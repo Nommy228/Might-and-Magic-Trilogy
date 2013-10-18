@@ -750,7 +750,7 @@ void Player::SetCondition( unsigned int uConditionIdx, int a3 )
     case Condition_Zombie:
       if ( classType == PLAYER_CLASS_LICH || IsEradicated() || IsZombie() || !IsDead())
         return;
-      memset(&pConditions[0], 0, sizeof(pConditions));
+      pConditions.fill(0);
       sHealth = GetMaxHealth();
       sMana = 0;
       player_sex = 0;
@@ -1240,7 +1240,7 @@ char Player::GetLearningPercent()
 Player::Player()
 {  
   memset(&pEquipment, 0, sizeof(PlayerEquipment));
-  memset(pInventoryMatrix.data(), 0, 126 * sizeof(int));
+  pInventoryMatrix.fill(0);
   for (uint i = 0; i < 126; ++i)
     pInventoryItemList[i].Reset();
   for (uint i = 0; i < 12; ++i)
@@ -1260,7 +1260,7 @@ Player::Player()
   pName[0] = 0;
   uCurrentFace = 0;
   uVoiceID = 0;
-  memset(pConditions.data(), 0, 20 * sizeof(__int64));
+  pConditions.fill(0);
 
   field_BB = 0;
 
@@ -1327,8 +1327,8 @@ Player::Player()
   uNumArmageddonCasts = 0;
   uNumFireSpikeCasts = 0;
 
-  memset(field_1988, 0, 49 * sizeof(int));
-  memset(playerEventBits, 0, 64 * sizeof(char));
+  memset(field_1988, 0, sizeof(field_1988));
+  memset(playerEventBits, 0, sizeof(playerEventBits));
 
   field_E0 = 0;
   field_E4 = 0;
@@ -3910,9 +3910,9 @@ void Player::Reset(PLAYER_CLASS_TYPE cls)
   uLevel = 1;
   uExperience = 251 + rand() % 100;
   uBirthYear = 1147 - rand() % 6;
-  memset(pActiveSkills.data(), 0, sizeof(pActiveSkills));
-  memset(_achieved_awards_bits, 0, 64);
-  memset(&spellbook, 0, sizeof(PlayerSpells));
+  pActiveSkills.fill(0);
+  memset(_achieved_awards_bits, 0, sizeof(_achieved_awards_bits));
+  memset(&spellbook, 0, sizeof(spellbook));
 
   for (uint i = 0; i < 37; ++i)
   {
@@ -4491,7 +4491,7 @@ void Player::UseItem_DrinkPotion_etc(signed int player_num, int a3)
               v30 = playerAffected->pConditions[Condition_Dead];
               v32 = playerAffected->pConditions[Condition_Pertified];
               v34 = playerAffected->pConditions[Condition_Eradicated];    
-              memset(&playerAffected->pConditions,0,sizeof(pConditions));
+              pConditions.fill(0);
               playerAffected->pConditions[Condition_Dead] = v30;
               playerAffected->pConditions[Condition_Pertified] = v32;
               playerAffected->pConditions[Condition_Eradicated] = v34;
@@ -5737,7 +5737,7 @@ void Player::SetVariable(enum VariableType var_type, signed int var_value)
       PlayAwardSound_Anim();
       return;
     case VAR_MajorCondition:
-      memset(this, 0, 0xA0u);
+      pConditions.fill(0);
       PlayAwardSound_Anim();
       return;
     case VAR_AutoNotes:
@@ -6333,7 +6333,7 @@ void Player::AddVariable(enum VariableType var_type, signed int val)
       PlayAwardSound_Anim97();
       return;
     case VAR_MajorCondition :
-      memset(this, 0, 0xA0u);
+      pConditions.fill(0);
       PlayAwardSound_Anim97();
       return;
     case VAR_AutoNotes:
@@ -7026,7 +7026,7 @@ void Player::SubtractVariable( enum VariableType VarNum, signed int pValue )
         }
       }
       if ( pParty->pHirelings[0].uProfession == pValue )
-        memset(pParty->pHirelings.data(), 0, sizeof(NPCData));
+        memset(&pParty->pHirelings[0], 0, sizeof(NPCData));
       if ( pParty->pHirelings[1].uProfession == pValue )
         memset(&pParty->pHirelings[1], 0, sizeof(NPCData));
       pParty->hirelingScrollPosition = 0;
@@ -7246,7 +7246,7 @@ bool IsDwarfPresentInParty(bool a1)
 
 
 //----- (00439FCB) --------------------------------------------------------
-void __fastcall DamagePlayerFromMonster(unsigned int uObjID, int element, Vec3_int_ *pPos, unsigned int a4)
+void __fastcall DamagePlayerFromMonster(unsigned int uObjID, int dmgSource, Vec3_int_ *pPos, unsigned int a4)
 {
   Player *playerPtr; // ebx@3
   Actor *actorPtr; // esi@3
@@ -7297,7 +7297,7 @@ void __fastcall DamagePlayerFromMonster(unsigned int uObjID, int element, Vec3_i
       }
     }
     pAudioPlayer->PlaySound(soundToPlay, PID(OBJECT_Player,a4 + 80), 0, -1, 0, 0, 0, 0);
-    int dmgToReceive = Actor::_43B3E0_CalcDamage(actorPtr, element);
+    int dmgToReceive = actorPtr->_43B3E0_CalcDamage(dmgSource);
     if ( actorPtr->pActorBuffs[3].uExpireTime > 0 )
     {
       __int16 spellPower = actorPtr->pActorBuffs[3].uPower;
@@ -7305,7 +7305,7 @@ void __fastcall DamagePlayerFromMonster(unsigned int uObjID, int element, Vec3_i
         dmgToReceive /= (signed int)spellPower;
     }
     int damageType;
-    switch (element)
+    switch (dmgSource)
     {
       case 0: damageType = actorPtr->pMonsterInfo.uAttack1Type; 
         break;
@@ -7437,7 +7437,7 @@ void __fastcall DamagePlayerFromMonster(unsigned int uObjID, int element, Vec3_i
       if ( a4 == -1 )
         a4 = stru_50C198.which_player_would_attack(actorPtr);
       Player *playerPtr = &pParty->pPlayers[a4];
-      int dmgToReceive = Actor::_43B3E0_CalcDamage(actorPtr, element);
+      int dmgToReceive = actorPtr->_43B3E0_CalcDamage(dmgSource);
       unsigned __int16 spriteType = v37->uType;
       if ( v37->uType == 545 )
       {
@@ -7492,7 +7492,7 @@ void __fastcall DamagePlayerFromMonster(unsigned int uObjID, int element, Vec3_i
           dmgToReceive /= (signed int)spellPower;
       }
       int damageType;
-      switch(element)
+      switch(dmgSource)
       {
         case 0:
           damageType = actorPtr->pMonsterInfo.uAttack1Type;
@@ -7553,7 +7553,7 @@ void __fastcall DamagePlayerFromMonster(unsigned int uObjID, int element, Vec3_i
           }
         }
       }
-      if ( !element
+      if ( !dmgSource
         && !(dword_6BE368_debug_settings_2 & 0x10)
         && actorPtr->pMonsterInfo.uSpecialAttackType
         && rand() % 100 < actorPtr->pMonsterInfo.uLevel * actorPtr->pMonsterInfo.uSpecialAttackLevel )

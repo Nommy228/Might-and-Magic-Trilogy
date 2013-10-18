@@ -99,10 +99,10 @@ void Party::Zero()
     uNumDeaths = 0;
     uNumPrisonTerms = 0;
     uNumBountiesCollected = 0;
-    memset(monster_for_hunting_killed.data(), 5, sizeof(__int16));
-    memset(monster_id_for_hunting.data(), 5, sizeof(__int16));
-    memset(_quest_bits, 64, sizeof(__int8));
-    memset(pArcomageWins.data(), 16, sizeof(__int8));
+    monster_for_hunting_killed.fill(0);
+    monster_id_for_hunting.fill(0);
+    memset(_quest_bits, 0, sizeof(_quest_bits));
+    pArcomageWins.fill(0);
     uNumArenaPageWins = 0;
     uNumArenaSquireWins = 0;
     uNumArenaKnightWins = 0;
@@ -174,7 +174,7 @@ int Party::GetNextActiveCharacter()
   }
 
   if ( playerAlreadyPicked[0] && playerAlreadyPicked[1] && playerAlreadyPicked[2] && playerAlreadyPicked[3] )
-    memset(playerAlreadyPicked.data(), 0, 4u);
+    playerAlreadyPicked.fill(false);
   for (int i = 0; i < 4; i++)
   {
     v6 = &this->pPlayers[i];
@@ -293,7 +293,7 @@ void Party::CreateDefaultParty(char bGiveItems)
   pHireling1Name[0] = 0;
   pHireling2Name[0] = 0;
   this->hirelingScrollPosition = 0;
-  memset(pHirelings.data(), 0, 2 * sizeof(NPCData));
+  memset(&pHirelings, 0, sizeof(pHirelings));
 
   strcpy(this->pPlayers[0].pName, pGlobalTXT_LocalizationStrings[509]); //Zoltan
   this->pPlayers[0].uPrevFace = 17;
@@ -552,9 +552,9 @@ int Party::Reset()
 
   pWindowList_at_506F50_minus1_indexing_buttons____and_an_int_[0] = 100;  // default character ui - stats
   uFlags = 0;
-  memset(_autonote_bits, 0, 26);
-  memset(_quest_bits, 0, 64);
-  memset(pIsArtifactFound.data(), 0, 29);
+  memset(_autonote_bits, 0, sizeof(_autonote_bits));
+  memset(_quest_bits, 0, sizeof(_autonote_bits));
+  pIsArtifactFound.fill(0);
   _449B7E_toggle_bit(_quest_bits, PARTY_QUEST_EMERALD_RED_POTION_ACTIVE, 1);
   _449B7E_toggle_bit(_quest_bits, PARTY_QUEST_EMERALD_SEASHELL_ACTIVE, 1);
   _449B7E_toggle_bit(_quest_bits, PARTY_QUEST_EMERALD_LONGBOW_ACTIVE, 1);
@@ -562,7 +562,7 @@ int Party::Reset()
   _449B7E_toggle_bit(_quest_bits, PARTY_QUEST_EMERALD_LUTE_ACTIVE, 1);
   _449B7E_toggle_bit(_quest_bits, PARTY_QUEST_EMERALD_HAT_ACTIVE, 1);
 
-  memset(PartyTimes._shop_ban_times.data(),0,53*sizeof(__int64));
+  PartyTimes._shop_ban_times.fill(0);
 
   memcpy(pNPCStats->pNewNPCData, pNPCStats->pNPCData, 0x94BCu);
   memcpy(pNPCStats->pGroups_copy, pNPCStats->pGroups, 0x66u);

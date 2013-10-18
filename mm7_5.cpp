@@ -3983,7 +3983,7 @@ void sub_43B1B0(signed int a1, unsigned int a2, Vec3_int_ *pVelocity, signed int
       v6 = stru_50C198._4273BB(v8, v7, v4, 0);
       if ( v6 )
       {
-        v10 = (unsigned int)Actor::_43B3E0_CalcDamage(v8, a4);
+        v10 = (unsigned int)v8->_43B3E0_CalcDamage(a4);
         if ( (signed __int64)v8->pActorBuffs[3].uExpireTime > 0 )
         {
           v11 = v8->pActorBuffs[3].uPower;

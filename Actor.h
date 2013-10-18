@@ -45,20 +45,21 @@ enum ACTOR_BUFF_INDEX
   ACTOR_BUFF_AFRAID = 4,
   ACTOR_BUFF_STONED = 5,
   ACTOR_BUFF_PARALYZED = 6,
-
-  ACTOR_BUFF_BERSERK = 8,
-
-  ACTOR_BUFF_FATE = 10,
-  ACTOR_BUFF_ENSLAVED = 11,
-  ACTOR_BUFF_DAY_OF_PROTECTION = 12,
-  ACTOR_BUFF_HOUR_OF_POWER = 13,
-  ACTOR_BUFF_SHIELD = 14,
-  ACTOR_BUFF_STONESKIN = 15,
-  ACTOR_BUFF_BLESS = 16,
-  ACTOR_BUFF_HEROISM = 17,
-  ACTOR_BUFF_HASTE = 18,
-  ACTOR_BUFF_PAIN_REFLECTION = 19,
-  ACTOR_BUFF_PAIN_HAMMERHANDS = 20,
+  ACTOR_BUFF_SLOWED = 7,
+  ACTOR_BUFF_SOMETHING_THAT_HALVES_AC = 8,
+  ACTOR_BUFF_BERSERK = 9,
+  ACTOR_BUFF_MASS_DISTORTION = 10,
+  ACTOR_BUFF_FATE = 11,
+  ACTOR_BUFF_ENSLAVED = 12,
+  ACTOR_BUFF_DAY_OF_PROTECTION = 13,
+  ACTOR_BUFF_HOUR_OF_POWER = 14,
+  ACTOR_BUFF_SHIELD = 15,
+  ACTOR_BUFF_STONESKIN = 16,
+  ACTOR_BUFF_BLESS = 17,
+  ACTOR_BUFF_HEROISM = 18,
+  ACTOR_BUFF_HASTE = 19,
+  ACTOR_BUFF_PAIN_REFLECTION = 20,
+  ACTOR_BUFF_PAIN_HAMMERHANDS = 21,
 };
 
 
@@ -236,12 +237,12 @@ struct Actor
 
   static void AggroSurroundingPeasants(unsigned int uActorID, int a2);
   static bool ArePeasantsOfSameFaction(Actor *a1, Actor *a2);
-  static bool StealFrom(unsigned int uActorID);
+  static void StealFrom(unsigned int uActorID);
   static void GiveItem(signed int uActorID, unsigned int uItemID, unsigned int bGive);
   static void ToggleFlag(signed int uActorID, unsigned int uFlag, int bToggle);
   static void ApplyFineForKillingPeasant(unsigned int uActorID);
   static void DrawHealthBar(Actor *actor, struct GUIWindow *window);
-  static int _43B3E0_CalcDamage(Actor *a1, signed int a2);
+  int _43B3E0_CalcDamage(signed int dmgSource);
   static void AddBloodsplatOnDamageOverlay(unsigned int uActorID, int a2, signed int a3);
 
 
