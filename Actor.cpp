@@ -1825,7 +1825,7 @@ void Actor::AI_RandomMove( unsigned int uActor_id, unsigned int uTarget_id, int 
   int absy; // eax@1
   unsigned int v9; // ebx@11
   int v10; // ebx@13
-  AIDirection notInitializedBecauseShouldBeRandom; // [sp+Ch] [bp-30h]@7
+  AIDirection doNotInitializeBecauseShouldBeRandom; // [sp+Ch] [bp-30h]@7
   unsigned int v16; // [sp+2Ch] [bp-10h]@1
   int y; // [sp+30h] [bp-Ch]@1
   int absx; // [sp+38h] [bp-4h]@1
@@ -1844,12 +1844,12 @@ void Actor::AI_RandomMove( unsigned int uActor_id, unsigned int uTarget_id, int 
   {
     if ( !uActionLength )
       uActionLength = 256;
-    Actor::AI_StandOrBored(uActor_id, OBJECT_Player, uActionLength, &notInitializedBecauseShouldBeRandom);
+    Actor::AI_StandOrBored(uActor_id, OBJECT_Player, uActionLength, &doNotInitializeBecauseShouldBeRandom);
     return;
   }
   if ( pActors[uActor_id].pMonsterInfo.uMovementType == 3 && absx < 128 )
   {
-    Actor::AI_Stand(uActor_id, uTarget_id, 256, &notInitializedBecauseShouldBeRandom);
+    Actor::AI_Stand(uActor_id, uTarget_id, 256, &doNotInitializeBecauseShouldBeRandom);
     return;
   }
   absx += ((rand() & 0xF) * radius) / 16;
@@ -1862,7 +1862,7 @@ void Actor::AI_RandomMove( unsigned int uActor_id, unsigned int uTarget_id, int 
   v10 = v9 + rand() % 256 - 128;
   if ( abs(v10 - v5->uYawAngle) > 256 && !(v5->uAttributes & 0x200000) )
   {
-    Actor::AI_Stand(uActor_id, uTarget_id, 256, &notInitializedBecauseShouldBeRandom);
+    Actor::AI_Stand(uActor_id, uTarget_id, 256, &doNotInitializeBecauseShouldBeRandom);
     return;
   }
   v5->uYawAngle = v10;
@@ -1878,9 +1878,10 @@ void Actor::AI_RandomMove( unsigned int uActor_id, unsigned int uTarget_id, int 
 }
 
 //----- (004031C1) --------------------------------------------------------
-char __fastcall Actor::_4031C1_update_job(unsigned int uActorID, signed int a2, int a3)
+char __fastcall Actor::_4031C1_update_job_never_gets_called(unsigned int uActorID, signed int a2, int a3)   //attempted to implement something like jobs for actors, but apparently was never finished
 {
-  unsigned int v3; // edi@1
+  return 0;
+  /*unsigned int v3; // edi@1
   Actor *v4; // esi@1
   ActorJob *v5; // eax@1
   signed int v6; // edx@2
@@ -1932,55 +1933,44 @@ char __fastcall Actor::_4031C1_update_job(unsigned int uActorID, signed int a2, 
       }
     }
   }
-  return (char)v5;
+  return (char)v5;*/
 }
 
 //----- (004030AD) --------------------------------------------------------
-void Actor::AI_Stun(unsigned int uActorID, signed int edx0, int arg0)
+void Actor::AI_Stun(unsigned int uActorID, signed int edx0, int stunRegardlessOfState)
 {
-  unsigned int v3; // edi@1
   Actor *v4; // ebx@1
-  //__int16 result; // ax@10
-  SpriteFrame *v6; // ecx@16
   __int16 v7; // ax@16
-  unsigned int v8; // ecx@16
   AIDirection a3; // [sp+Ch] [bp-40h]@16
-  AIDirection v10; // [sp+28h] [bp-24h]@16
-  unsigned int v11; // [sp+44h] [bp-8h]@1
-  signed int a2; // [sp+48h] [bp-4h]@1
+  AIDirection* v10; // [sp+28h] [bp-24h]@16
 
-  v3 = uActorID;
-  a2 = edx0;
   v4 = &pActors[uActorID];
-  v11 = uActorID;
-  if ( v4->uAIState == 7 )
+  if ( v4->uAIState == Fleeing )
     BYTE2(v4->uAttributes) |= 2u;
   if ( v4->pMonsterInfo.uHostilityType != 4 )
   {
     v4->uAttributes &= 0xFFFFFFFBu;
     v4->pMonsterInfo.uHostilityType = MonsterInfo::Hostility_Long;
   }
-  if ( (signed __int64)v4->pActorBuffs[1].uExpireTime > 0 )
+  if ( v4->pActorBuffs[1].uExpireTime > 0 )
     v4->pActorBuffs[1].Reset();
-  if ( (signed __int64)v4->pActorBuffs[4].uExpireTime > 0 )
+  if ( v4->pActorBuffs[4].uExpireTime > 0 )
     v4->pActorBuffs[4].Reset();
-  if ( arg0
-    || (v4->uAIState != 8
-    && v4->uAIState != 3
-    && v4->uAIState != 12
-    && v4->uAIState != 13
-    && v4->uAIState != 18
-    && v4->uAIState != 2))
+  if ( stunRegardlessOfState
+    || (v4->uAIState != Stunned
+    && v4->uAIState != AttackingRanged1
+    && v4->uAIState != AttackingRanged2
+    && v4->uAIState != AttackingRanged3
+    && v4->uAIState != AttackingRanged4
+    && v4->uAIState != AttackingMelee))
   {
-    memcpy(&v10, Actor::GetDirectionInfo(PID(OBJECT_Actor,v3), a2, &a3, 0), sizeof(v10));
-    v6 = pSpriteFrameTable->pSpriteSFrames;
-    v4->uYawAngle = LOWORD(v10.uYawAngle);
-    v7 = v6[v4->pSpriteIDs[ANIM_GotHit]].uAnimLength;
-    v8 = v11;
+    v10 = Actor::GetDirectionInfo(PID(OBJECT_Actor,uActorID), edx0, &a3, 0), sizeof(v10);
+    v4->uYawAngle = LOWORD(v10->uYawAngle);
+    v7 = pSpriteFrameTable->pSpriteSFrames[v4->pSpriteIDs[ANIM_GotHit]].uAnimLength;
     v4->uCurrentActionTime = 0;
     v4->uAIState = Stunned;
     v4->uCurrentActionLength = 8 * v7;
-    Actor::PlaySound(v8, 2u);
+    Actor::PlaySound(uActorID, 2u);
     v4->UpdateAnimation();
   }
 }
@@ -1991,8 +1981,7 @@ void Actor::AI_Bored(unsigned int uActorID, unsigned int uObjID, AIDirection *a4
   unsigned int v7; // eax@3
   unsigned int v9; // eax@3
   
-  assert(uActorID < uNumActors);
-  auto actor = &pActors[uActorID];
+  Actor* actor = &pActors[uActorID];
   
   AIDirection a3; // [sp+Ch] [bp-5Ch]@2
   if (!a4)
@@ -2023,16 +2012,12 @@ void Actor::AI_Bored(unsigned int uActorID, unsigned int uObjID, AIDirection *a4
 void Actor::Resurrect(unsigned int uActorID)
 {
   Actor *pActor; // esi@1
-  SpriteFrame *v2; // edx@1
-  int v3; // eax@1
 
   pActor = &pActors[uActorID];
-  v2 = pSpriteFrameTable->pSpriteSFrames;
-  v3 = pActor->pSpriteIDs[ANIM_Dying];
   pActor->uCurrentActionTime = 0;
   pActor->uAIState = Resurrected;
   pActor->uCurrentActionAnimation = ANIM_Dying;
-  pActor->uCurrentActionLength = 8 * v2[v3].uAnimLength;
+  pActor->uCurrentActionLength = 8 * pSpriteFrameTable->pSpriteSFrames[pActor->pSpriteIDs[ANIM_Dying]].uAnimLength;
   pActor->sCurrentHP = LOWORD(pActor->pMonsterInfo.uHP);
   Actor::PlaySound(uActorID, 1u);
   pActor->UpdateAnimation();
@@ -2105,81 +2090,51 @@ void Actor::Die(unsigned int uActorID)
 //----- (00402CED) --------------------------------------------------------
 void Actor::PlaySound(unsigned int uActorID, unsigned int uSoundID)
 {
-  //Actor *v2; // eax@1
   unsigned __int16 v3; // dx@1
-  int v4; // eax@3
-  int v5; // eax@4
-  unsigned int v6; // eax@6
-  //signed int v7; // eax@12
-  signed int v8; // [sp-18h] [bp-1Ch]@10
-  signed int v9; // [sp-14h] [bp-18h]@10
-  int v10; // [sp-10h] [bp-14h]@10
-  unsigned int v11; // [sp-Ch] [bp-10h]@10
-  int v12; // [sp-8h] [bp-Ch]@10
 
-  //v2 = &pActors[uActorID];
   v3 = pActors[uActorID].pSoundSampleIDs[uSoundID];
   if ( v3 )
   {
-    if ( (signed __int64)pActors[uActorID].pActorBuffs[3].uExpireTime <= 0 )
+    if ( pActors[uActorID].pActorBuffs[3].uExpireTime <= 0 )
     {
-      v12 = 0;
-      v8 = -1;
+      pAudioPlayer->PlaySound((SoundID)v3, PID(OBJECT_Actor, uActorID), 0, -1, 0, 0, 0, 0);
     }
     else
     {
-      v4 = pActors[uActorID].pActorBuffs[3].uPower - 2;
-      if ( v4 )
+      switch(pActors[uActorID].pActorBuffs[3].uPower)
       {
-        v5 = v4 - 1;
-        if ( v5 )
-        {
-          if ( v5 == 1 )
-            v6 = 55125;
-          else
-            v6 = uActorID;
-        }
-        else
-        {
-          v6 = 44100;
-        }
+        case 1: 
+          pAudioPlayer->PlaySound((SoundID)v3, PID(OBJECT_Actor, uActorID), 0, 0, 0, 0, 0, 33075);
+          break;
+        case 2: 
+          pAudioPlayer->PlaySound((SoundID)v3, PID(OBJECT_Actor, uActorID), 0, 0, 0, 0, 0, 33075);
+          break;
+        case 3: 
+        case 4: 
+          pAudioPlayer->PlaySound((SoundID)v3, PID(OBJECT_Actor, uActorID), 0, 0, 0, 0, 0, 33075);
+          break;
+        default:
+          pAudioPlayer->PlaySound((SoundID)v3, PID(OBJECT_Actor, uActorID), 0, -1, 0, 0, 0, 0);
+          break;
       }
-      else
-      {
-        v6 = 33075;
-      }
-      v12 = v6;
-      v8 = 0;
     }
-    pAudioPlayer->PlaySound((SoundID)(signed __int16)v3, PID(OBJECT_Actor, uActorID), 0, v8, 0, 0, 0, v12);
   }
 }
 
 //----- (00402AD7) --------------------------------------------------------
 void Actor::AI_Pursue1(unsigned int uActorID, unsigned int a2, signed int arg0, signed int uActionLength, AIDirection *pDir)
 {
-  unsigned int v5; // edi@1
   int v6; // eax@1
   Actor *v7; // ebx@1
   unsigned int v8; // ecx@1
-  char v9; // zf@1
   AIDirection *v10; // esi@6
-  //int v12; // ecx@19
-  //unsigned int v13; // eax@19
   AIDirection a3; // [sp+Ch] [bp-5Ch]@7
-  //AIDirection v15; // [sp+28h] [bp-40h]@7
-  AIDirection v16; // [sp+44h] [bp-24h]@7
-  //unsigned int v17; // [sp+60h] [bp-8h]@1
   unsigned int v18; // [sp+64h] [bp-4h]@1
-  //int v19; // [sp+70h] [bp+8h]@19
 
-  v5 = uActorID;
   v6 = 0;
   v7 = &pActors[uActorID];
-  v18 = a2;
   v8 = PID(OBJECT_Actor,uActorID);
-  v9 = v7->pMonsterInfo.uFlying == 0;
-  if ( !v9 && !pParty->bFlying )
+  if ( v7->pMonsterInfo.uFlying != 0 && !pParty->bFlying )                //TODO: Does v6 have a point?
   {
     if ( v7->pMonsterInfo.uMissleAttack1Type )
       v6 = v7->uActorRadius + 512;
@@ -2187,38 +2142,41 @@ void Actor::AI_Pursue1(unsigned int uActorID, unsigned int a2, signed int arg0, 
       v6 = pParty->uPartyHeight;
   }
 
-  v10 = pDir;
-  if ( !pDir )
+  if ( pDir == nullptr )
   {
-    memcpy(&v16, Actor::GetDirectionInfo(v8, a2, &a3, v6), sizeof(v16));
-    v10 = &v16;
+    v10 = Actor::GetDirectionInfo(v8, a2, &a3, v6);
+  }
+  else
+  {
+    v10 = pDir;
   }
   if ( MonsterStats::BelongsToSupertype(v7->pMonsterInfo.uID, MONSTER_SUPERTYPE_TREANT) )
   {
     if ( !uActionLength )
       uActionLength = 256;
-    Actor::AI_StandOrBored(v5, 4, uActionLength, v10);
+    Actor::AI_StandOrBored(uActorID, 4, uActionLength, v10);
     return;
   }
-  if ( (double)(signed int)v10->uDistance < 307.2 )
+  if ( v10->uDistance < 307.2 )
   {
     if ( !uActionLength )
       uActionLength = 256;
-    Actor::AI_Stand(v5, v18, uActionLength, v10);
+    Actor::AI_Stand(uActorID, a2, uActionLength, v10);
     return;
   }
-  if ( !v7->uMovementSpeed )
+  if ( v7->uMovementSpeed == 0 )
   {
-    Actor::AI_Stand(v5, v18, uActionLength, v10);
+    Actor::AI_Stand(uActorID, a2, uActionLength, v10);
     return;
   }
-  v18 = 16;
   if ( arg0 % 2 )
     v18 = -16;
+  else
+    v18 = 16;
 
   v7->uYawAngle = stru_5C6E00->Atan2(
-                    pParty->vPosition.x + fixpoint_mul(stru_5C6E00->Cos(v18 + stru_5C6E00->uIntegerPi + v10->uYawAngle), v10->uDistanceXZ) - v7->vPosition.x,
-                    pParty->vPosition.y + fixpoint_mul(stru_5C6E00->Sin(v18 + stru_5C6E00->uIntegerPi + v10->uYawAngle), v10->uDistanceXZ) - v7->vPosition.y);
+                    pParty->vPosition.x + (int)fixpoint_mul(stru_5C6E00->Cos(v18 + stru_5C6E00->uIntegerPi + v10->uYawAngle), v10->uDistanceXZ) - v7->vPosition.x,
+                    pParty->vPosition.y + (int)fixpoint_mul(stru_5C6E00->Sin(v18 + stru_5C6E00->uIntegerPi + v10->uYawAngle), v10->uDistanceXZ) - v7->vPosition.y);
   if ( uActionLength )
     v7->uCurrentActionLength = uActionLength;
   else
@@ -2231,49 +2189,33 @@ void Actor::AI_Pursue1(unsigned int uActorID, unsigned int a2, signed int arg0, 
 //----- (00402968) --------------------------------------------------------
 void Actor::AI_Flee(unsigned int uActorID, signed int sTargetPid, int uActionLength, AIDirection *a4)
 {
-  unsigned int v4; // esi@1
   Actor *v5; // ebx@1
-  //unsigned int result; // eax@1
   int v7; // ecx@2
-  signed __int16 v8; // cx@10
   unsigned __int16 v9; // ax@15
-  AIDirection v10; // [sp+8h] [bp-7Ch]@4
-  AIDirection a3; // [sp+24h] [bp-60h]@3
-  AIDirection v12; // [sp+40h] [bp-44h]@3
-  AIDirection v13; // [sp+5Ch] [bp-28h]@4
-  signed int a1; // [sp+78h] [bp-Ch]@2
-  unsigned int v15; // [sp+7Ch] [bp-8h]@1
-  //signed int a2; // [sp+80h] [bp-4h]@1
+  AIDirection* v10 = nullptr; // [sp+8h] [bp-7Ch]@4
+  AIDirection* a3 = nullptr; // [sp+24h] [bp-60h]@3
+  AIDirection* v13; // [sp+5Ch] [bp-28h]@4
 
-  v4 = uActorID;
-  //a2 = edx0;
-  v15 = uActorID;
   v5 = &pActors[uActorID];
-  //result = pActors[uActorID].CanAct();
-  if ( pActors[uActorID].CanAct() )
+  if ( v5->CanAct() )
   {
-    v7 = PID(OBJECT_Actor,v4);
-    a1 = PID(OBJECT_Actor,v4);
+    v7 = PID(OBJECT_Actor,uActorID);
     if ( !a4 )
     {
-      a4 = &v12;
-      memcpy(&v12, Actor::GetDirectionInfo(v7, sTargetPid, &a3, v5->pMonsterInfo.uFlying), sizeof(v12));
-      v7 = a1;
+      a4 = Actor::GetDirectionInfo(v7, sTargetPid, a3, v5->pMonsterInfo.uFlying);
     }
-    memcpy(&a3, Actor::GetDirectionInfo(v7, 4u, &v10, 0), sizeof(a3));
-    memcpy(&v13, &a3, sizeof(v13));
+    v13 = Actor::GetDirectionInfo(v7, 4u, v10, 0);
     if ( MonsterStats::BelongsToSupertype(v5->pMonsterInfo.uID, MONSTER_SUPERTYPE_TREANT)
-      || PID_TYPE(sTargetPid) == OBJECT_Actor && (double)(signed int)v13.uDistance < 307.2 )
+      || PID_TYPE(sTargetPid) == OBJECT_Actor && v13->uDistance < 307.2 )
     {
       if ( !uActionLength )
         uActionLength = 256;
-      Actor::AI_StandOrBored(v15, 4, uActionLength, &v13);
+      Actor::AI_StandOrBored(uActorID, 4, uActionLength, v13);
     }
     else
     {
-      v8 = v5->uMovementSpeed;
-      if ( v8 )
-        v5->uCurrentActionLength = (signed int)(a4->uDistanceXZ << 7) / v8;
+      if ( v5->uMovementSpeed )
+        v5->uCurrentActionLength = (signed int)(a4->uDistanceXZ << 7) / v5->uMovementSpeed;
       else
         v5->uCurrentActionLength = 0;
       if ( v5->uCurrentActionLength > 256 )
@@ -2292,30 +2234,19 @@ void Actor::AI_Flee(unsigned int uActorID, signed int sTargetPid, int uActionLen
 //----- (0040281C) --------------------------------------------------------
 void Actor::AI_Pursue2(unsigned int uActorID, unsigned int a2, signed int uActionLength, AIDirection *pDir, int a5)
 {
-  unsigned int v5; // edi@1
   int v6; // eax@1
   Actor *v7; // ebx@1
   unsigned int v8; // ecx@1
-  char v9; // zf@1
   AIDirection *v10; // esi@7
-  signed int v11; // edx@12
   signed __int16 v13; // cx@19
   unsigned __int16 v14; // ax@25
-  int v15; // [sp-8h] [bp-54h]@12
-  AIDirection *v16; // [sp-4h] [bp-50h]@12
   AIDirection a3; // [sp+Ch] [bp-40h]@8
   AIDirection v18; // [sp+28h] [bp-24h]@8
-  unsigned int v19; // [sp+44h] [bp-8h]@1
-  unsigned int v20; // [sp+48h] [bp-4h]@1
 
-  v5 = uActorID;
   v6 = 0;
   v7 = &pActors[uActorID];
-  v19 = a2;
   v8 = PID(OBJECT_Actor,uActorID);
-  v9 = v7->pMonsterInfo.uFlying == 0;
-  v20 = v5;
-  if ( !v9 && !pParty->bFlying )
+  if ( v7->pMonsterInfo.uFlying != 0 && !pParty->bFlying )
   {
     if ( v7->pMonsterInfo.uMissleAttack1Type && uCurrentlyLoadedLevelType == LEVEL_Outdoor )
       v6 = v7->uActorRadius + 512;
@@ -2325,29 +2256,20 @@ void Actor::AI_Pursue2(unsigned int uActorID, unsigned int a2, signed int uActio
   v10 = pDir;
   if ( !pDir )
   {
-    memcpy(&v18, Actor::GetDirectionInfo(v8, a2, &a3, v6), sizeof(v18));
-    memcpy(0, &v18, 0x1Cu);
-    v10 = 0;
-    v5 = v20;
+    v10 = Actor::GetDirectionInfo(v8, a2, &a3, v6);
   }
   if ( MonsterStats::BelongsToSupertype(v7->pMonsterInfo.uID, MONSTER_SUPERTYPE_TREANT) )
   {
     if ( !uActionLength )
       uActionLength = 256;
-    v16 = v10;
-    v15 = uActionLength;
-    v11 = 4;
-    Actor::AI_StandOrBored(v5, v11, v15, v16);
+    Actor::AI_StandOrBored(uActorID, 4, uActionLength, v10);
     return;
   }
   if ( (signed int)v10->uDistance < a5 )
   {
     if ( !uActionLength )
       uActionLength = 256;
-    v11 = v19;
-    v16 = v10;
-    v15 = uActionLength;
-    Actor::AI_StandOrBored(v5, v11, v15, v16);
+    Actor::AI_StandOrBored(uActorID, a2, uActionLength, v10);
     return;
   }
   if ( uActionLength )
@@ -2375,31 +2297,19 @@ void Actor::AI_Pursue2(unsigned int uActorID, unsigned int a2, signed int uActio
 //----- (00402686) --------------------------------------------------------
 void Actor::AI_Pursue3(unsigned int uActorID, unsigned int a2, signed int uActionLength, AIDirection *a4)
 {
-  //unsigned int v4; // edi@1
   int v5; // eax@1
   Actor *v6; // ebx@1
   int v7; // ecx@1
-  char v8; // zf@1
-  //AIDirection *v9; // esi@7
-  signed int v10; // edx@12
   signed __int16 v12; // cx@19
-  int v13; // edx@25
   __int16 v14; // ax@25
-  unsigned __int16 v15; // ax@26
   unsigned __int16 v16; // ax@28
-  int v17; // [sp-8h] [bp-54h]@12
-  //AIDirection *v18; // [sp-4h] [bp-50h]@12
   AIDirection a3; // [sp+Ch] [bp-40h]@8
-  AIDirection v20; // [sp+28h] [bp-24h]@8
-  int v21; // [sp+44h] [bp-8h]@1
-  //unsigned int v22; // [sp+48h] [bp-4h]@1
+  AIDirection* v20; // [sp+28h] [bp-24h]@8
 
   v5 = 0;
   v6 = &pActors[uActorID];
-  v21 = a2;
   v7 = PID(OBJECT_Actor,uActorID);
-  v8 = v6->pMonsterInfo.uFlying == 0;
-  if ( !v8 && !pParty->bFlying )
+  if ( v6->pMonsterInfo.uFlying != 0 && !pParty->bFlying )
   {
     if ( v6->pMonsterInfo.uMissleAttack1Type && uCurrentlyLoadedLevelType == LEVEL_Outdoor )
       v5 = v6->uActorRadius + 512;
@@ -2408,7 +2318,7 @@ void Actor::AI_Pursue3(unsigned int uActorID, unsigned int a2, signed int uActio
   }
   if ( !a4 )
   {
-    memcpy(&v20, Actor::GetDirectionInfo(v7, a2, &a3, v5), sizeof(v20));
+    v20 = Actor::GetDirectionInfo(v7, a2, &a3, v5);
   }
   if ( MonsterStats::BelongsToSupertype(v6->pMonsterInfo.uID, MONSTER_SUPERTYPE_TREANT) )
   {
@@ -2416,11 +2326,11 @@ void Actor::AI_Pursue3(unsigned int uActorID, unsigned int a2, signed int uActio
       uActionLength = 256;
     return Actor::AI_StandOrBored(uActorID, 4, uActionLength, a4);
   }
-  if ( (double)(signed int)a4->uDistance < 307.2 )
+  if ( a4->uDistance < 307.2 )
   {
     if ( !uActionLength )
       uActionLength = 256;
-    return Actor::AI_StandOrBored(uActorID, v21, uActionLength, a4);
+    return Actor::AI_StandOrBored(uActorID, a2, uActionLength, a4);
   }
   if ( uActionLength )
   {
@@ -2436,13 +2346,12 @@ void Actor::AI_Pursue3(unsigned int uActorID, unsigned int a2, signed int uActio
     if ( v6->uCurrentActionLength > 128 )
       v6->uCurrentActionLength = 128;
   }
-  v13 = rand() % 2;
   v14 = LOWORD(a4->uYawAngle);
-  if ( v13 )
-    v15 = v14 + 256;
+  if ( rand() % 2 )
+    v14 += 256;
   else
-    v15 = v14 - 256;
-  v6->uYawAngle = v15;
+    v14 -= 256;
+  v6->uYawAngle = v14;
   v16 = LOWORD(a4->uPitchAngle);
   v6->uCurrentActionTime = 0;
   v6->uPitchAngle = v16;
@@ -3979,7 +3888,7 @@ void InitializeActors()
 
     BYTE2(actor->uAttributes) &= 0x7Fu;
     if (BYTE2(actor->uAttributes) & 0x40)
-        Actor::_4031C1_update_job(i, pParty->uCurrentHour, 1);
+        Actor::_4031C1_update_job_never_gets_called(i, pParty->uCurrentHour, 1);
   }
 }
 //----- (00439474) --------------------------------------------------------
