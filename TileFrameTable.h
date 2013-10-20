@@ -20,7 +20,8 @@ enum TILE_DESC_FLAGS
   TILE_DESC_SCROLL_RIGHT = 0x2000,
 };
 
-
+#pragma warning( push )
+#pragma warning( disable: 4341 )
 enum Tileset: signed __int16
 {
   Tileset_Grass = 0,
@@ -36,6 +37,7 @@ enum Tileset: signed __int16
   Tileset_RoadGrassCobble = 10,
   Tileset_NULL =-1
 };
+#pragma warning( pop )
 
 /*   48 */
 #pragma pack(push, 1)

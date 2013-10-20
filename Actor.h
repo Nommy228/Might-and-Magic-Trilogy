@@ -217,7 +217,7 @@ struct Actor
   static void Resurrect(unsigned int uActorID);
   static void AI_Bored(unsigned int uActorID, unsigned int uObjID, struct AIDirection *a4);
   static void AI_Stun(unsigned int uActorID, signed int edx0, int arg0);
-  static char __fastcall _4031C1_update_job(unsigned int uActorID, signed int a2, int a3);
+  static char __fastcall _4031C1_update_job_never_gets_called(unsigned int uActorID, signed int a2, int a3);
   static void AI_RandomMove(unsigned int uActor_id, unsigned int uTarget_id, int radius, int uActionLength);
   static void AI_MissileAttack1(unsigned int uActorID, signed int sTargetPid, struct AIDirection *pDir);
   static void AI_MissileAttack2(unsigned int uActorID, signed int sTargetPid, struct AIDirection *pDir);

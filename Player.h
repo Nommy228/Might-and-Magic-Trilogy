@@ -220,6 +220,8 @@ enum CHARACTER_ATTRIBUTE_TYPE
   CHARACTER_ATTRIBUTE_SKILL_LEARNING    = 46
 };
 
+#pragma warning( push )
+#pragma warning( disable: 4341 )
 /*  328 */
 enum PLAYER_SKILL_TYPE: signed __int8
 {
@@ -264,6 +266,7 @@ enum PLAYER_SKILL_TYPE: signed __int8
   PLAYER_SKILL_MISC = 38,
   PLAYER_SKILL_INVALID = -1
 };
+#pragma warning( pop )
 
 /*  329 */
 enum PLAYER_CLASS_TYPE: unsigned __int8
