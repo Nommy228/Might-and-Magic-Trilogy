@@ -1,0 +1,46 @@
+#include "MainMenu.h"è
+#include "..\LOD.h"
+
+bool MainMenuWindow::OnMouseLeftClick(int x, int y)
+{
+  if (UIControl::OnMouseLeftClick(x, y))
+    return true;
+  return false;
+}
+
+bool MainMenuWindow::OnMouseRightClick(int x, int y)
+{
+  if (UIControl::OnMouseRightClick(x, y))
+    return true;
+  return false;
+}
+
+bool MainMenuWindow::OnKey(int key)
+{
+  if (UIControl::OnKey(key))
+    return true;
+  return false;
+}
+
+
+void MainMenuWindow::Show() {}
+bool MainMenuWindow::Focused() {return false;}
+
+bool MainMenuWindow::Initialize()
+{
+  auto background_texture = new RGBTexture;
+  background_texture->Load("mm6title.pcx", 0);
+  return true;
+}
+
+MainMenuWindow *MainMenuWindow::Create()
+{
+  auto window = new MainMenuWindow;
+  if (window)
+    if (!window->Initialize())
+    {
+      delete window;
+      window = nullptr;
+    }
+  return window;
+}

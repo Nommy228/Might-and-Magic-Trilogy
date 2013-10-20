@@ -1,2 +1,0 @@
-Might-and-Magic-Trilogy
-=======================
