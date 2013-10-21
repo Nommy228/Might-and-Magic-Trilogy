@@ -348,7 +348,6 @@ int dword_4DAFCC; // weak
 int (__stdcall *off_4DAFDC)(char); // weak
 char asc_4DB724[777]; // idb
 int dword_4DBD94; // weak
-std::array<int, 5> dword_4DF380 = {{0,1024,2560,5120,10240}}; // weak
 //int dword_4DF390; // weak
 char Str2[777]; // idb
 

@@ -2395,7 +2395,6 @@ bool ItemGen::IsRegularEnchanmentForAttribute( CHARACTER_ATTRIBUTE_TYPE attrToGe
   }
   std::map<CHARACTER_ATTRIBUTE_TYPE, CEnchantment*>* currList = bonusList->second;
   return (currList->find(attrToGet) != currList->end());
-  return false;
 }
 
 ITEM_EQUIP_TYPE ItemGen::GetItemEquipType()

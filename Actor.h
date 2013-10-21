@@ -195,7 +195,7 @@ struct Actor
   Reset();
 }
 
-  int _44FD29(int a2);
+  void SummonMinion(int summonerId);
   void Reset();
   void Remove();
   void PrepareSprites(char load_sounds_if_bit1_set);
@@ -245,6 +245,7 @@ struct Actor
   int _43B3E0_CalcDamage(signed int dmgSource);
   static void AddBloodsplatOnDamageOverlay(unsigned int uActorID, int a2, signed int a3);
 
+  static bool _46DF1A_collide_against_actor(int a1, int a2);
 
   char pActorName[32];
   signed __int16 sNPC_ID;

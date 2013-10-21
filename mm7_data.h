@@ -307,7 +307,6 @@ extern int dword_4DAFCC; // weak
 extern int (__stdcall *off_4DAFDC)(char); // weak
 extern char asc_4DB724[]; // idb
 extern int dword_4DBD94; // weak
-extern std::array<int, 5> dword_4DF380; // weak
 extern int dword_4DF390; // weak
 extern char Str2[]; // idb
 
@@ -1283,7 +1282,6 @@ int ODM_GetFloorLevel(int X, signed int Y, int Z, int, int *pOnWater, int *bmode
 int __fastcall sub_46D8E3(int a1, signed int a2, int a3, int a4);
 void ODM_GetTerrainNormalAt(int pos_x, int pos_z, Vec3_int_ *out);
 unsigned int __fastcall sub_46DEF2(signed int a2, unsigned int uLayingItemID);
-int __fastcall _46DF1A_collide_against_actor(int, int); // weak
 void _46E0B2_collide_against_decorations();
 void __fastcall _46E26D_collide_against_sprites(signed int a1, signed int a2);
 int _46E44E_collide_against_faces_and_portals(unsigned int b1); // idb

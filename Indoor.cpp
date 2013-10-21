@@ -3424,7 +3424,7 @@ LABEL_123:
                 v28 = abs(pActors[v26].vPosition.y - v0->vPosition.y);
                 v29 = abs(pActors[v26].vPosition.x - v0->vPosition.x);
                 if ( int_get_vector_length(v29, v28, v27) >= v0->uActorRadius + (signed int)pActors[v26].uActorRadius
-                  && _46DF1A_collide_against_actor(v54, 40) )
+                  && Actor::_46DF1A_collide_against_actor(v54, 40) )
                   ++v58;
                 v22 = 0;
               }

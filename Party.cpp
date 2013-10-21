@@ -1120,10 +1120,9 @@ bool Party::AddItemToParty(ItemGen *pItem)
     v7 = pIcons_LOD->LoadTexturePtr(v5, TEXTURE_16BIT_PALETTE);
     v21 = areWeLoadingTexture;
     v8 = 0;
-    int startId = uActiveCharacter >= 0 ? uActiveCharacter - 1 : 0;
     for (int i = 0; i < 4; i++)
     {
-      v9 = &pPlayers[(startId + i) % 4];  //start with current active player, then cycle right if item won't fit
+      v9 = &pPlayers[(uActiveCharacter + i) % 4];  //start with current active player, then cycle right if item won't fit
       v10 = v9->AddItem(-1, pItem->uItemID);
       if ( v10 )
       {

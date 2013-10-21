@@ -399,7 +399,7 @@ int stru319::special_ability_use_check( struct Actor *pActor, int a2 )
   if ( pActor->pMonsterInfo.uSpecialAbilityType == 2
     && pActor->pMonsterInfo.uSpecialAbilityDamageDiceBonus < 3u
     && rand() % 100 < 5 )
-    pActor->_44FD29(a2);
+    pActor->SummonMinion(a2);
   v4 = v3->_427102(pActor, pActor->pMonsterInfo.uSpell1ID);
   v5 = v3->_427102(pActor, pActor->pMonsterInfo.uSpell2ID);
   if ( v4 && pActor->pMonsterInfo.uSpell1UseChance && rand() % 100 < pActor->pMonsterInfo.uSpell1UseChance )

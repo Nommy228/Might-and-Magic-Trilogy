@@ -430,7 +430,7 @@ LABEL_92:
            for (v56 =0; v56 < uNumActors; ++v56)            
               {
                 if ( v20->GetActorsRelation(&pActors[v56]) )
-                  _46DF1A_collide_against_actor(v56, 0);
+                  Actor::_46DF1A_collide_against_actor(v56, 0);
 
               }
         }
@@ -438,7 +438,7 @@ LABEL_92:
       else
       {
         for ( i = 0; i < (signed int)uNumActors; ++i )
-          _46DF1A_collide_against_actor(i, 0);
+          Actor::_46DF1A_collide_against_actor(i, 0);
       }
       v26 = stru_721530.normal2.z - stru_721530.prolly_normal_d - 1;
       v27 = ODM_GetFloorLevel(
@@ -712,7 +712,7 @@ LABEL_25:
               //if ( v14 != (unsigned int)(signed __int64)((double)v41 * 0.3333333333333333) )
 				if( pActors[pSpriteObject->spell_caster_pid >> 3].pMonsterInfo.uID != v39b->pMonsterInfo.uID )
 					//not sure: pMonsterList->pMonsters[v39b->word_000086_some_monster_id-1].uToHitRadius
-					_46DF1A_collide_against_actor(v42, pMonsterList->pMonsters[v39b->word_000086_some_monster_id-1].uToHitRadius);
+					Actor::_46DF1A_collide_against_actor(v42, pMonsterList->pMonsters[v39b->word_000086_some_monster_id-1].uToHitRadius);
               ++v42;
               ++v39b;// += 836;
             }
@@ -727,7 +727,7 @@ LABEL_25:
             v39b = pActors.data();//[0].word_000086_some_monster_id;
             do
             {
-				_46DF1A_collide_against_actor(v42++, pMonsterList->pMonsters[v39b->word_000086_some_monster_id-1].uToHitRadius);
+				Actor::_46DF1A_collide_against_actor(v42++, pMonsterList->pMonsters[v39b->word_000086_some_monster_id-1].uToHitRadius);
               ++v39b;
             }
             while ( v42 < (signed int)uNumActors );

@@ -1093,7 +1093,7 @@ void UpdateActors_ODM()
       for ( i = 0; v31 < ai_arrays_size; ++v31 )
       {
         v33 = ai_near_actors_ids[v31];
-        if ( v33 != v75 && _46DF1A_collide_against_actor(v33, 40) )
+        if ( v33 != v75 && Actor::_46DF1A_collide_against_actor(v33, 40) )
           ++i;
       }
       v71 = i > 1;
@@ -1833,7 +1833,7 @@ void BLV_ProcessPartyActions()
       _46E44E_collide_against_faces_and_portals(1u);
       _46E0B2_collide_against_decorations();
       for ( v80 = 0; v80 < (signed int)uNumActors; ++v80 )
-        _46DF1A_collide_against_actor(v80, 0);
+        Actor::_46DF1A_collide_against_actor(v80, 0);
       if ( _46F04E_collide_against_portals() )
         break;
       ++v73;
@@ -2685,7 +2685,7 @@ void ODM_ProcessPartyActions()
     _46E26D_collide_against_sprites(v38, v37);
     _46ED8A_collide_against_sprite_objects(4u);
     for ( i = 0; i < (signed int)uNumActors; ++i )
-      _46DF1A_collide_against_actor(i, 0);
+      Actor::_46DF1A_collide_against_actor(i, 0);
     if ( stru_721530.field_7C >= stru_721530.field_6C )
     {
       _angle_x = stru_721530.normal2.x;

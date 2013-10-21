@@ -1,0 +1,5 @@
+.hg
+Debug
+Release
+*.orig
+.hg/*
