@@ -510,7 +510,8 @@ void OSWindow::SetWindowedMode(int new_window_width, int new_window_height)
 {
   SetWindowLongW(api_handle, GWL_EXSTYLE, 0);
   SetWindowLongW(api_handle, GWL_STYLE,   WS_VISIBLE | WS_OVERLAPPEDWINDOW);
-
+  SetWindowPos(api_handle, HWND_TOP, 0, 0, -1, -1, 0);
+  
   RECT rcWindow;
   GetWindowRect(api_handle, &rcWindow);
 
