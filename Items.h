@@ -10,10 +10,11 @@ enum DAMAGE_TYPE:unsigned int
     DMGT_COLD   = 2,
     DMGT_EARTH      = 3,
     DMGT_PHISYCAL= 4,
-    DMGT_5      = 5,
+    DMGT_MAGICAL = 5,
     DMGT_SPIRIT = 6,
     DMGT_MIND   = 7,
     DMGT_BODY   = 8,
+    DMGT_LIGHT  = 9,
     DMGT_DARK   =10
     };
 
@@ -163,8 +164,8 @@ enum ITEM_TYPE
 /*  331 */
 enum ITEM_EQUIP_TYPE: unsigned __int8
 {
-  EQUIP_OFF_HAND     = 0,
-  EQUIP_MAIN_HAND     = 1,
+  EQUIP_SINGLE_HANDED     = 0,
+  EQUIP_TWO_HANDED     = 1,
   EQUIP_BOW            = 2,
   EQUIP_ARMOUR         = 3,
   EQUIP_SHIELD         = 4,

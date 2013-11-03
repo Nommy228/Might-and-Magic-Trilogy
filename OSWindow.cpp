@@ -430,7 +430,7 @@ bool OSWindow::Initialize(const wchar_t *title, int window_width, int window_hei
 
 OSWindow *OSWindow::Create(const wchar_t *title, int window_width, int window_height)
 {
-  auto window = new OSWindow;
+  OSWindow* window = new OSWindow;
   if (window)
     if (!window->Initialize(title, window_width, window_height))
     {
@@ -447,14 +447,14 @@ LRESULT __stdcall OSWindow::WinApiMsgRouter(HWND hwnd, UINT msg, WPARAM wparam, 
 {
   if (msg == WM_NCCREATE)
   {
-    auto cs = (CREATESTRUCTA *)(lparam);
-    auto window = (OSWindow *)cs->lpCreateParams;
+    CREATESTRUCTA* cs = (CREATESTRUCTA *)(lparam);
+    OSWindow* window = (OSWindow *)cs->lpCreateParams;
 
     SetWindowLongPtrW(hwnd, GWLP_USERDATA, (LONG_PTR)window);
     return DefWindowProcW(hwnd, msg, wparam, lparam);
   }
 
-  auto window = (OSWindow *)GetWindowLongPtrW(hwnd, GWLP_USERDATA);
+  OSWindow* window = (OSWindow *)GetWindowLongPtrW(hwnd, GWLP_USERDATA);
   if (window && window->api_handle == hwnd)
   {
     LPARAM result;
@@ -517,8 +517,8 @@ void OSWindow::SetWindowedMode(int new_window_width, int new_window_height)
     if (!GetMenu(api_handle))
       window_total_height += GetSystemMetrics(SM_CYMENU);
   #endif
-  MoveWindow(api_handle, (GetSystemMetrics(SM_CXSCREEN) - window_total_width) / 2,
-                         (GetSystemMetrics(SM_CYSCREEN) - window_total_height) / 2,
+  MoveWindow(api_handle, ReadWindowsRegistryInt("window X", (GetSystemMetrics(SM_CXSCREEN) - window_total_width) / 2),
+                         ReadWindowsRegistryInt("window Y", (GetSystemMetrics(SM_CYSCREEN) - window_total_height) / 2),
                          window_total_width,
                          window_total_height, 0);
   #ifdef _DEBUG
@@ -687,6 +687,7 @@ bool OSWindow::OnOSMenu(int item_id)
     case 103:  pRenderer->SavePCXScreenshot(); break;
     case 101:  // Quit game
     case 40001:
+		pGame->Deinitialize();
       SendMessageW(api_handle, WM_DESTROY, 0, 0);
     break;
 

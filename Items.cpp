@@ -154,6 +154,7 @@ struct ItemsTable *pItemsTable; // 005D29E0
 //----- (00439DF3) --------------------------------------------------------
 int ItemGen::_439DF3_get_additional_damage(int *damage_type, bool *draintargetHP)
 	{
+    *draintargetHP = false;
 	*damage_type = 0;
 	if ( !uItemID )
 		return 0;
@@ -548,17 +549,17 @@ void ItemsTable::Initialize()
 					{
 					if ( !_stricmp(test_string, "weapon") )
 						{
-						pItems[item_counter].uEquipType = EQUIP_OFF_HAND;
+						pItems[item_counter].uEquipType = EQUIP_SINGLE_HANDED;
 						break;
 						}
 					if ( !_stricmp(test_string, "weapon2") )
 						{
-						pItems[item_counter].uEquipType = EQUIP_MAIN_HAND;
+						pItems[item_counter].uEquipType = EQUIP_TWO_HANDED;
 						break;
 						}
 					if ( !_stricmp(test_string, "weapon1or2") )
 						{
-						pItems[item_counter].uEquipType = EQUIP_OFF_HAND;
+						pItems[item_counter].uEquipType = EQUIP_SINGLE_HANDED;
 						break;
 						}
 					if ( !(_stricmp(test_string, "missile")&&_stricmp(test_string, "bow")))
@@ -1617,7 +1618,7 @@ void ItemsTable::GenerateItem(int treasure_level, unsigned int uTreasureType, It
         PLAYER_SKILL_TYPE requested_skill = PLAYER_SKILL_INVALID;
         switch (uTreasureType)
             {
-        case 20: requested_equip = EQUIP_OFF_HAND; break;
+        case 20: requested_equip = EQUIP_SINGLE_HANDED; break;
         case 21: requested_equip = EQUIP_ARMOUR; break;
         case 22: requested_skill = PLAYER_SKILL_MISC; break;
         case 23: requested_skill = PLAYER_SKILL_SWORD; break;
@@ -1768,8 +1769,8 @@ void ItemsTable::GenerateItem(int treasure_level, unsigned int uTreasureType, It
     //try get special enhansment
     switch (out_item->GetItemEquipType())
         {
-    case EQUIP_OFF_HAND:
-    case EQUIP_MAIN_HAND :   
+    case EQUIP_SINGLE_HANDED:
+    case EQUIP_TWO_HANDED :   
     case EQUIP_BOW :    
         if ( !uBonusChanceWpSpecial[v6] )
             return;
@@ -2428,109 +2429,109 @@ unsigned __int8 ItemGen::GetDamageMod()
 }
 //----- (004B8E3D) --------------------------------------------------------
 void GenerateStandartShopItems()
-	{
-	signed int item_count; 
-	signed int shop_index; 
-	int treasure_lvl; 
-	int item_class; 
-	int mdf;
+{
+  signed int item_count; 
+  signed int shop_index; 
+  int treasure_lvl; 
+  int item_class; 
+  int mdf;
 
-	shop_index = (signed int)window_SpeakInHouse->ptr_1C;
-	if ( uItemsAmountPerShopType[p2DEvents[shop_index - 1].uType] )
-		{
-	    for (item_count=0; item_count<=uItemsAmountPerShopType[p2DEvents[shop_index - 1].uType]; ++item_count )
-		{
-		   if (shop_index<=14) //weapon shop
-			   {
-			   treasure_lvl = shopWeap_variation_ord[shop_index].treasure_level;
-			   item_class =shopWeap_variation_ord[shop_index].item_class[rand() % 4];
-			   }
-		   else if (shop_index<=28) //armor shop
-			   {
-			   mdf =0;
-			   if (item_count > 3)
-					 ++mdf;// rechek offsets
-			    treasure_lvl = shopArmr_variation_ord[2*(shop_index-15)+mdf].treasure_level;
-				item_class =shopArmr_variation_ord[2*(shop_index-15)+mdf].item_class[rand() % 4];
-			   }
-		   else if (shop_index<=41)  //magic shop
-			   {
-			   treasure_lvl = shopMagic_treasure_lvl[shop_index-28];
-			   item_class = 22;  //misc
-			   }
-		   else if (shop_index<=53) //alchemist shop
-			   {
-			    if (item_count<6)
-					{
-					pParty->StandartItemsInShops[shop_index][item_count].Reset();
-					pParty->StandartItemsInShops[shop_index][item_count].uItemID = 220;  //potion bottle
-					continue;
-					}
-				else
-					{
-					treasure_lvl = shopAlch_treasure_lvl[shop_index-41];
-					item_class = 45;  //reagent
-					}
-			   }
-		   pItemsTable->GenerateItem(treasure_lvl, item_class, &pParty->StandartItemsInShops[shop_index][item_count]);
-		   pParty->StandartItemsInShops[shop_index][item_count].SetIdentified();  //identified
-		}
-		}
-	pParty->InTheShopFlags[shop_index] = 0;
-	}
+  shop_index = (signed int)window_SpeakInHouse->ptr_1C;
+  if ( uItemsAmountPerShopType[p2DEvents[shop_index - 1].uType] )
+  {
+    for (item_count = 0; item_count < uItemsAmountPerShopType[p2DEvents[shop_index - 1].uType]; ++item_count )
+    {
+      if (shop_index <= 14) //weapon shop
+      {
+        treasure_lvl = shopWeap_variation_ord[shop_index].treasure_level;
+        item_class = shopWeap_variation_ord[shop_index].item_class[rand() % 4];
+      }
+      else if (shop_index <= 28) //armor shop
+      {
+        mdf = 0;
+        if (item_count > 3)
+          ++mdf;// rechek offsets
+        treasure_lvl = shopArmr_variation_ord[2*(shop_index - 15) + mdf].treasure_level;
+        item_class = shopArmr_variation_ord[2*(shop_index - 15) + mdf].item_class[rand() % 4];
+      }
+      else if (shop_index <= 41)  //magic shop
+      {
+        treasure_lvl = shopMagic_treasure_lvl[shop_index - 28];
+        item_class = 22;  //misc
+      }
+      else if (shop_index <= 53) //alchemist shop
+      {
+        if (item_count < 6)
+        {
+          pParty->StandartItemsInShops[shop_index][item_count].Reset();
+          pParty->StandartItemsInShops[shop_index][item_count].uItemID = 220;  //potion bottle
+          continue;
+        }
+        else
+        {
+          treasure_lvl = shopAlch_treasure_lvl[shop_index - 41];
+          item_class = 45;  //reagent
+        }
+      }
+      pItemsTable->GenerateItem(treasure_lvl, item_class, &pParty->StandartItemsInShops[shop_index][item_count]);
+      pParty->StandartItemsInShops[shop_index][item_count].SetIdentified();  //identified
+    }
+  }
+  pParty->InTheShopFlags[shop_index] = 0;
+}
 
 //----- (004B8F94) --------------------------------------------------------
 void  GenerateSpecialShopItems()
-	{
-	signed int item_count; 
-	signed int shop_index; 
-	int treasure_lvl; 
-	int item_class; 
-	int mdf;
+{
+  signed int item_count; 
+  signed int shop_index; 
+  int treasure_lvl; 
+  int item_class; 
+  int mdf;
 
-	shop_index = (signed int)window_SpeakInHouse->ptr_1C;
-	if ( uItemsAmountPerShopType[p2DEvents[shop_index - 1].uType] )
-		{
-		for (item_count=0; item_count<=uItemsAmountPerShopType[p2DEvents[shop_index - 1].uType]; ++item_count )
-			{
-			if (shop_index<=14) //weapon shop
-				{
-				treasure_lvl = shopWeap_variation_spc[shop_index].treasure_level;
-				item_class =  shopWeap_variation_spc[shop_index].item_class[rand() % 4];
-				}
-			else if (shop_index<=28) //armor shop
-				{
-				mdf =0;
-				if (item_count > 3)
-					++mdf;
-				treasure_lvl = shopArmr_variation_spc[2*(shop_index-15)+mdf].treasure_level;
-				item_class =shopArmr_variation_spc[2*(shop_index-15)+mdf].item_class[rand() % 4];
-				}
-			else if (shop_index<=41)  //magic shop
-				{
-				treasure_lvl = shopMagicSpc_treasure_lvl[shop_index-28];
-				item_class = 22;  //misc
-				}
-			else if (shop_index<=53) //alchemist shop
-				{
-				if (item_count<6)
-					{
-					pParty->SpecialItemsInShops[shop_index][item_count].Reset();
-					pParty->SpecialItemsInShops[shop_index][item_count].uItemID = rand() % 32 + 740;  //mscrool
-					continue;
-					}
-				else
-					{
-					treasure_lvl = shopAlchSpc_treasure_lvl[shop_index-41];
-					item_class = 44;  //potion
-					}
-				}
-			pItemsTable->GenerateItem(treasure_lvl, item_class, &pParty->SpecialItemsInShops[shop_index][item_count]);
-			pParty->SpecialItemsInShops[shop_index][item_count].SetIdentified();  //identified
-			}
-		}
-	pParty->InTheShopFlags[shop_index] = 0;
-	}
+  shop_index = (signed int)window_SpeakInHouse->ptr_1C;
+  if ( uItemsAmountPerShopType[p2DEvents[shop_index - 1].uType] )
+  {
+    for ( item_count = 0; item_count < uItemsAmountPerShopType[p2DEvents[shop_index - 1].uType]; ++item_count )
+    {
+      if (shop_index <= 14) //weapon shop
+      {
+        treasure_lvl = shopWeap_variation_spc[shop_index].treasure_level;
+        item_class =  shopWeap_variation_spc[shop_index].item_class[rand() % 4];
+      }
+      else if (shop_index <= 28) //armor shop
+      {
+        mdf = 0;
+        if (item_count > 3)
+          ++mdf;
+        treasure_lvl = shopArmr_variation_spc[2*(shop_index - 15) + mdf].treasure_level;
+        item_class = shopArmr_variation_spc[2*(shop_index - 15) + mdf].item_class[rand() % 4];
+      }
+      else if (shop_index <= 41)  //magic shop
+      {
+        treasure_lvl = shopMagicSpc_treasure_lvl[shop_index - 28];
+        item_class = 22;  //misc
+      }
+      else if (shop_index <= 53) //alchemist shop
+      {
+        if (item_count < 6)
+        {
+          pParty->SpecialItemsInShops[shop_index][item_count].Reset();
+          pParty->SpecialItemsInShops[shop_index][item_count].uItemID = rand() % 32 + 740;  //mscrool
+          continue;
+        }
+        else
+        {
+          treasure_lvl = shopAlchSpc_treasure_lvl[shop_index - 41];
+          item_class = 44;  //potion
+        }
+      }
+      pItemsTable->GenerateItem(treasure_lvl, item_class, &pParty->SpecialItemsInShops[shop_index][item_count]);
+      pParty->SpecialItemsInShops[shop_index][item_count].SetIdentified();  //identified
+    }
+  }
+  pParty->InTheShopFlags[shop_index] = 0;
+}
 
 
 //----- (00450218) --------------------------------------------------------

@@ -97,7 +97,7 @@ void __fastcall LoadGame(unsigned int uSlot)
     int e = GetLastError();
 
   pNew_LOD->LoadFile("data\\new.lod", 0);
-  auto *f = pNew_LOD->FindContainer("header.bin", 1);
+  FILE *f = pNew_LOD->FindContainer("header.bin", 1);
   if (!f)
   {
     sprintf(Str, pGlobalTXT_LocalizationStrings[612], 100);
@@ -175,7 +175,7 @@ void __fastcall LoadGame(unsigned int uSlot)
 
   for (uint i = 0; i < 4; ++i)
   {
-    auto uQuickspell = pParty->pPlayers[i].uQuickSpell;
+    uchar uQuickspell = pParty->pPlayers[i].uQuickSpell;
     if (uQuickspell)
       stru_AA1058[i]._494836(uQuickspell, i + 9 - 8);
 
@@ -184,7 +184,7 @@ void __fastcall LoadGame(unsigned int uSlot)
       uint uEquipIdx = pParty->pPlayers[i].pEquipment.pIndices[j];
       if (uEquipIdx)
       {
-        auto uItemID = pParty->pPlayers[i].pInventoryItemList[uEquipIdx - 1].uItemID;
+        int uItemID = pParty->pPlayers[i].pInventoryItemList[uEquipIdx - 1].uItemID;
         if (pItemsTable->pItems[uItemID].uEquipType == 12)
         {
                 __debugbreak();  // looks like offset in player's inventory and wand_lut much like case in 0042ECB5
@@ -725,10 +725,10 @@ unsigned short * MakeScreenshot( signed int width, signed int height )
 
     if ( pRenderer->LockSurface_DDraw4(pRenderer->pBackBuffer4, &Dst, DDLOCK_WAIT) )
     {
-      auto src = (unsigned __int16 *)Dst.lpSurface;
-      auto src_width = (Dst.lPitch / sizeof(short));
-      auto src_height = Dst.dwHeight;
-      auto dst = pPixels;
+      ushort* src = (unsigned __int16 *)Dst.lpSurface;
+      ulong src_width = (Dst.lPitch / sizeof(short));
+      ulong src_height = Dst.dwHeight;
+      ushort* dst = pPixels;
       for (uint y = 0; y < height; ++y)
       {
         //uint src_y = (game_viewport_y + y * v25) * (Dst.lPitch / sizeof(short));

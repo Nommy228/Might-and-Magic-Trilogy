@@ -84,7 +84,7 @@ struct LightsStack_StationaryLight_
       return false;
     }
 
-      auto pLight = &pLights[uNumLightsActive++];
+      StationaryLight* pLight = &pLights[uNumLightsActive++];
       pLight->vPosition.x = x;
       pLight->vPosition.y = y;
       pLight->vPosition.z = z;

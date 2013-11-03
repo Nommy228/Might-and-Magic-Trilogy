@@ -566,8 +566,8 @@ int LightmapBuilder::_45C6D6(int a2, RenderVertexSoft *a3, Lightmap *pLightmap)
 //----- (0045C7F6) --------------------------------------------------------
 bool LightmapBuilder::ApplyLights_IndoorFace(unsigned int uFaceID)
 {
-  auto pFace = &pIndoor->pFaces[uFaceID];
-  auto pSector = pIndoor->pSectors + pFace->uSectorID;
+  BLVFace* pFace = &pIndoor->pFaces[uFaceID];
+  BLVSector* pSector = &pIndoor->pSectors[pFace->uSectorID];
 
   stru_F8AD28.uCurrentAmbientLightLevel = (stru_F8AD28.uDefaultAmbientLightLevel + pSector->uMinAmbientLightLevel) << 16;
 
@@ -585,7 +585,7 @@ bool LightmapBuilder::ApplyLights_IndoorFace(unsigned int uFaceID)
     if (uNumLightsApplied >= 20 )
       break;
 
-    auto pLight = &pIndoor->pLights[pSector->pLights[i]];
+    BLVLightMM7* pLight = &pIndoor->pLights[pSector->pLights[i]];
     if (~pLight->uAtributes & 0x08)
       ApplyLight_BLV((StationaryLight *)pLight, pFace, &uFaceID, false, &byte_4E94D0);
   }
@@ -623,7 +623,7 @@ bool LightmapBuilder::ApplyLight_BLV(StationaryLight *pLight, BLVFace *a2, unsig
           a2->pFacePlane.dist;
     if ((bLightBackfaces || v13 >= 0.0f) && fabsf(v13) <= pLight->uRadius)
     {
-      auto slot = *pSlot;
+      unsigned int slot = *pSlot;
 
       stru_F8AD28._blv_lights_radii[slot] = pLight->uRadius;
       stru_F8AD28._blv_lights_inv_radii[slot] = 65536 / pLight->uRadius;
@@ -1432,7 +1432,7 @@ bool LightmapBuilder::DrawLightmaps(int *indices)
       arg4.z = 1.0f;
       if (indices)
       {
-        for (auto i = indices; *i != -1; ++i)
+        for (int* i = indices; *i != -1; ++i)
         {
           v28 = &std__vector_000004[*i];
           if ( !DrawLightmap(v28, &arg4, 0.0) )
@@ -1441,9 +1441,9 @@ bool LightmapBuilder::DrawLightmaps(int *indices)
       }
       else
       {
-        for (auto i = 0; i < std__vector_000004_size; ++i)
+        for (unsigned int i = 0; i < std__vector_000004_size; ++i)
         {
-            auto _a1 = &std__vector_000004[(int)i];
+            Lightmap* _a1 = &std__vector_000004[(int)i];
             if ( !DrawLightmap(_a1, &arg4, 0.0) )
             {
               MessageBoxW(nullptr, L"Invalid lightmap detected!", L"E:\\WORK\\MSDEV\\MM7\\MM7\\Code\\Light.cpp:1238", 0);
@@ -1576,7 +1576,7 @@ void LightmapBuilder::Draw_183808_Lightmaps()
   ErrD3D(pRenderer->pRenderD3D->pDevice->SetRenderState(D3DRENDERSTATE_ALPHABLENDENABLE, TRUE));
   ErrD3D(pRenderer->pRenderD3D->pDevice->SetRenderState(D3DRENDERSTATE_DITHERENABLE, FALSE));
 
-  auto pTex = pGame->pIndoorCameraD3D->LoadTextureAndGetHardwarePtr("effpar03");
+  IDirect3DTexture2* pTex = pGame->pIndoorCameraD3D->LoadTextureAndGetHardwarePtr("effpar03");
   ErrD3D(pRenderer->pRenderD3D->pDevice->SetTexture(0, pTex));
 
   ErrD3D(pRenderer->pRenderD3D->pDevice->SetRenderState(D3DRENDERSTATE_SRCBLEND, D3DBLEND_ONE));

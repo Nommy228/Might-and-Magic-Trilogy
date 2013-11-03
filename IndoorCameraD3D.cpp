@@ -429,7 +429,7 @@ void IndoorCameraD3D::ViewTransform(RenderVertexSoft *a1a, unsigned int uNumVert
   {
     //ViewTransform_ODM(a1a + i);
 
-    auto a1 = a1a + i;
+    RenderVertexSoft* a1 = &a1a[i];
     //----- (00481CCE) --------------------------------------------------------
     //void ViewTransform_ODM(RenderVertexSoft *a1)
     {

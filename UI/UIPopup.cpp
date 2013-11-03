@@ -240,8 +240,8 @@ void GameUI_DrawItemInfo( struct ItemGen* inspect_item )
   out_text[200] = 0;
   switch (inspect_item->GetItemEquipType())
   {
-    case EQUIP_OFF_HAND:
-    case EQUIP_MAIN_HAND:
+    case EQUIP_SINGLE_HANDED:
+    case EQUIP_TWO_HANDED:
       sprintfex(out_text + 100, "%s: +%d   %s: %dd%d", pGlobalTXT_LocalizationStrings[LOCSTR_ATTACK],
           (int)inspect_item->GetDamageMod(), pGlobalTXT_LocalizationStrings[53],
           (int)inspect_item->GetDamageDice(), (int)inspect_item->GetDamageRoll()); //"Damage"
@@ -576,7 +576,7 @@ void MonsterPopup_Draw(unsigned int uActorID, GUIWindow *window)
         {
           v21 = dst_x;
           v22 = &pRenderer->pTargetSurface[dst_y * pRenderer->uTargetSurfacePitch + dst_x];
-          auto _v22_2 = v22;
+          ushort* _v22_2 = v22;
           v23 = i - dst_y;
           v115 = i - dst_y;
           while ( 1 )
@@ -616,11 +616,11 @@ void MonsterPopup_Draw(unsigned int uActorID, GUIWindow *window)
       pDesc.dwSize = 124;
       if ( pRenderer->LockSurface_DDraw4(pSprites_LOD->pHardwareSprites[v10->pHwSpriteIDs[0]].pTextureSurface, &pDesc, DDLOCK_WAIT) )
       {
-        auto src = (unsigned __int16 *)pDesc.lpSurface;
+        ushort* src = (unsigned __int16 *)pDesc.lpSurface;
         uint num_top_scanlines_above_frame_y = i - dst_y;
         for (uint y = dst_y; y < dst_w; ++y)
         {
-          auto dst = &pRenderer->pTargetSurface[y * pRenderer->uTargetSurfacePitch + dst_x];
+          ushort* dst = &pRenderer->pTargetSurface[y * pRenderer->uTargetSurfacePitch + dst_x];
 
           uint src_y = num_top_scanlines_above_frame_y + y;
           for (uint x = dst_x; x < dst_z; ++x)
@@ -1602,7 +1602,9 @@ void Inventory_ItemPopupAndAlchemy()
 
   pMouse->GetCursorPos(&cursor);
   int item_pid = (pRenderer->pActiveZBuffer[cursor.x + pSRZBufferLineOffsets[cursor.y]] & 0xFFFF) - 1;
-  auto item = &pPlayers[uActiveCharacter]->pInventoryItemList[item_pid];
+  if (item_pid == -1) //added here to avoid crash
+    return;
+  ItemGen* item = &pPlayers[uActiveCharacter]->pInventoryItemList[item_pid];
 
   if (cursor.x <= 13 || cursor.x >= 462)//items out of inventory(вещи вне инвентаря)
   {
@@ -1686,7 +1688,7 @@ void Inventory_ItemPopupAndAlchemy()
     {
       if (item->IsBroken() ||                         // cant harden broken items
           item->uItemID >= ITEM_ARTIFACT_PUCK ||      // cant harden artifacts
-          item->GetItemEquipType() < EQUIP_OFF_HAND ||
+          item->GetItemEquipType() < EQUIP_SINGLE_HANDED ||
           item->GetItemEquipType() > EQUIP_WAND)
       {
         pMouse->RemoveHoldingItem();

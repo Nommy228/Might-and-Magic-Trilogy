@@ -192,7 +192,7 @@ void stru6::DrawProjectiles()
   
   for (uint i = 0; i < uNumProjectiles; ++i)
   {
-    auto p = pProjectiles + i;
+    ProjectileAnim* p = &pProjectiles[i];
 
     v[0].vWorldPosition.x = p->srcX;
     v[0].vWorldPosition.y = p->srcY;
@@ -735,12 +735,12 @@ int stru6::_4A806F(Actor *pActor)
   float v5; // ST00_4@6
 
   v2 = (int)pActor;
-  v3 = LODWORD(pActor->pActorBuffs[10].uExpireTime) - pMiscTimer->uTotalGameTimeElapsed;
+  v3 = LODWORD(pActor->pActorBuffs[ACTOR_BUFF_MASS_DISTORTION].uExpireTime) - pMiscTimer->uTotalGameTimeElapsed;
   if ( (signed int)v3 <= 64 )
   {
     if ( (v3 & 0x80000000u) != 0 )
     {
-      pActor->pActorBuffs[10].uExpireTime = 0i64;
+      pActor->pActorBuffs[ACTOR_BUFF_MASS_DISTORTION].uExpireTime = 0i64;
       v4 = 1.0;
     }
     else
@@ -1581,7 +1581,7 @@ void stru6::DrawPlayerBuffAnims()
 {
   for (uint i = 0; i < 4; ++i)
   {
-    auto buff = pPlayerBuffs + i;
+    PlayerBuffAnim* buff = &pPlayerBuffs[i];
     if (!buff->bRender)
       continue;
 
@@ -1592,7 +1592,7 @@ void stru6::DrawPlayerBuffAnims()
       continue;
     }
 
-    auto icon = pIconsFrameTable->GetFrame(buff->uSpellIconID, buff->uSpellAnimTimeElapsed);
+    IconFrame* icon = pIconsFrameTable->GetFrame(buff->uSpellIconID, buff->uSpellAnimTimeElapsed);
     pRenderer->DrawTextureTransparent(pPlayerPortraitsXCoords_For_PlayerBuffAnimsDrawing[i], 385, pIcons_LOD->GetTexture(icon->uTextureID));
 
     pOtherOverlayList->bRedraw = true;

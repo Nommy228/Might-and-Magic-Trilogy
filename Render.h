@@ -320,10 +320,10 @@ struct Render
   unsigned int GetActorTintColor(float a2, int tint, int a4, int a5, RenderBillboard *a6);
   void DrawPolygon(unsigned int uNumVertices, struct Polygon *a3, ODMFace *a4, IDirect3DTexture2 *pTexture);
   void DrawTerrainPolygon(unsigned int uNumVertices, struct Polygon *a4, IDirect3DTexture2 *a5, bool transparent, bool clampAtTextureBorders);
-  void DrawSkyPolygon(unsigned int uNumVertices, struct Polygon *pSkyPolygon, IDirect3DTexture2 *pTexture);
-  void _4A2ED5(signed int a2, struct Polygon *a3, IDirect3DTexture2 *pHwTex);
+  void DrawOutdoorSkyPolygon(unsigned int uNumVertices, struct Polygon *pSkyPolygon, IDirect3DTexture2 *pTexture);
+  void DrawIndoorSkyPolygon(signed int uNumVertices, struct Polygon *pSkyPolygon, IDirect3DTexture2 *pTexture);
   void DrawIndoorPolygon(unsigned int uNumVertices, struct BLVFace *a3, IDirect3DTexture2 *pHwTex, struct Texture *pTex, int uPackedID, unsigned int uColor, int a8);
-  void DrawIndoorPolygonNoLight(unsigned int uNumVertices, unsigned int uFaceID);
+  void DrawIndoorSky(unsigned int uNumVertices, unsigned int uFaceID);
   void MakeParticleBillboardAndPush_BLV(RenderBillboardTransform_local0 *a2, IDirect3DTexture2 *a3, unsigned int uDiffuse, int angle);
   void MakeParticleBillboardAndPush_ODM(RenderBillboardTransform_local0 *a2, IDirect3DTexture2 *a3, unsigned int uDiffuse, int angle);
   void TransformBillboard(RenderBillboardTransform_local0 *a2, Sprite *pSprite, int dimming_level, RenderBillboard *pBillboard);
@@ -357,7 +357,7 @@ struct Render
   void DrawBuildingsD3D();
   //struct BSPModel *DrawBuildingsSW();
   //int OnOutdoorRedrawSW();
-  void DrawSkyD3D();
+  void DrawOutdoorSkyD3D();
   //int DrawSkySW(struct Span *a1, Polygon *a2, int a3);
   void PrepareDecorationsRenderList_ODM();
   void DrawSpriteObjects_ODM();

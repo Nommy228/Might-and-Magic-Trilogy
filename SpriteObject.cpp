@@ -1054,7 +1054,7 @@ void InitializeSpriteObjects()
 {
   for (uint i = 0; i < uNumSpriteObjects; ++i)
   {
-    auto item = &pSpriteObjects[i];
+    SpriteObject* item = &pSpriteObjects[i];
 
     if (item->uType &&
         (item->uSoundID & 8 || pObjectList->pObjects[item->uType].uFlags & 0x10))

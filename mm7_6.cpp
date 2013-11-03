@@ -42,534 +42,7 @@
 
 
 
-//----- (00426A5A) --------------------------------------------------------
-void stru319::LootActor(Actor *pActor)
-{
-  signed int v2; // edi@1
-  char v3; // zf@1
-  unsigned int v4; // eax@13
-  unsigned int v5; // esi@13
-  int v6; // eax@14
-  unsigned __int8 v7; // al@30
-  Party *v8; // esi@34
-  char *v9; // [sp-4h] [bp-3Ch]@10
-  char *v10; // [sp-4h] [bp-3Ch]@31
-  char *v11; // [sp-4h] [bp-3Ch]@38
-  ItemGen Dst; // [sp+Ch] [bp-2Ch]@1
-  int v13; // [sp+30h] [bp-8h]@1
-  int v14; // [sp+34h] [bp-4h]@1
 
-  pParty->sub_421B2C_PlaceInInventory_or_DropPickedItem();
-  Dst.Reset();
-  v2 = 0;
-  v3 = ((unsigned int)&array_77EC08[1975].pEdgeList1[1] & pActor->uAttributes) == 0;
-  v13 = 0;
-  v14 = 0;
-  if ( v3 )
-  {
-    if ( pActor->pMonsterInfo.uTreasureDiceRolls )
-    {
-		do
-		{
-		  ++v2;
-		  v14 += rand() % pActor->pMonsterInfo.uTreasureDiceSides + 1;
-		}
-		while ( v2 < pActor->pMonsterInfo.uTreasureDiceRolls );
-		if ( v14 )
-		{
-		  pParty->PartyFindsGold(v14, 0);
-		  viewparams->bRedrawGameUI = 1;
-		}
-	}
-  }
-  else
-  {
-    if ( pActor->array_000234[3].uItemID != 0 &&  pActor->array_000234[3].GetItemEquipType() == 18 )
-	{
-		v14 = pActor->array_000234[3].uSpecEnchantmentType;
-		pActor->array_000234[3].Reset();
-		if ( v14 )
-		{
-		  pParty->PartyFindsGold(v14, 0);
-		  viewparams->bRedrawGameUI = 1;
-		}
-	}
-  }
-  if ( pActor->uCarriedItemID )
-  {
-    Dst.Reset();
-    Dst.uItemID = pActor->uCarriedItemID;
-    v9 = pItemsTable->pItems[Dst.uItemID].pUnidentifiedName;
-    if ( v14 )
-      sprintfex(pTmpBuf2.data(), pGlobalTXT_LocalizationStrings[490], v14, v9);
-    else
-      sprintfex(pTmpBuf2.data(), pGlobalTXT_LocalizationStrings[471], v9);
-    ShowStatusBarString(pTmpBuf2.data(), 2u);
-    v4 = Dst.uItemID;
-    v5 = Dst.uItemID;
-    if ( Dst.GetItemEquipType() == 12 )
-    {
-      v5 = Dst.uItemID;
-      v6 = rand() % 6 + Dst.GetDamageMod() + 1;
-      Dst.uNumCharges = v6;
-      Dst.uMaxCharges = v6;
-      v4 = Dst.uItemID;
-    }
-    if ( pItemsTable->pItems[v5].uEquipType == 14 && v4 != 220 )
-      Dst.uEnchantmentType = 2 * rand() % 4 + 2;
-    pItemsTable->SetSpecialBonus(&Dst);
-    if ( !pParty->AddItemToParty(&Dst) )
-      pParty->SetHoldingItem(&Dst);
-    pActor->uCarriedItemID = 0;
-    if ( pActor->array_000234[0].uItemID )
-    {
-      if ( !pParty->AddItemToParty(pActor->array_000234) )
-      {
-        pParty->sub_421B2C_PlaceInInventory_or_DropPickedItem();
-        pParty->SetHoldingItem(pActor->array_000234);
-      }
-      pActor->array_000234[0].Reset();
-    }
-    if ( pActor->array_000234[1].uItemID )
-    {
-      if ( !pParty->AddItemToParty(&pActor->array_000234[1]) )
-      {
-        pParty->sub_421B2C_PlaceInInventory_or_DropPickedItem();
-        pParty->SetHoldingItem(&pActor->array_000234[1]);
-      }
-      pActor->array_000234[1].Reset();
-    }
-    pActor->Remove();
-    return;
-  }
-  if ( (unsigned int)&array_77EC08[1975].pEdgeList1[1] & pActor->uAttributes )
-  {
-    if ( pActor->array_000234[3].uItemID )
-    {
-      memcpy(&Dst, &pActor->array_000234[3], sizeof(Dst));
-      pActor->array_000234[3].Reset();
-      v11 = pItemsTable->pItems[Dst.uItemID].pUnidentifiedName;
-      if ( v14 )
-        sprintfex(pTmpBuf2.data(), pGlobalTXT_LocalizationStrings[490], v14, v11);
-      else
-        sprintfex(pTmpBuf2.data(), pGlobalTXT_LocalizationStrings[471], v11);
-      ShowStatusBarString(pTmpBuf2.data(), 2u);
-      if ( !pParty->AddItemToParty(&Dst) )
-        pParty->SetHoldingItem(&Dst);
-      v13 = 1;
-    }
-    v8 = pParty;
-    goto LABEL_45;
-  }
-  if ( rand() % 100 >= pActor->pMonsterInfo.uTreasureDropChance || (v7 = pActor->pMonsterInfo.uTreasureLevel) == 0 )
-  {
-    v8 = pParty;
-    goto LABEL_45;
-  }
-  pItemsTable->GenerateItem(v7, pActor->pMonsterInfo.uTreasureType, &Dst);
-  v10 = pItemsTable->pItems[Dst.uItemID].pUnidentifiedName;
-  if ( v14 )
-    sprintfex(pTmpBuf2.data(), pGlobalTXT_LocalizationStrings[490], v14, v10);//Вы нашли ^I[%d] золот^L[ой;ых;ых] и предмет (%s)!
-  else
-    sprintfex(pTmpBuf2.data(), pGlobalTXT_LocalizationStrings[471], v10);//Вы нашли ^Pv[%s]!
-  ShowStatusBarString(pTmpBuf2.data(), 2);
-  v8 = pParty;
-  if ( !pParty->AddItemToParty(&Dst) )
-    pParty->SetHoldingItem(&Dst);
-  v13 = 1;
-LABEL_45:
-  if ( pActor->array_000234[0].uItemID )
-  {
-    if ( !v8->AddItemToParty(pActor->array_000234) )
-    {
-      pParty->sub_421B2C_PlaceInInventory_or_DropPickedItem();
-      v8->SetHoldingItem(pActor->array_000234);
-      v13 = 1;
-    }
-    pActor->array_000234[0].Reset();
-  }
-  if ( pActor->array_000234[1].uItemID )
-  {
-    if ( !v8->AddItemToParty(&pActor->array_000234[1]) )
-    {
-      pParty->sub_421B2C_PlaceInInventory_or_DropPickedItem();
-      v8->SetHoldingItem(&pActor->array_000234[1]);
-      v13 = 1;
-    }
-    pActor->array_000234[1].Reset();
-  }
-  if ( !v13 || rand() % 100 < 90 )
-  {
-    pActor->Remove();
-  }
-}
-
-//----- (00426E10) --------------------------------------------------------
-int stru319::which_player_would_attack(Actor *pActor)
-{
-  signed int v2; // ebx@1
-  int v3; // ecx@2
-  signed int v4; // edx@3
-  char v5; // zf@3
-  unsigned int v6; // eax@3
-  int v7; // eax@6
-  int v8; // eax@7
-  int v9; // eax@8
-  int v10; // eax@9
-  int v11; // eax@10
-  int v12; // eax@11
-  int v13; // esi@35
-  signed int v14; // edi@37
-  enum CHARACTER_RACE v15; // eax@44
-  Player *v16; // ecx@47
-  unsigned __int8 v17; // sf@50
-  unsigned __int8 v18; // of@50
-  int v19; // esi@52
-  Player *v20; // ecx@53
-  int result; // eax@57
-  int v22[16]; // [sp+8h] [bp-140h]@3
-  int v23[60]; // [sp+48h] [bp-100h]@48
-  int v24; // [sp+138h] [bp-10h]@2
-  int v25; // [sp+13Ch] [bp-Ch]@1
-  int v26; // [sp+140h] [bp-8h]@1
-  int v27; // [sp+144h] [bp-4h]@1
-
-  v27 = -1;
-  v26 = -1;
-  v25 = -1;
-  v2 = 0;
-  if ( pActor->pMonsterInfo.uAttackPreference )
-  {
-    v3 = 0;
-    v24 = 0;
-    do
-    {
-      v4 = 1;
-      v6 = pActor->pMonsterInfo.uAttackPreference & (1 << v3);
-      v5 = (pActor->pMonsterInfo.uAttackPreference & (1 << v3)) == 0;
-      v22[v3] = v6;
-      if ( !v5 )
-      {
-        if ( (signed int)v6 > 128 )
-        {
-          switch ( v6 )
-          {
-            case 0x100u:
-              v27 = 8;
-              break;
-            case 0x200u:
-              v25 = 0;
-              break;
-            case 0x400u:
-              v25 = 1;
-              break;
-            case 0x800u:
-              v26 = 0;
-              break;
-            case 0x1000u:
-              v26 = 1;
-              break;
-            case 0x2000u:
-              v26 = 3;
-              break;
-            case 0x4000u:
-              v26 = 2;
-              break;
-          }
-        }
-        else
-        {
-          if ( v6 == 128 )
-          {
-            v27 = 4;
-          }
-          else
-          {
-            v7 = v6 - 1;
-            if ( v7 )
-            {
-              v8 = v7 - 1;
-              if ( v8 )
-              {
-                v9 = v8 - 2;
-                if ( v9 )
-                {
-                  v10 = v9 - 4;
-                  if ( v10 )
-                  {
-                    v11 = v10 - 8;
-                    if ( v11 )
-                    {
-                      v12 = v11 - 16;
-                      if ( v12 )
-                      {
-                        if ( v12 == 32 )
-                          v27 = 20;
-                      }
-                      else
-                      {
-                        v27 = 32;
-                      }
-                    }
-                    else
-                    {
-                      v27 = 24;
-                    }
-                  }
-                  else
-                  {
-                    v27 = 28;
-                  }
-                }
-                else
-                {
-                  v27 = 16;
-                }
-              }
-              else
-              {
-                v27 = 12;
-              }
-            }
-            else
-            {
-              v27 = 0;
-            }
-          }
-        }
-        v2 = 0;
-        v13 = 0;
-        while ( 1 )
-        {
-          v14 = 0;
-          if ( v27 != -1 && v27 == pPlayers[v13 + 1]->classType )
-            v14 = v4;
-          if ( v25 != -1 && v25 == pPlayers[v13 + 1]->uSex )
-            v14 = v4;
-          if ( v26 != -1 )
-          {
-            v15 = pPlayers[v13 + 1]->GetRace();
-            if ( v26 == v15 )
-              v14 = 1;
-          }
-          if ( v14 == 1 )
-          {
-            v16 = pPlayers[v13 + 1];
-            if ( !(v16->pConditions[12] | v16->pConditions[13] | v16->pConditions[14] | v16->pConditions[15] | v16->pConditions[16]) )
-              v23[v2++] = v13;
-          }
-          ++v13;
-          if ( v13 >= 4 )
-            break;
-          v4 = 1;
-        }
-      }
-      v3 = v24 + 1;
-      v18 = __OFSUB__(v24 + 1, 15);
-      v17 = v24++ - 14 < 0;
-    }
-    while ( v17 ^ v18 );
-    if ( v2 )
-      return v23[rand() % v2];
-  }
-  v19 = 0;
-  do
-  {
-    v20 = pPlayers[v19 + 1];
-    if ( !(v20->pConditions[12] | v20->pConditions[13] | v20->pConditions[14] | v20->pConditions[15] | v20->pConditions[16]) )
-      v23[v2++] = v19;
-    ++v19;
-  }
-  while ( v19 < 4 );
-  if ( v2 )
-    result = v23[rand() % v2];
-  else
-    result = 0;
-  return result;
-}
-
-//----- (0042704B) --------------------------------------------------------
-int stru319::special_ability_use_check( struct Actor *pActor, int a2 )
-    {
-  stru319 *v3; // edi@1
-  signed int v4; // ebx@5
-  signed int v5; // edi@5
-
-  v3 = this;
-  if ( pActor->pMonsterInfo.uSpecialAbilityType == 2
-    && pActor->pMonsterInfo.uSpecialAbilityDamageDiceBonus < 3u
-    && rand() % 100 < 5 )
-    pActor->SummonMinion(a2);
-  v4 = v3->_427102(pActor, pActor->pMonsterInfo.uSpell1ID);
-  v5 = v3->_427102(pActor, pActor->pMonsterInfo.uSpell2ID);
-  if ( v4 && pActor->pMonsterInfo.uSpell1UseChance && rand() % 100 < pActor->pMonsterInfo.uSpell1UseChance )
-    return 2;
-  if ( v5 && pActor->pMonsterInfo.uSpell2UseChance && rand() % 100 < pActor->pMonsterInfo.uSpell2UseChance )
-    return 3;
-  return pActor->pMonsterInfo.uAttack2Chance && rand() % 100 < pActor->pMonsterInfo.uAttack2Chance?1:0;
-}
-
-//----- (00427102) --------------------------------------------------------
-int stru319::_427102(Actor *pActor, signed int a2)
-{
-  unsigned __int8 v3; // cf@11
-  unsigned __int8 v4; // zf@11
-  SpellBuff *v6; // ecx@46
-  Player *v7; // esi@49
-  signed int v8; // edx@50
-  SpellBuff *v9; // ecx@50
-
-  switch(a2)
-  {
-	case 77:
-		{
-		if ( pActor->sCurrentHP >= (signed int)pActor->pMonsterInfo.uHP )
-			return 0;
-		return 1;
-		}
-	case 80:
-		{
-		v6 = pParty->pPartyBuffs.data();
-		while ( (signed __int64)v6->uExpireTime <= 0 )
-		{
-			++v6;
-			if ( v6 > &pParty->pPartyBuffs[PARTY_BUFF_WIZARD_EYE] )
-			{
-				v7 = pParty->pPlayers.data();//[0].pPlayerBuffs;
-				v8 = 0;
-				v9 = v7->pPlayerBuffs.data();
-				while ( v9->uExpireTime <= 0i64 )
-				{
-					++v8;
-					++v9;
-					if ( v8 >= 24 )
-					{
-						++v7;
-						if ( v7 <= &pParty->pPlayers[3] )
-						{
-							v8 = 0;
-							v9 = v7->pPlayerBuffs.data();
-						}
-						else
-							return 0;
-					}
-				}
-				return 1;
-			}
-		}
-		return 1;
-		}
-	case 85:
-		{
-		if ( SHIDWORD(pActor->pActorBuffs[13].uExpireTime) < 0 )
-			return 1;
-		if ( SHIDWORD(pActor->pActorBuffs[13].uExpireTime) > 0 )
-			return 0;
-		v3 = 0;
-		v4 = LODWORD(pActor->pActorBuffs[13].uExpireTime) == 0;
-		break;
-		}
-	case 86:
-		{
-        if ( SHIDWORD(pActor->pActorBuffs[14].uExpireTime) < 0 )
-			return 1;
-        if ( SHIDWORD(pActor->pActorBuffs[14].uExpireTime) > 0 )
-			return 0;
-        v3 = 0;
-        v4 = LODWORD(pActor->pActorBuffs[14].uExpireTime) == 0;
-		break;
-		}
-	case 95:
-		{
-        if ( SHIDWORD(pActor->pActorBuffs[20].uExpireTime) < 0 )
-			return 1;
-        if ( SHIDWORD(pActor->pActorBuffs[20].uExpireTime) > 0 )
-			return 0;
-        v3 = 0;
-        v4 = LODWORD(pActor->pActorBuffs[20].uExpireTime) == 0;
-		break;
-		}
-	case 73:
-		{
-		if ( SHIDWORD(pActor->pActorBuffs[21].uExpireTime) < 0 )
-			return 1;
-		if ( SHIDWORD(pActor->pActorBuffs[21].uExpireTime) > 0 )
-			return 0;
-		v3 = 0;
-		v4 = LODWORD(pActor->pActorBuffs[21].uExpireTime) == 0;
-		break;
-		}
-	case 5:
-		{
-		if ( SHIDWORD(pActor->pActorBuffs[19].uExpireTime) < 0 )
-			return 1;
-		if ( SHIDWORD(pActor->pActorBuffs[19].uExpireTime) > 0 )
-			return 0;
-		v3 = 0;
-		v4 = LODWORD(pActor->pActorBuffs[19].uExpireTime) == 0;
-		break;
-		}
-	case 17:
-		{
-		if ( SHIDWORD(pActor->pActorBuffs[15].uExpireTime) < 0 )
-			return 1;
-		if ( SHIDWORD(pActor->pActorBuffs[15].uExpireTime) > 0 )
-			return 0;
-		v3 = 0;
-		v4 = LODWORD(pActor->pActorBuffs[15].uExpireTime) == 0;
-		break;
-		}
-	case 38:
-		{
-		if ( SHIDWORD(pActor->pActorBuffs[16].uExpireTime) < 0 )
-			return 1;
-		if ( SHIDWORD(pActor->pActorBuffs[16].uExpireTime) > 0 )
-			return 0;
-		v3 = 0;
-		v4 = LODWORD(pActor->pActorBuffs[16].uExpireTime) == 0;
-		}
-	case 46:
-		{
-		if ( SHIDWORD(pActor->pActorBuffs[17].uExpireTime) < 0 )
-			return 1;
-		if ( SHIDWORD(pActor->pActorBuffs[17].uExpireTime) > 0 )
-			return 0;
-		v3 = 0;
-		v4 = LODWORD(pActor->pActorBuffs[17].uExpireTime) == 0;
-		break;
-		}
-	case 47:
-		{
-		if ( SHIDWORD(pActor->pActorBuffs[11].uExpireTime) < 0 )
-			return 1;
-		if ( SHIDWORD(pActor->pActorBuffs[11].uExpireTime) > 0 )
-			return 0;
-		v3 = 0;
-		v4 = LODWORD(pActor->pActorBuffs[11].uExpireTime) == 0;
-		break;
-		}
-	case 51:
-		{
-		if ( SHIDWORD(pActor->pActorBuffs[18].uExpireTime) < 0 )
-			return 1;
-		if ( SHIDWORD(pActor->pActorBuffs[18].uExpireTime) <= 0 )
-		{
-			v3 = 0;
-			v4 = LODWORD(pActor->pActorBuffs[18].uExpireTime) == 0;
-		}
-		else
-			return 0;
-		break;
-		}
-	default:
-		{
-		return 1;
-		}
-  }
-  if ( !(v3 | v4) )
-    return 0;
-  return 1;
-}
 
 //----- (004272F5) --------------------------------------------------------
 int stru319::PlayerHitOrMiss(Player *pPlayer, Actor *pActor, int a3, int a4)
@@ -589,12 +62,12 @@ int stru319::PlayerHitOrMiss(Player *pPlayer, Actor *pActor, int a3, int a4)
 
   v5 = pActor->pMonsterInfo.uAC;
   v6 = 0;
-  if ( (signed __int64)pActor->pActorBuffs[8].uExpireTime > 0 )
+  if ( (signed __int64)pActor->pActorBuffs[ACTOR_BUFF_SOMETHING_THAT_HALVES_AC].uExpireTime > 0 )
     v5 /= 2;
-  if ( (signed __int64)pActor->pActorBuffs[14].uExpireTime > 0 )
-    v6 = pActor->pActorBuffs[15].uPower;
-  if ( (signed __int64)pActor->pActorBuffs[16].uExpireTime > 0 && pActor->pActorBuffs[16].uPower > v6 )
-    v6 = pActor->pActorBuffs[16].uPower;
+  if ( (signed __int64)pActor->pActorBuffs[ACTOR_BUFF_HOUR_OF_POWER].uExpireTime > 0 )
+    v6 = pActor->pActorBuffs[ACTOR_BUFF_SHIELD].uPower;
+  if ( (signed __int64)pActor->pActorBuffs[ACTOR_BUFF_STONESKIN].uExpireTime > 0 && pActor->pActorBuffs[ACTOR_BUFF_STONESKIN].uPower > v6 )
+    v6 = pActor->pActorBuffs[ACTOR_BUFF_STONESKIN].uPower;
   v7 = v6 + v5;
   if ( a3 )
     v8 = pPlayer->GetRangedAttack();
@@ -632,42 +105,6 @@ int stru319::PlayerHitOrMiss(Player *pPlayer, Actor *pActor, int a3, int a4)
   return result;
 }
 
-//----- (004273BB) --------------------------------------------------------
-bool stru319::_4273BB(Actor *pActor, Actor *a2, int a3, int a4)
-{
-  Actor *v5; // ecx@1
-  signed int v6; // ebx@1
-  signed int v7; // esi@1
-  unsigned __int8 v8; // zf@1
-  unsigned __int8 v9; // sf@1
-  int v10; // ebx@10
-  signed int a2a; // [sp+18h] [bp+Ch]@1
-
-  v5 = a2;
-  v6 = a2->pMonsterInfo.uAC;
-  v7 = 0;
-  v8 = HIDWORD(a2->pActorBuffs[8].uExpireTime) == 0;
-  v9 = SHIDWORD(a2->pActorBuffs[8].uExpireTime) < 0;
-  a2a = 0;
-  if ( !v9 && (!(v9 | v8) || LODWORD(v5->pActorBuffs[8].uExpireTime) > 0) )
-    v6 /= 2;
-  if ( (signed __int64)v5->pActorBuffs[14].uExpireTime > 0 )
-    v7 = v5->pActorBuffs[14].uPower;
-  if ( (signed __int64)v5->pActorBuffs[16].uExpireTime > 0 && v5->pActorBuffs[16].uPower > v7 )
-    v7 = v5->pActorBuffs[16].uPower;
-  v10 = v7 + v6;
-  if ( (signed __int64)pActor->pActorBuffs[14].uExpireTime > 0 )
-    a2a = pActor->pActorBuffs[14].uPower;
-  if ( (signed __int64)pActor->pActorBuffs[17].uExpireTime > 0 && pActor->pActorBuffs[17].uPower > a2a )
-    a2a = pActor->pActorBuffs[17].uPower;
-  if ( (signed __int64)pActor->pActorBuffs[11].uExpireTime > 0 )
-  {
-    a2a += pActor->pActorBuffs[11].uPower;
-    pActor->pActorBuffs[11].Reset();
-  }
-  return rand() % (v10 + 2 * pActor->pMonsterInfo.uLevel + 10) + a2a + 1 > v10 + 5;
-}
-
 //----- (004274AD) --------------------------------------------------------
 bool stru319::ActorHitOrMiss(Actor *pActor, Player *pPlayer)
 {
@@ -676,14 +113,14 @@ bool stru319::ActorHitOrMiss(Actor *pActor, Player *pPlayer)
   int v5; // esi@8
 
   v3 = 0;
-  if ( (signed __int64)pActor->pActorBuffs[14].uExpireTime > 0 )
-    v3 = pActor->pActorBuffs[14].uPower;
-  if ( (signed __int64)pActor->pActorBuffs[17].uExpireTime > 0 && pActor->pActorBuffs[17].uPower > v3 )
-    v3 = pActor->pActorBuffs[17].uPower;
-  if ( (signed __int64)pActor->pActorBuffs[11].uExpireTime > 0 )
+  if ( (signed __int64)pActor->pActorBuffs[ACTOR_BUFF_HOUR_OF_POWER].uExpireTime > 0 )
+    v3 = pActor->pActorBuffs[ACTOR_BUFF_HOUR_OF_POWER].uPower;
+  if ( (signed __int64)pActor->pActorBuffs[ACTOR_BUFF_BLESS].uExpireTime > 0 && pActor->pActorBuffs[ACTOR_BUFF_BLESS].uPower > v3 )
+    v3 = pActor->pActorBuffs[ACTOR_BUFF_BLESS].uPower;
+  if ( (signed __int64)pActor->pActorBuffs[ACTOR_BUFF_FATE].uExpireTime > 0 )
   {
-    v3 += pActor->pActorBuffs[11].uPower;
-    pActor->pActorBuffs[11].Reset();
+    v3 += pActor->pActorBuffs[ACTOR_BUFF_FATE].uPower;
+    pActor->pActorBuffs[ACTOR_BUFF_FATE].Reset();
   }
   v4 = pPlayer->GetActualAC() + 2 * pActor->pMonsterInfo.uLevel + 10;
   v5 = rand() % v4 + 1;
@@ -720,8 +157,8 @@ int stru319::CalcMagicalDamageToActor(Actor *pActor, int a2, signed int a3)
 
   v4 = 0;
   v5 = 0;
-  if ( (signed __int64)pActor->pActorBuffs[14].uExpireTime > 0 )
-    v5 = pActor->pActorBuffs[14].uPower;
+  if ( (signed __int64)pActor->pActorBuffs[ACTOR_BUFF_HOUR_OF_POWER].uExpireTime > 0 )
+    v5 = pActor->pActorBuffs[ACTOR_BUFF_HOUR_OF_POWER].uPower;
   switch ( a2 )
   {
     case 0:
@@ -903,7 +340,7 @@ void _42ECB5_PlayerAttacksActor()
   //v27 = 6972 * uActiveCharacter;
   //v1 = &pParty->pPlayers[uActiveCharacter-1];
   //result = pParty->pPlayers[uActiveCharacter-1].CanAct();
-  auto player = &pParty->pPlayers[uActiveCharacter - 1];
+  Player* player = &pParty->pPlayers[uActiveCharacter - 1];
   if (!player->CanAct())
     return;
 
@@ -926,7 +363,7 @@ void _42ECB5_PlayerAttacksActor()
   int main_hand_idx = player->pEquipment.uMainHand;
   if (main_hand_idx)
   {
-    auto item = &player->pInventoryItemList[main_hand_idx - 1];
+    ItemGen* item = &player->pInventoryItemList[main_hand_idx - 1];
       //v5 = (char *)v1 + 36 * v4;
     if (!item->IsBroken())
     {
@@ -959,7 +396,7 @@ void _42ECB5_PlayerAttacksActor()
     target_id = PID_ID(target_pid);
   }
 
-  auto actor = &pActors[target_id];
+  Actor* actor = &pActors[target_id];
   int actor_distance = 0;
   if (target_type == OBJECT_Actor)
   {
@@ -1001,7 +438,7 @@ void _42ECB5_PlayerAttacksActor()
     Vec3_int_::Normalize(&a3.x, &a3.y, &a3.z);
 
     DamageMonsterFromParty(PID(OBJECT_Player, uActiveCharacter - 1), target_id, &a3);
-    if (player->WearsItem(ITEM_ARTIFACT_SPLITTER, EQUIP_MAIN_HAND) || player->WearsItem(ITEM_ARTIFACT_SPLITTER, EQUIP_OFF_HAND))
+    if (player->WearsItem(ITEM_ARTIFACT_SPLITTER, EQUIP_TWO_HANDED) || player->WearsItem(ITEM_ARTIFACT_SPLITTER, EQUIP_SINGLE_HANDED))
           _42FA66_do_explosive_impact(
             actor->vPosition.x,
             actor->vPosition.y,
@@ -1041,7 +478,7 @@ void _42ECB5_PlayerAttacksActor()
   else
   {
     int main_hand_idx = player->pEquipment.uMainHand;
-    if (player->HasItemEquipped(EQUIP_MAIN_HAND))
+    if (player->HasItemEquipped(EQUIP_TWO_HANDED))
       v34 = player->pInventoryItemList[main_hand_idx - 1].GetPlayerSkillType();
     pTurnEngine->ApplyPlayerAction();
   }
@@ -1255,84 +692,6 @@ void InitializeTurnBasedAnimations(void *_this)
   pIconsFrameTable->InitializeAnimation(uIconID_TurnStop);
   pIconsFrameTable->InitializeAnimation(uIconID_TurnStart);
   pIconsFrameTable->InitializeAnimation(uIconID_CharacterFrame);
-}
-
-//----- (0042F4DA) --------------------------------------------------------
-int _42F4DA_check_actor_proximity()
-{
-  signed int v0; // edi@1
-  Actor *v1; // esi@4
-  int v2; // ebx@5
-  int v3; // eax@5
-  int v4; // ebx@5
-  unsigned int v5; // ecx@5
-  int v6; // edx@6
-  unsigned int v7; // edx@8
-  unsigned int v8; // edx@10
-  __int16 v9; // ax@12
-  signed int result; // eax@20
-  int v11; // [sp+Ch] [bp-10h]@5
-  int v12; // [sp+10h] [bp-Ch]@5
-  signed int v13; // [sp+14h] [bp-8h]@3
-
-  v0 = 5120;
-  if ( uCurrentlyLoadedLevelType == LEVEL_Indoor)
-    v0 = 2560;
-  v13 = 0;
-  if ( (signed int)uNumActors <= 0 )
-  {
-    result = 0;
-  }
-  else
-  {
-    v1 = pActors.data();
-    while ( 1 )
-    {
-		v2 = abs(v1->vInitialPosition.x - pParty->vPosition.x);
-		v11 = abs(v1->vInitialPosition.y - pParty->vPosition.y);
-		v12 = abs(v1->vInitialPosition.z - pParty->vPosition.z);
-      v3 = v2;
-      v4 = v11;
-      v5 = v12;
-      if ( v3 < v11 )
-      {
-        v6 = v3;
-        v3 = v11;
-        v4 = v6;
-      }
-      if ( v3 < v12 )
-      {
-        v7 = v3;
-        v3 = v12;
-        v5 = v7;
-      }
-      if ( v4 < (signed int)v5 )
-      {
-        v8 = v5;
-        v5 = v4;
-        v4 = v8;
-      }
-      if ( (signed int)(((unsigned int)(11 * v4) >> 5) + (v5 >> 2) + v3) < v0 )
-      {
-		v9 = v1->uAIState;
-        if ( v1->uAIState != 5 )
-        {
-          if ( v9 != 4
-            && v9 != 11
-            && v9 != 19
-            && v9 != 17
-			&& (BYTE2(v1->uAttributes) & 8 || ((Actor *)nullptr)->GetActorsRelation( v1)) )
-            break;
-        }
-      }
-      ++v13;
-      ++v1;
-      if ( v13 >= (signed int)uNumActors )
-        return 0;
-    }
-    result = 1;
-  }
-  return result;
 }
 
 //----- (0042F7EB) --------------------------------------------------------
@@ -1633,7 +992,7 @@ void ProcessInputActions()
   int v24; // [sp+4h] [bp-4h]@87
 
   pGame->pKeyboardInstance->EnterCriticalSection();
-  auto pKeyboard = pGame->pKeyboardInstance;
+  Keyboard* pKeyboard = pGame->pKeyboardInstance;
   if (!bAlwaysRun)
   {
     if (pKeyboard->IsShiftHeld())

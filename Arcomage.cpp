@@ -271,7 +271,7 @@ int stru272_stru0::Free()
 //----- (0040E01A) --------------------------------------------------------
 int stru272_stru0::StartFill( stru272_stru2* a2 )
     {
-    auto a1 = this;
+    stru272_stru0* a1 = this;
     if ( a1->signature == SIG_trpg )
         {
         a1->field_4 = a2->field_20;
@@ -3900,7 +3900,7 @@ LABEL_49:
         if ( !pParty->pArcomageWins[v8-108] )
         {
           pParty->pArcomageWins[v8-108] = 1;
-          auto _a = (signed int)(p2DEvents[ window_SpeakInHouse->par1C - 1].fPriceMultiplier * 100.0);
+          signed int _a = (signed int)(p2DEvents[ window_SpeakInHouse->par1C - 1].fPriceMultiplier * 100.0);
           pParty->PartyFindsGold(_a, 0);
         }
       

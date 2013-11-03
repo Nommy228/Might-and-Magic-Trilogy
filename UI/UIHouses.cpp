@@ -1057,7 +1057,7 @@ void __fastcall OnSelectShopDialogueOption(signed int uMessageParam)
     case BuildingType_SelfGuild:
     case BuildingType_16:
     {
-      if ( pParty->PartyTimes.Shops_next_generation_time[window_SpeakInHouse->par1C] >= (signed __int64)pParty->uTimePlayed )
+      if ( pParty->PartyTimes.Shops_next_generation_time[window_SpeakInHouse->par1C - 139] >= (signed __int64)pParty->uTimePlayed )
       {
         for ( uint i = 0; i < 12; ++i )
         {
@@ -1068,7 +1068,7 @@ void __fastcall OnSelectShopDialogueOption(signed int uMessageParam)
       else//generation new books
       {
         SpellBookGenerator();
-        pParty->PartyTimes.Shops_next_generation_time[window_SpeakInHouse->par1C] = pParty->uTimePlayed + (signed __int64)((double)(0xA8C000
+        pParty->PartyTimes.Shops_next_generation_time[window_SpeakInHouse->par1C - 139] = pParty->uTimePlayed + (signed __int64)((double)(0xA8C000
                                   * (signed int)p2DEvents[(unsigned int)window_SpeakInHouse->ptr_1C - 1].field_1C) * 0.033333335);
       }
       break;
@@ -1598,7 +1598,7 @@ void  TravelByTransport()
           v15 = v14;
         while ( GetTickCount() < v15 )
           sqrt(3.1415926);
-        while ( sub_4BD8B5() )
+        while ( HouseDialogPressCloseBtn() )
           ;
         pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 0, 0);
         return;
@@ -2046,8 +2046,8 @@ void  TavernDialog()
       {
         Party::TakeGold(pPriceRoom);
         PlayHouseSound((unsigned int)window_SpeakInHouse->ptr_1C, HouseSound_NotEnoughMoney_TrainingSuccessful);
-        dialog_menu_id = HOUSE_DIALOGUE_NULL;
-        sub_4BD8B5();
+        //dialog_menu_id = HOUSE_DIALOGUE_NULL;
+        HouseDialogPressCloseBtn();
         GetHouseGoodbyeSpeech();
         pVideoPlayer->Unload();
         if ( pMessageQueue_50CBD0->uNumMessages )
@@ -2076,13 +2076,13 @@ void  TavernDialog()
       if ( pPriceSkill < v9 / 3 )
         pPriceSkill = v9 / 3;
       all_text_height = 0;
-      for ( pItemNum = pDialogueWindow->pStartingPosActiveItem;
-            pItemNum < pDialogueWindow->pStartingPosActiveItem + pDialogueWindow->pNumPresenceButton; ++pItemNum )
+      for ( int i = pDialogueWindow->pStartingPosActiveItem;
+            i < pDialogueWindow->pStartingPosActiveItem + pDialogueWindow->pNumPresenceButton; ++i )
       {
-        if ( byte_4ED970_skill_learn_ability_by_class_table[pPlayers[uActiveCharacter]->classType][pDialogueWindow->GetControl(pItemNum)->msg_param - 36]
-            && !pPlayers[uActiveCharacter]->pActiveSkills[pDialogueWindow->GetControl(pItemNum)->msg_param - 36] )
+        if ( byte_4ED970_skill_learn_ability_by_class_table[pPlayers[uActiveCharacter]->classType][pDialogueWindow->GetControl(i)->msg_param - 36]
+            && !pPlayers[uActiveCharacter]->pActiveSkills[pDialogueWindow->GetControl(i)->msg_param - 36] )
         {
-          all_text_height = pFontArrus->CalcTextHeight(pSkillNames[pDialogueWindow->GetControl(pItemNum)->msg_param - 36], &dialog_window, 0, 0);
+          all_text_height = pFontArrus->CalcTextHeight(pSkillNames[pDialogueWindow->GetControl(i)->msg_param - 36], &dialog_window, 0, 0);
           pSkillCount++;
         }
       }
@@ -2094,10 +2094,10 @@ void  TavernDialog()
         if ( (149 - all_text_height) / pSkillCount > 32 )
           v91 = 32;
         v54 = (149 - pSkillCount * v91 - all_text_height) / 2 - v91 / 2 + 162;
-        for ( pItemNum = pDialogueWindow->pStartingPosActiveItem;
-              pItemNum < pDialogueWindow->pStartingPosActiveItem + pDialogueWindow->pNumPresenceButton; pItemNum++ )
+        for ( int i = pDialogueWindow->pStartingPosActiveItem;
+              i < pDialogueWindow->pStartingPosActiveItem + pDialogueWindow->pNumPresenceButton; i++ )
         {
-          pButton = pDialogueWindow->GetControl(pItemNum);
+          pButton = pDialogueWindow->GetControl(i);
           if ( !byte_4ED970_skill_learn_ability_by_class_table[pPlayers[uActiveCharacter]->classType][pButton->msg_param - 36]
             || pPlayers[uActiveCharacter]->pActiveSkills[pButton->msg_param - 36] )
           {
@@ -2113,7 +2113,7 @@ void  TavernDialog()
             v54 = pTextHeight + pButton->uY - 1;
             pButton->uW = v54;
             pColorText = TargetColor(0xFFu, 0xFFu, 0x9Bu);
-            if ( pDialogueWindow->pCurrentPosActiveItem != pItemNum )
+            if ( pDialogueWindow->pCurrentPosActiveItem != i )
               pColorText = TargetColor(0xFFu, 0xFFu, 0xFFu);
             dialog_window.DrawTitleText(pFontArrus, 0, pButton->uY, pColorText, pSkillNames[pButton->msg_param - 36], 3);
           }

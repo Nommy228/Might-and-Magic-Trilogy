@@ -194,7 +194,7 @@ bool stru9::CalcPortalShape(struct RenderVertexSoft *a1, signed int a2, struct R
   //v9 = a1;
   //v10 = a5;
   //v11 = (char *)&a1->vWorldPosition.z;
-  auto pLineStart = &a1[0];
+  RenderVertexSoft* pLineStart = &a1[0];
   //pVertices = a3;
   pLinelength1 = a5->x * a1[0].vWorldPosition.x + a1[0].vWorldPosition.y * a5->y + a1[0].vWorldPosition.z * a5->z;
   //v20 = v13;
@@ -267,7 +267,7 @@ void stru9::AddVertex(struct VertexBuffer *pVertexBuffer, struct RenderVertexSof
 bool stru9::_498774(struct RenderVertexSoft *a1, struct RenderVertexSoft *a2, struct RenderVertexSoft *a3, struct stru312 *a4, struct RenderVertexSoft *a5)
 {
   RenderVertexSoft *v6; // ecx@5
-  bool result; // eax@5
+  int result; // eax@5
   double v8; // st7@5
   __int16 v9; // fps@5
   double v10; // st7@6

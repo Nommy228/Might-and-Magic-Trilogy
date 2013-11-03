@@ -727,7 +727,7 @@ LABEL_25:
       if ( v21->HasItemEquipped(v22) )
       {
         //v23 = v21->pEquipment.pIndices;
-        auto _idx = v21->pEquipment.pIndices[v22];
+        uint _idx = v21->pEquipment.pIndices[v22];
         v24 = v21->pInventoryItemList[_idx].uItemID;
         if ( v24 > 134 )
         {
@@ -1326,7 +1326,7 @@ void _494035_timed_effects__water_walking_damage__etc()
 
   for (uint i = 0; i < 2; ++i)
   {
-    auto pBuf = &pParty->pPartyBuffs[dword_4EE07C[i]];
+    SpellBuff* pBuf = &pParty->pPartyBuffs[dword_4EE07C[i]];
     if (pBuf->uExpireTime == 0)
       continue;
 
@@ -1525,7 +1525,7 @@ void PlayerFrameTable::ToFile()
   FILE *v2; // eax@1
   FILE *v3; // edi@1
 
-  auto Str = this;
+  PlayerFrameTable* Str = this;
 
   v1 = Str;
   v2 = fopen("data\\dpft.bin", "wb");
@@ -1781,7 +1781,7 @@ char *BuildDialogueString(const char *lpsz, unsigned __int8 uPlayerID, ItemGen *
     npc = GetNPCData(sDialogue_SpeakingActorNPC_ID);
 
   //pText = a4;
-  auto len = strlen(lpsz);
+  uint len = strlen(lpsz);
   for (int i = 0, dst = 0; i < len; ++i)
   {
     char c = lpsz[i];
@@ -1968,7 +1968,7 @@ char *BuildDialogueString(const char *lpsz, unsigned __int8 uPlayerID, ItemGen *
           break;
         case 17://текст наёмного НПС
         {
-          auto pay_percentage = pNPCStats->pProfessions[npc->uProfession - 1].uHirePrice / 100;
+          uint pay_percentage = pNPCStats->pProfessions[npc->uProfession - 1].uHirePrice / 100;
           if ( !pay_percentage )
             pay_percentage = 1;
           sprintf(a1, "%lu", pay_percentage);
@@ -2581,8 +2581,8 @@ void Present_NoColorKey()
             pDst[x] = pRenderer->uTargetRMask | pRenderer->uTargetBMask;
         }*/
         
-        auto pSrc = pRenderer->pTargetSurface;
-        auto pDst = (__int16 *)Dst.lpSurface;
+        ushort* pSrc = pRenderer->pTargetSurface;
+        short* pDst = (__int16 *)Dst.lpSurface;
 
         for (uint y = 0; y < 8; ++y)
           memcpy(pDst + y * Dst.lPitch / 2,
@@ -2602,9 +2602,9 @@ void Present_NoColorKey()
                  pSrc + y * 640, 640 * sizeof(__int16));
 
 
-        auto pSrc_x1y1 = pSrc + 640 * pViewport->uViewportTL_Y + pViewport->uViewportTL_X;
+        ushort* pSrc_x1y1 = pSrc + 640 * pViewport->uViewportTL_Y + pViewport->uViewportTL_X;
         //_this = (unsigned int)&pSrc[2 * (((signed int)pViewport->uViewportX >> 1) + 320 * pViewport->uViewportY)];
-        auto pDst_x1y1 = pDst + Dst.lPitch * pViewport->uViewportTL_Y + pViewport->uViewportTL_X;
+        short* pDst_x1y1 = pDst + Dst.lPitch * pViewport->uViewportTL_Y + pViewport->uViewportTL_X;
         //v23 = (unsigned __int32)((char *)v26 + 4 * (((signed int)pViewport->uViewportX >> 1) + (Dst.lPitch >> 2) * pViewport->uViewportY));
         v9 = ((signed int)pViewport->uViewportTL_X >> 1) - ((signed int)pViewport->uViewportBR_X >> 1);
         //v20 = ((signed int)pViewport->uViewportZ >> 1) - ((signed int)pViewport->uViewportX >> 1);
@@ -2615,7 +2615,7 @@ void Present_NoColorKey()
         //v26 = (LPVOID)(pViewport->uViewportW - pViewport->uViewportY + 1);
         v10 = (int)pSrc_x1y1;
         v11 = (int)pDst_x1y1;
-        auto uHalfWidth = v20 = (pViewport->uViewportBR_X - pViewport->uViewportTL_X) / 2;
+        int uHalfWidth = v20 = (pViewport->uViewportBR_X - pViewport->uViewportTL_X) / 2;
         v13 = v24;
 
         for (uint y = pViewport->uViewportTL_Y; y < pViewport->uViewportBR_Y + 1; ++y)
@@ -3592,8 +3592,7 @@ void OnSelectNPCDialogueOption(DIALOGUE_TYPE newDialogueType)
 					CheckBountyRespawnAndAward();
 					break;
 				case 399:
-                  __debugbreak(); // what kind of dialogue is that?
-					sub_4BBCDD();
+					Arena_SelectionFightLevel();
 					break;
 				default:
 					activeLevelDecoration = (LevelDecoration*)1;

@@ -1602,7 +1602,7 @@ void  UIShop_Buy_Identify_Repair()
           {
             item = &pPlayers[uActiveCharacter]->pInventoryItemList[pItemID - 1];
             pPriceMultiplier = p2DEvents[(unsigned int)window_SpeakInHouse->ptr_1C - 1].fPriceMultiplier;
-            auto _v = (ItemGen *)&pPlayers[uActiveCharacter]->pInventoryItemList[pItemID - 1];
+            ItemGen* _v = &pPlayers[uActiveCharacter]->pInventoryItemList[pItemID - 1];
             uPriceItemService = pPlayers[uActiveCharacter]->GetPriceRepair(_v->GetValue(), pPriceMultiplier);
             if ( item->uAttributes & 2 )
             {

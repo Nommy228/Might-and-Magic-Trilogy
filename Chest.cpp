@@ -67,7 +67,7 @@ bool Chest::Open( signed int uChestID )
   assert( uChestID < 20 );
   if ( ( uChestID < 0 ) && ( uChestID >= 20 ) )
     return false;
-  auto chest = &pChests[uChestID];
+  Chest* chest = &pChests[uChestID];
 
   ++pIcons_LOD->uTexturePacksCount;
   if (!pIcons_LOD->uNumPrevLoadedFiles)
@@ -212,7 +212,7 @@ void  ChestUI_WritePointedObjectStatusString()
     v1 = pRenderer->pActiveZBuffer[v0->x + pSRZBufferLineOffsets[pMouse->GetCursorPos(&v3)->y]];
     if ( v1 )
     {
-      auto _w = (ItemGen *)(&pOtherOverlayList->pOverlays[49].field_4 + 2662 * (unsigned int)pChestWindow->ptr_1C
+      ItemGen* _w = (ItemGen *)(&pOtherOverlayList->pOverlays[49].field_4 + 2662 * (unsigned int)pChestWindow->ptr_1C
                                              + 18 * *((short *)&pChests[0].igChestItems[139].uExpireTime
                                                + v1 + 2662 * (unsigned int)pChestWindow->ptr_1C + 3));
 

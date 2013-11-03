@@ -1091,13 +1091,12 @@ void SetUserInterface(enum PartyAlignment alignment, bool bReplace);
 void reset_some_strus_flt_2Cs();
 int __fastcall GetPortalScreenCoord(unsigned int uFaceID);
 bool PortalFrustrum(int pNumVertices, struct BspRenderer_PortalViewportData *a2, struct BspRenderer_PortalViewportData *near_portal, int uFaceID);
-int sr_424CD7(unsigned int uVertexID); // idb
-int BuildingVerticesClipping(unsigned int uNumVertices);
+int ODM_NearClip(unsigned int uVertexID); // idb
+int ODM_FarClip(unsigned int uNumVertices);
 bool __fastcall sub_427769_spell(unsigned int uSpellID);
 void _42777D_CastSpell_UseWand_ShootArrow(int a1, unsigned int uPlayerID, unsigned int a4, __int16 a5, int a6);
 void _42ECB5_PlayerAttacksActor();
 void  InitializeTurnBasedAnimations(void *);
-int _42F4DA_check_actor_proximity();
 bool __fastcall sub_42F7EB_DropItemAt(unsigned int uSpriteID, int x, int y, int z, int a4, int count, int a7, unsigned __int16 attributes, ItemGen *a9);
 void __fastcall sub_42F960_create_object(int x, int y, int z); // idb
 void CompactLayingItemsList();
@@ -1202,13 +1201,12 @@ void _4B4224_UpdateNPCTopics(int _this);
 void __fastcall DrawTextAtStatusBar(const char *Str, int a5);
 __int64 GetExperienceRequiredForLevel(int a1);
 void CheckBountyRespawnAndAward();
-void sub_4BBCDD();
-void __fastcall _4BBF61_summon_actor(int a1, __int16 x, int y, int z); // idb
+void Arena_SelectionFightLevel();
 void ArenaFight();
 void SpellBookGenerator();
 void UI_CreateEndConversationButton();
 void __fastcall OnSelectShopDialogueOption(signed int uMessageParam);
-int sub_4BD8B5();
+int HouseDialogPressCloseBtn();
 bool __fastcall MerchandiseTest(ItemGen *item, int _2da_idx);
 void UIShop_Buy_Identify_Repair();
 bool __fastcall IsBModelVisible(unsigned int uModelID, int *unused);
@@ -1344,7 +1342,7 @@ int __fastcall GetDiceResult(unsigned int uNumDice, unsigned int uDiceSides); //
 inline int round(float x) { return (int)floor(x + 0.5f); }
 inline void __fastcall memset32(void *ptr, unsigned __int32 value, int count)
 {
-  auto p = (unsigned __int32 *)ptr;
+  unsigned __int32* p = (unsigned __int32 *)ptr;
   for ( int i=0; i < count; i++ )
     *p++ = value;
 }

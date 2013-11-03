@@ -235,7 +235,7 @@ struct BLVMapOutline //0C
 #define FACE_TEXTURE_FRAME      0x00004000 // Texture ID is a frameset from TextureFrameTable, otherwise BitmapID
 #define FACE_OUTLINED           0x00010000 // outline face edges
 #define FACE_TEXTURE_FLOW       0x00040000 // The texture moves slowly. For horizontal facets only.
-#define FACE_DO_NOT_LIGHT       0x00400000
+#define FACE_INDOOR_SKY       0x00400000
 #define FACE_CLICKABLE          0x02000000 // Event can be triggered by clicking on the facet.
 #define FACE_PRESSURE_PLATE     0x04000000 // Event can be triggered by stepping on the facet.
 #define FACE_ETHEREAL           0x20000000 // Untouchable. You can pass through it.

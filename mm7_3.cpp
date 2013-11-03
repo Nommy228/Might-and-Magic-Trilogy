@@ -979,7 +979,7 @@ void UpdateActors_ODM()
     if ( v0->uCurrentActionAnimation == ANIM_Walking )
     {
       v8 = v0->uMovementSpeed;
-      if ( (signed __int64)v0->pActorBuffs[7].uExpireTime > 0 )
+      if ( (signed __int64)v0->pActorBuffs[ACTOR_BUFF_SLOWED].uExpireTime > 0 )
       {
         v8 = (signed __int64)((double)v8 * 0.5);
       }
@@ -1312,7 +1312,7 @@ void UpdateObjects()
   //v20 = 0;
   for (uint i = 0; i < uNumSpriteObjects; ++i)
   {
-    auto item = &pSpriteObjects[i];
+    SpriteObject* item = &pSpriteObjects[i];
     //v2 = (char *)&item->uSpriteFrameID;
     //do
     //{
@@ -1544,7 +1544,7 @@ void BLV_ProcessPartyActions()
   bJumping = 0;
 
   uFaceID = -1;
-  auto floor_level = collide_against_floor(new_party_x, new_party_y, party_z + 40, &uSectorID, &uFaceID);
+  int floor_level = collide_against_floor(new_party_x, new_party_y, party_z + 40, &uSectorID, &uFaceID);
 
   if ( pParty->bFlying )
   {
@@ -1572,7 +1572,7 @@ void BLV_ProcessPartyActions()
   blv_prev_party_y = pParty->vPosition.z;
   if (!pParty->bTurnBasedModeOn)
   {
-    auto v67 = GetTickCount() / 500;
+    int v67 = GetTickCount() / 500;
     if (dword_720CDC != v67 )
     {
       dword_4F8580[3 * dword_4F8580[1]] = pParty->vPosition.x;
@@ -1611,7 +1611,7 @@ void BLV_ProcessPartyActions()
       pParty->uFlags &= ~PARTY_FLAGS_1_LANDING;
     else for (uint i = 0; i < 4; ++i)
     {                                      // receive falling damage
-      auto player = &pParty->pPlayers[i];
+      Player* player = &pParty->pPlayers[i];
       if (!player->HasEnchantedItemEquipped(72) && !player->WearsItem(ITEM_ARTIFACT_HERMES_SANDALS, EQUIP_BOOTS))
       {
         player->ReceiveDamage((pParty->uFallStartY - party_z) * (0.1f * player->GetMaxHealth()) / 256, DMGT_PHISYCAL);
@@ -1647,7 +1647,7 @@ void BLV_ProcessPartyActions()
 
     if (!bJumping && pParty->floor_face_pid != uFaceID)
     {
-      auto pFace = &pIndoor->pFaces[uFaceID];
+      BLVFace* pFace = &pIndoor->pFaces[uFaceID];
       if (pFace->uAttributes & FACE_PRESSURE_PLATE)
         uFaceEvent = pIndoor->pFaceExtras[pFace->uFaceExtraID].uEventID;
     }
@@ -1806,7 +1806,7 @@ void BLV_ProcessPartyActions()
   stru_721530.field_70 = 0;
   stru_721530.prolly_normal_d = pParty->field_14_radius;
   stru_721530.field_8_radius = pParty->field_14_radius / 2;
-  auto v83 = 0;
+  int v83 = 0;
   stru_721530.field_0 = 1;
   stru_721530.height = pParty->uPartyHeight - 32;
   while ( 1 )
@@ -1866,7 +1866,7 @@ void BLV_ProcessPartyActions()
     v43 = stru_721530.uFaceID;
     uSectorID = stru_721530.uSectorID;
     stru_721530.field_70 += stru_721530.field_7C;
-    auto v87 = ((unsigned __int64)(stru_721530.field_7C * (signed __int64)stru_721530.direction.z) >> 16) + new_party_z;
+    unsigned long long v87 = ((unsigned __int64)(stru_721530.field_7C * (signed __int64)stru_721530.direction.z) >> 16) + new_party_z;
     if ( PID_TYPE(stru_721530.uFaceID) == OBJECT_Actor)
     {
       if ( SHIDWORD(pParty->pPartyBuffs[PARTY_BUFF_INVISIBILITY].uExpireTime) >= 0
@@ -2156,7 +2156,7 @@ void ODM_ProcessPartyActions()
   pY = pParty->vPosition.y;
   v113 = pParty->field_6F0;
   bJumping = 0;
-  auto partyAtHighSlope = IsTerrainSlopeTooHigh(pParty->vPosition.x, pParty->vPosition.y);
+  bool partyAtHighSlope = IsTerrainSlopeTooHigh(pParty->vPosition.x, pParty->vPosition.y);
   v114 = 0;
   v124 = 0;
   v102 = 0;
@@ -2205,7 +2205,7 @@ void ODM_ProcessPartyActions()
     }
     else for (int _i = 0; _i < 4; ++_i)     // receive falling damage
     {
-      auto player = &pParty->pPlayers[_i];
+      Player* player = &pParty->pPlayers[_i];
 
       if ( !player->HasEnchantedItemEquipped(72) && !player->WearsItem(ITEM_ARTIFACT_HERMES_SANDALS, EQUIP_BOOTS) )
       {
@@ -2637,7 +2637,7 @@ void ODM_ProcessPartyActions()
 		{ // falling scream
 		  for (int i = 0; i < 4; ++i)
 		  {
-			auto player = &pParty->pPlayers[i];
+			Player* player = &pParty->pPlayers[i];
 			if (!player->HasEnchantedItemEquipped(72) && !player->WearsItem(ITEM_ARTIFACT_HERMES_SANDALS, EQUIP_BOOTS) && player->CanAct())
 			  player->PlaySound(SPEECH_66, 0);
 		  }
@@ -2702,7 +2702,7 @@ void ODM_ProcessPartyActions()
     v122 = v40;
     ODM_GetFloorLevel(_angle_x, _angle_y, v40, pParty->uPartyHeight, &is_on_water, &bmodel_standing_on_pid, 0);
     v129 = ODM_GetFloorLevel(_angle_x, pY, v40, pParty->uPartyHeight, &is_on_water, &v97, 0);
-    auto v119 = ODM_GetFloorLevel(pX, _angle_y, v40, pParty->uPartyHeight, &is_on_water, &v110, 0);
+    int v119 = ODM_GetFloorLevel(pX, _angle_y, v40, pParty->uPartyHeight, &is_on_water, &v110, 0);
     pModel = (BSPModel *)IsTerrainSlopeTooHigh(_angle_x, pY);
     v42 = IsTerrainSlopeTooHigh(pX, _angle_y);
     is_not_on_bmodel = false;
@@ -3703,7 +3703,7 @@ PartyAction ActionQueue::Next()
   if (!uNumActions)
     return PARTY_INVALID;
 
-  auto result = pActions[0];
+  PartyAction result = pActions[0];
   for (unsigned int i = 0; i < uNumActions - 1; ++i)
     pActions[i] = pActions[i + 1];
   --uNumActions;
@@ -4170,7 +4170,7 @@ bool stru6_stru1_indoor_sw_billboard::sub_477F63()
   signed int v9; // [sp+Ch] [bp-8h]@1
   float v10; // [sp+10h] [bp-4h]@2
 
-  auto a1 = this;
+  stru6_stru1_indoor_sw_billboard* a1 = this;
 
   v1 = 0;
   v2 = a1;
@@ -4230,7 +4230,7 @@ int stru6_stru1_indoor_sw_billboard::sub_47802A()
   int a6; // [sp+3Ch] [bp-8h]@5
   int a5; // [sp+40h] [bp-4h]@5
 
-  auto a1 = this;
+  stru6_stru1_indoor_sw_billboard* a1 = this;
 
   v16 = 0;
   if ( uCurrentlyLoadedLevelType == LEVEL_Indoor )
@@ -4437,7 +4437,7 @@ unsigned short *LoadTgaTexture(const wchar_t *filename, int *out_width = nullptr
     *out_height = 0;
 
   DWORD w;
-  auto  file = CreateFileW(filename, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, 0, nullptr);
+  void*  file = CreateFileW(filename, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, 0, nullptr);
   if (file == INVALID_HANDLE_VALUE)
     return nullptr;
 
@@ -4452,7 +4452,7 @@ unsigned short *LoadTgaTexture(const wchar_t *filename, int *out_width = nullptr
   }
 
   int imgSize = header.tgaWidth * header.tgaHeight * 3;
-  auto pixels = new unsigned char[imgSize];
+  unsigned char* pixels = new unsigned char[imgSize];
   ReadFile(file, pixels, imgSize, &w, nullptr);
   CloseHandle(file);
 
@@ -4467,7 +4467,7 @@ unsigned short *LoadTgaTexture(const wchar_t *filename, int *out_width = nullptr
   if (out_height)
     *out_height = header.tgaHeight;
 
-  auto pixels_16bit = new unsigned short[imgSize / 3];
+  unsigned short* pixels_16bit = new unsigned short[imgSize / 3];
   for (int i = 0; i < imgSize / 3; ++i)
   {
     pixels_16bit[i] = (pixels[i * 3] / 8 & 0x1F) |
@@ -4876,161 +4876,6 @@ DIR_ZN:
   ErrD3D((skybox_surface)->Unlock(0));
   goto draw;
 }
-
-//----- (00479543) --------------------------------------------------------
-void Render::DrawSkyD3D()
-{
-  int v9; // eax@4
-  int v10; // ebx@4
-  int v13; // edi@6
-  int v14; // ecx@6
-  int v15; // eax@8
-  int v16; // eax@12
-  signed __int64 v17; // qtt@13
-  signed int v18; // ecx@13
-  struct Polygon pSkyPolygon; // [sp+14h] [bp-150h]@1
-  double v26; // [sp+120h] [bp-44h]@4
-  int v30; // [sp+134h] [bp-30h]@1
-  int v32; // [sp+13Ch] [bp-28h]@6
-  int v33; // [sp+140h] [bp-24h]@2
-  signed __int64 v34; // [sp+144h] [bp-20h]@1
-  int v35; // [sp+148h] [bp-1Ch]@4
-  int v36; // [sp+14Ch] [bp-18h]@2
-  int v37; // [sp+154h] [bp-10h]@8
-  int v38; // [sp+158h] [bp-Ch]@1
-  int v39; // [sp+15Ch] [bp-8h]@4
-  int v40; // [sp+160h] [bp-4h]@7
-
-  v30 = (signed __int64)((double)(pODMRenderParams->int_fov_rad * pGame->pIndoorCameraD3D->vPartyPos.z)
-                       / ((double)pODMRenderParams->int_fov_rad + 8192.0)
-                       + (double)(pViewport->uScreenCenterY + 7));//include "+ 7"
-  v34 = cos((double)pGame->pIndoorCameraD3D->sRotationX * 0.0030664064) * 0x2000;//(double)pODMRenderParams->shading_dist_mist
-  v38 = (signed __int64)((double)(pViewport->uScreenCenterY + 7)
-                       - (double)pODMRenderParams->int_fov_rad
-                       / (v34 + 0.0000001)
-                       * (sin((double)pGame->pIndoorCameraD3D->sRotationX * 0.0030664064)
-                        * (double)-0x2000//(double)pODMRenderParams->shading_dist_mist
-                        - (double)pGame->pIndoorCameraD3D->vPartyPos.z));
-  pSkyPolygon.Create_48607B(&stru_8019C8);//заполн€етс€ ptr_38
-  pSkyPolygon.ptr_38->_48694B_frustum_sky();
-  pSkyPolygon.uTileBitmapID = pOutdoor->uSky_TextureID;//179(original 166)
-  pSkyPolygon.pTexture = (Texture *)(SLOWORD(pOutdoor->uSky_TextureID) != -1 ? (int)&pBitmaps_LOD->pTextures[SLOWORD(pOutdoor->uSky_TextureID)] : 0);
-  if ( pSkyPolygon.pTexture )
-  {
-    pSkyPolygon.dimming_level = 0;
-    pSkyPolygon.uNumVertices = 4;
-  //centering(центруем)--наклон камеры ----------------------------------------
-    pSkyPolygon.v_18.x = -stru_5C6E00->Sin(pGame->pIndoorCameraD3D->sRotationX + 16);
-    pSkyPolygon.v_18.y = 0;
-    pSkyPolygon.v_18.z = -stru_5C6E00->Cos(pGame->pIndoorCameraD3D->sRotationX + 16);
-  
-  //sky wiew position(положение неба на экране)------------------------------------------
-  //                X
-  // 0._____________________________.3
-  //  |8,8                    468,8 |
-  //  |                             |
-  //  |                             |
-  // Y|                             |
-  //  |                             |
-  //  |8,351                468,351 |
-  // 1._____________________________.2
-  // 
-    array_50AC10[0].vWorldViewProjX = (double)(signed int)pViewport->uViewportTL_X;
-    array_50AC10[0].vWorldViewProjY = (double)(signed int)pViewport->uViewportTL_Y;
-
-    array_50AC10[1].vWorldViewProjX = (double)(signed int)pViewport->uViewportTL_X;
-    array_50AC10[1].vWorldViewProjY = (double)v38;
-
-    array_50AC10[2].vWorldViewProjX = (double)(signed int)pViewport->uViewportBR_X;
-    array_50AC10[2].vWorldViewProjY = (double)v38;
-
-    array_50AC10[3].vWorldViewProjX = (double)(signed int)pViewport->uViewportBR_X;
-    array_50AC10[3].vWorldViewProjY = (double)(signed int)pViewport->uViewportTL_Y;
-
-    pSkyPolygon.sTextureDeltaU = 224 * pMiscTimer->uTotalGameTimeElapsed;
-    pSkyPolygon.sTextureDeltaV = 224 * pMiscTimer->uTotalGameTimeElapsed;
-
-    pSkyPolygon.field_24 = 0x2000000u;
-    v33 = 65536 / (signed int)(signed __int64)(((double)(pViewport->uViewportBR_X - pViewport->uViewportTL_X) * 0.5) / tan(0.6457717418670654) + 0.5);
-    for ( uint i = 0; i < pSkyPolygon.uNumVertices; ++i )
-    {
-      v26 = array_50AC10[i].vWorldViewProjY + 6.7553994e15;
-      //rotate skydome(вращение купола неба)--------------------------------------
-      // ¬ игре прин€та сво€ система измерени€ углов. ѕолный угол (180). «начению угла 0 соответствует 
-      // направление на север и/или юг (либо на восток и/или запад), значению 65536 еденицам(0х10000) соответствует угол 90.
-	  // две переменные хран€т данные по углу обзора. field_14 по западу и востоку. field_20 по югу и северу
-      // от -25080 до 25080
-      v39 = (unsigned __int64)(pSkyPolygon.ptr_38->viewing_angle_from_west_east * (signed __int64)(v33 * (v30 - array_50AC10[i].vWorldViewProjY))) >> 16;
-      v35 = v39 + pSkyPolygon.ptr_38->angle_from_north;
-
-      v39 = (unsigned __int64)(pSkyPolygon.ptr_38->viewing_angle_from_north_south * (signed __int64)(v33 * (v30 - array_50AC10[i].vWorldViewProjY))) >> 16;
-      v36 = v39 + pSkyPolygon.ptr_38->angle_from_east;
-
-      v38 = pSkyPolygon.v_18.z;
-      v9 = (unsigned __int64)(pSkyPolygon.v_18.z * (signed __int64)(v33 * (v30 - array_50AC10[i].vWorldViewProjY))) >> 16;
-      v10 = pSkyPolygon.v_18.x + v9;
-      v39 = pSkyPolygon.v_18.x + v9;
-      if ( pSkyPolygon.v_18.x + v9 > 0 )
-      {
-        v10 = 0;
-        v39 = 0;
-      }
-      v38 = v10;
-      v13 = v33 * (pViewport->uScreenCenterX - (signed __int64)array_50AC10[i].vWorldViewProjX);
-      v34 = -pSkyPolygon.field_24;
-      v32 = (signed __int64)array_50AC10[i].vWorldViewProjX;
-      v14 = v33 * (v30 - (signed __int64)array_50AC10[i].vWorldViewProjX);
-      while ( 1 )
-      {
-        v40 = v14;
-        if ( !v10 )
-          goto LABEL_12;
-        v37 = abs((int)v34 >> 14);
-        v15 = abs(v10);
-        if ( v37 <= v15 || v32 <= (signed int)pViewport->uViewportTL_Y )
-        {
-          if ( v39 <= 0 )
-            break;
-        }
-        v14 = v40;
-LABEL_12:
-        v37 = pSkyPolygon.v_18.z;
-        v16 = (unsigned __int64)(pSkyPolygon.v_18.z * (signed __int64)v14) >> 16;
-        --v32;
-        v14 += v33;
-        v10 = pSkyPolygon.v_18.x + v16;
-        v39 = pSkyPolygon.v_18.x + v16;
-        v38 = pSkyPolygon.v_18.x + v16;
-      }
-      LODWORD(v17) = LODWORD(v34) << 16;
-      HIDWORD(v17) = v34 >> 16;
-      //v40 = v17 / v38;
-      v18 = v17 / v38;
-      if ( v18 < 0 )
-        v18 = pODMRenderParams->shading_dist_mist;
-      v37 = v35 + ((unsigned __int64)(pSkyPolygon.ptr_38->angle_from_west * (signed __int64)v13) >> 16);
-      v35 = 224 * pMiscTimer->uTotalGameTimeElapsed
-          + ((signed int)((unsigned __int64)(v37 * (signed __int64)v18) >> 16) >> 3);
-      array_50AC10[i].u = (double)v35 / ((double)pSkyPolygon.pTexture->uTextureWidth * 65536.0);
-
-      v36 = v36 + ((unsigned __int64)(pSkyPolygon.ptr_38->angle_from_south * (signed __int64)v13) >> 16);
-      v35 = 224 * pMiscTimer->uTotalGameTimeElapsed
-         + ((signed int)((unsigned __int64)(v36 * (signed __int64)v18) >> 16) >> 3);
-      array_50AC10[i].v = (double)v35 / ((double)pSkyPolygon.pTexture->uTextureHeight * 65536.0);
-
-      array_50AC10[i].vWorldViewPosition.x = (double)0x2000;//pODMRenderParams->shading_dist_mist
-      array_50AC10[i]._rhw = 1.0 / (double)(v18 >> 16);
-    }
-    pRenderer->DrawSkyPolygon(pSkyPolygon.uNumVertices, &pSkyPolygon, pBitmaps_LOD->pHardwareTextures[(signed __int16)pSkyPolygon.uTileBitmapID]);
-    array_50AC10[0].vWorldViewProjY = (double)v38;
-    array_50AC10[1].vWorldViewProjY = array_50AC10[1].vWorldViewProjY + 30.0;
-    array_50AC10[2].vWorldViewProjY = array_50AC10[2].vWorldViewProjY + 30.0;
-    array_50AC10[3].vWorldViewProjY = (double)v38;
-    pRenderer->DrawSkyPolygon(pSkyPolygon.uNumVertices, &pSkyPolygon, pBitmaps_LOD->pHardwareTextures[(signed __int16)pSkyPolygon.uTileBitmapID]);
-    return;
-  }
-}
-
 //----- (0047A384) --------------------------------------------------------
 void ODM_LoadAndInitialize(const char *pLevelFilename, ODMRenderParams *thisa)
 {
@@ -5091,7 +4936,7 @@ void ODM_LoadAndInitialize(const char *pLevelFilename, ODMRenderParams *thisa)
       //v12 = 0;
       //while ( 1 )
       //{
-      auto spawn = pOutdoor->pSpawnPoints + i;
+      SpawnPointMM7* spawn = pOutdoor->pSpawnPoints + i;
         //v6 = &pOutdoor->pSpawnPoints[v12 / 0x18];
       if (spawn->uKind == 3 )
         SpawnEncounter(v4, spawn, 0, 0, 0);
@@ -5314,7 +5159,10 @@ int __fastcall GetActorTintColor(int max_dimm, int min_dimm, float distance, int
       v20 = pParty->pPartyBuffs[PARTY_BUFF_TORCHLIGHT].uPower;
     v9 = (double)v20 * 1024.0;
     if ( a4 )
-      goto LABEL_19;
+    {
+      v6 = 216;
+      goto LABEL_20;
+    }
     if ( distance <= v9 )
     {
       if ( distance > 0.0 )
@@ -5324,7 +5172,10 @@ int __fastcall GetActorTintColor(int max_dimm, int min_dimm, float distance, int
         //v6 = LODWORD(v10);
         v6 = floorf(0.5f + distance * 216.0 / v9);
         if (v6 > 216 )
-          goto LABEL_19;
+        {
+          v6 = 216;
+          goto LABEL_20;
+        }
       }
     }
     else
@@ -5340,7 +5191,7 @@ LABEL_20:
         v6 = 216;
       return (255 - v6) | ((255 - v6) << 16) | ((255 - v6) << 8);
     }
-LABEL_19:
+//LABEL_19:
     v6 = 216;
     goto LABEL_20;
   }
@@ -5475,28 +5326,28 @@ bool IsTerrainSlopeTooHigh(int pos_x, int pos_z)
 
   //v12 = a1;
   //v11 = a2;
-  auto grid_x = WorldPosToGridCellX(pos_x);
-  auto grid_z = WorldPosToGridCellZ(pos_z) - 1;
+  unsigned int grid_x = WorldPosToGridCellX(pos_x);
+  unsigned int grid_z = WorldPosToGridCellZ(pos_z) - 1;
 
-  auto party_grid_x1 = GridCellToWorldPosX(grid_x);
+  int party_grid_x1 = GridCellToWorldPosX(grid_x);
   //dword_76D56C_terrain_cell_world_pos_around_party_x = GridCellToWorldPosX(grid_x + 1);
   //dword_76D570_terrain_cell_world_pos_around_party_x = GridCellToWorldPosX(grid_x + 1);
   //dword_76D574_terrain_cell_world_pos_around_party_x = GridCellToWorldPosX(grid_x);
-  auto party_grid_z1 = GridCellToWorldPosZ(grid_z);
+  int party_grid_z1 = GridCellToWorldPosZ(grid_z);
   //dword_76D55C_terrain_cell_world_pos_around_party_z = GridCellToWorldPosZ(grid_z);
   //dword_76D560_terrain_cell_world_pos_around_party_z = GridCellToWorldPosZ(grid_z + 1);
   //dword_76D564_terrain_cell_world_pos_around_party_z = GridCellToWorldPosZ(grid_z + 1);
-  auto party_x1z1_y = pOutdoor->DoGetHeightOnTerrain(grid_x, grid_z);
-  auto party_x2z1_y = pOutdoor->DoGetHeightOnTerrain(grid_x + 1, grid_z);
-  auto party_x2z2_y = pOutdoor->DoGetHeightOnTerrain(grid_x + 1, grid_z + 1);
-  auto party_x1z2_y = pOutdoor->DoGetHeightOnTerrain(grid_x, grid_z + 1);
+  int party_x1z1_y = pOutdoor->DoGetHeightOnTerrain(grid_x, grid_z);
+  int party_x2z1_y = pOutdoor->DoGetHeightOnTerrain(grid_x + 1, grid_z);
+  int party_x2z2_y = pOutdoor->DoGetHeightOnTerrain(grid_x + 1, grid_z + 1);
+  int party_x1z2_y = pOutdoor->DoGetHeightOnTerrain(grid_x, grid_z + 1);
   //dword_76D554_terrain_cell_world_pos_around_party_y = v4;
   if (party_x1z1_y == party_x2z1_y &&
       party_x2z1_y == party_x2z2_y &&
       party_x2z2_y == party_x1z2_y )
     return false;
 
-  auto dx = abs(pos_x - party_grid_x1),
+  int dx = abs(pos_x - party_grid_x1),
        dz = abs(party_grid_z1 - pos_z);
 
   int y1, y2, y3;
@@ -5569,15 +5420,15 @@ int __fastcall GetTerrainHeightsAroundParty2(int a1, int a2, int *pIsOnWater, in
 
   //v11 = a1;
   //v12 = a2;
-  auto grid_x = WorldPosToGridCellX(a1);
-  auto grid_z = WorldPosToGridCellZ(a2) - 1;
+  unsigned int grid_x = WorldPosToGridCellX(a1);
+  unsigned int grid_z = WorldPosToGridCellZ(a2) - 1;
 
-  auto grid_x1 = GridCellToWorldPosX(grid_x),
+  int grid_x1 = GridCellToWorldPosX(grid_x),
        grid_x2 = GridCellToWorldPosX(grid_x + 1);
-  auto grid_z1 = GridCellToWorldPosZ(grid_z),
+  int grid_z1 = GridCellToWorldPosZ(grid_z),
        grid_z2 = GridCellToWorldPosZ(grid_z + 1);
 
-  auto y_x1z1 = pOutdoor->DoGetHeightOnTerrain(grid_x,     grid_z),
+  int y_x1z1 = pOutdoor->DoGetHeightOnTerrain(grid_x,     grid_z),
        y_x2z1 = pOutdoor->DoGetHeightOnTerrain(grid_x + 1, grid_z),
        y_x2z2 = pOutdoor->DoGetHeightOnTerrain(grid_x + 1, grid_z + 1),
        y_x1z2 = pOutdoor->DoGetHeightOnTerrain(grid_x,     grid_z + 1);
@@ -6188,9 +6039,9 @@ void OnMapLoad()
 
 	for (uint i = 0; i < uLevelEVT_NumEvents; ++i)
 	{
-		auto pEvent = pLevelEVT_Index[i];
+		EventIndex pEvent = pLevelEVT_Index[i];
 
-		auto _evt = (_evt_raw *)(&pLevelEVT[pEvent.uEventOffsetInEVT]);
+		_evt_raw* _evt = (_evt_raw *)(&pLevelEVT[pEvent.uEventOffsetInEVT]);
 
 		if (_evt->_e_type == EVENT_PlaySound)
 		{
@@ -6264,8 +6115,8 @@ void OnMapLoad()
 				v16 = (signed int)(v14 / 4);
 				years = v16 / 12;
 
-				auto _1 = (unsigned __int64)((double)pParty->uTimePlayed * 0.234375) >> 32;
-				auto _2 = ((__int64)v9 << 32) | _1;
+				unsigned __int64 _1 = (unsigned __int64)((double)pParty->uTimePlayed * 0.234375) >> 32;
+				__int64 _2 = ((__int64)v9 << 32) | _1;
 
 				seconds = _2 % 60;
 				//v19 = (signed __int64)__PAIR__((unsigned __int64)(signed __int64)((double)(signed __int64)pParty->uTimePlayed * 0.234375) >> 32,
@@ -6764,7 +6615,7 @@ void OnTimer(int __unused)
   if (__unused)
     _5773C0_unused = 0;
   
-  auto v13 = (signed __int64)(pParty->uTimePlayed - _5773B8_event_timer) / 128;
+  long long v13 = (signed __int64)(pParty->uTimePlayed - _5773B8_event_timer) / 128;
   if (!v13)
     return;
 
@@ -6777,7 +6628,7 @@ void OnTimer(int __unused)
   for (uint i = 0; i < dword_5B65C8_timers_count; ++i)
   {
         //v4 = (char *)&array_5B5928_timers[0].field_C;
-    auto timer = array_5B5928_timers + i;
+    stru176* timer = &array_5B5928_timers[i];
         //while ( 1 )
         //{
           //v5 = *(short *)v4;
@@ -6857,7 +6708,7 @@ void __fastcall sub_448CF4_spawn_monsters(__int16 typeindex, __int16 level, int 
   {
     v11 = uNumActors;
     SpawnEncounter(&pMapStats->pInfos[v10], &v16, 0, count, 0);
-    memcpy(&v15, Actor::GetDirectionInfo(PID(OBJECT_Actor, v11), 4u, &a3, 1), sizeof(v15));
+    Actor::GetDirectionInfo(PID(OBJECT_Actor, v11), 4u, &v15, 1);
     v12 = v11;
     if ( (signed int)v11 < (signed int)uNumActors )
     {

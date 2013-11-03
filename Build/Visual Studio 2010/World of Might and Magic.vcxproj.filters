@@ -1,0 +1,419 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClInclude Include="MM7.h" />
+    <ClInclude Include="lib\legacy_dx\d3d.h">
+      <Filter>lib\legacy_dx</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\legacy_dx\d3dcaps.h">
+      <Filter>lib\legacy_dx</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\legacy_dx\d3drm.h">
+      <Filter>lib\legacy_dx</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\legacy_dx\d3drmdef.h">
+      <Filter>lib\legacy_dx</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\legacy_dx\d3drmobj.h">
+      <Filter>lib\legacy_dx</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\legacy_dx\d3drmwin.h">
+      <Filter>lib\legacy_dx</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\legacy_dx\d3dtypes.h">
+      <Filter>lib\legacy_dx</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\legacy_dx\ddraw.h">
+      <Filter>lib\legacy_dx</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\legacy_dx\dinput.h">
+      <Filter>lib\legacy_dx</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\legacy_dx\dinputd.h">
+      <Filter>lib\legacy_dx</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\legacy_dx\dmdls.h">
+      <Filter>lib\legacy_dx</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\legacy_dx\dmerror.h">
+      <Filter>lib\legacy_dx</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\legacy_dx\dmksctrl.h">
+      <Filter>lib\legacy_dx</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\legacy_dx\dmplugin.h">
+      <Filter>lib\legacy_dx</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\legacy_dx\dmusbuff.h">
+      <Filter>lib\legacy_dx</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\legacy_dx\dmusicc.h">
+      <Filter>lib\legacy_dx</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\legacy_dx\dmusicf.h">
+      <Filter>lib\legacy_dx</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\legacy_dx\dmusici.h">
+      <Filter>lib\legacy_dx</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\legacy_dx\dmusics.h">
+      <Filter>lib\legacy_dx</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\legacy_dx\dsconf.h">
+      <Filter>lib\legacy_dx</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\legacy_dx\dsound.h">
+      <Filter>lib\legacy_dx</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\legacy_dx\dvoice.h">
+      <Filter>lib\legacy_dx</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\legacy_dx\multimon.h">
+      <Filter>lib\legacy_dx</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\legacy_dx\rmxfguid.h">
+      <Filter>lib\legacy_dx</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\legacy_dx\rmxftmpl.h">
+      <Filter>lib\legacy_dx</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\legacy_dx\strsafe.h">
+      <Filter>lib\legacy_dx</Filter>
+    </ClInclude>
+    <ClInclude Include="AudioPlayer.h" />
+    <ClInclude Include="VideoPlayer.h" />
+    <ClInclude Include="Texture.h" />
+    <ClInclude Include="LOD.h" />
+    <ClInclude Include="Mouse.h" />
+    <ClInclude Include="LightmapBuilder.h" />
+    <ClInclude Include="Vis.h" />
+    <ClInclude Include="Render.h" />
+    <ClInclude Include="Game.h" />
+    <ClInclude Include="VectorTypes.h" />
+    <ClInclude Include="ParticleEngine.h" />
+    <ClInclude Include="IndoorCameraD3D.h" />
+    <ClInclude Include="Keyboard.h" />
+    <ClInclude Include="Party.h" />
+    <ClInclude Include="Player.h" />
+    <ClInclude Include="CShow.h" />
+    <ClInclude Include="stru6.h" />
+    <ClInclude Include="stru9.h" />
+    <ClInclude Include="stru10.h" />
+    <ClInclude Include="stru11.h" />
+    <ClInclude Include="stru12.h" />
+    <ClInclude Include="GammaControl.h" />
+    <ClInclude Include="Indoor.h" />
+    <ClInclude Include="Outdoor.h" />
+    <ClInclude Include="BSPModel.h" />
+    <ClInclude Include="Actor.h" />
+    <ClInclude Include="Items.h" />
+    <ClInclude Include="Monsters.h" />
+    <ClInclude Include="NPC.h" />
+    <ClInclude Include="PaletteManager.h" />
+    <ClInclude Include="GUIButton.h" />
+    <ClInclude Include="GUIFont.h" />
+    <ClInclude Include="GUIWindow.h" />
+    <ClInclude Include="Spells.h" />
+    <ClInclude Include="DecalBuilder.h" />
+    <ClInclude Include="Lights.h" />
+    <ClInclude Include="Arcomage.h" />
+    <ClInclude Include="GUIProgressBar.h" />
+    <ClInclude Include="Events.h" />
+    <ClInclude Include="Sprites.h" />
+    <ClInclude Include="Overlays.h" />
+    <ClInclude Include="Time.h" />
+    <ClInclude Include="Chest.h" />
+    <ClInclude Include="mm7_data.h" />
+    <ClInclude Include="Viewport.h" />
+    <ClInclude Include="MapInfo.h" />
+    <ClInclude Include="PlayerFrameTable.h" />
+    <ClInclude Include="OSInfo.h" />
+    <ClInclude Include="Math.h" />
+    <ClInclude Include="Weather.h" />
+    <ClInclude Include="IconFrameTable.h" />
+    <ClInclude Include="ObjectList.h" />
+    <ClInclude Include="DecorationList.h" />
+    <ClInclude Include="Outdoor_stuff.h" />
+    <ClInclude Include="Random.h" />
+    <ClInclude Include="Indoor_stuff.h" />
+    <ClInclude Include="stru157.h" />
+    <ClInclude Include="stru123.h" />
+    <ClInclude Include="AIL.h" />
+    <ClInclude Include="Bink_Smacker.h" />
+    <ClInclude Include="TurnEngine.h" />
+    <ClInclude Include="stru220.h" />
+    <ClInclude Include="stru279.h" />
+    <ClInclude Include="stru314.h" />
+    <ClInclude Include="SaveLoad.h" />
+    <ClInclude Include="stru287.h" />
+    <ClInclude Include="Awards.h" />
+    <ClInclude Include="Autonotes.h" />
+    <ClInclude Include="stru160.h" />
+    <ClInclude Include="FactionTable.h" />
+    <ClInclude Include="StorylineTextTable.h" />
+    <ClInclude Include="stru277.h" />
+    <ClInclude Include="stru298.h" />
+    <ClInclude Include="OSAPI.h" />
+    <ClInclude Include="Events2D.h" />
+    <ClInclude Include="stru176.h" />
+    <ClInclude Include="stru159.h" />
+    <ClInclude Include="stru351.h" />
+    <ClInclude Include="stru272.h" />
+    <ClInclude Include="lib\zlib\deflate.h">
+      <Filter>lib\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\zlib\infblock.h">
+      <Filter>lib\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\zlib\infcodes.h">
+      <Filter>lib\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\zlib\inffast.h">
+      <Filter>lib\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\zlib\inffixed.h">
+      <Filter>lib\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\zlib\inftrees.h">
+      <Filter>lib\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\zlib\infutil.h">
+      <Filter>lib\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\zlib\trees.h">
+      <Filter>lib\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\zlib\zconf.h">
+      <Filter>lib\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\zlib\zlib.h">
+      <Filter>lib\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\zlib\zutil.h">
+      <Filter>lib\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="Log.h" />
+    <ClInclude Include="FrameTableInc.h" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="stru346.h" />
+    <ClInclude Include="texts.h" />
+    <ClInclude Include="UI\UIHouses.h">
+      <Filter>UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Level\Decoration.h">
+      <Filter>Level</Filter>
+    </ClInclude>
+    <ClInclude Include="Conditions.h" />
+    <ClInclude Include="NZIArray.h" />
+    <ClInclude Include="OSWindow.h" />
+    <ClInclude Include="NewUI\MainMenu.h">
+      <Filter>NewUI</Filter>
+    </ClInclude>
+    <ClInclude Include="NewUI\Core\UIControl.h">
+      <Filter>NewUI\Core</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="lib">
+      <UniqueIdentifier>{674d5845-1afa-4bb4-b0f9-e59bdcf6bf46}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="lib\legacy_dx">
+      <UniqueIdentifier>{7f786ac2-aa3f-48a5-81ef-d5bcf2ee57bf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="lib\zlib">
+      <UniqueIdentifier>{2c8eede3-bdcb-4411-b5e3-86c1c48e8351}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UI">
+      <UniqueIdentifier>{d3dc8b56-9b77-4b4f-adae-767b4576537d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UI\Books">
+      <UniqueIdentifier>{e97134e5-029e-4065-bcd8-a4a00333b990}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Level">
+      <UniqueIdentifier>{5fd52edd-099a-407a-b897-6a369c82b64f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NewUI">
+      <UniqueIdentifier>{161ab378-81a8-4a60-8b20-691a826dbb7d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NewUI\Core">
+      <UniqueIdentifier>{5905ea57-e631-40d3-9139-94e4ec73c51f}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="lib\legacy_dx\d3dvec.inl">
+      <Filter>lib\legacy_dx</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="mm7_2.cpp" />
+    <ClCompile Include="Game.cpp" />
+    <ClCompile Include="GammaControl.cpp" />
+    <ClCompile Include="Monsters.cpp" />
+    <ClCompile Include="Time.cpp" />
+    <ClCompile Include="Actor.cpp" />
+    <ClCompile Include="Items.cpp" />
+    <ClCompile Include="LOD.cpp" />
+    <ClCompile Include="Render.cpp" />
+    <ClCompile Include="Spells.cpp" />
+    <ClCompile Include="Overlays.cpp" />
+    <ClCompile Include="Chest.cpp" />
+    <ClCompile Include="GUIWindow.cpp" />
+    <ClCompile Include="Keyboard.cpp" />
+    <ClCompile Include="LightmapBuilder.cpp" />
+    <ClCompile Include="Arcomage.cpp" />
+    <ClCompile Include="Mouse.cpp" />
+    <ClCompile Include="Texture.cpp" />
+    <ClCompile Include="DecalBuilder.cpp" />
+    <ClCompile Include="IndoorCameraD3D.cpp" />
+    <ClCompile Include="Sprites.cpp" />
+    <ClCompile Include="Vis.cpp" />
+    <ClCompile Include="GUIFont.cpp" />
+    <ClCompile Include="Indoor.cpp" />
+    <ClCompile Include="Outdoor.cpp" />
+    <ClCompile Include="Player.cpp" />
+    <ClCompile Include="stru10.cpp" />
+    <ClCompile Include="LightsStack.cpp" />
+    <ClCompile Include="BSPModel.cpp" />
+    <ClCompile Include="PaletteManager.cpp" />
+    <ClCompile Include="ParticleEngine.cpp" />
+    <ClCompile Include="Party.cpp" />
+    <ClCompile Include="stru9.cpp" />
+    <ClCompile Include="stru6.cpp" />
+    <ClCompile Include="AudioPlayer.cpp" />
+    <ClCompile Include="GUIButton.cpp" />
+    <ClCompile Include="VideoPlayer.cpp" />
+    <ClCompile Include="GUIProgressBar.cpp" />
+    <ClCompile Include="TileFrameTable.h" />
+    <ClCompile Include="Weather.cpp" />
+    <ClCompile Include="Random.cpp" />
+    <ClCompile Include="SaveLoad.cpp" />
+    <ClCompile Include="mm7_3.cpp" />
+    <ClCompile Include="mm7_data.cpp" />
+    <ClCompile Include="AIL.cpp" />
+    <ClCompile Include="Bink_Smacker.cpp" />
+    <ClCompile Include="Events.cpp" />
+    <ClCompile Include="lib\zlib\adler32.c">
+      <Filter>lib\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="lib\zlib\compress.c">
+      <Filter>lib\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="lib\zlib\crc32.c">
+      <Filter>lib\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="lib\zlib\deflate.c">
+      <Filter>lib\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="lib\zlib\infblock.c">
+      <Filter>lib\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="lib\zlib\infcodes.c">
+      <Filter>lib\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="lib\zlib\inffast.c">
+      <Filter>lib\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="lib\zlib\inflate.c">
+      <Filter>lib\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="lib\zlib\inftrees.c">
+      <Filter>lib\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="lib\zlib\infutil.c">
+      <Filter>lib\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="lib\zlib\trees.c">
+      <Filter>lib\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="lib\zlib\uncompr.c">
+      <Filter>lib\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="lib\zlib\zutil.c">
+      <Filter>lib\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="Log.cpp" />
+    <ClCompile Include="OSAPI.cpp" />
+    <ClCompile Include="mm7_4.cpp" />
+    <ClCompile Include="mm7_5.cpp" />
+    <ClCompile Include="FrameTableInc.cpp" />
+    <ClCompile Include="mm7_6.cpp" />
+    <ClCompile Include="StorylineTextTable.cpp" />
+    <ClCompile Include="texts.cpp" />
+    <ClCompile Include="mm7text_ru.cpp" />
+    <ClCompile Include="NPC.cpp" />
+    <ClCompile Include="SpriteObject.cpp" />
+    <ClCompile Include="Viewport.cpp" />
+    <ClCompile Include="_deleted.cpp" />
+    <ClCompile Include="TileTable.cpp" />
+    <ClCompile Include="CShow.cpp" />
+    <ClCompile Include="ArcomageCards.cpp" />
+    <ClCompile Include="IconFrameTable.cpp" />
+    <ClCompile Include="CastSpellInfo.cpp" />
+    <ClCompile Include="ObjectList.cpp" />
+    <ClCompile Include="DecorationList.cpp" />
+    <ClCompile Include="UI\UIBooks.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="UI\UITransition.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="UI\UICharacter.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="UI\UiGame.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="UI\UIHouses.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="UI\UIMainMenu.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="UI\UIMsgProc.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="UI\UIOptions.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="UI\UIPartyCreation.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="UI\UIPopup.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="UI\UIRest.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="UI\UISaveLoad.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="UI\UIShops.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="UI\UIGuilds.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="UI\Books\UIMapBook.cpp">
+      <Filter>UI\Books</Filter>
+    </ClCompile>
+    <ClCompile Include="UI\Books\UINotesBooks.cpp">
+      <Filter>UI\Books</Filter>
+    </ClCompile>
+    <ClCompile Include="UI\Books\UISpellBook.cpp">
+      <Filter>UI\Books</Filter>
+    </ClCompile>
+    <ClCompile Include="TurnEngine.cpp" />
+    <ClCompile Include="Conditions.cpp" />
+    <ClCompile Include="Level\Decoration.cpp">
+      <Filter>Level</Filter>
+    </ClCompile>
+    <ClCompile Include="VectorTypes.cpp" />
+    <ClCompile Include="OSWindow.cpp" />
+    <ClCompile Include="NewUI\MainMenu.cpp">
+      <Filter>NewUI</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Might and Magic Trilogy.rc" />
+  </ItemGroup>
+</Project>

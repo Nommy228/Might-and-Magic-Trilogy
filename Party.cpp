@@ -45,7 +45,7 @@ void Party::CountHirelings()
 
   for (unsigned int i = 0; i < pNPCStats->uNumNewNPCs; ++i)
   {
-    auto npc = pNPCStats->pNewNPCData + i;
+    NPCData* npc = &pNPCStats->pNewNPCData[i];
     if (npc->Hired() &&
         (!pHirelings[0].pName || strcmp(npc->pName, pHirelings[0].pName)))
     {
@@ -621,14 +621,14 @@ void Party::ResetPosMiscAndSpellBuffs()
   this->field_708 = 15;
   this->field_0 = 25;
 
-  for (auto playerId = 0; playerId < 4; playerId++)
+  for (int playerId = 0; playerId < 4; playerId++)
   {
-    for (auto buffId = 0; buffId < 24; buffId++)
+    for (int buffId = 0; buffId < 24; buffId++)
     {
       this->pPlayers[playerId].pPlayerBuffs[buffId].Reset();
     }
   }
-  for (auto buffId = 0; buffId < 20; buffId++)
+  for (int buffId = 0; buffId < 20; buffId++)
   {
     this->pPartyBuffs[buffId].Reset();
   }
@@ -644,7 +644,7 @@ void Party::UpdatePlayersAndHirelingsEmotions()
     Player* player = &pPlayers[i];
     player->uExpressionTimePassed += (unsigned short)pMiscTimer->uTimeElapsed;
 
-    auto condition = player->GetMajorConditionIdx();
+    uint condition = player->GetMajorConditionIdx();
     if (condition == Condition_Good || condition == Condition_Zombie)
     {
       if (player->uExpressionTimePassed < player->uExpressionTimeLength)
@@ -1122,7 +1122,7 @@ bool Party::AddItemToParty(ItemGen *pItem)
     v8 = 0;
     for (int i = 0; i < 4; i++)
     {
-      v9 = &pPlayers[(uActiveCharacter + i) % 4];  //start with current active player, then cycle right if item won't fit
+      v9 = ::pPlayers[(uActiveCharacter + i) % 4];  //start with current active player, then cycle right if item won't fit
       v10 = v9->AddItem(-1, pItem->uItemID);
       if ( v10 )
       {

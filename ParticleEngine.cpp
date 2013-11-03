@@ -177,7 +177,7 @@ void ParticleEngine::UpdateParticles()
 
   for (uint i = uStartParticle; i <= uEndParticle; ++i)
   {
-    auto p = pParticles + i;
+    Particle* p = &pParticles[i];
 
       if (p->type == ParticleType_Invalid)
         continue;
@@ -531,7 +531,7 @@ bool ParticleEngine::ViewProject_TrueIfStillVisible_ODM(unsigned int uID)
         //HIDWORD(v8) = fixpoint_sub_unknown(v6->x - pIndoorCamera->pos.x, v5);
         //v12 = v6->_z + 6.7553994e15;
         //uIDd = (LODWORD(v12) - pIndoorCamera->pos.z) << 16;
-        auto _hidword_v12 = fixpoint_mul(v11, v3) + fixpoint_sub_unknown(v6->z - pGame->pIndoorCameraD3D->vPartyPos.z, v44);
+        long long _hidword_v12 = fixpoint_mul(v11, v3) + fixpoint_sub_unknown(v6->z - pGame->pIndoorCameraD3D->vPartyPos.z, v44);
         LODWORD(v13) = 0;
         HIDWORD(v13) = SLOWORD(pODMRenderParams->int_fov_rad);
         //v14 = v13 / _hidword_v12;
@@ -569,7 +569,7 @@ bool ParticleEngine::ViewProject_TrueIfStillVisible_ODM(unsigned int uID)
         //v21 = v6->_z + 6.7553994e15;
         LODWORD(v22) = 0;
         HIDWORD(v22) = SLOWORD(pODMRenderParams->int_fov_rad);
-        auto _var_123 = fixpoint_sub_unknown(v6->x - pGame->pIndoorCameraD3D->vPartyPos.x, v4) + fixpoint_sub_unknown(v6->y - pGame->pIndoorCameraD3D->vPartyPos.y, v5);
+        long long _var_123 = fixpoint_sub_unknown(v6->x - pGame->pIndoorCameraD3D->vPartyPos.x, v4) + fixpoint_sub_unknown(v6->y - pGame->pIndoorCameraD3D->vPartyPos.y, v5);
         //v23 = v22 / _var_123;
         v6->_screenspace_scale = v22 / _var_123;
         //v24 = v6->_screenspace_scale;
@@ -636,7 +636,7 @@ void ParticleEngine::DrawParticles_BLV()
 
   for (uint i = uStartParticle; i < uEndParticle; ++i)
   {
-    auto p = pParticles + i;
+    Particle* p = &pParticles[i];
 
     if (p->type == ParticleType_Invalid)
       continue;
@@ -755,7 +755,7 @@ void ParticleEngine::DrawParticles_ODM()
   //v16 = this->uStartParticle;
   for (uint i = uStartParticle; i <= uEndParticle; ++i)
   {
-    auto particle = pParticles + i;
+    Particle* particle = &pParticles[i];
     if (particle->type == ParticleType_Invalid || !ViewProject_TrueIfStillVisible_ODM(i))
       continue;
 

@@ -22,6 +22,7 @@
 #include "GammaControl.h"
 #include "stru6.h"
 
+#include "Actor.h"
 #include "Vis.h"
 #include "MapInfo.h"
 #include "Game.h"
@@ -67,6 +68,37 @@
 #include "NewUI/MainMenu.h"
 #include "Level/Decoration.h"
 
+int __stdcall aWinProc(HWND hWnd, UINT Msg, WPARAM wParam, unsigned int lParam);
+int __stdcall InsertMM7CDDialogFunc(HWND hDlg, int a2, __int16 a3, int a4);
+bool __fastcall FindMM7CD(HWND hWnd, char *pCDDrive);
+bool __fastcall Initialize(HINSTANCE hInst, char *pCmdLine);
+
+//----- (004A1780) mm6_chinese---------------------------------------------
+__int64 fixpoint_div(int a1, int a2)
+{
+  return ((__int64)a1 << 16) / a2;
+}
+
+__int64 fixpoint_sub_unknown(int a1, int a2)
+{
+  return (((__int64)a1 << 16) * a2) >> 16;
+}
+
+//----- (0042EBBE) --------------------------------------------------------
+//----- (004453C0) mm6-----------------------------------------------------
+//----- (004A1760) mm6_chinese---------------------------------------------
+__int64 fixpoint_mul(int a1, int a2)
+{
+  return ((__int64)a1 * (__int64)a2) >> 16;
+}
+
+__int64 fixpoint_dot(int x1, int x2, int y1, int y2, int z1, int z2)
+{
+  return fixpoint_mul(x1, x2) +
+         fixpoint_mul(y1, y2) +
+         fixpoint_mul(z1, z2);
+}
+
 //----- (004BB756) --------------------------------------------------------
 int UseNPCSkill(NPCProf profession)
 {
@@ -83,7 +115,7 @@ int UseNPCSkill(NPCProf profession)
     {
       for (int i = 0; i < 4; ++i)
       {
-        auto player = &pParty->pPlayers[i];
+        Player* player = &pParty->pPlayers[i];
         player->sHealth = player->GetMaxHealth();
 
         for (int j = 0; j < 14; ++j)
@@ -97,11 +129,11 @@ int UseNPCSkill(NPCProf profession)
     {
       for (int i = 0; i < 4; ++i)
       {
-        auto player = &pParty->pPlayers[i];
+        Player* player = &pParty->pPlayers[i];
         player->sHealth = player->GetMaxHealth();
 
-        auto v5 = LODWORD(player->pConditions[19]);//*((int *)v4 - 32);
-        auto v6 = HIDWORD(player->pConditions[19]);//*((int *)v4 - 31);
+        int v5 = LODWORD(player->pConditions[19]);//*((int *)v4 - 32);
+        int v6 = HIDWORD(player->pConditions[19]);//*((int *)v4 - 31);
         memset(player->pConditions.data(), 0, 0xA0u);
 
         __debugbreak();
@@ -141,7 +173,7 @@ int UseNPCSkill(NPCProf profession)
       }
       else
       {
-        auto v19 = pOtherOverlayList->_4418B1(10008, 203, 0, 65536);
+        int v19 = pOtherOverlayList->_4418B1(10008, 203, 0, 65536);
         pParty->pPartyBuffs[PARTY_BUFF_FLY].Apply(pParty->uTimePlayed + 60 * (256 * 2), 3, 1, v19, 0);
         pParty->pPartyBuffs[PARTY_BUFF_FLY].uFlags |= 1u;
         pAudioPlayer->PlaySound(SOUND_11090, 0, 0, -1, 0, 0, 0, 0);
@@ -151,7 +183,7 @@ int UseNPCSkill(NPCProf profession)
 
     case WaterMaster:
     {
-      auto v20 = pOtherOverlayList->_4418B1(10005, 201, 0, 65536);
+      int v20 = pOtherOverlayList->_4418B1(10005, 201, 0, 65536);
       pParty->pPartyBuffs[PARTY_BUFF_WATER_WALK].Apply(pParty->uTimePlayed + 60 * (256 * (2 + 1)), 3, 0, v20, 0);
       pParty->pPartyBuffs[PARTY_BUFF_WATER_WALK].uFlags |= 1u;
       pAudioPlayer->PlaySound(SOUND_12040, 0, 0, -1, 0, 0, 0, 0);
@@ -273,7 +305,7 @@ void CheckBountyRespawnAndAward()
 }
 
 //----- (004BBCDD) --------------------------------------------------------
-void  sub_4BBCDD()
+void  Arena_SelectionFightLevel()
 {
   signed int v0; // ebp@3
   Actor *v1; // eax@4
@@ -419,7 +451,7 @@ void  ArenaFight()
       pViewport->uViewportBR_Y - pViewport->uViewportTL_Y + 1,
       pRenderer->uTargetGMask | pRenderer->uTargetBMask);
 
-  auto pTex = pIcons_LOD->GetTexture(uTextureID_Leather);
+  Texture* pTex = pIcons_LOD->GetTexture(uTextureID_Leather);
   pRenderer->GetLeather(8, 352 - v0, pTex, pTex->uTextureHeight - v0);
 
   pRenderer->DrawTextureIndexed(8u, 347 - v0, pTexture_591428);
@@ -569,93 +601,94 @@ void  ArenaFight()
   {
     monster_y = pMonsterArenaPlacements[i].y;
     v21 = rand();
-    _4BBF61_summon_actor((unsigned __int16)monster_ids[v21 % num_monsters], pMonsterArenaPlacements[i].x, monster_y, 1);
+    Actor::_4BBF61_summon_actor((unsigned __int16)monster_ids[v21 % num_monsters], pMonsterArenaPlacements[i].x, monster_y, 1);
   }
   pAudioPlayer->PlaySound((SoundID)14060, 0, 0, -1, 0, 0, 0, 0);
 }
 
 //----- (004BD8B5) --------------------------------------------------------
-int sub_4BD8B5()
+int HouseDialogPressCloseBtn()
 {
-  int v0; // eax@4
-
   if ( pMessageQueue_50CBD0->uNumMessages )
     pMessageQueue_50CBD0->uNumMessages = pMessageQueue_50CBD0->pMessages[0].field_8 != 0;
   pKeyActionMap->SetWindowInputStatus(WINDOW_INPUT_CANCELLED);
   pKeyActionMap->ResetKeys();
   activeLevelDecoration = NULL;
   current_npc_text = 0;
-  if ( pDialogueNPCCount )
+  if ( pDialogueNPCCount == 0)
+    return 0;
+
+  if ( dialog_menu_id == HOUSE_DIALOGUE_SHOP_BUY_SPECIAL && ShopTexture )
   {
-    v0 = dialog_menu_id;
-    if ( dialog_menu_id != HOUSE_DIALOGUE_SHOP_BUY_STANDARD && dialog_menu_id != HOUSE_DIALOGUE_SHOP_SELL
-      && dialog_menu_id != HOUSE_DIALOGUE_97 && dialog_menu_id != HOUSE_DIALOGUE_SHOP_REPAIR
-      && dialog_menu_id != HOUSE_DIALOGUE_SHOP_IDENTIFY && ShopTexture )
-    {
-      ShopTexture->Release();
-      v0 = dialog_menu_id;
-      ShopTexture = 0;
-    }
-    if ( v0 && v0 != 1 )
-    {
-      if ( v0 == -1 )
-      {
-        _4B4224_UpdateNPCTopics((int)((char *)pDialogueNPCCount - 1));
-        pVideoPlayer->_4BF5B2();
-        return 1;
-      }
-      if ( v0 != 94 && v0 != 96 && v0 != 101 )
-      {
-        if ( v0 == 3 || v0 == 5 || v0 == 4 )
-        {
-          UI_CreateEndConversationButton();
-          dialog_menu_id = HOUSE_DIALOGUE_SHOP_DISPLAY_EQUIPMENT;
-          InitializaDialogueOptions_Shops(in_current_building_type);
-        }
-        else
-        {
-          if ( v0 != 102 && v0 != 103 && v0 != 104 )
-          {
-            pVideoPlayer->_4BF5B2();
-            dialog_menu_id = HOUSE_DIALOGUE_MAIN;
-            InitializaDialogueOptions(in_current_building_type);
-            return 1;
-          }
-          pVideoPlayer->_4BF5B2();
-          UI_CreateEndConversationButton();
-          dialog_menu_id = HOUSE_DIALOGUE_TAVERN_ARCOMAGE_MAIN;
-          InitializaDialogueOptions_Tavern(in_current_building_type);
-        }
-        return 1;
-      }
+    ShopTexture->Release();
+    ShopTexture = 0;
+  }
+
+  switch(dialog_menu_id)
+  {
+    case -1:
+      _4B4224_UpdateNPCTopics((int)((char *)pDialogueNPCCount - 1));
+      pVideoPlayer->_4BF5B2();
+      break;
+
+    case HOUSE_DIALOGUE_SHOP_DISPLAY_EQUIPMENT:
+    case HOUSE_DIALOGUE_LEARN_SKILLS:
+    case HOUSE_DIALOGUE_TAVERN_ARCOMAGE_MAIN:
       pVideoPlayer->_4BF5B2();
       UI_CreateEndConversationButton();
-	  dialog_menu_id = HOUSE_DIALOGUE_MAIN;
-	  InitializaDialogueOptions(in_current_building_type);
-	  return 1;
-    }
-    pDialogueNPCCount = 0;
-    pDialogueWindow->Release();
-    dialog_menu_id = HOUSE_DIALOGUE_NULL;
-    pDialogueWindow = 0;
-    pIcons_LOD->SyncLoadedFilesCount();
-    if ( uNumDialogueNPCPortraits != 1 )
-    {
+      dialog_menu_id = HOUSE_DIALOGUE_MAIN;
+      InitializaDialogueOptions(in_current_building_type);
+      break;
+
+    case HOUSE_DIALOGUE_SHOP_SELL:
+    case HOUSE_DIALOGUE_SHOP_IDENTIFY:
+    case HOUSE_DIALOGUE_SHOP_REPAIR:
+      UI_CreateEndConversationButton();
+      dialog_menu_id = HOUSE_DIALOGUE_SHOP_DISPLAY_EQUIPMENT;
+      InitializaDialogueOptions_Shops(in_current_building_type);
+      break;
+
+    case HOUSE_DIALOGUE_TAVERN_ARCOMAGE_RULES:
+    case HOUSE_DIALOGUE_TAVERN_ARCOMAGE_VICTORY_CONDITIONS:
+    case HOUSE_DIALOGUE_TAVERN_ARCOMAGE_RESULT:
+      pVideoPlayer->_4BF5B2();
+      UI_CreateEndConversationButton();
+      dialog_menu_id = HOUSE_DIALOGUE_TAVERN_ARCOMAGE_MAIN;
+      InitializaDialogueOptions_Tavern(in_current_building_type);
+      break;
+
+    case HOUSE_DIALOGUE_NULL:
+    case HOUSE_DIALOGUE_MAIN:
+      pDialogueNPCCount = 0;
+      pDialogueWindow->Release();
+      dialog_menu_id = HOUSE_DIALOGUE_NULL;
+      pDialogueWindow = 0;
+      pIcons_LOD->SyncLoadedFilesCount();
+
+      if ( uNumDialogueNPCPortraits == 1 )
+        return 0;
+
       pBtn_ExitCancel = window_SpeakInHouse->pControlsHead;
       if ( uNumDialogueNPCPortraits > 0 )
       {
         for ( uint i = 0; i < (unsigned int)uNumDialogueNPCPortraits; ++i )
         {
           HouseNPCPortraitsButtonsList[i] = window_SpeakInHouse->CreateButton(pNPCPortraits_x[uNumDialogueNPCPortraits - 1][i],
-                                                                              pNPCPortraits_y[uNumDialogueNPCPortraits - 1][i],
-                                              63, 73, 1, 0, UIMSG_ClickHouseNPCPortrait, i, 0, byte_591180[i].data(), 0, 0, 0);
+                                            pNPCPortraits_y[uNumDialogueNPCPortraits - 1][i],
+                                            63, 73, 1, 0, UIMSG_ClickHouseNPCPortrait, i, 0, byte_591180[i].data(), 0, 0, 0);
         }
       }
+
       pVideoPlayer->_4BF5B2();
-      return 1;
-    }
+      break;
+
+    default:
+      pVideoPlayer->_4BF5B2();
+      dialog_menu_id = HOUSE_DIALOGUE_MAIN;
+      InitializaDialogueOptions(in_current_building_type);
+      break;
   }
-  return 0;
+  return 1;
 }
 
 //----- (004BF91E) --------------------------------------------------------
@@ -939,18 +972,18 @@ int stru350::sub_451007_scale_image_bicubic(unsigned short *pSrc, int srcWidth, 
             v21 = _450FB1(((int*)v175)[i]);
           else if(field0value == 16)
             v21 = _450FB1(((_WORD*)v175)[i]);
-          else
+          else if (field0value == 8)
             v21 = _450FB1(((unsigned __int8*)v175)[i]);
           v240 += ((unsigned int)v21 >> 24);
           a6b += BYTE2(v21);
           v252 += BYTE1(v21);
           v251 += (unsigned __int8)v21;
         }
-        if(field0value == 32)
+        if (field0value == 32)
           v175 += 2 * srcPitch;
-        else if(field0value == 16)
+        else if (field0value == 16)
           v175 += srcPitch;   
-        else
+        else if (field0value == 8)
           v175 = (unsigned short*)((char *)v175 + 2 * srcPitch);
       }
       v22 = (unsigned int)v240 / ((heightRatioPlusOne - heightRatio) * (widthRatioPlusOne - widthRatio));
@@ -1376,7 +1409,7 @@ signed int __fastcall sub_44FA4C_spawn_light_elemental(int a1, int a2, int a3)
       if ( v20 == uNumActors )
         ++uNumActors;
       v6->uSummonerID = PID(OBJECT_Player, a1);
-      result = v6->pActorBuffs[2].Apply(pParty->uTimePlayed + (a3 * 128) / 30.0f,
+      result = v6->pActorBuffs[ACTOR_BUFF_SUMMONED].Apply(pParty->uTimePlayed + (a3 * 128) / 30.0f,
                  a2,
                  a1,
                  0,
@@ -1746,7 +1779,7 @@ void RespawnGlobalDecorations()
   uint decorEventIdx = 0;
   for (uint i = 0; i < uNumLevelDecorations; ++i)
   {
-    auto decor = &pLevelDecorations[i];
+    LevelDecoration* decor = &pLevelDecorations[i];
 
     if (!decor->uEventID)
     {
@@ -2109,8 +2142,8 @@ unsigned int stru193_math::Atan2(int x, int y)
   int highIdx;
   int angle;
 
-  auto X = x;
-  auto Y = y;
+  int X = x;
+  int Y = y;
 
   if ( abs(X) < 65536 )
   {
@@ -2834,7 +2867,7 @@ void _461103_load_level_sub()
   for (uint i = 0; i < uNumActors; ++i)
   //if ( (signed int)uNumActors > 0 )
   {
-    auto pActor = &pActors[i];
+    Actor* pActor = &pActors[i];
     //v2 = (char *)&pActors[0].uNPC_ID;
     //do
     //{
@@ -2885,7 +2918,7 @@ void _461103_load_level_sub()
 
   for (uint i = 0; i < uNumActors; ++i)
   {
-    auto pActor = &pActors[i];
+    Actor* pActor = &pActors[i];
     //v7 = (char *)&pActors[0].pMonsterInfo;
     //do
     //{
@@ -2925,7 +2958,7 @@ void _461103_load_level_sub()
       v18 = 4;
       v10 = &pMonsterStats->pInfos[v9 + 1];
       //v11 = (int *)pMonsterList->pMonsters[v9].pSoundSampleIDs;
-      auto v11 = &pMonsterList->pMonsters[v9];
+      MonsterDesc* v11 = &pMonsterList->pMonsters[v9];
       do
       {
         pSoundList->LoadSound(v11->pSoundSampleIDs[4 - v18], 0);
@@ -2999,10 +3032,10 @@ void MainMenu_Loop()
   pIcons_LOD->_inlined_sub2();
 
   pWindow_MainMenu = GUIWindow::Create(0, 0, 640, 480, WINDOW_MainMenu, 0, 0);
-  auto pNew = pIcons_LOD->LoadTexturePtr("title_new", TEXTURE_16BIT_PALETTE);
-  auto pLoad = pIcons_LOD->LoadTexturePtr("title_load", TEXTURE_16BIT_PALETTE);
-  auto pCredits = pIcons_LOD->LoadTexturePtr("title_cred", TEXTURE_16BIT_PALETTE);
-  auto pExit = pIcons_LOD->LoadTexturePtr("title_exit", TEXTURE_16BIT_PALETTE);
+  Texture* pNew = pIcons_LOD->LoadTexturePtr("title_new", TEXTURE_16BIT_PALETTE);
+  Texture* pLoad = pIcons_LOD->LoadTexturePtr("title_load", TEXTURE_16BIT_PALETTE);
+  Texture* pCredits = pIcons_LOD->LoadTexturePtr("title_cred", TEXTURE_16BIT_PALETTE);
+  Texture* pExit = pIcons_LOD->LoadTexturePtr("title_exit", TEXTURE_16BIT_PALETTE);
 
   pMainMenu_BtnNew     = pWindow_MainMenu->CreateButton(495, 172, pNew->uTextureWidth,     pNew->uTextureHeight,     1, 0, UIMSG_MainMenu_ShowPartyCreationWnd, 0, 'N', "", pNew, 0);
   pMainMenu_BtnLoad    = pWindow_MainMenu->CreateButton(495, 227, pLoad->uTextureWidth,    pLoad->uTextureHeight,    1, 0, UIMSG_MainMenu_ShowLoadWindow,       1, 'L', "", pLoad, 0);
@@ -3012,8 +3045,8 @@ void MainMenu_Loop()
   pTexture_PCX.Release();
   pTexture_PCX.Load("title.pcx", 0);
   SetCurrentMenuID(MENU_MAIN);
-  //SetForegroundWindow(hWnd);
-  //SendMessageW(hWnd, WM_ACTIVATEAPP, 1, 0);
+  SetForegroundWindow(window->GetApiHandle());
+  SendMessageW(window->GetApiHandle(), WM_ACTIVATEAPP, 1, 0);
   while (GetCurrentMenuID() == MENU_MAIN || GetCurrentMenuID() == MENU_SAVELOAD)
   {
     POINT pt;
@@ -3475,7 +3508,7 @@ bool __fastcall CheckMM7CD(char c)
   memcpy(Filename, "X:\\anims\\magic7.vid", sizeof(Filename));
   *Filename = c;
 
-  auto f = fopen(Filename, "rb");
+  FILE* f = fopen(Filename, "rb");
   if (!f)
     return false;
 
@@ -3850,7 +3883,7 @@ bool MM7_Initialize(int game_width, int game_height)
   {
     void *sft_mm6 = pIcons_LOD_mm6 ? pIcons_LOD_mm6->LoadRaw("dsft.bin", 1) : nullptr,
          *sft_mm8 = nullptr;
-    auto  sft_mm7 = pEvents_LOD->LoadRaw("dsft.bin", 1);
+    void*  sft_mm7 = pEvents_LOD->LoadRaw("dsft.bin", 1);
     pSpriteFrameTable = new SpriteFrameTable;
     pSpriteFrameTable->FromFile(sft_mm6, sft_mm7, sft_mm8);
     free(sft_mm6);
@@ -3859,7 +3892,7 @@ bool MM7_Initialize(int game_width, int game_height)
     
     void *tft_mm6 = pIcons_LOD_mm6 ? pIcons_LOD_mm6->LoadRaw("dtft.bin", 1) : nullptr,
          *tft_mm8 = nullptr;
-    auto  tft_mm7 = pEvents_LOD->LoadRaw("dtft.bin", 1);
+    void*  tft_mm7 = pEvents_LOD->LoadRaw("dtft.bin", 1);
     pTextureFrameTable = new TextureFrameTable;
     pTextureFrameTable->FromFile(tft_mm6, tft_mm7, tft_mm8);
     free(tft_mm6);
@@ -3868,7 +3901,7 @@ bool MM7_Initialize(int game_width, int game_height)
 
     void *tiles_mm6 = pIcons_LOD_mm6 ? pIcons_LOD_mm6->LoadRaw("dtile.bin", 1) : nullptr,
          *tiles_mm8 = nullptr;
-    auto  tiles_mm7 = pEvents_LOD->LoadRaw("dtile.bin", 1);
+    void*  tiles_mm7 = pEvents_LOD->LoadRaw("dtile.bin", 1);
     pTileTable = new TileTable;
     pTileTable->FromFile(tiles_mm6, tiles_mm7, tiles_mm8);
     free(tiles_mm6);
@@ -3877,7 +3910,7 @@ bool MM7_Initialize(int game_width, int game_height)
     
     void *pft_mm6 = pIcons_LOD_mm6 ? pIcons_LOD_mm6->LoadRaw("dpft.bin", 1) : nullptr,
          *pft_mm8 = nullptr;
-    auto  pft_mm7 = pEvents_LOD->LoadRaw("dpft.bin", 1);
+    void*  pft_mm7 = pEvents_LOD->LoadRaw("dpft.bin", 1);
     pPlayerFrameTable = new PlayerFrameTable;
     pPlayerFrameTable->FromFile(pft_mm6, pft_mm7, pft_mm8);
     free(pft_mm6);
@@ -3886,7 +3919,7 @@ bool MM7_Initialize(int game_width, int game_height)
 
     void *ift_mm6 = pIcons_LOD_mm6 ? pIcons_LOD_mm6->LoadRaw("dift.bin", 1) : nullptr,
          *ift_mm8 = nullptr;
-    auto  ift_mm7 = pEvents_LOD->LoadRaw("dift.bin", 1);
+    void*  ift_mm7 = pEvents_LOD->LoadRaw("dift.bin", 1);
     pIconsFrameTable = new IconFrameTable;
     pIconsFrameTable->FromFile(ift_mm6, ift_mm7, ift_mm8);
     free(ift_mm6);
@@ -3895,7 +3928,7 @@ bool MM7_Initialize(int game_width, int game_height)
 
     void *decs_mm6 = pIcons_LOD_mm6 ? pIcons_LOD_mm6->LoadRaw("ddeclist.bin", 1) : nullptr,
          *decs_mm8 = nullptr;
-    auto  decs_mm7 = pEvents_LOD->LoadRaw("ddeclist.bin", 1);
+    void*  decs_mm7 = pEvents_LOD->LoadRaw("ddeclist.bin", 1);
     pDecorationList = new DecorationList;
     pDecorationList->FromFile(decs_mm6, decs_mm7, decs_mm8);
     free(decs_mm6);
@@ -3904,7 +3937,7 @@ bool MM7_Initialize(int game_width, int game_height)
 
     void *objs_mm6 = pIcons_LOD_mm6 ? pIcons_LOD_mm6->LoadRaw("dobjlist.bin", 1) : nullptr,
          *objs_mm8 = nullptr;
-    auto  objs_mm7 = pEvents_LOD->LoadRaw("dobjlist.bin", 1);
+    void*  objs_mm7 = pEvents_LOD->LoadRaw("dobjlist.bin", 1);
     pObjectList = new ObjectList;
     pObjectList->FromFile(objs_mm6, objs_mm7, objs_mm8);
     free(objs_mm6);
@@ -3913,7 +3946,7 @@ bool MM7_Initialize(int game_width, int game_height)
 
     void *mons_mm6 = pIcons_LOD_mm6 ? pIcons_LOD_mm6->LoadRaw("dmonlist.bin", 1) : nullptr,
          *mons_mm8 = nullptr;
-    auto  mons_mm7 = pEvents_LOD->LoadRaw("dmonlist.bin", 1);
+    void*  mons_mm7 = pEvents_LOD->LoadRaw("dmonlist.bin", 1);
     pMonsterList = new MonsterList;
     pMonsterList->FromFile(mons_mm6, mons_mm7, mons_mm8);
     free(mons_mm6);
@@ -3922,7 +3955,7 @@ bool MM7_Initialize(int game_width, int game_height)
     
     void *chests_mm6 = pIcons_LOD_mm6 ? pIcons_LOD_mm6->LoadRaw("dchest.bin", 1) : nullptr,
          *chests_mm8 = nullptr;
-    auto  chests_mm7 = pEvents_LOD->LoadRaw("dchest.bin", 1);
+    void*  chests_mm7 = pEvents_LOD->LoadRaw("dchest.bin", 1);
     pChestList = new ChestList;
     pChestList->FromFile(chests_mm6, chests_mm7, chests_mm8);
     free(chests_mm6);
@@ -3931,7 +3964,7 @@ bool MM7_Initialize(int game_width, int game_height)
 
     void *overlays_mm6 = pIcons_LOD_mm6 ? pIcons_LOD_mm6->LoadRaw("doverlay.bin", 1) : nullptr,
          *overlays_mm8 = nullptr;
-    auto  overlays_mm7 = pEvents_LOD->LoadRaw("doverlay.bin", 1);
+    void*  overlays_mm7 = pEvents_LOD->LoadRaw("doverlay.bin", 1);
     pOverlayList = new OverlayList;
     pOverlayList->FromFile(overlays_mm6, overlays_mm7, overlays_mm8);
     free(overlays_mm6);
@@ -3940,7 +3973,7 @@ bool MM7_Initialize(int game_width, int game_height)
 
     void *sounds_mm6 = pIcons_LOD_mm6 ? pIcons_LOD_mm6->LoadRaw("dsounds.bin", 1) : nullptr,
          *sounds_mm8 = nullptr;
-    auto  sounds_mm7 = pEvents_LOD->LoadRaw("dsounds.bin", 1);
+    void*  sounds_mm7 = pEvents_LOD->LoadRaw("dsounds.bin", 1);
     pSoundList = new SoundList;
     pSoundList->FromFile(sounds_mm6, sounds_mm7, sounds_mm8);
     free(sounds_mm6);
@@ -3961,7 +3994,7 @@ bool MM7_Initialize(int game_width, int game_height)
   }
   else
   {
-    window->SetWindowedMode(game_width, game_height);
+    //window->SetWindowedMode(game_width, game_height);
     pRenderer->SwitchToWindow();
   }
 
@@ -4339,7 +4372,7 @@ bool MM_Main(const wchar_t *pCmdLine)
     Log::Warning(L"MM: entering main loop");
     while ( 1 )
     {
-      auto main_menu_window = MainMenuWindow::Create();
+      MainMenuWindow* main_menu_window = MainMenuWindow::Create();
       window->AddControl(main_menu_window);
 
       MainMenu_Loop();

@@ -27,6 +27,7 @@
 #include "Chest.h"
 #include "Outdoor.h"
 #include "Game.h"
+#include "IconFrameTable.h"
 
 
 #include "mm7_data.h"
@@ -341,6 +342,8 @@ void GUIWindow::Release()
         pIcons_LOD->SyncLoadedFilesCount();
         pCurrentScreen = pMainScreenNum;
 		}
+  case WINDOW_null:
+    return;
 	default:
 		{
 		break;
@@ -806,7 +809,7 @@ void GUIWindow::OpenSpellBook()
   //v3 = 0;
   a2 = 0;
 
-  auto chapter = &pPlayer->spellbook.pChapters[pPlayer->lastOpenedSpellbookPage];
+  PlayerSpellbookChapter* chapter = &pPlayer->spellbook.pChapters[pPlayer->lastOpenedSpellbookPage];
   for (uint i = 0; i < 11; ++i)
   {
     if (!chapter->bIsSpellAvailable[i])
@@ -1183,7 +1186,7 @@ void GUIWindow::DrawText( GUIFont *a2, signed int uX, int uY, unsigned int uFont
   const char *v32; // [sp+34h] [bp-4h]@7
   size_t pInString; // [sp+4Ch] [bp+14h]@11
   
-  auto a1 = this;
+  GUIWindow* a1 = this;
   v29 = 0;
   v9 = a1;
   v10 = a2;
@@ -1554,7 +1557,7 @@ GUIWindow * GUIWindow::Create( unsigned int uX, unsigned int uY, unsigned int uW
       break;
   }
 
-  auto pWindow = &pWindowList[uNextFreeWindowID];
+  GUIWindow* pWindow = &pWindowList[uNextFreeWindowID];
   pWindow->uFrameWidth = uWidth;
   pWindow->uFrameHeight = uHeight;
 
@@ -2221,6 +2224,11 @@ void GUI_UpdateWindows()
   if ( sub_4637E0_is_there_popup_onscreen() )
     UI_OnMouseRightClick(0);
 }
+void LoadFonts_and_DrawCopyrightWindow()
+{
+  MainMenuUI_LoadFontsAndSomeStuff();
+  DrawCopyrightWindow();
+}
 //----- (00415485) --------------------------------------------------------
 void DrawCopyrightWindow()
 {
@@ -2359,4 +2367,293 @@ void  free_book_subwindow()
     pGUIWindow_ScrollWindow->Release();
     pGUIWindow_ScrollWindow = 0;
   }
+}
+//----- (004226EF) --------------------------------------------------------
+void SetUserInterface(PartyAlignment align, bool bReplace)
+{
+  extern void set_default_ui_skin();
+  set_default_ui_skin();
+
+  if (align == PartyAlignment_Evil)
+  {
+    if ( bReplace )
+    {
+      pTexture_RightFrame->Reload("ib-r-C.pcx");
+      pTexture_BottomFrame->Reload("ib-b-C.pcx");
+      pTexture_TopFrame->Reload("ib-t-C.pcx");
+      pTexture_LeftFrame->Reload("ib-l-C.pcx");
+      pTexture_StatusBar->Reload("IB-Foot-c.pcx");
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_right_panel], "ib-mb-C", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_Minimap_Loop], "ib-autmask-c", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_Compas], "IB-COMP-C", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[dword_5079D0], "IB-InitG-c", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[dword_5079C8], "IB-InitY-c", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[dword_5079CC], "IB-InitR-c", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_Btn_NPCLeft], "IB-NPCLD-C", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_Btn_NPCRight], "IB-NPCRD-C", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_Btn_ZoomIn], "ib-autout-C", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_Btn_ZoomOut], "ib-autin-C", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_GameUI_CharSelectionFrame], "IB-selec-C", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_Btn_CastSpell], "ib-m1d-c", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_Btn_Rest], "ib-m2d-c", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_Btn_QuickReference], "ib-m3d-c", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_Btn_GameSettings], "ib-m4d-c", 2);
+
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_PlayerBuff_Bless], "isg-01-c", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_PlayerBuff_Preservation], "isg-02-c", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_PlayerBuff_Hammerhands], "isg-03-c", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_PlayerBuff_PainReflection], "isg-04-c", 2);
+
+      pUIAnim_WizardEye->uIconID = pIconsFrameTable->FindIcon("wizeyeC");
+      pIconsFrameTable->InitializeAnimation(pUIAnim_WizardEye->uIconID);
+      pUIAnum_Torchlight->uIconID = pIconsFrameTable->FindIcon("torchC");
+      pIconsFrameTable->InitializeAnimation(pUIAnum_Torchlight->uIconID);
+
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uExitCancelTextureId], "ib-bcu-c", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_50795C], "evtnpc-c", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_CharacterUI_InventoryBackground], "fr_inven-c", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_Parchment], "parchment", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_5076B4], "cornr_ll-c", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_5076B0], "cornr_lr-c", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_5076AC], "cornr_ul-c", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_5076A8], "cornr_ur-c", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_5076A4], "edge_btm-c", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_5076A0], "edge_lf-c", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_50769C], "edge_rt-c", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_507698], "edge_top-c", 2);
+      pIcons_LOD->ReloadTexture(pTexture_591428, "endcap-c", 2);
+    }
+    else
+    {
+      pTexture_RightFrame->Load("ib-r-C.pcx", 0);
+      pTexture_BottomFrame->Load("ib-b-c.pcx", 0);
+      pTexture_TopFrame->Load("ib-t-C.pcx", 0);
+      pTexture_LeftFrame->Load("ib-l-C.pcx", 0);
+      pTexture_StatusBar->Load("IB-Foot-c.pcx", 0);
+      uTextureID_right_panel = pIcons_LOD->LoadTexture("ib-mb-C", TEXTURE_16BIT_PALETTE);
+      uTextureID_Minimap_Loop = pIcons_LOD->LoadTexture("ib-autmask-c", TEXTURE_16BIT_PALETTE);
+      uTextureID_Compas = pIcons_LOD->LoadTexture("IB-COMP-C", TEXTURE_16BIT_PALETTE);
+      dword_5079D0 = pIcons_LOD->LoadTexture("IB-InitG-c", TEXTURE_16BIT_PALETTE);
+      dword_5079C8 = pIcons_LOD->LoadTexture("IB-InitY-c", TEXTURE_16BIT_PALETTE);
+      dword_5079CC = pIcons_LOD->LoadTexture("IB-InitR-c", TEXTURE_16BIT_PALETTE);
+      uTextureID_Btn_NPCLeft = pIcons_LOD->LoadTexture("IB-NPCLD-C", TEXTURE_16BIT_PALETTE);
+      uTextureID_Btn_NPCRight = pIcons_LOD->LoadTexture("IB-NPCRD-C", TEXTURE_16BIT_PALETTE);
+      uTextureID_Btn_ZoomIn = pIcons_LOD->LoadTexture("ib-autout-C", TEXTURE_16BIT_PALETTE);
+      uTextureID_Btn_ZoomOut = pIcons_LOD->LoadTexture("ib-autin-C", TEXTURE_16BIT_PALETTE);
+      uTextureID_GameUI_CharSelectionFrame = pIcons_LOD->LoadTexture("IB-selec-C", TEXTURE_16BIT_PALETTE);
+      uTextureID_Btn_CastSpell = pIcons_LOD->LoadTexture("ib-m1d-c", TEXTURE_16BIT_PALETTE);
+      uTextureID_Btn_Rest = pIcons_LOD->LoadTexture("ib-m2d-c", TEXTURE_16BIT_PALETTE);
+      uTextureID_Btn_QuickReference = pIcons_LOD->LoadTexture("ib-m3d-c", TEXTURE_16BIT_PALETTE);
+      uTextureID_Btn_GameSettings = pIcons_LOD->LoadTexture("ib-m4d-c", TEXTURE_16BIT_PALETTE);
+      uExitCancelTextureId = pIcons_LOD->LoadTexture("ib-bcu-c", TEXTURE_16BIT_PALETTE);
+      uTextureID_PlayerBuff_Bless = pIcons_LOD->LoadTexture("isg-01-c", TEXTURE_16BIT_PALETTE);
+      uTextureID_PlayerBuff_Preservation = pIcons_LOD->LoadTexture("isg-02-c", TEXTURE_16BIT_PALETTE);
+      uTextureID_PlayerBuff_Hammerhands = pIcons_LOD->LoadTexture("isg-03-c", TEXTURE_16BIT_PALETTE);
+      uTextureID_PlayerBuff_PainReflection = pIcons_LOD->LoadTexture("isg-04-c", TEXTURE_16BIT_PALETTE);
+      uTextureID_50795C = pIcons_LOD->LoadTexture("evtnpc-c", TEXTURE_16BIT_PALETTE);
+      uTextureID_CharacterUI_InventoryBackground = pIcons_LOD->LoadTexture("fr_inven", TEXTURE_16BIT_PALETTE);
+      pUIAnim_WizardEye->uIconID = pIconsFrameTable->FindIcon("wizeyeC");
+      pIconsFrameTable->InitializeAnimation((signed __int16)pUIAnim_WizardEye->uIconID);
+      pUIAnum_Torchlight->uIconID = pIconsFrameTable->FindIcon("torchC");
+      pIconsFrameTable->InitializeAnimation((signed __int16)pUIAnum_Torchlight->uIconID);
+    }
+    uGameUIFontMain = TargetColor(0xC8u, 0, 0);
+    uGameUIFontShadow = TargetColor(10, 0, 0);
+  }
+  else if (align == PartyAlignment_Neutral)
+  {
+    if ( bReplace )
+    {
+      pTexture_RightFrame->Reload("ib-r-a.pcx");
+      pTexture_BottomFrame->Reload("ib-b-a.pcx");
+      pTexture_TopFrame->Reload("ib-t-a.pcx");
+      pTexture_LeftFrame->Reload("ib-l-a.pcx");
+      pTexture_StatusBar->Reload("IB-Foot-a.pcx");
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_right_panel], "ib-mb-a", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_Minimap_Loop], "ib-autmask-a", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_Compas], "IB-COMP-a", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[dword_5079D0], "IB-InitG-a", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[dword_5079C8], "IB-InitY-a", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[dword_5079CC], "IB-InitR-a", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_Btn_NPCLeft], "IB-NPCLD-a", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_Btn_NPCRight], "IB-NPCRD-a", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_Btn_ZoomIn], "ib-autout-a", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_Btn_ZoomOut], "ib-autin-a", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_GameUI_CharSelectionFrame], "IB-selec-a", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_Btn_CastSpell], "ib-m1d-a", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_Btn_Rest], "ib-m2d-a", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_Btn_QuickReference], "ib-m3d-a", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_Btn_GameSettings], "ib-m4d-a", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_PlayerBuff_Bless], "isg-01-a", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_PlayerBuff_Preservation], "isg-02-a", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_PlayerBuff_Hammerhands], "isg-03-a", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_PlayerBuff_PainReflection], "isg-04-a", 2);
+      pUIAnim_WizardEye->uIconID = pIconsFrameTable->FindIcon("wizeyeA");
+      pIconsFrameTable->InitializeAnimation((signed __int16)pUIAnim_WizardEye->uIconID);
+      pUIAnum_Torchlight->uIconID = pIconsFrameTable->FindIcon("torchA");
+      pIconsFrameTable->InitializeAnimation((signed __int16)pUIAnum_Torchlight->uIconID);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uExitCancelTextureId], "ib-bcu-a", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_50795C], "evtnpc", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_CharacterUI_InventoryBackground], "fr_inven", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_Parchment], "parchment", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_5076B4], "cornr_ll", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_5076B0], "cornr_lr", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_5076AC], "cornr_ul", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_5076A8], "cornr_ur", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_5076A4], "edge_btm", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_5076A0], "edge_lf", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_50769C], "edge_rt", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_507698], "edge_top", 2);
+      pIcons_LOD->ReloadTexture(pTexture_591428, "endcap", 2);
+    }
+    else
+    {
+      pTexture_RightFrame->Load("ib-r-A.pcx", 0);
+      pTexture_BottomFrame->Load("ib-b-A.pcx", 0);
+      pTexture_TopFrame->Load("ib-t-A.pcx", 0);
+      pTexture_LeftFrame->Load("ib-l-A.pcx", 0);
+      pTexture_StatusBar->Load("IB-Foot-a.pcx", 0);
+      uTextureID_right_panel = pIcons_LOD->LoadTexture("ib-mb-A", TEXTURE_16BIT_PALETTE);
+      uTextureID_Minimap_Loop = pIcons_LOD->LoadTexture("ib-autmask-a", TEXTURE_16BIT_PALETTE);
+      uTextureID_Compas = pIcons_LOD->LoadTexture("IB-COMP-A", TEXTURE_16BIT_PALETTE);
+      dword_5079D0 = pIcons_LOD->LoadTexture("IB-InitG-a", TEXTURE_16BIT_PALETTE);
+      dword_5079C8 = pIcons_LOD->LoadTexture("IB-InitY-a", TEXTURE_16BIT_PALETTE);
+      dword_5079CC = pIcons_LOD->LoadTexture("IB-InitR-a", TEXTURE_16BIT_PALETTE);
+      uTextureID_Btn_NPCLeft = pIcons_LOD->LoadTexture("IB-NPCLD-A", TEXTURE_16BIT_PALETTE);
+      uTextureID_Btn_NPCRight = pIcons_LOD->LoadTexture("IB-NPCRD-A", TEXTURE_16BIT_PALETTE);
+      uTextureID_GameUI_CharSelectionFrame = pIcons_LOD->LoadTexture("IB-selec-A", TEXTURE_16BIT_PALETTE);
+      uTextureID_Btn_CastSpell = pIcons_LOD->LoadTexture("ib-m1d-a", TEXTURE_16BIT_PALETTE);
+      uTextureID_Btn_Rest = pIcons_LOD->LoadTexture("ib-m2d-a", TEXTURE_16BIT_PALETTE);
+      uTextureID_Btn_QuickReference = pIcons_LOD->LoadTexture("ib-m3d-a", TEXTURE_16BIT_PALETTE);
+      uTextureID_Btn_GameSettings = pIcons_LOD->LoadTexture("ib-m4d-a", TEXTURE_16BIT_PALETTE);
+      uTextureID_Btn_ZoomIn = pIcons_LOD->LoadTexture("ib-autout-a", TEXTURE_16BIT_PALETTE);
+      uTextureID_Btn_ZoomOut = pIcons_LOD->LoadTexture("ib-autin-a", TEXTURE_16BIT_PALETTE);
+      uExitCancelTextureId = pIcons_LOD->LoadTexture("ib-bcu-a", TEXTURE_16BIT_PALETTE);
+      uTextureID_PlayerBuff_Bless = pIcons_LOD->LoadTexture("isg-01-a", TEXTURE_16BIT_PALETTE);
+      uTextureID_PlayerBuff_Preservation = pIcons_LOD->LoadTexture("isg-02-a", TEXTURE_16BIT_PALETTE);
+      uTextureID_PlayerBuff_Hammerhands = pIcons_LOD->LoadTexture("isg-03-a", TEXTURE_16BIT_PALETTE);
+      uTextureID_PlayerBuff_PainReflection = pIcons_LOD->LoadTexture("isg-04-a", TEXTURE_16BIT_PALETTE);
+      uTextureID_50795C = pIcons_LOD->LoadTexture("evtnpc", TEXTURE_16BIT_PALETTE);
+      uTextureID_CharacterUI_InventoryBackground = pIcons_LOD->LoadTexture("fr_inven", TEXTURE_16BIT_PALETTE);
+      pUIAnim_WizardEye->uIconID = pIconsFrameTable->FindIcon("wizeyeA");
+      pIconsFrameTable->InitializeAnimation((signed __int16)pUIAnim_WizardEye->uIconID);
+      pUIAnum_Torchlight->uIconID = pIconsFrameTable->FindIcon("torchA");
+      pIconsFrameTable->InitializeAnimation((signed __int16)pUIAnum_Torchlight->uIconID);
+      uTextureID_Parchment = pIcons_LOD->LoadTexture("parchment", TEXTURE_16BIT_PALETTE);
+      uTextureID_5076B4 = pIcons_LOD->LoadTexture("cornr_ll", TEXTURE_16BIT_PALETTE);
+      uTextureID_5076B0 = pIcons_LOD->LoadTexture("cornr_lr", TEXTURE_16BIT_PALETTE);
+      uTextureID_5076AC = pIcons_LOD->LoadTexture("cornr_ul", TEXTURE_16BIT_PALETTE);
+      uTextureID_5076A8 = pIcons_LOD->LoadTexture("cornr_ur", TEXTURE_16BIT_PALETTE);
+      uTextureID_5076A4 = pIcons_LOD->LoadTexture("edge_btm", TEXTURE_16BIT_PALETTE);
+      uTextureID_5076A0 = pIcons_LOD->LoadTexture("edge_lf", TEXTURE_16BIT_PALETTE);
+      uTextureID_50769C = pIcons_LOD->LoadTexture("edge_rt", TEXTURE_16BIT_PALETTE);
+      uTextureID_507698 = pIcons_LOD->LoadTexture("edge_top", TEXTURE_16BIT_PALETTE);
+      pTexture_591428 = pIcons_LOD->LoadTexturePtr("endcap", TEXTURE_16BIT_PALETTE);
+    }
+    uGameUIFontMain = TargetColor(0xAu, 0, 0);
+    uGameUIFontShadow = TargetColor(230, 214, 193);
+  }
+  else if (align == PartyAlignment_Good)
+  {
+    if ( bReplace )
+    {
+      pTexture_RightFrame->Reload("ib-r-B.pcx");
+      pTexture_BottomFrame->Reload("ib-b-B.pcx");
+      pTexture_TopFrame->Reload("ib-t-B.pcx");
+      pTexture_LeftFrame->Reload("ib-l-B.pcx");
+      pTexture_StatusBar->Reload("IB-Foot-b.pcx");
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_right_panel], "ib-mb-B", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_Minimap_Loop], "ib-autmask-b", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_Compas], "IB-COMP-B", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[dword_5079D0], "IB-InitG-b", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[dword_5079C8], "IB-InitY-b", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[dword_5079CC], "IB-InitR-b", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_Btn_NPCLeft], "IB-NPCLD-B", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_Btn_NPCRight], "IB-NPCRD-B", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_Btn_ZoomIn], "ib-autout-B", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_Btn_ZoomOut], "ib-autin-B", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_GameUI_CharSelectionFrame], "IB-selec-B", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_Btn_CastSpell], "ib-m1d-b", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_Btn_Rest], "ib-m2d-b", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_Btn_QuickReference], "ib-m3d-b", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_Btn_GameSettings], "ib-m4d-b", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_PlayerBuff_Bless], "isg-01-b", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_PlayerBuff_Preservation], "isg-02-b", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_PlayerBuff_Hammerhands], "isg-03-b", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_PlayerBuff_PainReflection], "isg-04-b", 2);
+      pUIAnim_WizardEye->uIconID = pIconsFrameTable->FindIcon("wizeyeB");
+      pIconsFrameTable->InitializeAnimation((signed __int16)pUIAnim_WizardEye->uIconID);
+      pUIAnum_Torchlight->uIconID = pIconsFrameTable->FindIcon("torchB");
+      pIconsFrameTable->InitializeAnimation((signed __int16)pUIAnum_Torchlight->uIconID);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uExitCancelTextureId], "ib-bcu-b", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_50795C], "evtnpc-b", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_CharacterUI_InventoryBackground], "fr_inven-b", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_Parchment], "parchment", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_5076B4], "cornr_ll-b", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_5076B0], "cornr_lr-b", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_5076AC], "cornr_ul-b", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_5076A8], "cornr_ur-b", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_5076A4], "edge_btm-b", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_5076A0], "edge_lf-b", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_50769C], "edge_rt-b", 2);
+      pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_507698], "edge_top-b", 2);
+      pIcons_LOD->ReloadTexture(pTexture_591428, "endcap-b", 2);
+    }
+    uGameUIFontMain = TargetColor(0, 0, 0xC8u);
+    uGameUIFontShadow = TargetColor(255, 255, 255);
+  }
+  else Error("Invalid alignment type: %u", align);
+}
+//----- (0041D20D) --------------------------------------------------------
+void DrawBuff_remaining_time_string( int uY, struct GUIWindow *window, __int64 remaining_time, struct GUIFont *Font )
+{
+  unsigned int full_time; // esi@1
+  signed __int64 hours; // kr00_8@1
+  const char *text; // eax@2
+  signed __int64 minutes; // [sp+10h] [bp-10h]@1
+  signed __int64 seconds; // [sp+18h] [bp-8h]@1
+  unsigned int day; // [sp+24h] [bp+4h]@1
+
+  full_time = (signed __int64)((double)remaining_time * 0.234375);
+  day = (unsigned int)((full_time / 60) / 60) / 24;
+  hours = ((full_time / 60) / 60) % 24;
+  minutes = (signed __int64)(full_time / 60) % 60;
+  seconds = (signed __int64)full_time % 60;
+  strcpy(pTmpBuf.data(), "\r020");
+  if ( day )
+  {
+    text = pGlobalTXT_LocalizationStrings[57];   // Days
+    if ( day <= 1 )
+      text = pGlobalTXT_LocalizationStrings[56]; // Day
+    sprintfex(pTmpBuf2.data(), "%d %s ", (int)day, text);
+    strcat(pTmpBuf.data(), pTmpBuf2.data());
+  }
+  if ( hours )
+  {
+    if ( hours <= 1 )
+      text = pGlobalTXT_LocalizationStrings[109];// Hour
+    else
+      text = pGlobalTXT_LocalizationStrings[110];// Hours
+    sprintfex(pTmpBuf2.data(), "%d %s ", (int)hours, text);
+    strcat(pTmpBuf.data(), pTmpBuf2.data());
+  }
+  if ( minutes && !day )
+  {
+    if ( minutes <= 1 )
+      text = pGlobalTXT_LocalizationStrings[437];// Minute
+    else
+      text = pGlobalTXT_LocalizationStrings[436];// Minutes
+    sprintfex(pTmpBuf2.data(), "%d %s ", (int)minutes, text);
+    strcat(pTmpBuf.data(), pTmpBuf2.data());
+  }
+  if ( seconds && !hours )
+  {
+    if ( seconds <= 1 )
+      text = pGlobalTXT_LocalizationStrings[439];// Second
+    else
+      text = pGlobalTXT_LocalizationStrings[438];// Seconds
+    sprintfex(pTmpBuf2.data(), "%d %s ", (int)seconds, text);
+    strcat(pTmpBuf.data(), pTmpBuf2.data());
+  }
+  window->DrawText(Font, 32, uY, 0, pTmpBuf.data(), 0, 0, 0);
 }

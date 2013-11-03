@@ -71,7 +71,7 @@ void ObjectList::FromFile(void *data_mm6, void *data_mm7, void *data_mm8)
   for (uint i = 0; i < num_mm6_objs; ++i)
   {
     auto src = (ObjectDesc_mm6 *)((char *)data_mm6 + 4) + i;
-    auto dst = pObjects + num_mm7_objs + i;
+    ObjectDesc* dst = &pObjects[num_mm7_objs + i];
     memcpy(dst->field_0, src->field_0, sizeof(dst->field_0));
     dst->uObjectID = src->uObjectID;
     dst->uRadius = src->uRadius;

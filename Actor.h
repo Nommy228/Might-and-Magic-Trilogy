@@ -12,12 +12,8 @@
 #pragma pack(push, 1)
 struct stru319
 {
-  void LootActor(struct Actor *pActor);
-  int which_player_would_attack(struct Actor *pActor);
-  int  special_ability_use_check(struct Actor *pActor, int a2);
-  int _427102(struct Actor *pActor, signed int a2);
+  int which_player_to_attack(struct Actor *pActor);
   int PlayerHitOrMiss(struct Player *pPlayer, struct Actor *pActor, int a3, int a4);
-  bool _4273BB(struct Actor *pActor, struct Actor *a2, int a3, int a4);
   bool ActorHitOrMiss(struct Actor *pActor, struct Player *pPlayer);
   int _427546(int a2);
   int CalcMagicalDamageToActor(struct Actor *pActor, int a2, signed int a3);
@@ -32,7 +28,13 @@ struct stru319
 extern stru319 stru_50C198; // idb
 
 
-
+enum ABILITY_INDEX
+{
+  ABILITY_ATTACK1 = 0,
+  ABILITY_ATTACK2 = 1,
+  ABILITY_SPELL1 = 2,
+  ABILITY_SPELL2 = 3,
+};
 
 
 
@@ -228,7 +230,7 @@ struct Actor
   static void AI_Stand(unsigned int uActorID, unsigned int object_to_face_pid, unsigned int uActionLength, struct AIDirection *a4);
   static void AI_StandOrBored(unsigned int uActorID, signed int uObjID, int uActionLength, struct AIDirection *a4);
   static void AI_FaceObject(unsigned int uActorID, unsigned int uObjID, int _48, struct AIDirection *a4);
-  static struct AIDirection * GetDirectionInfo(unsigned int uObj1ID, unsigned int uObj2ID, struct AIDirection *pOut, int a4);
+  static void GetDirectionInfo(unsigned int uObj1ID, unsigned int uObj2ID, struct AIDirection *pOut, int a4);
   static void Explode(unsigned int uActorID);
   static void AI_RangedAttack(unsigned int uActorID, struct AIDirection *a2, int type, char a4);
   static void AI_SpellAttack(unsigned int uActorID, struct AIDirection *pDir, int uSpellID, int a4, unsigned int uSkillLevel);
@@ -246,6 +248,13 @@ struct Actor
   static void AddBloodsplatOnDamageOverlay(unsigned int uActorID, int a2, signed int a3);
 
   static bool _46DF1A_collide_against_actor(int a1, int a2);
+  static void _4BBF61_summon_actor(int a1, __int16 x, int y, int z); // idb
+
+
+  void LootActor();
+  bool _427102_IsOkToCastSpell(signed int a2);
+  ABILITY_INDEX special_ability_use_check(int a2);
+  bool _4273BB_DoesHitOtherActor(Actor *defender, int a3, int a4);
 
   char pActorName[32];
   signed __int16 sNPC_ID;
@@ -297,3 +306,5 @@ struct Actor
 
 extern std::array<Actor, 500> pActors;
 extern size_t uNumActors;
+
+bool CheckActors_proximity();

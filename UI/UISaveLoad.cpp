@@ -85,9 +85,9 @@ static void UI_DrawSaveLoad(bool save)
     }
     else
       am = 0;
-    auto day = aDayNames[full_days % 7];
-    auto ampm = aAMPMNames[am];
-    auto month = aMonthNames[current_month];
+    const char* day = aDayNames[full_days % 7];
+    const char* ampm = aAMPMNames[am];
+    const char* month = aMonthNames[current_month];
 
     sprintfex(pTmpBuf.data(), "%s %d:%02d %s\n%d %s %d", day, current_hour, current_minutes, aAMPMNames[am], current_day + 1, month, current_year);
     save_load_window.DrawTitleText(pFontSmallnum, 0, 0, 0, pTmpBuf.data(), 3);

@@ -3,3 +3,4 @@ Debug/
 Release/
 *.orig
 .git/*
+Build/

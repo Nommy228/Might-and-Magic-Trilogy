@@ -1515,7 +1515,7 @@ unsigned int LODWriteableFile::Write(const LOD::Directory *pDir, const void *pDi
 
     //insert new data in sorted index lod file
     bRewrite_data = false;
-    insert_index=0;
+    insert_index=-1;
     if (!isFileOpened)
         return 1;
     if ( !pSubIndices)
@@ -1551,8 +1551,11 @@ unsigned int LODWriteableFile::Write(const LOD::Directory *pDir, const void *pDi
                 }
             else if (comp_res>0)
                 {
-                if (insert_index==0)
+                if (insert_index==-1)
+                  {
                      insert_index=i;
+                     break;
+                  }
                 }
             }
     strcpy(Filename, "lod.tmp");
@@ -2571,7 +2574,7 @@ int LODFile_IconsBitmaps::LoadTextureFromLOD(Texture *pOutTex, const char *pCont
   //v5 = this;
   //v6 = FindContainer(pContainer, 0);
   //File = v6;
-  auto pFile = FindContainer(pContainer, false);
+  FILE* pFile = FindContainer(pContainer, false);
   if (!pFile)
     return -1;
   v8 = pOutTex;

@@ -98,7 +98,7 @@ void IconFrameTable::ToFile()
   FILE *v2; // eax@1
   FILE *v3; // edi@1
 
-  auto Str = this;
+  IconFrameTable* Str = this;
 
   v1 = Str;
   v2 = fopen("data\\dift.bin", "wb");

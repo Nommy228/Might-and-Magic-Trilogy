@@ -87,8 +87,8 @@ unsigned char pSkillAvailabilityPerClass[9][37] =  // byte[] @ MM7.exe::004ED820
 
 unsigned char pEquipTypeToBodyAnchor[21] = // 4E8398
 {
-  1, // EQUIP_OFF_HAND
-  1, // EQUIP_MAIN_HAND
+  1, // EQUIP_SINGLE_HANDED
+  1, // EQUIP_TWO_HANDED
   2, // EQUIP_BOW
   3, // EQUIP_ARMOUR
   0, // EQUIP_SHIELD
@@ -1470,7 +1470,7 @@ int Player::GetActualAttribute( CHARACTER_ATTRIBUTE_TYPE attrId, unsigned short 
       break;
   }
 
-  auto uConditionMult = pConditionAttributeModifier[attrId][GetMajorConditionIdx()];
+  uchar uConditionMult = pConditionAttributeModifier[attrId][GetMajorConditionIdx()];
   int magicBonus = GetMagicalBonus(attrId);
   int itemBonus = GetItemsBonus(attrId);
   return uConditionMult * uAgeingMultiplier * this->*attrValue / 100 / 100
@@ -1550,7 +1550,7 @@ int Player::CalculateMeleeDamageTo( bool ignoreSkillBonus, bool ignoreOffhand, u
   }
   else
   {
-    if ( HasItemEquipped(EQUIP_MAIN_HAND) )
+    if ( HasItemEquipped(EQUIP_TWO_HANDED) )
     {
       ItemGen *mainHandItemGen = this->GetMainHandItem();
       int itemId = mainHandItemGen->uItemID;
@@ -1561,7 +1561,7 @@ int Player::CalculateMeleeDamageTo( bool ignoreSkillBonus, bool ignoreOffhand, u
     }
     if ( !ignoreOffhand )
     {
-      if ( this->HasItemEquipped(EQUIP_OFF_HAND) )
+      if ( this->HasItemEquipped(EQUIP_SINGLE_HANDED) )
       {
         ItemGen *offHandItemGen = (ItemGen *)&this->pInventoryItemList[this->pEquipment.uShield - 1];
         if ( offHandItemGen->GetItemEquipType() != EQUIP_SHIELD )
@@ -1908,14 +1908,14 @@ PLAYER_SKILL_TYPE Player::GetEquippedItemSkillType(ITEM_EQUIP_TYPE uEquipSlot)
 //----- (0048D676) --------------------------------------------------------
 bool Player::IsUnarmed()
 {
-  return !HasItemEquipped(EQUIP_MAIN_HAND) &&
-        (!HasItemEquipped(EQUIP_OFF_HAND) || GetOffHandItem()->GetItemEquipType() == EQUIP_SHIELD);
+  return !HasItemEquipped(EQUIP_TWO_HANDED) &&
+        (!HasItemEquipped(EQUIP_SINGLE_HANDED) || GetOffHandItem()->GetItemEquipType() == EQUIP_SHIELD);
 }
 
 //----- (0048D6AA) --------------------------------------------------------
 bool Player::HasItemEquipped(ITEM_EQUIP_TYPE uEquipIndex)
 {
-  auto i = pEquipment.pIndices[uEquipIndex];
+  uint i = pEquipment.pIndices[uEquipIndex];
   if (i)
     return !pOwnItems[i - 1].IsBroken();
   else 
@@ -1979,7 +1979,7 @@ int Player::StealFromShop( ItemGen *itemToSteal, int extraStealDifficulty, int r
     v8 = SkillToMastery(v6);
     itemvalue = itemToSteal->GetValue();
     v10 = itemToSteal->GetItemEquipType();
-    if ( v10 == EQUIP_OFF_HAND || v10 == EQUIP_MAIN_HAND || v10 == EQUIP_BOW )
+    if ( v10 == EQUIP_SINGLE_HANDED || v10 == EQUIP_TWO_HANDED || v10 == EQUIP_BOW )
       itemvalue *= 3;
     currMaxItemValue = StealingRandomBonuses[rand() % 5] + v7 * StealingMasteryBonuses[v8];
     *fineIfFailed = 100 * (reputation + extraStealDifficulty) + itemvalue;
@@ -2283,7 +2283,7 @@ int Player::ReceiveSpecialAttackEffect( int attType, struct Actor *pActor )
         {
           if ( i == EQUIP_ARMOUR )
             v46[v4++] = this->pEquipment.uArmor - 1;
-          if ( (i == EQUIP_OFF_HAND || i == EQUIP_MAIN_HAND) && GetEquippedItemEquipType((ITEM_EQUIP_TYPE)i) == EQUIP_SHIELD )
+          if ( (i == EQUIP_SINGLE_HANDED || i == EQUIP_TWO_HANDED) && GetEquippedItemEquipType((ITEM_EQUIP_TYPE)i) == EQUIP_SHIELD )
             v46[v4++] = this->pEquipment.pIndices[i] - 1;
         }
       }
@@ -2299,8 +2299,8 @@ int Player::ReceiveSpecialAttackEffect( int attType, struct Actor *pActor )
         {
           if ( i == EQUIP_BOW )
             v46[v4++] = LOBYTE(this->pEquipment.uBow) - 1;
-          if ( (i == EQUIP_OFF_HAND || i == EQUIP_MAIN_HAND)
-            && (GetEquippedItemEquipType((ITEM_EQUIP_TYPE)i) == EQUIP_OFF_HAND || GetEquippedItemEquipType((ITEM_EQUIP_TYPE)i) == EQUIP_MAIN_HAND) )
+          if ( (i == EQUIP_SINGLE_HANDED || i == EQUIP_TWO_HANDED)
+            && (GetEquippedItemEquipType((ITEM_EQUIP_TYPE)i) == EQUIP_SINGLE_HANDED || GetEquippedItemEquipType((ITEM_EQUIP_TYPE)i) == EQUIP_TWO_HANDED) )
             v46[v4++] = this->pEquipment.pIndices[i] - 1;
         }
       }
@@ -2525,7 +2525,7 @@ int Player::GetAttackRecoveryTime(bool bRangedAttack)
   {
       weapon_recovery = base_recovery_times_per_weapon_type[1];
   }
-  else if ( HasItemEquipped(EQUIP_MAIN_HAND) )
+  else if ( HasItemEquipped(EQUIP_TWO_HANDED) )
   {
     weapon = GetMainHandItem();
     if (weapon->GetItemEquipType() == EQUIP_WAND)
@@ -2537,7 +2537,7 @@ int Player::GetAttackRecoveryTime(bool bRangedAttack)
     else
       weapon_recovery = base_recovery_times_per_weapon_type[weapon->GetPlayerSkillType()];
   }
-  if (HasItemEquipped(EQUIP_OFF_HAND) && GetEquippedItemEquipType(EQUIP_OFF_HAND) != EQUIP_SHIELD) 
+  if (HasItemEquipped(EQUIP_SINGLE_HANDED) && GetEquippedItemEquipType(EQUIP_SINGLE_HANDED) != EQUIP_SHIELD) 
       // ADD: shield check because shield recovery is added later and can be accidentally doubled
   {
     if (base_recovery_times_per_weapon_type[GetOffHandItem()->GetPlayerSkillType()] > weapon_recovery)
@@ -2550,7 +2550,7 @@ int Player::GetAttackRecoveryTime(bool bRangedAttack)
   uint armour_recovery = 0;
   if ( HasItemEquipped(EQUIP_ARMOUR) )
   {
-    auto armour_skill_type = GetArmorItem()->GetPlayerSkillType();
+    uchar armour_skill_type = GetArmorItem()->GetPlayerSkillType();
     uint base_armour_recovery = base_recovery_times_per_weapon_type[armour_skill_type];
     float multiplier;
 
@@ -2576,9 +2576,9 @@ int Player::GetAttackRecoveryTime(bool bRangedAttack)
   }
 
   uint shield_recovery = 0;
-  if (HasItemEquipped(EQUIP_OFF_HAND) && GetEquippedItemEquipType(EQUIP_OFF_HAND) == EQUIP_SHIELD)
+  if (HasItemEquipped(EQUIP_SINGLE_HANDED) && GetEquippedItemEquipType(EQUIP_SINGLE_HANDED) == EQUIP_SHIELD)
   {
-    auto skill_type = GetOffHandItem()->GetPlayerSkillType();
+    uchar skill_type = GetOffHandItem()->GetPlayerSkillType();
 
     uint shield_base_recovery = base_recovery_times_per_weapon_type[skill_type];
     float multiplier = GetArmorRecoveryMultiplierFromSkillLevel(skill_type, 1.0f, 0, 0, 0);
@@ -2948,7 +2948,7 @@ int Player::GetParameterBonus( int player_parameter )
 //----- (0048EA46) --------------------------------------------------------
 int Player::GetSpecialItemBonus( int enchantmentId )
 {
-  for (int i = EQUIP_OFF_HAND; i < EQUIP_BOOK; ++i )
+  for (int i = EQUIP_SINGLE_HANDED; i < EQUIP_BOOK; ++i )
   {
     if ( HasItemEquipped((ITEM_EQUIP_TYPE)i) )
     {
@@ -3060,9 +3060,9 @@ int Player::GetItemsBonus( enum CHARACTER_ATTRIBUTE_TYPE attr, bool getOnlyMainH
       }
       else
       {
-        if ( this->HasItemEquipped(EQUIP_MAIN_HAND) )
+        if ( this->HasItemEquipped(EQUIP_TWO_HANDED) )
         {
-          v22 = this->GetEquippedItemEquipType(EQUIP_MAIN_HAND);
+          v22 = this->GetEquippedItemEquipType(EQUIP_TWO_HANDED);
           if ( v22 >= 0 && v22 <= 2)
           {
             ItemGen* mainHandItem = GetMainHandItem();
@@ -3078,7 +3078,7 @@ int Player::GetItemsBonus( enum CHARACTER_ATTRIBUTE_TYPE attr, bool getOnlyMainH
             v5 = mainHandItem->GetDamageMod() + v25 * v26;
           }
         }
-        if ( getOnlyMainHandDmg || !this->HasItemEquipped(EQUIP_OFF_HAND) ||  (GetEquippedItemEquipType(EQUIP_OFF_HAND) < 0 || GetEquippedItemEquipType(EQUIP_OFF_HAND) > 2))
+        if ( getOnlyMainHandDmg || !this->HasItemEquipped(EQUIP_SINGLE_HANDED) ||  (GetEquippedItemEquipType(EQUIP_SINGLE_HANDED) < 0 || GetEquippedItemEquipType(EQUIP_SINGLE_HANDED) > 2))
         {
             return v5;
         }
@@ -3098,15 +3098,15 @@ int Player::GetItemsBonus( enum CHARACTER_ATTRIBUTE_TYPE attr, bool getOnlyMainH
       {
         return 0;
       }
-      if ( this->HasItemEquipped(EQUIP_MAIN_HAND) )
+      if ( this->HasItemEquipped(EQUIP_TWO_HANDED) )
       {
-        v17 = this->GetEquippedItemEquipType(EQUIP_MAIN_HAND);
+        v17 = this->GetEquippedItemEquipType(EQUIP_TWO_HANDED);
         if ( v17 >= 0 && v17 <= 2)
         {
           v5 = GetMainHandItem()->GetDamageMod();
         }
       }
-      if ( getOnlyMainHandDmg || !this->HasItemEquipped(EQUIP_OFF_HAND) || (this->GetEquippedItemEquipType(EQUIP_OFF_HAND) < 0) || this->GetEquippedItemEquipType(EQUIP_OFF_HAND) > 2 )
+      if ( getOnlyMainHandDmg || !this->HasItemEquipped(EQUIP_SINGLE_HANDED) || (this->GetEquippedItemEquipType(EQUIP_SINGLE_HANDED) < 0) || this->GetEquippedItemEquipType(EQUIP_SINGLE_HANDED) > 2 )
         return v5;
       else
       {
@@ -3120,9 +3120,9 @@ int Player::GetItemsBonus( enum CHARACTER_ATTRIBUTE_TYPE attr, bool getOnlyMainH
       {
         return 1;
       }
-      if ( this->HasItemEquipped(EQUIP_MAIN_HAND) )
+      if ( this->HasItemEquipped(EQUIP_TWO_HANDED) )
       {
-        v9 = this->GetEquippedItemEquipType(EQUIP_MAIN_HAND);
+        v9 = this->GetEquippedItemEquipType(EQUIP_TWO_HANDED);
         if ( v9 >= 0 && v9 <= 2)
         {
           ItemGen* mainHandItem = GetMainHandItem();
@@ -3135,7 +3135,7 @@ int Player::GetItemsBonus( enum CHARACTER_ATTRIBUTE_TYPE attr, bool getOnlyMainH
         }
       }
 
-      if ( getOnlyMainHandDmg || !this->HasItemEquipped(EQUIP_OFF_HAND) || (this->GetEquippedItemEquipType(EQUIP_OFF_HAND) < 0) || this->GetEquippedItemEquipType(EQUIP_OFF_HAND) > 2 )
+      if ( getOnlyMainHandDmg || !this->HasItemEquipped(EQUIP_SINGLE_HANDED) || (this->GetEquippedItemEquipType(EQUIP_SINGLE_HANDED) < 0) || this->GetEquippedItemEquipType(EQUIP_SINGLE_HANDED) > 2 )
       {
         return v5;
       }
@@ -3578,30 +3578,36 @@ int Player::GetSkillBonus(enum CHARACTER_ATTRIBUTE_TYPE inSkill)    //TODO: move
         if (currItem != nullptr && (!currItem->IsBroken()))
         {
           PLAYER_SKILL_TYPE itemSkillType = (PLAYER_SKILL_TYPE)currItem->GetPlayerSkillType();
-          int currArmorSkillLevel = GetActualSkillLevel(itemSkillType);
+          int currArmorSkillLevel = 0;
           int multiplier = 0;
           switch (itemSkillType)
           {
           case PLAYER_SKILL_STAFF:
+            currArmorSkillLevel = GetActualSkillLevel(itemSkillType);
             multiplier = GetMultiplierForSkillLevel(currArmorSkillLevel, 0, 1, 1, 1);
             break;
           case PLAYER_SKILL_SWORD:
           case PLAYER_SKILL_SPEAR:
+            currArmorSkillLevel = GetActualSkillLevel(itemSkillType);
             multiplier = GetMultiplierForSkillLevel(currArmorSkillLevel, 0, 0, 0, 1);
             break;
           case PLAYER_SKILL_SHIELD:
+            currArmorSkillLevel = GetActualSkillLevel(itemSkillType);
             wearingArmor = true;
             multiplier = GetMultiplierForSkillLevel(currArmorSkillLevel, 1, 1, 2, 2);
             break;
           case PLAYER_SKILL_LEATHER:
+            currArmorSkillLevel = GetActualSkillLevel(itemSkillType);
             wearingLeather = true;
             multiplier = GetMultiplierForSkillLevel(currArmorSkillLevel, 1, 1, 2, 2);
             break;
           case PLAYER_SKILL_CHAIN:
+            currArmorSkillLevel = GetActualSkillLevel(itemSkillType);
             wearingArmor = true;
             multiplier = GetMultiplierForSkillLevel(currArmorSkillLevel, 1, 1, 1, 1);
             break;
           case PLAYER_SKILL_PLATE:
+            currArmorSkillLevel = GetActualSkillLevel(itemSkillType);
             wearingArmor = true; 
             multiplier = GetMultiplierForSkillLevel(currArmorSkillLevel, 1, 1, 1, 1);
             break;
@@ -3636,7 +3642,7 @@ int Player::GetSkillBonus(enum CHARACTER_ATTRIBUTE_TYPE inSkill)    //TODO: move
       if ( this->HasItemEquipped((ITEM_EQUIP_TYPE)i) )
       {
         ItemGen* currItem = GetNthEquippedIndexItem(i);
-        if ( currItem->GetItemEquipType() <= EQUIP_MAIN_HAND)
+        if ( currItem->GetItemEquipType() <= EQUIP_TWO_HANDED)
         {
           PLAYER_SKILL_TYPE currItemSkillType = (PLAYER_SKILL_TYPE)currItem->GetPlayerSkillType();
           int currentItemSkillLevel = this->GetActualSkillLevel(currItemSkillType);
@@ -3699,7 +3705,7 @@ int Player::GetSkillBonus(enum CHARACTER_ATTRIBUTE_TYPE inSkill)    //TODO: move
       if ( this->HasItemEquipped((ITEM_EQUIP_TYPE)i) )
       {
         ItemGen* currItemPtr = GetNthEquippedIndexItem(i);
-        if ( currItemPtr->GetItemEquipType() == EQUIP_MAIN_HAND || currItemPtr->GetItemEquipType() == EQUIP_OFF_HAND )
+        if ( currItemPtr->GetItemEquipType() == EQUIP_TWO_HANDED || currItemPtr->GetItemEquipType() == EQUIP_SINGLE_HANDED )
         {
           PLAYER_SKILL_TYPE currItemSkillType = (PLAYER_SKILL_TYPE)currItemPtr->GetPlayerSkillType();
           int currItemSkillLevel = this->GetActualSkillLevel(currItemSkillType);
@@ -3843,7 +3849,7 @@ PLAYER_SEX Player::GetSexByVoice()
 //----- (00490188) --------------------------------------------------------
 void Player::SetInitialStats()
 {
-  auto v1 = GetRace();
+  CHARACTER_RACE v1 = GetRace();
   uMight = StatTable[v1][0].uBaseValue;
   uIntelligence = StatTable[v1][1].uBaseValue;
   uWillpower = StatTable[v1][2].uBaseValue;
@@ -5003,7 +5009,8 @@ bool Player::CompareVariable( enum VariableType VarNum, signed int pValue )   //
     case VAR_QBits_QuestsDone:
       return _449B57_test_bit(pParty->_quest_bits, pValue);
     case VAR_PlayerItemInHands:
-      for (int i = 0; i < 138; i++)
+      //for (int i = 0; i < 138; i++)
+      for (int i = 0; i < 126; i++)
       {
         if (pInventoryItemList[i].uItemID == pValue)
         {
@@ -7298,9 +7305,9 @@ void __fastcall DamagePlayerFromMonster(unsigned int uObjID, int dmgSource, Vec3
     }
     pAudioPlayer->PlaySound(soundToPlay, PID(OBJECT_Player,a4 + 80), 0, -1, 0, 0, 0, 0);
     int dmgToReceive = actorPtr->_43B3E0_CalcDamage(dmgSource);
-    if ( actorPtr->pActorBuffs[3].uExpireTime > 0 )
+    if ( actorPtr->pActorBuffs[ACTOR_BUFF_SHRINK].uExpireTime > 0 )
     {
-      __int16 spellPower = actorPtr->pActorBuffs[3].uPower;
+      __int16 spellPower = actorPtr->pActorBuffs[ACTOR_BUFF_SHRINK].uPower;
       if ( spellPower )
         dmgToReceive /= (signed int)spellPower;
     }
@@ -7435,7 +7442,7 @@ void __fastcall DamagePlayerFromMonster(unsigned int uObjID, int dmgSource, Vec3
     {
       Actor *actorPtr = &pActors[uActorID];
       if ( a4 == -1 )
-        a4 = stru_50C198.which_player_would_attack(actorPtr);
+        a4 = stru_50C198.which_player_to_attack(actorPtr);
       Player *playerPtr = &pParty->pPlayers[a4];
       int dmgToReceive = actorPtr->_43B3E0_CalcDamage(dmgSource);
       unsigned __int16 spriteType = v37->uType;
@@ -7472,22 +7479,22 @@ void __fastcall DamagePlayerFromMonster(unsigned int uObjID, int dmgSource, Vec3
         if ( playerPtr->HasItemEquipped(EQUIP_ARMOUR)
           && playerPtr->GetArmorItem()->uItemID == ITEM_ARTIFACT_GOVERNORS_ARMOR )
           dmgToReceive >>= 1;
-        if ( playerPtr->HasItemEquipped(EQUIP_MAIN_HAND))
+        if ( playerPtr->HasItemEquipped(EQUIP_TWO_HANDED))
         {
           ItemGen* mainHandItem = playerPtr->GetMainHandItem();
           if ( mainHandItem->uItemID == ITEM_RELIC_KELEBRIM || mainHandItem->uItemID == ITEM_ARTIFACT_ELFBANE || (mainHandItem->GetItemEquipType() == EQUIP_SHIELD && SkillToMastery(playerPtr->pActiveSkills[PLAYER_SKILL_SHIELD]) == 4))
             dmgToReceive >>= 1;
         }
-        if ( playerPtr->HasItemEquipped(EQUIP_OFF_HAND))
+        if ( playerPtr->HasItemEquipped(EQUIP_SINGLE_HANDED))
         {
           ItemGen* offHandItem = playerPtr->GetOffHandItem();
           if ( offHandItem->uItemID == ITEM_RELIC_KELEBRIM || offHandItem->uItemID == ITEM_ARTIFACT_ELFBANE || (offHandItem->GetItemEquipType() == EQUIP_SHIELD && SkillToMastery(playerPtr->pActiveSkills[PLAYER_SKILL_SHIELD]) == 4))
             dmgToReceive >>= 1;
         }
       }
-      if ( actorPtr->pActorBuffs[3].uExpireTime > 0 )
+      if ( actorPtr->pActorBuffs[ACTOR_BUFF_SHRINK].uExpireTime > 0 )
       {
-        int spellPower = actorPtr->pActorBuffs[3].uPower;
+        int spellPower = actorPtr->pActorBuffs[ACTOR_BUFF_SHRINK].uPower;
         if ( spellPower )
           dmgToReceive /= (signed int)spellPower;
       }

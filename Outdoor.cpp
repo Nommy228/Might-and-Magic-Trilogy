@@ -113,7 +113,7 @@ void OutdoorLocation::ExecDraw(unsigned int bRedraw)
 
   if (pRenderer->pRenderD3D) // d3d - redraw always
   {
-    pRenderer->DrawSkyD3D();
+    pRenderer->DrawOutdoorSkyD3D();
     pRenderer->DrawBuildingsD3D();
     pRenderer->RenderTerrainD3D();
   }
@@ -394,7 +394,7 @@ bool OutdoorLocation::GetTravelDestination(signed int sPartyX, signed int sParty
   char Str[140]; // [sp+8h] [bp-78h]@3
   //int a5a; // [sp+94h] [bp+14h]@3
 
-  auto Source = this;
+  OutdoorLocation* Source = this;
 
   v5 = Source;
   if ( a5 < 10
@@ -626,7 +626,7 @@ void OutdoorLocation::SetFog()
 {
   strcpy(pOutdoor->pLevelFilename, pCurrentMapName);
 
-  auto map_id = pMapStats->GetMapInfo(pCurrentMapName);
+  MAP_TYPE map_id = pMapStats->GetMapInfo(pCurrentMapName);
   if (map_id == MAP_INVALID || map_id == MAP_CELESTIA || map_id == MAP_THE_PIT || map_id > MAP_SHOALS)
     return;
 
@@ -1727,13 +1727,13 @@ LABEL_33:
   //v40 = header.uCompressedSize;
   //pSource = header.uDecompressedSize;
   //v41 = malloc(header.uDecompressedSize);
-  auto pSrcMem = (unsigned char *)malloc(header.uDecompressedSize);
-  auto pSrc = pSrcMem;
+  uchar* pSrcMem = (unsigned char *)malloc(header.uDecompressedSize);
+  uchar* pSrc = pSrcMem;
   //v42 = v41;
   //HIDWORD(v142) = (uint32)pSrc;
   if (header.uCompressedSize < header.uDecompressedSize)
   {
-    auto pComressedSrc = (char *)malloc(header.uCompressedSize);
+    char* pComressedSrc = (char *)malloc(header.uCompressedSize);
     fread(pComressedSrc, header.uCompressedSize, 1, v39);
 
     uint actualDecompressedSize = header.uDecompressedSize;
@@ -1824,7 +1824,7 @@ LABEL_33:
   for (uint i = 0; i < uNumBModels; ++i)
   {
     //v48 = 0;
-    auto model = &pBModels[i];
+    BSPModel* model = &pBModels[i];
 
     model->pVertices.pVertices = nullptr;
     model->pFaces = nullptr;
@@ -1895,7 +1895,7 @@ LABEL_33:
       //memcpy(v59, uSourceLen, (size_t)pFilename);
       //uSourceLen = (char *)uSourceLen + (int)pFilename;
     //ptr = (FILE *)malloc(10 * model->uNumFaces);
-    auto textureFilenames = (const char *)malloc(10 * model->uNumFaces);
+    const char* textureFilenames = (const char *)malloc(10 * model->uNumFaces);
       //pFilename = (char *)(10 * pBModels[v48].uNumFaces);
     memcpy((char *)textureFilenames, pSrc, 10 * model->uNumFaces);
     pSrc += 10 * model->uNumFaces;
@@ -1904,11 +1904,11 @@ LABEL_33:
       //v60 = pBModels;
     for (uint j = 0; j < model->uNumFaces; ++j)
     {
-      auto texFilename = textureFilenames + j * 10;
+      const char* texFilename = &textureFilenames[j * 10];
     //v149 = 0;
     //Str2 = (char *)ptr;
 
-      auto *face = &model->pFaces[j];
+      ODMFace* face = &model->pFaces[j];
       //pFilename = (char *)v149 + (unsigned int)v60[v48].pFaces;
       if (~face->uAttributes & FACE_DONT_CACHE_TEXTURE)
       {
@@ -2073,7 +2073,7 @@ LABEL_69:
       fread(pSrc, header.uDecompressedSize, 1u, v39);
     else if (header.uCompressedSize < header.uDecompressedSize)
     {
-      auto compressedMem = malloc(header.uCompressedSize);
+      void* compressedMem = malloc(header.uCompressedSize);
       fread(compressedMem, header.uCompressedSize, 1, v39);
 
       uint actualDecompressedSize = header.uDecompressedSize;
@@ -2143,7 +2143,7 @@ LABEL_112:
       fread(pSrcMem, header.uDecompressedSize, 1, v39);
     else if (header.uCompressedSize < header.uDecompressedSize)
     {
-      auto compressedMem = malloc(header.uCompressedSize);
+      void* compressedMem = malloc(header.uCompressedSize);
       fread(compressedMem, header.uCompressedSize, 1u, v39);
 
       uint actualDecompressedSize = header.uDecompressedSize;
@@ -2181,7 +2181,7 @@ LABEL_120:
   //v151 = 0;
   for (uint i = 0; i < uNumBModels; ++i)
   {
-    auto model = pBModels[i];
+    BSPModel model = pBModels[i];
     //pNumItems = 0;
     //do
     //{
@@ -2190,7 +2190,7 @@ LABEL_120:
       //v87 = (unsigned int)((char *)v86 + pNumItems);
     for (uint j = 0; j < model.uNumFaces; ++j)
     {
-      auto face = model.pFaces[j];
+      ODMFace face = model.pFaces[j];
 
       //if ( *(int *)(v87 + 76) > 0 )
       //{
@@ -2213,7 +2213,7 @@ LABEL_120:
       //thisa = 0;
     for (uint j = 0; j < model.uNumFaces; ++j)
     {
-      auto face = model.pFaces[j];
+      ODMFace face = model.pFaces[j];
         //pFilename = 0;
         //do
         //{
@@ -2321,7 +2321,7 @@ LABEL_120:
   strcpy(pGroundTileset, byte_6BE124_cfg_textures_DefaultGroundTexture.data());
   //v97 = pTileTypes[0].uTileID;
   //v108 = 0;
-  auto v98 = pTileTable->GetTileById(pTileTypes[0].uTileID);
+  TileDesc* v98 = pTileTable->GetTileById(pTileTypes[0].uTileID);
   //v99 = pBitmaps_LOD->LoadTexture(v98->pTileName, TEXTURE_DEFAULT);
   uMainTile_BitmapID = pBitmaps_LOD->LoadTexture(v98->pTileName, TEXTURE_DEFAULT);
   if (uMainTile_BitmapID != -1)
@@ -2681,7 +2681,7 @@ bool OutdoorLocation::PrepareDecorations()
 
   for (uint i = 0; i < uNumLevelDecorations; ++i)
   {
-    auto decor = &pLevelDecorations[i];
+    LevelDecoration* decor = &pLevelDecorations[i];
 
       pDecorationList->InitializeDecorationSprite(decor->uDecorationDescID);
       v4 = pDecorationList->pDecorations[decor->uDecorationDescID].uSoundID;
@@ -2916,7 +2916,7 @@ void OutdoorLocation::PrepareActorsDrawList()
     //v1 = pActors;//[0].vPosition.z;
     //do
     //{
-    auto actor = &pActors[i];
+    Actor* actor = &pActors[i];
 	  //v2 = actor->uAIState;
 
 	actor->uAttributes &= 0xFFFFFFF7u;
@@ -2968,7 +2968,7 @@ LABEL_17:
       }
       v12 = 32 * i + v11;
 LABEL_18:
-      if ( (signed __int64)actor->pActorBuffs[5].uExpireTime > 0 || (signed __int64)actor->pActorBuffs[6].uExpireTime > 0 )
+      if ( (signed __int64)actor->pActorBuffs[ACTOR_BUFF_STONED].uExpireTime > 0 || (signed __int64)actor->pActorBuffs[ACTOR_BUFF_PARALYZED].uExpireTime > 0 )
         v12 = 0;
 	  v13 = actor->uAIState;
       if ( v13 == 17 && !v49 )
@@ -3062,12 +3062,12 @@ LABEL_25:
         v28->uIndoorSectorID = 0;
         v28->uPalette = v15->uPaletteIndex;
         v28->_screenspace_x_scaler_packedfloat = (unsigned __int64)(v15->scale * (signed __int64)v58) >> 16;
-        v30 = HIDWORD(actor->pActorBuffs[3].uExpireTime) == 0;
-        v31 = SHIDWORD(actor->pActorBuffs[3].uExpireTime) < 0;
+        v30 = HIDWORD(actor->pActorBuffs[ACTOR_BUFF_SHRINK].uExpireTime) == 0;
+        v31 = SHIDWORD(actor->pActorBuffs[ACTOR_BUFF_SHRINK].uExpireTime) < 0;
         v28->_screenspace_y_scaler_packedfloat = (unsigned __int64)(v15->scale * (signed __int64)v57) >> 16;
-        if ( v31 || v31 | v30 && LODWORD(actor->pActorBuffs[3].uExpireTime) <= 0u )
+        if ( v31 || v31 | v30 && LODWORD(actor->pActorBuffs[ACTOR_BUFF_SHRINK].uExpireTime) <= 0u )
         {
-          if ( (signed __int64)actor->pActorBuffs[10].uExpireTime > 0i64 )
+          if ( (signed __int64)actor->pActorBuffs[ACTOR_BUFF_MASS_DISTORTION].uExpireTime > 0i64 )
           {
             v52 = (unsigned __int64)(pGame->pStru6Instance->_4A806F(actor)
                                    * (signed __int64)v28->_screenspace_y_scaler_packedfloat) >> 16;
@@ -3078,10 +3078,10 @@ LABEL_53:
         }
         else
         {
-          v32 = actor->pActorBuffs[3].uPower;
+          v32 = actor->pActorBuffs[ACTOR_BUFF_SHRINK].uPower;
           if ( v32 )
           {
-            v33 = actor->pActorBuffs[3].uPower;
+            v33 = actor->pActorBuffs[ACTOR_BUFF_SHRINK].uPower;
             v28->_screenspace_x_scaler_packedfloat = (unsigned __int64)(65536 / (unsigned __int16)v32 * (signed __int64)v28->_screenspace_x_scaler_packedfloat) >> 16;
             v52 = (unsigned __int64)(65536 / v33 * (signed __int64)v28->_screenspace_y_scaler_packedfloat) >> 16;
             goto LABEL_53;
@@ -3313,23 +3313,23 @@ int ODM_GetFloorLevel(int X, signed int Y, int Z, int __unused, int *pIsOnWater,
 //----- (0046DCC8) --------------------------------------------------------
 void ODM_GetTerrainNormalAt(int pos_x, int pos_z, Vec3_int_ *out)
 {
-  auto grid_x = WorldPosToGridCellX(pos_x);
-  auto grid_z = WorldPosToGridCellZ(pos_z) - 1;
+  uint grid_x = WorldPosToGridCellX(pos_x);
+  uint grid_z = WorldPosToGridCellZ(pos_z) - 1;
 
-  auto grid_pos_x1 = GridCellToWorldPosX(grid_x);
-  auto grid_pos_x2 = GridCellToWorldPosX(grid_x + 1);
-  auto grid_pos_z1 = GridCellToWorldPosZ(grid_z);
-  auto grid_pos_z2 = GridCellToWorldPosZ(grid_z + 1);
+  int grid_pos_x1 = GridCellToWorldPosX(grid_x);
+  int grid_pos_x2 = GridCellToWorldPosX(grid_x + 1);
+  int grid_pos_z1 = GridCellToWorldPosZ(grid_z);
+  int grid_pos_z2 = GridCellToWorldPosZ(grid_z + 1);
 
-  auto x1z1_y = pOutdoor->DoGetHeightOnTerrain(grid_x, grid_z);
-  auto x2z1_y = pOutdoor->DoGetHeightOnTerrain(grid_x + 1, grid_z);
-  auto x2z2_y = pOutdoor->DoGetHeightOnTerrain(grid_x + 1, grid_z + 1);
-  auto x1z2_y = pOutdoor->DoGetHeightOnTerrain(grid_x, grid_z + 1);
+  int x1z1_y = pOutdoor->DoGetHeightOnTerrain(grid_x, grid_z);
+  int x2z1_y = pOutdoor->DoGetHeightOnTerrain(grid_x + 1, grid_z);
+  int x2z2_y = pOutdoor->DoGetHeightOnTerrain(grid_x + 1, grid_z + 1);
+  int x1z2_y = pOutdoor->DoGetHeightOnTerrain(grid_x, grid_z + 1);
 
   float side1_dx, side1_dy, side1_dz,
         side2_dx, side2_dy, side2_dz;
 
-  auto dx = abs(pos_x - grid_pos_x1),
+  int dx = abs(pos_x - grid_pos_x1),
        dz = abs(grid_pos_z1 - pos_z);
   if (dz >= dx)
   {
@@ -3400,7 +3400,7 @@ void MakeActorAIList_ODM()
   ai_arrays_size = 0;
   for (uint i = 0; i < uNumActors; ++i)
   {
-    auto actor = &pActors[i];
+    Actor* actor = &pActors[i];
 
     actor->uAttributes &= 0xFFFFFBFF;
     if (!actor->CanAct())

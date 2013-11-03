@@ -40,10 +40,10 @@ int uTextureID_GameUI_CharSelectionFrame; // 50C98C
 //----- (00421D00) --------------------------------------------------------
 void __fastcall GameUI_OnPlayerPortraitLeftClick(unsigned int uPlayerID)
 {
-  auto player = &pParty->pPlayers[uPlayerID - 1];
+  Player* player = &pParty->pPlayers[uPlayerID - 1];
   if (pParty->pPickedItem.uItemID)
   {
-    if (auto slot = player->AddItem(-1, pParty->pPickedItem.uItemID))
+    if (int slot = player->AddItem(-1, pParty->pPickedItem.uItemID))
     {
       memcpy(&player->pInventoryItemList[slot-1], &pParty->pPickedItem, 0x24u);
       viewparams->bRedrawGameUI = true;
@@ -376,7 +376,7 @@ void GameUI_DrawDialogue()
     assert(pNPC->uProfession < sizeof(aNPCProfessionNames) / sizeof(*aNPCProfessionNames.data())); // sometimes buffer overflows; errors emerge both here and in dialogue text
     sprintfex(pTmpBuf.data(), pGlobalTXT_LocalizationStrings[429], pNPC->pName, aNPCProfessionNames[pNPC->uProfession]);//^Pi[%s] %s
   }
-  else
+  else if (pNPC->pName)
     strcpy(pTmpBuf.data(), pNPC->pName);
 
   window.DrawTitleText(pFontArrus, 483, 112, ui_game_dialogue_npc_name_color, pTmpBuf.data(), 3);
@@ -437,7 +437,7 @@ void GameUI_DrawDialogue()
       }
       else if (pGreetType == 2)//HiredNPC_greet
       {
-        auto prof = pNPCStats->pProfessions + pNPC->uProfession;
+        NPCProfession* prof = &pNPCStats->pProfessions[pNPC->uProfession];
 
         if (pNPC->Hired())
           pInString = BuildDialogueString(prof->pDismissText, uActiveCharacter - 1, 0, 0, 0, 0);
@@ -452,7 +452,7 @@ void GameUI_DrawDialogue()
   {
     window.uFrameWidth = game_viewport_width;
     window.uFrameZ = 452;
-    auto font = pFontArrus;
+    GUIFont* font = pFontArrus;
     pTextHeight = pFontArrus->CalcTextHeight(pInString, &window, 13, 0) + 7;
     if ( 352 - pTextHeight < 8 )
     {
@@ -820,7 +820,7 @@ void GameUI_CharacterQuickRecord_Draw(GUIWindow *window, Player *player)
   uFramesetIDa = 0;
   for (uint i = 0; i < 24; ++i)
   {
-    auto buff = player->pPlayerBuffs.data() + i;
+    SpellBuff* buff = &player->pPlayerBuffs[i];
     if (buff->uExpireTime > 0)
     {
       v36 = uFramesetIDa++ * pFontComic->uFontHeight + 134;
@@ -850,7 +850,7 @@ void GameUI_QuickRef_Draw()
   pFontHeight = LOBYTE(pFontArrus->uFontHeight) + 1;
   for ( uint i = 0; i < 4; ++i )
   {
-    auto player = &pParty->pPlayers[i];
+    Player* player = &pParty->pPlayers[i];
     pX = 94 * i + 89;
     if ( i == 0 )
       pGUIWindow_CurrentMenu->DrawTextInRect(pFontArrus, 22, 18, 0, pGlobalTXT_LocalizationStrings[149], 60, 0);//Name
@@ -1644,7 +1644,7 @@ void GameUI_DrawPartySpells()
     //v2 =  byte_4E5DD8[v1];
     if (pParty->pPartyBuffs[byte_4E5DD8[i]].uExpireTime)
     {
-      auto tex = pIcons_LOD->GetTexture(pTextureIDs_PartyBuffIcons[i]);
+      Texture* tex = pIcons_LOD->GetTexture(pTextureIDs_PartyBuffIcons[i]);
       //v3 = pTextureIDs_PartyBuffIcons[i];
       pRenderer->_4A65CC(pPartySpellbuffsUI_XYs[i][0],
       pPartySpellbuffsUI_XYs[i][1], tex, tex,
@@ -1841,8 +1841,8 @@ void GameUI_DrawMinimap(unsigned int uX, unsigned int uY, unsigned int uZ, unsig
   uCenterX = (uX + uZ) / 2;
   uCenterY = (uY + uW) / 2;
   lPitch = pRenderer->uTargetSurfacePitch;
-  auto bWizardEyeActive = pParty->WizardEyeActive();
-  auto uWizardEyeSkillLevel = pParty->WizardEyeSkillLevel();
+  bool bWizardEyeActive = pParty->WizardEyeActive();
+  int uWizardEyeSkillLevel = pParty->WizardEyeSkillLevel();
   if ( CheckHiredNPCSpeciality(Cartographer) )
   {
     bWizardEyeActive = true;
@@ -1860,8 +1860,8 @@ void GameUI_DrawMinimap(unsigned int uX, unsigned int uY, unsigned int uZ, unsig
 
   if ( uCurrentlyLoadedLevelType == LEVEL_Outdoor)
   {
-    auto pMapLod0 = pIcons_LOD->pTextures[viewparams->uTextureID_LocationMap].pLevelOfDetail0_prolly_alpha_mask;
-    auto pPal = pIcons_LOD->pTextures[viewparams->uTextureID_LocationMap].pPalette16;
+    uchar* pMapLod0 = pIcons_LOD->pTextures[viewparams->uTextureID_LocationMap].pLevelOfDetail0_prolly_alpha_mask;
+    ushort* pPal = pIcons_LOD->pTextures[viewparams->uTextureID_LocationMap].pPalette16;
     v73 = (1 << (pIcons_LOD->pTextures[viewparams->uTextureID_LocationMap].uWidthLn2 + 16)) / (signed int)uZoom;
     v20 = (double)(pParty->vPosition.x + 32768) / (double)(1 << (16 - pIcons_LOD->pTextures[viewparams->uTextureID_LocationMap].uWidthLn2));
     uWb = (double)(32768 - pParty->vPosition.y) / (double)(1 << (16 - pIcons_LOD->pTextures[viewparams->uTextureID_LocationMap].uWidthLn2));
@@ -1898,12 +1898,12 @@ void GameUI_DrawMinimap(unsigned int uX, unsigned int uY, unsigned int uZ, unsig
       assert(uWidth == 137 && uHeight == 117);
       //auto pMinimap = (unsigned __int16 *)pOdmMinimap;
 
-      auto mapWidth = pIcons_LOD->pTextures[viewparams->uTextureID_LocationMap].uTextureWidth;
+      ushort mapWidth = pIcons_LOD->pTextures[viewparams->uTextureID_LocationMap].uTextureWidth;
 
       v29 = v70 >> 16;
       for (int y = 0; y < uHeight; ++y)
       {
-        auto pMapLod0Line = &pMapLod0[v27 * mapWidth];
+        uchar* pMapLod0Line = &pMapLod0[v27 * mapWidth];
         for (int x = 0; x < uWidth; ++x)
         {
           //*pMinimap++ = pPal[pMapLod0Line[v29]];
@@ -1934,9 +1934,9 @@ void GameUI_DrawMinimap(unsigned int uX, unsigned int uY, unsigned int uZ, unsig
 
     for (uint i = 0; i < (uint)pIndoor->pMapOutlines->uNumOutlines; ++i)
     {
-      auto pOutline = &pIndoor->pMapOutlines->pOutlines[i];
-      auto pFace1 = pIndoor->pFaces + pOutline->uFace1ID;
-      auto pFace2 = pIndoor->pFaces + pOutline->uFace2ID;
+      BLVMapOutline* pOutline = &pIndoor->pMapOutlines->pOutlines[i];
+      BLVFace* pFace1 = pIndoor->pFaces + pOutline->uFace1ID;
+      BLVFace* pFace2 = pIndoor->pFaces + pOutline->uFace2ID;
       //v9 = pIndoor->pFaces[pMapVertex->uFace1ID].uAttributes;
         //v10 = pIndoor->pFaces[pMapVertex->uFace2ID].uAttributes;
       if (pFace1->Visible() && pFace2->Visible())
@@ -1963,9 +1963,9 @@ LABEL_15:
       }
       else
       {
-        auto _a = (uZoom * (signed __int64)pIndoor->pVertices[pOutline->uVertex1ID].x);
-        auto _b = ((unsigned int)((unsigned __int64)_a >> 16) << 16);
-        auto _c = ((signed int)(_b - uZoom * pParty->vPosition.x) >> 16);
+        long long _a = (uZoom * (signed __int64)pIndoor->pVertices[pOutline->uVertex1ID].x);
+        uint _b = ((unsigned int)((unsigned __int64)_a >> 16) << 16);
+        int _c = ((signed int)(_b - uZoom * pParty->vPosition.x) >> 16);
         pX = uCenterX + ((signed int)(((unsigned int)((unsigned __int64)(uZoom * (signed __int64)pIndoor->pVertices[pOutline->uVertex1ID].x) >> 16) << 16) - uZoom * pParty->vPosition.x) >> 16);
         pY = uCenterY - ((signed int)(((unsigned int)((unsigned __int64)(uZoom * (signed __int64)pIndoor->pVertices[pOutline->uVertex1ID].y) >> 16) << 16) - uZoom * pParty->vPosition.y) >> 16);
         pZ = uCenterX + ((signed int)(((unsigned int)((unsigned __int64)(uZoom * (signed __int64)pIndoor->pVertices[pOutline->uVertex2ID].x) >> 16) << 16) - uZoom * pParty->vPosition.x) >> 16);
@@ -1979,7 +1979,7 @@ LABEL_15:
 
     for (uint i = 0; i < uNumBlueFacesInBLVMinimap; ++i)
     {
-      auto pOutline = &pIndoor->pMapOutlines->pOutlines[pBlueFacesInBLVMinimapIDs[i]];
+      BLVMapOutline* pOutline = &pIndoor->pMapOutlines->pOutlines[pBlueFacesInBLVMinimapIDs[i]];
       pX = uCenterX + ((signed int)(((unsigned int)((unsigned __int64)((signed int)uZoom * (signed __int64)pIndoor->pVertices[pOutline->uVertex1ID].x) >> 16) << 16) - uZoom * pParty->vPosition.x) >> 16);
       pY = uCenterY - ((signed int)(((unsigned int)((unsigned __int64)((signed int)uZoom * (signed __int64)pIndoor->pVertices[pOutline->uVertex1ID].y) >> 16) << 16) - uZoom * pParty->vPosition.y) >> 16);
       pZ = uCenterX + ((signed int)(((unsigned int)((unsigned __int64)((signed int)uZoom * (signed __int64)pIndoor->pVertices[pOutline->uVertex2ID].x) >> 16) << 16) - uZoom * pParty->vPosition.x) >> 16);
@@ -2119,12 +2119,12 @@ void  GameUI_DrawTorchlightAndWizardEye()
   {
     if (pParty->TorchlightActive())
     {
-      auto icon = pIconsFrameTable->GetFrame((signed __int16)pUIAnum_Torchlight->uIconID, pEventTimer->Time());
+      IconFrame* icon = pIconsFrameTable->GetFrame((signed __int16)pUIAnum_Torchlight->uIconID, pEventTimer->Time());
       pRenderer->DrawTextureTransparent(pUIAnum_Torchlight->x, pUIAnum_Torchlight->y, pIcons_LOD->GetTexture(icon->uTextureID));
     }
     if (pParty->WizardEyeActive())
     {
-      auto icon = pIconsFrameTable->GetFrame((signed __int16)pUIAnim_WizardEye->uIconID, pEventTimer->Time());
+      IconFrame* icon = pIconsFrameTable->GetFrame((signed __int16)pUIAnim_WizardEye->uIconID, pEventTimer->Time());
       pRenderer->DrawTextureTransparent(pUIAnim_WizardEye->x, pUIAnim_WizardEye->y, pIcons_LOD->GetTexture(icon->uTextureID));
     }
   }

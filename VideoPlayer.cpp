@@ -117,7 +117,7 @@ _BINKBUF *VideoPlayer::CreateBinkBuffer(unsigned int uWidth, unsigned int uHeigh
       v11.dwFlags = DDSD_CAPS | DDSD_WIDTH | DDSD_HEIGHT;
       v11.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN | DDSCAPS_SYSTEMMEMORY;
 
-      auto hr = pRenderer->pDirectDraw4->CreateSurface(&v11, &v15, 0);
+      long hr = pRenderer->pDirectDraw4->CreateSurface(&v11, &v15, 0);
       ErrD3D(hr);
     }
     v5->uWidth = v11.dwWidth;
@@ -161,7 +161,7 @@ _BINKBUF *VideoPlayer::CreateBinkBuffer(unsigned int uWidth, unsigned int uHeigh
       Dst.dwFlags = DDSD_CAPS | DDSD_WIDTH | DDSD_HEIGHT;
       Dst.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN | DDSCAPS_SYSTEMMEMORY;
 
-      auto hr = pRenderer->pDirectDraw2->CreateSurface(&Dst, (LPDIRECTDRAWSURFACE *)&a2, 0);
+      long hr = pRenderer->pDirectDraw2->CreateSurface(&Dst, (LPDIRECTDRAWSURFACE *)&a2, 0);
       ErrD3D(hr);
     }
     v5->uWidth = Dst.dwWidth;
@@ -1076,7 +1076,7 @@ void VideoPlayer::_4BF5B2()
   if ( window_SpeakInHouse && window_SpeakInHouse->ptr_1C == (void *)165 && !this->pSmackerMovie )
   {
     bGameoverLoop = 1;
-    sub_4BD8B5();
+    HouseDialogPressCloseBtn();
     window_SpeakInHouse->Release();
     pParty->uFlags &= 0xFFFFFFFDu;
     if ( EnterHouse(HOUSE_BODY_GUILD_ERATHIA) )

@@ -28,14 +28,14 @@ bool MainMenuWindow::Focused() {return false;}
 
 bool MainMenuWindow::Initialize()
 {
-  auto background_texture = new RGBTexture;
+  RGBTexture* background_texture = new RGBTexture;
   background_texture->Load("mm6title.pcx", 0);
   return true;
 }
 
 MainMenuWindow *MainMenuWindow::Create()
 {
-  auto window = new MainMenuWindow;
+  MainMenuWindow* window = new MainMenuWindow;
   if (window)
     if (!window->Initialize())
     {

@@ -301,7 +301,7 @@ struct Party
   char pHireling1Name[100];
   char pHireling2Name[100];
   int armageddon_timer;
-  int field_16140;
+  int armageddonDamage;
   std::array<int, 4> pTurnBasedPlayerRecoveryTimes;
   std::array<int, 53> InTheShopFlags;
   int uFine;

@@ -219,13 +219,13 @@ void BLVRenderParams::Reset()
   this->uPartySectorID = v7;
   if ( !v7 )
   {
-    __debugbreak(); // shouldnt happen, please provide savegame
+    //__debugbreak(); // shouldnt happen, please provide savegame
     /*v8 = this->vPartyPos.z;
     this->vPartyPos.x = pParty->vPosition.x;
     v9 = pParty->vPosition.y;
     v10 = this->vPartyPos.x;
     this->vPartyPos.y = pParty->vPosition.y;*/
-    this->uPartySectorID = pIndoor->GetSector(v10, v9, v8);
+    this->uPartySectorID = pIndoor->GetSector(pParty->vPosition.x, pParty->vPosition.y, pParty->vPosition.z);
   }
   if ( pRenderer->pRenderD3D )
   {
@@ -508,7 +508,7 @@ void IndoorLocation::ExecDraw_d3d(unsigned int uFaceID, IndoorCameraD3D_Vec4 *pV
   static stru154 stru_F7B60C; // idb
 
     //v9 = &pIndoor->pFaces[uFaceID];
-  auto pFace = &pIndoor->pFaces[uFaceID];
+  BLVFace* pFace = &pIndoor->pFaces[uFaceID];
   if (pFace->uNumVertices < 3)
     return;
 
@@ -561,7 +561,7 @@ void IndoorLocation::ExecDraw_d3d(unsigned int uFaceID, IndoorCameraD3D_Vec4 *pV
           stru_F7B60C.face_plane.dist = pFace->pFacePlane.dist;
         }
 
-        if (stru_F8AD28.uNumLightsApplied > 0 && !(pFace->uAttributes & FACE_DO_NOT_LIGHT))
+        if (stru_F8AD28.uNumLightsApplied > 0 && !(pFace->uAttributes & FACE_INDOOR_SKY))
           pGame->pLightmapBuilder->ApplyLights(&stru_F8AD28, &stru_F7B60C, uNumVerticesa, array_507D30, pVertices, 0);
 
         if (pDecalBuilder->uNumDecals > 0)
@@ -601,8 +601,8 @@ void IndoorLocation::ExecDraw_d3d(unsigned int uFaceID, IndoorCameraD3D_Vec4 *pV
           v27 = pBitmaps_LOD->pHardwareTextures[v23];
         }
 
-        if (pFace->uAttributes & FACE_DO_NOT_LIGHT)
-          pRenderer->DrawIndoorPolygonNoLight(uNumVerticesa, uFaceID);
+        if (pFace->uAttributes & FACE_INDOOR_SKY)
+          pRenderer->DrawIndoorSky(uNumVerticesa, uFaceID);
         else
           pRenderer->DrawIndoorPolygon(uNumVerticesa, pFace, v27, v28, PID(OBJECT_BModel, uFaceID), v17, 0);
         return;
@@ -702,7 +702,7 @@ void BspRenderer::AddFaceToRenderList_d3d(unsigned int node_id, unsigned int uFa
   nodes[num_nodes].viewing_portal_id = -1;
   //v39 = &pIndoor->pFaces[uFaceID];
 
-  auto pFace = &pIndoor->pFaces[uFaceID];
+  BLVFace* pFace = &pIndoor->pFaces[uFaceID];
 
   if (!pFace->Portal())
   {
@@ -752,13 +752,13 @@ void BspRenderer::AddFaceToRenderList_d3d(unsigned int node_id, unsigned int uFa
   if (v9 >= 0)
     return;
 
-  auto num_vertices = GetPortalScreenCoord(uFaceID);
+  int num_vertices = GetPortalScreenCoord(uFaceID);
   if (num_vertices < 2)
     return;
 
-  auto face_min_screenspace_x = PortalFace._screen_space_x[0],
+  int face_min_screenspace_x = PortalFace._screen_space_x[0],
        face_max_screenspace_x = PortalFace._screen_space_x[0];
-  auto face_min_screenspace_y = PortalFace._screen_space_y[0],
+  int face_min_screenspace_y = PortalFace._screen_space_y[0],
        face_max_screenspace_y = PortalFace._screen_space_y[0];
   for (uint i = 1; i < num_vertices; ++i)
   {
@@ -1796,14 +1796,14 @@ LABEL_50:
   //v84 = malloc(header.uDecompressedSize);
   //v85 = v84;
   //ptr = v84;
-  auto pRawBLV = malloc(header.uDecompressedSize);
+  void* pRawBLV = malloc(header.uDecompressedSize);
   memset(pRawBLV, 0, header.uDecompressedSize);
 
   if (header.uCompressedSize == header.uDecompressedSize)
     fread(pRawBLV, header.uDecompressedSize, 1, File);
   else if (header.uCompressedSize < header.uDecompressedSize)
   {
-    auto pTmpMem = malloc(header.uCompressedSize);
+    void* pTmpMem = malloc(header.uCompressedSize);
     {
       fread(pTmpMem, header.uCompressedSize, 1, File);
 
@@ -1823,7 +1823,7 @@ LABEL_50:
   
   bLoaded = true;
 
-  auto pData = (char *)pRawBLV;
+  char* pData = (char *)pRawBLV;
   
   pGameLoadingUI_ProgressBar->Progress();
 
@@ -1844,24 +1844,24 @@ LABEL_50:
 
   for (uint i = 0, j = 0; i < uNumFaces; ++i)
   {
-    auto pFace = pFaces + i;
+    BLVFace* pFace = &pFaces[i];
 
-    pFace->pVertexIDs = pLFaces + j;
+    pFace->pVertexIDs = &pLFaces[j];
     
     j += pFace->uNumVertices + 1;
-    pFace->pXInterceptDisplacements = (short *)(pLFaces + j);
+    pFace->pXInterceptDisplacements = (short *)(&pLFaces[j]);
 
     j += pFace->uNumVertices + 1;
-    pFace->pYInterceptDisplacements = (short *)(pLFaces + j);
+    pFace->pYInterceptDisplacements = (short *)(&pLFaces[j]);
 
     j += pFace->uNumVertices + 1;
-    pFace->pZInterceptDisplacements = (short *)(pLFaces + j);
+    pFace->pZInterceptDisplacements = (short *)(&pLFaces[j]);
 
     j += pFace->uNumVertices + 1;
-    pFace->pVertexUIDs = (__int16 *)(pLFaces + j);
+    pFace->pVertexUIDs = (__int16 *)(&pLFaces[j]);
 
     j += pFace->uNumVertices + 1;
-    pFace->pVertexVIDs = (__int16 *)(pLFaces + j);
+    pFace->pVertexVIDs = (__int16 *)(&pLFaces[j]);
 
     j += pFace->uNumVertices + 1;
       /*v93 = &pFaces[v92];
@@ -1899,7 +1899,7 @@ LABEL_50:
 
   for (uint i = 0; i < uNumFaces; ++i)
   {
-    auto pFace = pFaces + i;
+    BLVFace* pFace = &pFaces[i];
 
     char pTexName[16];
     strncpy(pTexName, pData, 10);
@@ -1946,8 +1946,8 @@ LABEL_50:
 
   for (uint i = 0; i < uNumFaces; ++i)
   {
-    auto pFace = pFaces + i;
-    auto pFaceExtra = pFaceExtras + pFace->uFaceExtraID;
+    BLVFace* pFace = &pFaces[i];
+    BLVFaceExtra* pFaceExtra = &pFaceExtras[pFace->uFaceExtraID];
 
     if (pFaceExtra->uEventID)
     {
@@ -1972,33 +1972,33 @@ LABEL_50:
 
   for (uint i = 0, j = 0; i < uNumSectors; ++i)
   {
-    auto pSector = pSectors + i;
+    BLVSector* pSector = &pSectors[i];
 
-    pSector->pFloors = ptr_0002B0_sector_rdata + j;
+    pSector->pFloors = &ptr_0002B0_sector_rdata[j];
     j += pSector->uNumFloors;
 
-    pSector->pWalls = ptr_0002B0_sector_rdata + j;
+    pSector->pWalls = &ptr_0002B0_sector_rdata[j];
     j += pSector->uNumWalls;
 
-    pSector->pCeilings = ptr_0002B0_sector_rdata + j;
+    pSector->pCeilings = &ptr_0002B0_sector_rdata[j];
     j += pSector->uNumCeilings;
 
-    pSector->pFluids = ptr_0002B0_sector_rdata + j;
+    pSector->pFluids = &ptr_0002B0_sector_rdata[j];
     j += pSector->uNumFluids;
 
-    pSector->pPortals = ptr_0002B0_sector_rdata + j;
+    pSector->pPortals = &ptr_0002B0_sector_rdata[j];
     j += pSector->uNumPortals;
 
-    pSector->pFaceIDs = ptr_0002B0_sector_rdata + j;
+    pSector->pFaceIDs = &ptr_0002B0_sector_rdata[j];
     j += pSector->uNumFaces;
 
-    pSector->pCogs = ptr_0002B0_sector_rdata + j;
+    pSector->pCogs = &ptr_0002B0_sector_rdata[j];
     j += pSector->uNumCogs;
 
-    pSector->pDecorationIDs = ptr_0002B0_sector_rdata + j;
+    pSector->pDecorationIDs = &ptr_0002B0_sector_rdata[j];
     j += pSector->uNumDecorations;
 
-    pSector->pMarkers = ptr_0002B0_sector_rdata + j;
+    pSector->pMarkers = &ptr_0002B0_sector_rdata[j];
     j += pSector->uNumMarkers;
 
 
@@ -2135,7 +2135,7 @@ LABEL_50:
       fread(pRawDLV, 1, header.uCompressedSize, File);
     else if (header.uCompressedSize < header.uDecompressedSize)
     {
-      auto pTmpMem = malloc(header.uCompressedSize);
+      void* pTmpMem = malloc(header.uCompressedSize);
       {
         fread(pTmpMem, header.uCompressedSize, 1, File);
 
@@ -2192,9 +2192,9 @@ LABEL_132:
     *(int *)pDest = 1;
     File = pGames_LOD->FindContainer(pFilename, 0);
     fread(&header, 0x10u, 1u, File);
-    auto v155 = header.uCompressedSize;
-    auto Count = header.uDecompressedSize;
-    auto Src = (BLVFace *)malloc(header.uDecompressedSize);
+    uint v155 = header.uCompressedSize;
+    uint Count = header.uDecompressedSize;
+    BLVFace* Src = (BLVFace *)malloc(header.uDecompressedSize);
     pRawDLV = Src;
     if ( v155 <= Count )
     {
@@ -2204,7 +2204,7 @@ LABEL_132:
       }
       else
       {
-        auto _uSourceLen = malloc(v155);
+        void* _uSourceLen = malloc(v155);
         fread(_uSourceLen, v155, 1u, File);
         zlib::MemUnzip(Src, &Count, _uSourceLen, v155);
         free(_uSourceLen);
@@ -2231,7 +2231,7 @@ LABEL_140:
 
   for (uint i = 0; i < pMapOutlines->uNumOutlines; ++i)
   {
-    auto pVertex = pMapOutlines->pOutlines + i;
+    BLVMapOutline* pVertex = &pMapOutlines->pOutlines[i];
     if ((unsigned __int8)(1 << (7 - i % 8)) & _visible_outlines[i / 8])
       pVertex->uFlags |= 1;
   }
@@ -2239,8 +2239,8 @@ LABEL_140:
 
   for (uint i = 0; i < uNumFaces; ++i)
   {
-    auto pFace = pFaces + i;
-    auto pFaceExtra = pFaceExtras + pFace->uFaceExtraID;
+    BLVFace* pFace = &pFaces[i];
+    BLVFaceExtra* pFaceExtra = &pFaceExtras[pFace->uFaceExtraID];
 
     memcpy(&pFace->uAttributes, pData, 4);
     pData += 4;
@@ -2279,7 +2279,7 @@ LABEL_140:
 
   for (uint i = 0; i < uNumSpriteObjects; ++i)
   {
-    auto pItem = &pSpriteObjects[i];
+    SpriteObject* pItem = &pSpriteObjects[i];
  
     if (pItem->stru_24.uItemID && !(pItem->uAttributes & 0x0100))
     {
@@ -2321,30 +2321,30 @@ LABEL_140:
   //if (uNumDoors > 0)
   for (uint i = 0, j = 0; i < uNumDoors; ++i)
   {
-    auto pDoor = pDoors + i;
+    BLVDoor* pDoor = &pDoors[i];
 
-    pDoor->pVertexIDs = ptr_0002B4_doors_ddata + j;
+    pDoor->pVertexIDs = &ptr_0002B4_doors_ddata[j];
     j += pDoor->uNumVertices;
 
-    pDoor->pFaceIDs = ptr_0002B4_doors_ddata + j;
+    pDoor->pFaceIDs = &ptr_0002B4_doors_ddata[j];
     j += pDoor->uNumFaces;
 
-    pDoor->pSectorIDs = ptr_0002B4_doors_ddata + j;
+    pDoor->pSectorIDs = &ptr_0002B4_doors_ddata[j];
     j += pDoor->field_48;
 
-    pDoor->pDeltaUs = (short *)(ptr_0002B4_doors_ddata + j);
+    pDoor->pDeltaUs = (short *)(&ptr_0002B4_doors_ddata[j]);
     j += pDoor->uNumFaces;
 
-    pDoor->pDeltaVs = (short *)(ptr_0002B4_doors_ddata + j);
+    pDoor->pDeltaVs = (short *)(&ptr_0002B4_doors_ddata[j]);
     j += pDoor->uNumFaces;
 
-    pDoor->pXOffsets = ptr_0002B4_doors_ddata + j;
+    pDoor->pXOffsets = &ptr_0002B4_doors_ddata[j];
     j += pDoor->uNumOffsets;
 
-    pDoor->pYOffsets = ptr_0002B4_doors_ddata + j;
+    pDoor->pYOffsets = &ptr_0002B4_doors_ddata[j];
     j += pDoor->uNumOffsets;
 
-    pDoor->pZOffsets = ptr_0002B4_doors_ddata + j;
+    pDoor->pZOffsets = &ptr_0002B4_doors_ddata[j];
     j += pDoor->uNumOffsets;
     /*v173 = pDoors;
     for ( k = 0; ; v172 = v188 + 2 * *((short *)&v173[k] - 3) )
@@ -2383,12 +2383,12 @@ LABEL_140:
   //v245 = 0;
   for (uint i = 0; i < uNumDoors; ++i)
   {
-    auto pDoor = pDoors + i;
+    BLVDoor* pDoor = &pDoors[i];
 
     for (uint j = 0; j < pDoor->uNumFaces; ++j)
     {
-      auto pFace = pFaces + pDoor->pFaceIDs[j];
-      auto pFaceExtra = pFaceExtras + pFace->uFaceExtraID;
+      BLVFace* pFace = &pFaces[pDoor->pFaceIDs[j]];
+      BLVFaceExtra* pFaceExtra = &pFaceExtras[pFace->uFaceExtraID];
 
       pDoor->pDeltaUs[j] = pFaceExtra->sTextureDeltaU;
       pDoor->pDeltaVs[j] = pFaceExtra->sTextureDeltaV;
@@ -2511,7 +2511,7 @@ int IndoorLocation::GetSector(int sX, int sY, int sZ)
 
   for (uint i = 1; i < uNumSectors; ++i)
   {
-    auto pSector = pSectors + i;
+    BLVSector* pSector = &pSectors[i];
 
     if (pSector->pBounding.x1 > sX || pSector->pBounding.x2 < sX ||
         pSector->pBounding.y1 > sY || pSector->pBounding.y2 < sY ||
@@ -2532,7 +2532,7 @@ int IndoorLocation::GetSector(int sX, int sY, int sZ)
       else
         uFaceID = pSector->pPortals[j - pSector->uNumFloors];
 
-      auto pFace = pFaces + uFaceID;
+      BLVFace* pFace = &pFaces[uFaceID];
       if (pFace->uPolygonType != POLYGON_Floor &&
           pFace->uPolygonType != POLYGON_InBetweenFloorAndWall)
         continue;
@@ -2547,13 +2547,13 @@ int IndoorLocation::GetSector(int sX, int sY, int sZ)
         if (v54 >= 2)
           break;
 
-        auto v2 = &pVertices[pFace->pVertexIDs[k]];
+        Vec3<int16_t>* v2 = &pVertices[pFace->pVertexIDs[k]];
         v50 = v2->y >= sY;
 
         if (v59 == v50)
           continue;
 
-        auto v1 = &pVertices[pFace->pVertexIDs[k - 1]];
+        Vec3<int16_t>* v1 = &pVertices[pFace->pVertexIDs[k - 1]];
         v25 = v2->x >= sX ? 0 : 2;
         v26 = v25 | (v1->x < sX);
 
@@ -2575,15 +2575,15 @@ int IndoorLocation::GetSector(int sX, int sY, int sZ)
                         //fixpoint_div(v1->x - v2->x, v1->y - v2->y);
                         //_a58 = v33 / (v1->y - v2->y);
                         //_a59 = fixpoint_mul(_a58, sY - v2->y);
-            auto x_div_y = fixpoint_div(v1->x - v2->x, v1->y - v2->y);
-            auto res = fixpoint_mul(x_div_y, sY - v2->y);  // a / b * c  - looks like projection 
+            long long x_div_y = fixpoint_div(v1->x - v2->x, v1->y - v2->y);
+            long long res = fixpoint_mul(x_div_y, sY - v2->y);  // a / b * c  - looks like projection 
             if (res + v2->x > sX)
               ++v54;
           }
           else
           {
-            auto x_div_y = fixpoint_div(v2->x - v1->x, v2->y - v1->y);
-            auto res = fixpoint_mul(x_div_y, sY - v1->y);
+            long long x_div_y = fixpoint_div(v2->x - v1->x, v2->y - v1->y);
+            long long res = fixpoint_mul(x_div_y, sY - v1->y);
 
             if (res + v1->x > sX)
               ++v54;
@@ -2854,7 +2854,7 @@ void  BLV_UpdateDoors()
   //if ( pIndoor->uNumDoors > 0 )
   for (uint i = 0; i < pIndoor->uNumDoors; ++i)
   {
-    auto door = pIndoor->pDoors + i;
+    BLVDoor* door = &pIndoor->pDoors[i];
     //v80 = 0;
     //do
     //{
@@ -2897,7 +2897,7 @@ LABEL_10:
       }
       else
       {
-        auto v5 = (signed int)(door->uTimeSinceTriggered * door->uOpenSpeed) / 128;
+        signed int v5 = (signed int)(door->uTimeSinceTriggered * door->uOpenSpeed) / 128;
         //v6 = door->uMoveLength;
         if ( v5 >= door->uMoveLength)
         {
@@ -3274,12 +3274,12 @@ void  UpdateActors_BLV()
       if ( v0->uCurrentActionAnimation == ANIM_Walking)
       {
         v6 = v0->uMovementSpeed;
-        v7 = HIDWORD(v0->pActorBuffs[7].uExpireTime) == 0;
-        v8 = SHIDWORD(v0->pActorBuffs[7].uExpireTime) < 0;
+        v7 = HIDWORD(v0->pActorBuffs[ACTOR_BUFF_SLOWED].uExpireTime) == 0;
+        v8 = SHIDWORD(v0->pActorBuffs[ACTOR_BUFF_SLOWED].uExpireTime) < 0;
         v61 = v0->uMovementSpeed;
-        if ( !v8 && (!(v8 | v7) || LODWORD(v0->pActorBuffs[7].uExpireTime)) )
+        if ( !v8 && (!(v8 | v7) || LODWORD(v0->pActorBuffs[ACTOR_BUFF_SLOWED].uExpireTime)) )
         {
-          v9 = v0->pActorBuffs[7].uPower;
+          v9 = v0->pActorBuffs[ACTOR_BUFF_SLOWED].uPower;
           if ( v9 )
             LODWORD(v10) = v6 / (unsigned __int16)v9;
           else
@@ -3755,7 +3755,7 @@ void  PrepareToLoadBLV(unsigned int bLoading)
 
   for (uint i = 0; i < pIndoor->uNumDoors; ++i)
   {
-    auto pDoor = pIndoor->pDoors + i;
+    BLVDoor* pDoor = &pIndoor->pDoors[i];
 
     if (pDoor->uAttributes & 0x01)
     {
@@ -3817,7 +3817,7 @@ LABEL_43:
 
   for (uint i = 0; i < pIndoor->uNumFaces; ++i)
   {
-    auto pFace = pIndoor->pFaces + i;
+    BLVFace* pFace = &pIndoor->pFaces[i];
     if (!pFace->uBitmapID != -1)
       pBitmaps_LOD->pTextures[pFace->uBitmapID].palette_id2 = pPaletteManager->LoadPalette(pBitmaps_LOD->pTextures[pFace->uBitmapID].palette_id1);
  }
@@ -3826,7 +3826,7 @@ LABEL_43:
   
   for (uint i = 0; i < uNumLevelDecorations; ++i)
   {
-    auto pDecortaion = &pLevelDecorations[i];
+    LevelDecoration* pDecortaion = &pLevelDecorations[i];
     
     pDecorationList->InitializeDecorationSprite(pDecortaion->uDecorationDescID);
 
@@ -3888,10 +3888,10 @@ LABEL_43:
 
   for (uint i = 0; i < uNumSpriteObjects; ++i)
   {
-    auto p = &pSpriteObjects[i];
+    SpriteObject* p = &pSpriteObjects[i];
     if (p->uObjectDescID)
     {
-      auto uItemID = p->stru_24.uItemID;
+      int uItemID = p->stru_24.uItemID;
       if (uItemID)
       {
         if (uItemID != 220 && pItemsTable->pItems[uItemID].uEquipType == EQUIP_POTION &&
@@ -3902,6 +3902,7 @@ LABEL_43:
     }
   }
 
+  // INDOOR initialize actors
   for (uint i = 0; i < uNumActors; ++i)
   //if ( (signed int)uNumActors > (signed int)v13 )
   {
@@ -4024,11 +4025,11 @@ int BLV_GetFloorLevel(int x, int y, int z, unsigned int uSectorID, unsigned int 
   static __int16 word_721390_ys[104]; // idb
   static __int16 word_721460_xs[104]; // idb
 
-  auto pSector = &pIndoor->pSectors[uSectorID];
+  BLVSector* pSector = &pIndoor->pSectors[uSectorID];
   v55 = 0;
   for (uint i = 0; i < pSector->uNumFloors; ++i)
   {
-    auto pFloor = &pIndoor->pFaces[pSector->pFloors[i]];
+    BLVFace* pFloor = &pIndoor->pFaces[pSector->pFloors[i]];
     if (pFloor->Clickable())
       continue;
 
@@ -4070,8 +4071,8 @@ int BLV_GetFloorLevel(int x, int y, int z, unsigned int uSectorID, unsigned int 
             ++v53;
           else
           {
-            auto a_div_b = fixpoint_div(y - word_721390_ys[j], word_721390_ys[j + 1] - word_721390_ys[j]);
-            auto res = fixpoint_mul((signed int)word_721460_xs[j + 1] - (signed int)word_721460_xs[j], a_div_b);
+            long long a_div_b = fixpoint_div(y - word_721390_ys[j], word_721390_ys[j + 1] - word_721390_ys[j]);
+            long long res = fixpoint_mul((signed int)word_721460_xs[j + 1] - (signed int)word_721460_xs[j], a_div_b);
 
             if (res + word_721460_xs[j] >= x)
                 ++v53;
@@ -4103,7 +4104,7 @@ int BLV_GetFloorLevel(int x, int y, int z, unsigned int uSectorID, unsigned int 
   {
     for (uint i = 0; i < pSector->uNumPortals; ++i)
     {
-      auto portal = &pIndoor->pFaces[pSector->pPortals[i]];
+      BLVFace* portal = &pIndoor->pFaces[pSector->pPortals[i]];
       if (portal->uPolygonType != POLYGON_Floor)
         continue;
 
@@ -4141,8 +4142,8 @@ int BLV_GetFloorLevel(int x, int y, int z, unsigned int uSectorID, unsigned int 
                   ++v54;
                 else
                 {
-                  auto a_div_b = fixpoint_div(y - word_721390_ys[j], word_721390_ys[j + 1] - word_721390_ys[j]);
-                  auto res = fixpoint_mul(word_721460_xs[j + 1] - word_721460_xs[j], a_div_b);
+                  long long a_div_b = fixpoint_div(y - word_721390_ys[j], word_721390_ys[j + 1] - word_721390_ys[j]);
+                  long long res = fixpoint_mul(word_721460_xs[j + 1] - word_721460_xs[j], a_div_b);
                   if (res + word_721460_xs[j] >= x)
                     ++v54;
                 }
@@ -4506,7 +4507,7 @@ void PrepareActorRenderList_BLV()
 
   for (uint i = 0; i < uNumActors; ++i)
   {
-    auto p = &pActors[i];
+    Actor* p = &pActors[i];
 
     if (p->uAIState == Removed ||
         p->uAIState == Disabled)
@@ -4541,7 +4542,7 @@ LABEL_10:
     }
     v8 = p->uCurrentActionTime;
 LABEL_12:
-    if (p->pActorBuffs[5].uExpireTime > 0i64 || p->pActorBuffs[6].uExpireTime > 0i64 )
+    if (p->pActorBuffs[ACTOR_BUFF_STONED].uExpireTime > 0i64 || p->pActorBuffs[ACTOR_BUFF_PARALYZED].uExpireTime > 0i64 )
       v8 = 0;
     v31 = p->pSpriteIDs[v5];
     if (p->uAIState == Resurrected)
@@ -4620,9 +4621,9 @@ LABEL_12:
       a5a = (unsigned __int64)(v10->scale * (signed __int64)v19) >> 16;
     }
     v0->_screenspace_y_scaler_packedfloat = a5a;
-    if ( (signed __int64)p->pActorBuffs[3].uExpireTime <= 0 )
+    if ( (signed __int64)p->pActorBuffs[ACTOR_BUFF_SHRINK].uExpireTime <= 0 )
     {
-      if ( (signed __int64)p->pActorBuffs[10].uExpireTime > 0 )
+      if ( (signed __int64)p->pActorBuffs[ACTOR_BUFF_MASS_DISTORTION].uExpireTime > 0 )
       {
         a5b = (unsigned __int64)(pGame->pStru6Instance->_4A806F(p) * (signed __int64)v0->_screenspace_y_scaler_packedfloat) >> 16;
         goto LABEL_43;
@@ -4630,11 +4631,11 @@ LABEL_12:
     }
     else
     {
-      v22 = p->pActorBuffs[3].uPower;
+      v22 = p->pActorBuffs[ACTOR_BUFF_SHRINK].uPower;
       if ( v22 )
       {
         v23 = (unsigned __int64)(65536 / (unsigned __int16)v22 * (signed __int64)v0->_screenspace_x_scaler_packedfloat) >> 16;
-        v24 = p->pActorBuffs[3].uPower;
+        v24 = p->pActorBuffs[ACTOR_BUFF_SHRINK].uPower;
         v0->_screenspace_x_scaler_packedfloat = v23;
         a5b = (unsigned __int64)(65536 / v24 * (signed __int64)v0->_screenspace_y_scaler_packedfloat) >> 16;
 LABEL_43:
@@ -4656,12 +4657,12 @@ LABEL_44:
     v0->actual_z = HIWORD(x);
     v0->object_pid = PID(OBJECT_Actor,i);
 
-    v29 = HIDWORD(p->pActorBuffs[5].uExpireTime) == 0;
-    v30 = HIDWORD(p->pActorBuffs[5].uExpireTime) < 0;
+    v29 = HIDWORD(p->pActorBuffs[ACTOR_BUFF_STONED].uExpireTime) == 0;
+    v30 = HIDWORD(p->pActorBuffs[ACTOR_BUFF_STONED].uExpireTime) < 0;
     v0->field_1E = v41;
     v0->pSpriteFrame = v10;
     v0->uTintColor = pMonsterList->pMonsters[p->pMonsterInfo.uID - 1].uTintColor;
-    if ( !v30 && (!(v30 | v29) || LODWORD(p->pActorBuffs[5].uExpireTime)) )
+    if ( !v30 && (!(v30 | v29) || LODWORD(p->pActorBuffs[ACTOR_BUFF_STONED].uExpireTime)) )
     {
       HIBYTE(v26) = HIBYTE(v41) | 1;
       v0->field_1E = v26;
@@ -4709,7 +4710,7 @@ void PrepareItemsRenderList_BLV()
 
   for (uint i = 0; i < uNumSpriteObjects; ++i)
   {
-    auto p = &pSpriteObjects[i];
+    SpriteObject* p = &pSpriteObjects[i];
     if (p->uObjectDescID)
     {
       v1 = &pObjectList->pObjects[p->uObjectDescID];
@@ -6090,7 +6091,7 @@ char __fastcall DoInteractionWithTopmostZObject(int a1, int a2)
         return 1;
       if ( v14 == 5 )
       {
-        stru_50C198.LootActor(&pActors[PID_ID(a1)]);
+        pActors[PID_ID(a1)].LootActor();
       }
       else
       {
@@ -6151,7 +6152,7 @@ char __fastcall DoInteractionWithTopmostZObject(int a1, int a2)
             face_id = PID_ID(a1) & 0x3F;
         if (bmodel_id >= pOutdoor->uNumBModels)
           return 1;
-        auto face = &pOutdoor->pBModels[bmodel_id].pFaces[face_id];
+        ODMFace* face = &pOutdoor->pBModels[bmodel_id].pFaces[face_id];
         if (face->uAttributes & 0x100000 || face->sCogTriggeredID == 0 )
           return 1;
         EventProcessor((signed __int16)face->sCogTriggeredID, v2, 1);

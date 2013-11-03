@@ -990,7 +990,7 @@ void OnPressSpace()
   if ( pRenderer->pRenderD3D )
   {
     pGame->PickKeyboard(GetAsyncKeyState(VK_CONTROL) & 0x8001, &vis_sprite_filter_3, &vis_door_filter);
-    auto pid = pGame->pVisInstance->get_picked_object_zbuf_val();
+    int pid = pGame->pVisInstance->get_picked_object_zbuf_val();
     if ( pid != -1 )
       DoInteractionWithTopmostZObject(pid & 0xFFFF, PID_ID(pid));
     return;

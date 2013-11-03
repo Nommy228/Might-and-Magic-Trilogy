@@ -465,7 +465,7 @@ void EventProcessor(int uEventID, int targetObj, int canShowMessages, int entry_
       {
       //v9 = pSomeEVT_Events[v8].uEventOffsetInEVT;
       //v10 = (ByteArray *)&v5[v9];
-      auto _evt = (_evt_raw *)(pSomeEVT + pSomeEVT_Events[v4].uEventOffsetInEVT);
+      _evt_raw * _evt = (_evt_raw *)(pSomeEVT + pSomeEVT_Events[v4].uEventOffsetInEVT);
 
       switch (_evt->_e_type)
         {
@@ -700,7 +700,7 @@ LABEL_47:
               {
                 if ( pEventID == 78 )
                 {
-                  sub_4BD8B5();
+                  HouseDialogPressCloseBtn();
                   window_SpeakInHouse->Release();
                   pParty->uFlags &= ~2;
                   if ( EnterHouse(HOUSE_DARK_GUILD_PIT) )
@@ -797,7 +797,7 @@ LABEL_47:
 
           if ( window_SpeakInHouse->par1C == 165 )
             {
-            sub_4BD8B5();
+            HouseDialogPressCloseBtn();
             pVideoPlayer->Unload();
             window_SpeakInHouse->Release();
             pParty->uFlags &= ~2;
@@ -1434,7 +1434,7 @@ LABEL_280:
               {
               pAudioPlayer->StopChannels(-1, -1);
               dialog_menu_id = HOUSE_DIALOGUE_NULL;
-              while ( sub_4BD8B5() )
+              while ( HouseDialogPressCloseBtn() )
                 ;
               pVideoPlayer->Unload();
               window_SpeakInHouse->Release();

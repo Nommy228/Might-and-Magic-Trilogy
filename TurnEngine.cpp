@@ -168,7 +168,7 @@ void stru262_TurnBased::Start()
                 {
                 v8 = ai_near_actors_targets_pid[actor_id];
                 pActors[actor_id].uAttributes |= 0x80;
-                memcpy(&v31, Actor::GetDirectionInfo(PID(OBJECT_Actor,actor_id), v8, &a3, 0), sizeof(AIDirection));
+                Actor::GetDirectionInfo(PID(OBJECT_Actor,actor_id), v8, &v31, 0);
                 memcpy(&v30, &v31, sizeof(AIDirection));
                 Actor::AI_StandOrBored(actor_id, 4, 32, &v30);
                 this->pQueue[this->uActorQueueSize].uPackedID = PID(OBJECT_Actor,actor_id);
@@ -292,7 +292,7 @@ void stru262_TurnBased::End(bool bPlaySound)
 //----- (00405E14) --------------------------------------------------------
 void stru262_TurnBased::AITurnBasedAction()
     {
-    AIDirection *v6; // esi@21
+    AIDirection v6; // esi@21
     int v7; // eax@21
     AIDirection a3; // [sp+4h] [bp-68h]@21
     AIDirection v14; // [sp+20h] [bp-4Ch]@21
@@ -323,8 +323,8 @@ void stru262_TurnBased::AITurnBasedAction()
             if (curr_actor->uCurrentActionTime>=curr_actor->uCurrentActionLength)
                 {
                 target_pid = ai_near_actors_targets_pid[i];
-                v6 = Actor::GetDirectionInfo(PID(OBJECT_Actor,i), target_pid, &a3, 0);  
-                memcpy(&v15, v6, sizeof(AIDirection));   
+                Actor::GetDirectionInfo(PID(OBJECT_Actor,i), target_pid, &v6, 0);  
+                memcpy(&v15, &v6, sizeof(AIDirection));   
                 memcpy(&v14, &v15, sizeof(AIDirection));
                 v7 = curr_actor->uAIState;
                 if(v7==Dying)
@@ -658,7 +658,7 @@ void stru262_TurnBased::SetAIRecoveryTimes()
                 monster_ai_state == AIState::Fidgeting)
                 {
                 pQueue[i].actor_initiative = pMonsterStats->pInfos[monster->pMonsterInfo.uID].uRecoveryTime;
-                if (monster->pActorBuffs[7].uExpireTime > 0)
+                if (monster->pActorBuffs[ACTOR_BUFF_SLOWED].uExpireTime > 0)
                     pQueue[i].actor_initiative*=2;
                 }
             }
@@ -715,7 +715,7 @@ void stru262_TurnBased::AIAttacks( unsigned int queue_index )
         {
         v4 = PID_ID(v3);
         a2a = ai_near_actors_targets_pid[PID_ID(pQueue[queue_index].uPackedID)];
-        memcpy(&a3, Actor::GetDirectionInfo(v1->uPackedID, ai_near_actors_targets_pid[PID_ID(v3)], &a3, 0), sizeof(a3));
+        Actor::GetDirectionInfo(v1->uPackedID, ai_near_actors_targets_pid[PID_ID(v3)], &a3, 0);
         memcpy(&a4, &a3, sizeof(a4));
         v5 = &pActors[PID_ID(v3)];
         LOWORD(v3) = v5->uAIState;
@@ -727,7 +727,7 @@ void stru262_TurnBased::AIAttacks( unsigned int queue_index )
                          switch (v3)
                          {
                            case  AIState::AttackingMelee:
-                             v19 = stru_50C198.special_ability_use_check(&pActors[v4], v4);
+                             v19 = pActors[v4].special_ability_use_check(v4);
                              stru_50FE08.Add( v28->uPackedID,  5120,  v5->vPosition.x, v5->vPosition.y, v5->vPosition.z + ((signed int)v5->uActorHeight >> 1), v19,  1);
                              Actor::AI_Stand(v4, a2a, 0, &a4);
                              break;
@@ -777,7 +777,7 @@ void stru262_TurnBased::AI_Action_( int queue_index )
     unsigned int v3; // eax@1
     unsigned int actor_id; // edi@2
     Actor *v5; // ebx@2
-    AIDirection *v7; // esi@10
+    AIDirection v7; // esi@10
     int v8; // eax@10
     int v9; // ecx@10
     signed int v10; // eax@13
@@ -808,9 +808,9 @@ void stru262_TurnBased::AI_Action_( int queue_index )
                 v22 = ai_near_actors_targets_pid[actor_id];
                 if ( v5->pMonsterInfo.uHostilityType && !v22)
                     v5->pMonsterInfo.uHostilityType = MonsterInfo::Hostility_Friendly;
-                v7 = Actor::GetDirectionInfo(PID(OBJECT_Actor,actor_id), v22, &a3, 0);
+                Actor::GetDirectionInfo(PID(OBJECT_Actor,actor_id), v22, &v7, 0);
                 v8 = v5->uActorRadius;
-                memcpy(&a3, v7, sizeof(AIDirection));
+                memcpy(&a3, &v7, sizeof(AIDirection));
                 memcpy(&v18, &a3, sizeof(AIDirection));
                 v9 = a3.uDistance - v8;
                 v20 = a3.uDistance - v8;
@@ -848,7 +848,7 @@ void stru262_TurnBased::AI_Action_( int queue_index )
                 
                 if ( v5->pMonsterInfo.uHostilityType == 4 && v22 && (signed int)v9 < 5120 )
                     {
-                    v14 = stru_50C198.special_ability_use_check(v5, actor_id);
+                    v14 = v5->special_ability_use_check(actor_id);
                     v21->AI_action_type = TE_AI_STAND;
                     switch (v14)
                         {
@@ -920,7 +920,7 @@ void stru262_TurnBased::ActorAISetMovementDecision()
         if (PID_TYPE(pQueue[i].uPackedID) == OBJECT_Actor)
             {
             target_pid = ai_near_actors_targets_pid[PID_ID(pQueue[i].uPackedID)];
-            memcpy(&v7, Actor::GetDirectionInfo(pQueue[i].uPackedID, target_pid, &a3, 0), sizeof(AIDirection));
+            Actor::GetDirectionInfo(pQueue[i].uPackedID, target_pid, &v7, 0);
             if ( !ActorMove(i) )
                 Actor::AI_Stand(PID_ID(pQueue[i].uPackedID), target_pid, 32, &v7);
             }
@@ -941,7 +941,7 @@ void stru262_TurnBased::ActorAIStopMovement()
         if (PID_TYPE(pQueue[i].uPackedID) == OBJECT_Actor)
             {
             target_pid = ai_near_actors_targets_pid[PID_ID(pQueue[i].uPackedID)];
-            memcpy(&v7, Actor::GetDirectionInfo(pQueue[i].uPackedID, target_pid, &a3, 0), sizeof(AIDirection));
+            Actor::GetDirectionInfo(pQueue[i].uPackedID, target_pid, &v7, 0);
             Actor::AI_Stand(PID_ID(pQueue[i].uPackedID), target_pid, 32, &v7);
             pQueue[i].AI_action_type = TE_AI_STAND;
             pQueue[i].uActionLength = 0;
@@ -966,11 +966,11 @@ void stru262_TurnBased::ActorAIDoAdditionalMove()
         if (PID_TYPE(pQueue[i].uPackedID) == OBJECT_Actor)
             {
             v6 = &pActors[PID_ID(pQueue[i].uPackedID)];
-            if ( !(v6->pActorBuffs[5].uExpireTime > 0|| (v6->pActorBuffs[6].uExpireTime > 0) || 
+            if ( !(v6->pActorBuffs[ACTOR_BUFF_STONED].uExpireTime > 0|| (v6->pActorBuffs[ACTOR_BUFF_PARALYZED].uExpireTime > 0) || 
                     v6->uAIState == AIState::Dead || v6->uAIState == AIState::Removed || v6->uAIState == AIState::Disabled) )
                 {
                 v13 = ai_near_actors_targets_pid[PID_ID(pQueue[i].uPackedID)];
-                memcpy(&v9, Actor::GetDirectionInfo(pQueue[i].uPackedID, v13, &a3, 0), sizeof(AIDirection));
+                Actor::GetDirectionInfo(pQueue[i].uPackedID, v13, &v9, 0);
                 if ( v6->uAIState == AIState::Pursuing || v6->uAIState == AIState::Tethered ) 
                     {
                     if ( (double)(signed int)v9.uDistance < 307.2 )
@@ -1004,7 +1004,7 @@ bool stru262_TurnBased::ActorMove(signed int queue_position)
     //int v3; // ecx@2
     Actor *actor; // ebx@2
 
-    AIDirection *v9; // esi@10
+    AIDirection v9; // esi@10
     int v10; // eax@10
     int v11; // ecx@10
     unsigned __int8 pHostileType; // al@12
@@ -1032,9 +1032,9 @@ bool stru262_TurnBased::ActorMove(signed int queue_position)
     Actor::_SelectTarget(uActorID, &ai_near_actors_targets_pid[uActorID], true);
     if ( actor->pMonsterInfo.uHostilityType && !ai_near_actors_targets_pid[uActorID] )
         actor->pMonsterInfo.uHostilityType = MonsterInfo::Hostility_Friendly;
-    v9 = Actor::GetDirectionInfo(pQueue[queue_position].uPackedID, ai_near_actors_targets_pid[uActorID], &a3, 0);
+    Actor::GetDirectionInfo(pQueue[queue_position].uPackedID, ai_near_actors_targets_pid[uActorID], &v9, 0);
     v10 = actor->uActorRadius;
-    memcpy(&a3, v9, sizeof(AIDirection));
+    memcpy(&a3, &v9, sizeof(AIDirection));
     memcpy(&pDir, &a3, sizeof(AIDirection));
     v11 = a3.uDistance - v10;
     v28 = a3.uDistance - v10;
@@ -1061,7 +1061,7 @@ bool stru262_TurnBased::ActorMove(signed int queue_position)
         break;
         }
 
-    if ( actor->pActorBuffs[4].uExpireTime > 0 )
+    if ( actor->pActorBuffs[ACTOR_BUFF_AFRAID].uExpireTime > 0 )
         {
         if (v11 < 10240 )
             {
@@ -1183,7 +1183,7 @@ void stru262_TurnBased::ActorAIChooseNewTargets()
                 { 
                 target_pid = ai_near_actors_targets_pid[uActorID];      
                 Actor::_SelectTarget(uActorID, &ai_near_actors_targets_pid[uActorID], true);  
-                memcpy(&v9, Actor::GetDirectionInfo(pQueue[i].uPackedID, target_pid, &a3, 0), sizeof(AIDirection));
+                Actor::GetDirectionInfo(pQueue[i].uPackedID, target_pid, &v9, 0);
                 memcpy(&a4, &v9, sizeof(AIDirection));     
                 curr_acror->uCurrentActionTime += pEventTimer->uTimeElapsed;
                 if ( curr_acror->uCurrentActionTime > curr_acror->uCurrentActionLength )

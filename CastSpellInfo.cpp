@@ -350,7 +350,7 @@ void CastSpellInfoHelpers::_427E01_cast_spell()
     {
       if (PID_TYPE(a2) == OBJECT_Actor)
       {
-        memcpy(&v715, Actor::GetDirectionInfo(PID(OBJECT_Player, pCastSpell->uPlayerID + 1), a2, &a3, 0), sizeof(v715));
+        Actor::GetDirectionInfo(PID(OBJECT_Player, pCastSpell->uPlayerID + 1), a2, &v715, 0);
         v2 = v723;
       }
       else
@@ -555,7 +555,7 @@ void CastSpellInfoHelpers::_427E01_cast_spell()
 			int _v733 = 0;
 			for (uint i = 0; i < uNumSpriteObjects; ++i)
 			{
-				auto object = &pSpriteObjects[i];
+				SpriteObject* object = &pSpriteObjects[i];
 				if (object->uType && object->spell_id == SPELL_FIRE_FIRE_SPIKE && object->spell_caster_pid == PID(OBJECT_Player, pCastSpell->uPlayerID))
 				++_v733;
 				/*v33 = (char *)&pSpriteObjects[0].field_48;
@@ -637,7 +637,7 @@ void CastSpellInfoHelpers::_427E01_cast_spell()
 			pSpellSprite.vPosition.z = pActors[PID_ID(a2)].vPosition.z;
 			pSpellSprite.vPosition.y = pActors[PID_ID(a2)].vPosition.y;
 			pSpellSprite.spell_target_pid = PID(OBJECT_Actor, PID_ID(a2));
-			auto obj_id = pSpellSprite.Create(0, 0, 0, 0);
+			int obj_id = pSpellSprite.Create(0, 0, 0, 0);
 			DamageMonsterFromParty(PID(OBJECT_Item, obj_id), PID_ID(a2), &v697);
 			LODWORD(v727) = 1;
 			break;
@@ -651,7 +651,7 @@ void CastSpellInfoHelpers::_427E01_cast_spell()
 				LODWORD(v727) = 1;
 				break;
 			}
-			pActors[PID_ID(a2)].pActorBuffs[10].Apply(pMiscTimer->uTotalGameTimeElapsed + 128, 0, 0, 0, 0);
+			pActors[PID_ID(a2)].pActorBuffs[ACTOR_BUFF_MASS_DISTORTION].Apply(pMiscTimer->uTotalGameTimeElapsed + 128, 0, 0, 0, 0);
 			v704.x = 0;
 			v704.y = 0;
 			v704.z = 0;
@@ -671,7 +671,7 @@ void CastSpellInfoHelpers::_427E01_cast_spell()
 			pSpellSprite.vPosition.y = pActors[PID_ID(a2)].vPosition.y;
 			pSpellSprite.vPosition.z = pActors[PID_ID(a2)].vPosition.z;
 			pSpellSprite.spell_target_pid = PID(OBJECT_Actor, PID_ID(a2));
-			auto obj_id = pSpellSprite.Create(0, 0, 0, 0);
+			int obj_id = pSpellSprite.Create(0, 0, 0, 0);
 			DamageMonsterFromParty(PID(OBJECT_Item, obj_id), PID_ID(a2), &v704);
 			LODWORD(v727) = 1;
 			break;
@@ -702,7 +702,7 @@ void CastSpellInfoHelpers::_427E01_cast_spell()
 			pSpellSprite.uFacing = LOWORD(v715.uYawAngle);
 			pSpellSprite.uAttributes |= 0x80u;
 			pSpellSprite.uSoundID = LOWORD(pCastSpell->sound_id);
-			auto obj_id = pSpellSprite.Create(0, 0, 0, 0);
+			int obj_id = pSpellSprite.Create(0, 0, 0, 0);
 			if ( !MonsterStats::BelongsToSupertype(pActor->pMonsterInfo.uID, MONSTER_SUPERTYPE_UNDEAD) )
 			{
 				ShowStatusBarString(pGlobalTXT_LocalizationStrings[428], 2); // Spell failed
@@ -848,7 +848,7 @@ void CastSpellInfoHelpers::_427E01_cast_spell()
 			Actor::AI_Stand(PID_ID(a2), 4u, 0x80u, 0);
 			v54 = (signed __int64)((double)(23040 * v2) * 0.033333335);
 			v55 = &pActors[PID_ID(a2)];
-			v55->pActorBuffs[6].Apply(pParty->uTimePlayed + (signed int)v54, v731, 0, 0, 0);
+			v55->pActorBuffs[ACTOR_BUFF_PARALYZED].Apply(pParty->uTimePlayed + (signed int)v54, v731, 0, 0, 0);
 			BYTE2(v55->uAttributes) |= 8u;
 			v55->vVelocity.x = 0;
 			//v672 = 0;
@@ -882,8 +882,8 @@ void CastSpellInfoHelpers::_427E01_cast_spell()
 			v58 = (signed __int64)((double)(23040 * v2) * 0.033333335);
 			//v59 = v721;
 			pActor = &pActors[PID_ID(a2)];
-			//((SpellBuff *)((char *)&pActors[0].pActorBuffs[7] + v721))->Apply(
-			pActor->pActorBuffs[7].Apply(pParty->uTimePlayed + (signed int)v58,	v731, amount, 0, 0);
+			//((SpellBuff *)((char *)&pActors[0].pActorBuffs[ACTOR_BUFF_SLOWED] + v721))->Apply(
+			pActor->pActorBuffs[ACTOR_BUFF_SLOWED].Apply(pParty->uTimePlayed + (signed int)v58,	v731, amount, 0, 0);
 			//*((char *)&pActors[0].uAttributes + v59 + 2) |= 8u;
 			BYTE2(pActor->uAttributes) |= 8u;
 			//v672 = 0;
@@ -911,12 +911,12 @@ void CastSpellInfoHelpers::_427E01_cast_spell()
 		else if ( v731 == 3 )
 			power  = 29030400;
 
-		//((SpellBuff *)((char *)&pActors[0].pActorBuffs[9] + v730))->Reset();
-		pActors[PID_ID(a2)].pActorBuffs[9].Reset();
-		//((SpellBuff *)((char *)&pActors[0].pActorBuffs[12] + v730))->Reset();
-		pActors[PID_ID(a2)].pActorBuffs[12].Reset();
-		//((SpellBuff *)((char *)&pActors[0].pActorBuffs[1] + v730))->Apply(
-		pActors[PID_ID(a2)].pActorBuffs[1].Apply(pParty->uTimePlayed + (signed int)(signed __int64)((double)(signed int)(power << 7) * 0.033333335),
+		//((SpellBuff *)((char *)&pActors[0].pActorBuffs[ACTOR_BUFF_BERSERK] + v730))->Reset();
+		pActors[PID_ID(a2)].pActorBuffs[ACTOR_BUFF_BERSERK].Reset();
+		//((SpellBuff *)((char *)&pActors[0].pActorBuffs[ACTOR_BUFF_ENSLAVED] + v730))->Reset();
+		pActors[PID_ID(a2)].pActorBuffs[ACTOR_BUFF_ENSLAVED].Reset();
+		//((SpellBuff *)((char *)&pActors[0].pActorBuffs[ACTOR_BUFF_CHARM] + v730))->Apply(
+		pActors[PID_ID(a2)].pActorBuffs[ACTOR_BUFF_CHARM].Apply(pParty->uTimePlayed + (signed int)(signed __int64)((double)(signed int)(power << 7) * 0.033333335),
 			v731, 0, 0, 0);
 		pSpellSprite.stru_24.Reset();
 		pSpellSprite.spell_id = pCastSpell->uSpellID;
@@ -996,7 +996,7 @@ void CastSpellInfoHelpers::_427E01_cast_spell()
 			if ( !pPlayer->CanCastSpell(uRequiredMana) )
 				break;
 			v730c = &pParty->pPlayers[pCastSpell->uPlayerID_2].pInventoryItemList[a2];
-			auto _itm = &pItemsTable->pItems[v730c->uItemID];
+			ItemDesc* _itm = &pItemsTable->pItems[v730c->uItemID];
 			v730c->UpdateTempBonus(pParty->uTimePlayed);
 			if ( v730c->uItemID < 64 || v730c->uItemID > 65 
 				&& !v730c->IsBroken()
@@ -1418,7 +1418,7 @@ void CastSpellInfoHelpers::_427E01_cast_spell()
 			}
 			if ( !pPlayer->CanCastSpell(uRequiredMana) )
 				break;
-			auto _v726 = _46A6AC_spell_render((int)dword_50BF30.data(), 100, 4096);
+			int _v726 = _46A6AC_spell_render((int)dword_50BF30.data(), 100, 4096);
 			v700.z = 0;
 			v700.y = 0;
 			v700.x = 0;
@@ -1512,7 +1512,7 @@ void CastSpellInfoHelpers::_427E01_cast_spell()
 			}
 			if ( !pPlayer->CanCastSpell(uRequiredMana) )
 				break;
-			auto _v726 = (signed int)(60 * stru_5C6E00->uIntegerDoublePi) / 360;
+			int _v726 = (signed int)(60 * stru_5C6E00->uIntegerDoublePi) / 360;
 			pSpellSprite.stru_24.Reset();
 			pSpellSprite.spell_id = pCastSpell->uSpellID;
 			pSpellSprite.spell_level = v2;
@@ -1707,7 +1707,7 @@ void CastSpellInfoHelpers::_427E01_cast_spell()
 				pSpellSprite.spell_caster_pid = PID(OBJECT_Player, pCastSpell->uPlayerID);
 				pSpellSprite.spell_target_pid = v730;
 				//__debugbreak();//звездопад
-				pSpellSprite.field_60_distance_related_prolly_lod = stru_50C198._427546((int)&_this[69].uNumCharges);
+				pSpellSprite.field_60_distance_related_prolly_lod = stru_50C198._427546(((int)_this) + 2500);
 				pSpellSprite.uFacing = v685;
 				pSpellSprite.uSoundID = LOWORD(pCastSpell->sound_id);
 				if ( pParty->bTurnBasedModeOn == 1 )
@@ -2309,7 +2309,7 @@ void CastSpellInfoHelpers::_427E01_cast_spell()
 				v343 = PID_ID(v342);
 				HIDWORD(v344) = 0 + ((pParty->uTimePlayed + 1280) >> 32);
 				LODWORD(v344) = LODWORD(pParty->uTimePlayed) + 1280;
-				pActors[v343].pActorBuffs[11].Apply(v344, v731, amount, 0, 0);
+				pActors[v343].pActorBuffs[ACTOR_BUFF_FATE].Apply(v344, v731, amount, 0, 0);
 				BYTE2(pActors[v343].uAttributes) |= 8u;
 				//v672 = 0;
 				v661 = &pActors[v343];
@@ -2393,7 +2393,7 @@ void CastSpellInfoHelpers::_427E01_cast_spell()
 				LODWORD(v733) = 300 * v2 + 180;
 			if ( !pPlayer->CanCastSpell(uRequiredMana) )
 				break;
-			auto _v726 = _46A6AC_spell_render((int)dword_50BF30.data(), 100, 4096);
+			int _v726 = _46A6AC_spell_render((int)dword_50BF30.data(), 100, 4096);
 			pGame->GetStru6()->FadeScreen__like_Turn_Undead_and_mb_Armageddon(0xFFFFFFu, 0xC0u);
 			++pSpellSprite.uType;
 			pSpellSprite.stru_24.Reset();
@@ -2419,7 +2419,7 @@ void CastSpellInfoHelpers::_427E01_cast_spell()
 
 					pSpellSprite.spell_target_pid = PID(OBJECT_Actor, dword_50BF30[a2]);
 					pSpellSprite.Create(0, 0, 0, 0);
-					v369->pActorBuffs[4].Apply(
+					v369->pActorBuffs[ACTOR_BUFF_AFRAID].Apply(
 						pParty->uTimePlayed + (signed __int64)((double)(signed int)((int)v733 << 7) * 0.033333335),
 						v731, 0, 0, 0);
 				}
@@ -2768,9 +2768,9 @@ void CastSpellInfoHelpers::_427E01_cast_spell()
 			v730 = 836 * v426;
 			if ( stru_50C198.GetMagicalResistance(&pActors[v426], 7u) )
 			{
-				pActors[v426].pActorBuffs[1].Reset();
-				pActors[v426].pActorBuffs[12].Reset();
-				pActors[v426].pActorBuffs[9].Apply(
+				pActors[v426].pActorBuffs[ACTOR_BUFF_CHARM].Reset();
+				pActors[v426].pActorBuffs[ACTOR_BUFF_ENSLAVED].Reset();
+				pActors[v426].pActorBuffs[ACTOR_BUFF_BERSERK].Apply(
 				pParty->uTimePlayed + (signed __int64)((double)(amount << 7) * 0.033333335),
 				v731, 0, 0, 0);
 				pActors[v426].pMonsterInfo.uHostilityType = MonsterInfo::Hostility_Long;
@@ -2820,9 +2820,9 @@ void CastSpellInfoHelpers::_427E01_cast_spell()
 				break;
 			if ( stru_50C198.GetMagicalResistance(&pActors[PID_ID(a2)], 7u) )
 			{
-				pActors[PID_ID(a2)].pActorBuffs[9].Reset();
-				pActors[PID_ID(a2)].pActorBuffs[1].Reset();
-				pActors[PID_ID(a2)].pActorBuffs[12].Apply(pParty->uTimePlayed + (signed __int64)((double)(amount << 7) * 0.033333335),
+				pActors[PID_ID(a2)].pActorBuffs[ACTOR_BUFF_BERSERK].Reset();
+				pActors[PID_ID(a2)].pActorBuffs[ACTOR_BUFF_CHARM].Reset();
+				pActors[PID_ID(a2)].pActorBuffs[ACTOR_BUFF_ENSLAVED].Apply(pParty->uTimePlayed + (signed __int64)((double)(amount << 7) * 0.033333335),
 				v731, 0, 0, 0);
 			}
 			pSpellSprite.stru_24.Reset();
@@ -2863,7 +2863,7 @@ void CastSpellInfoHelpers::_427E01_cast_spell()
 				amount = 180 * v2;
 			if ( !pPlayer->CanCastSpell(uRequiredMana) )
 				break;
-			auto _v726 = _46A6AC_spell_render((int)dword_50BF30.data(), 100, 4096);
+			int _v726 = _46A6AC_spell_render((int)dword_50BF30.data(), 100, 4096);
 			pGame->GetStru6()->FadeScreen__like_Turn_Undead_and_mb_Armageddon(0xA0A0Au, 0xC0u);
 			++pSpellSprite.uType;
 			pSpellSprite.stru_24.Reset();
@@ -2891,7 +2891,7 @@ void CastSpellInfoHelpers::_427E01_cast_spell()
 				pSpellSprite.Create(0, 0, 0, 0);
 				if ( stru_50C198.GetMagicalResistance(v433, 7u) )
 				{
-					v433->pActorBuffs[4].Apply(pParty->uTimePlayed + (signed __int64)((double)(amount << 7) * 0.033333335),
+					v433->pActorBuffs[ACTOR_BUFF_AFRAID].Apply(pParty->uTimePlayed + (signed __int64)((double)(amount << 7) * 0.033333335),
 						v731, 0, 0, 0);
 				}
 			}
@@ -2967,7 +2967,7 @@ void CastSpellInfoHelpers::_427E01_cast_spell()
 			{
 				if (PID_TYPE(a2) == OBJECT_Actor)
 				{
-					stru_50C198.LootActor(&pActors[v445]);
+					pActors[v445].LootActor();
 				}
 				else
 				{
@@ -3313,7 +3313,7 @@ void CastSpellInfoHelpers::_427E01_cast_spell()
 			if ( (signed int)uNumActors > 0 )
 			{
 				v518 = pActors.data();//[0].uAIState;
-				auto _v726 = uNumActors;
+				size_t _v726 = uNumActors;
 				do
 				{
 					v519 = v518->uAIState;
@@ -3687,7 +3687,7 @@ void CastSpellInfoHelpers::_427E01_cast_spell()
 			}
 			if ( !pPlayer->CanCastSpell(uRequiredMana) )
 				break;
-			auto _v726 = ((signed int)(60 * stru_5C6E00->uIntegerDoublePi) / 360);
+			signed int _v726 = ((signed int)(60 * stru_5C6E00->uIntegerDoublePi) / 360);
 			pSpellSprite.stru_24.Reset();
 			pSpellSprite.spell_id = pCastSpell->uSpellID;
 			pSpellSprite.spell_level = v2;
@@ -3758,9 +3758,9 @@ void CastSpellInfoHelpers::_427E01_cast_spell()
 				pCastSpell->uSpellID = 0;
 				continue;
 			}
-			pActor->pActorBuffs[9].Reset();
-			pActor->pActorBuffs[1].Reset();
-			pActor->pActorBuffs[12].Apply(pParty->uTimePlayed + (signed __int64)((double)(signed int)((int)v733 << 7) * 0.033333335),
+			pActor->pActorBuffs[ACTOR_BUFF_BERSERK].Reset();
+			pActor->pActorBuffs[ACTOR_BUFF_CHARM].Reset();
+			pActor->pActorBuffs[ACTOR_BUFF_ENSLAVED].Apply(pParty->uTimePlayed + (signed __int64)((double)(signed int)((int)v733 << 7) * 0.033333335),
 				v731, 0, 0, 0);
 			pSpellSprite.stru_24.Reset();
 			pSpellSprite.spell_id = pCastSpell->uSpellID;
@@ -4011,11 +4011,11 @@ void CastSpellInfoHelpers::_427E01_cast_spell()
 			if ( !pPlayer->CanCastSpell(uRequiredMana) )
 				break;
 			pParty->armageddon_timer = 256;
-			pParty->field_16140 = v2;
+			pParty->armageddonDamage = v2;
 			++pPlayer->uNumArmageddonCasts;
 			if ( pParty->bTurnBasedModeOn == 1 )
 				++pTurnEngine->pending_actions;
-			auto _v726 = 50;
+			int _v726 = 50;
 			do
 			{
 				v642 = rand() % 4096 - 2048;
@@ -4154,7 +4154,7 @@ void _42777D_CastSpell_UseWand_ShootArrow(int a1, unsigned int uPlayerID, unsign
     //v6 = a5;
     //v7 = &pParty->pPlayers[uPlayerID];
   assert(uPlayerID < 4);
-  auto player = &pParty->pPlayers[uPlayerID];
+  Player* player = &pParty->pPlayers[uPlayerID];
     if ( !(a5 & 0x10) )
     {
       switch ( a1 )
@@ -4319,7 +4319,7 @@ void _42777D_CastSpell_UseWand_ShootArrow(int a1, unsigned int uPlayerID, unsign
       
     for (uint i = 0; i < CastSpellInfoCount; ++i)
     {
-      auto spell = &pCastSpellInfo[i];
+      CastSpellInfo* spell = &pCastSpellInfo[i];
       if (!spell->uSpellID)
         continue;
 

@@ -165,7 +165,7 @@ __int16 SoundList::LoadSound(int a1, unsigned int a3)
     return uSoundIdx;
 
 
-  auto pSoundData = pSound->pSoundData[0];
+  SoundData* pSoundData = pSound->pSoundData[0];
   switch (AIL_file_type((void *)pSoundData->pData, pSoundData->uDataSize))
   {
     default:
@@ -404,7 +404,7 @@ void SoundList::FromFile(void *data_mm6, void *data_mm7, void *data_mm8)
   for (uint i = 0; i < num_mm6_sounds; ++i)
   {
     auto src = (SoundDesc_mm6 *)((char *)data_mm6 + 4) + i;
-    auto dst = pSounds + num_mm7_sounds + i;
+    SoundDesc* dst = &pSounds[num_mm7_sounds + i];
 
     memcpy(dst, src, sizeof(SoundDesc_mm6));
     dst->p3DSound = nullptr;
@@ -723,7 +723,7 @@ void AudioPlayer::PlaySound(SoundID eSoundID, signed int a3, unsigned int uNumRe
       end_channel = 0;
 
   assert(sound_id < pSoundList->sNumSounds);
-  auto sound_desc = pSoundList->pSounds + sound_id;
+  SoundDesc* sound_desc = pSoundList->pSounds + sound_id;
   if (!b3DSoundInitialized || sound_desc->Is3D())
   {
     if (!a3)  // generic sound like from UI
@@ -767,7 +767,7 @@ void AudioPlayer::PlaySound(SoundID eSoundID, signed int a3, unsigned int uNumRe
             end_channel = 3;
 
             assert(object_id < uNumActors);
-            auto actor = &pActors[object_id];
+            Actor* actor = &pActors[object_id];
 
             sample_volume = GetSoundStrengthByDistanceFromParty(actor->vPosition.x, actor->vPosition.y, actor->vPosition.z);
             if (!sample_volume)
@@ -781,7 +781,7 @@ void AudioPlayer::PlaySound(SoundID eSoundID, signed int a3, unsigned int uNumRe
             end_channel = 4;
 
             assert(object_id < uNumLevelDecorations);
-            auto decor = &pLevelDecorations[object_id];
+            LevelDecoration* decor = &pLevelDecorations[object_id];
 
             sample_volume = GetSoundStrengthByDistanceFromParty(decor->vPosition.x, decor->vPosition.y, decor->vPosition.z);
             if (!sample_volume)
@@ -796,7 +796,7 @@ void AudioPlayer::PlaySound(SoundID eSoundID, signed int a3, unsigned int uNumRe
             end_channel = 7;
 
             assert(object_id < uNumSpriteObjects);
-            auto object = &pSpriteObjects[object_id];
+            SpriteObject* object = &pSpriteObjects[object_id];
 
             sample_volume = GetSoundStrengthByDistanceFromParty(object->vPosition.x, object->vPosition.y, object->vPosition.z);
             if (!sample_volume)
@@ -821,7 +821,7 @@ void AudioPlayer::PlaySound(SoundID eSoundID, signed int a3, unsigned int uNumRe
 LABEL_123:
     for (uint i = 0; i < uMixerChannels; ++i)
     {
-      auto channel = pMixerChannels + i;
+      MixerChannel* channel = &pMixerChannels[i];
       if (channel->source_pid == a3 &&
           AIL_sample_status(channel->hSample) == AIL::Sample::Playing)
       {
@@ -836,7 +836,7 @@ LABEL_133:
       //pAudioPlayer4 = pAudioPlayer;
       for (v62 = start_channel; v62 <= end_channel; ++v62)
       {
-        auto channel = pMixerChannels + v62;
+        MixerChannel* channel = pMixerChannels + v62;
         if (AIL_sample_status(channel->hSample) == AIL::Sample::Done)
         {
           AIL_end_sample(channel->hSample);
@@ -868,7 +868,7 @@ LABEL_140:*/
         int min_volume = sample_volume;
         for (uint i = start_channel; i <= end_channel; ++i)
         {
-          auto channel = pMixerChannels + i;
+          MixerChannel* channel = &pMixerChannels[i];
 
           int volume = AIL_sample_volume(channel->hSample);
           if (volume < min_volume)
@@ -903,7 +903,7 @@ LABEL_140:*/
           v62 = 13;
         }
 
-        auto channel = &pMixerChannels[v62];
+        MixerChannel* channel = &pMixerChannels[v62];
         AIL_end_sample(channel->hSample);
         FreeChannel(channel);
       }
@@ -931,7 +931,7 @@ LABEL_140:*/
         return;
 
         //pMixerChannel5 = &pAudioPlayer->pMixerChannels[v62];
-      auto channel = &pMixerChannels[v62];
+      MixerChannel* channel = &pMixerChannels[v62];
       AIL_init_sample(channel->hSample);
       AIL_set_sample_file(channel->hSample, (char *)pSoundList->pSounds[sound_id].pSoundData[a7] + 4 * (a7 == 0), -1);
       if (uVolume)
@@ -952,7 +952,7 @@ LABEL_140:*/
         assert(uCurrentlyLoadedLevelType == LEVEL_Indoor);
 
         assert(object_id < pIndoor->uNumDoors);
-        auto door = &pIndoor->pDoors[object_id];
+        BLVDoor* door = &pIndoor->pDoors[object_id];
         if (!door->uDoorID)
           return;
 
@@ -967,7 +967,7 @@ LABEL_140:*/
       else if (object_type == OBJECT_Item)
       {
         assert(object_id < uNumSpriteObjects);
-        auto object = &pSpriteObjects[object_id];
+        SpriteObject* object = &pSpriteObjects[object_id];
         if (!GetSoundStrengthByDistanceFromParty(object->vPosition.x, object->vPosition.y, object->vPosition.z) )
             return;
         AIL_set_sample_pan(channel->hSample, sub_4AB66C(object->vPosition.x, object->vPosition.y));
@@ -975,7 +975,7 @@ LABEL_140:*/
       else if (object_type == OBJECT_Actor)
       {
         assert(object_id < uNumActors);
-        auto actor = &pActors[object_id];
+        Actor* actor = &pActors[object_id];
         if (!GetSoundStrengthByDistanceFromParty(actor->vPosition.x, actor->vPosition.y, actor->vPosition.z))
           return;
         AIL_set_sample_pan(channel->hSample, sub_4AB66C(actor->vPosition.x, actor->vPosition.y));
@@ -983,7 +983,7 @@ LABEL_140:*/
       else if (object_type == OBJECT_Decoration)
       {
         assert(object_id < uNumLevelDecorations);
-        auto decor = &pLevelDecorations[object_id];
+        LevelDecoration* decor = &pLevelDecorations[object_id];
         if (!GetSoundStrengthByDistanceFromParty(decor->vPosition.x, decor->vPosition.y, decor->vPosition.z))
           return;
         AIL_set_sample_pan(channel->hSample, sub_4AB66C(decor->vPosition.x, decor->vPosition.y));
@@ -1640,7 +1640,7 @@ LABEL_37:
         continue;
     }
 
-    if (auto sound_strength = GetSoundStrengthByDistanceFromParty(source_x, source_y, source_z))
+    if (int sound_strength = GetSoundStrengthByDistanceFromParty(source_x, source_y, source_z))
     {
       AIL_set_sample_volume(pMixerChannels[i].hSample, sound_strength);
       AIL_set_sample_pan(pMixerChannels[i].hSample, sub_4AB66C(source_x, source_y));
@@ -1656,7 +1656,7 @@ LABEL_37:
 
   if (pCurrentScreen != SCREEN_GAME)
   {
-    auto channel = &pMixerChannels[4];
+    MixerChannel* channel = &pMixerChannels[4];
     if (AIL_sample_status(channel->hSample) == AIL::Sample::Playing)
       AIL_end_sample(channel->hSample);
     return;
@@ -1676,13 +1676,13 @@ LABEL_37:
         //v45 = abs(v44->vPosition.z - pParty->vPosition.z);
         //v46 = abs(v44->vPosition.y - pParty->vPosition.y);
         //v47 = abs(v44->vPosition.x - pParty->vPosition.x);
-    auto decor = &pLevelDecorations[_6807B8_level_decorations_ids[i]];
+    LevelDecoration* decor = &pLevelDecorations[_6807B8_level_decorations_ids[i]];
     if (int_get_vector_length(decor->vPosition.x - pParty->vPosition.x,
                               decor->vPosition.y - pParty->vPosition.y,
                               decor->vPosition.z - pParty->vPosition.z) > 8192)
       continue;
 
-    auto decor_desc = &pDecorationList->pDecorations[decor->uDecorationDescID];
+    DecorationDesc* decor_desc = &pDecorationList->pDecorations[decor->uDecorationDescID];
       //v48 = &pDecorationList->pDecorations[decor->uDecorationDescID];
       //v49 = v48->uFlags;
       uNumRepeats = (~(unsigned __int8)decor_desc->uFlags & DECORATION_DESC_SLOW_LOOP) >> 6;

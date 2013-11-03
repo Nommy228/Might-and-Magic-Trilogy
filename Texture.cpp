@@ -1171,7 +1171,7 @@ unsigned int RGBTexture::LoadFromFILE(FILE *pFile, unsigned int mode, unsigned i
 
 
 
-      auto pOutPixels = pPixels;
+      ushort* pOutPixels = pPixels;
  
  memset(pOutPixels, 0, uNumPixels * sizeof(__int16));
 

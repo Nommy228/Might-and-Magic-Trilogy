@@ -472,7 +472,7 @@ void MonsterList::FromFile(void *data_mm6, void *data_mm7, void *data_mm8)
   for (uint i = 0; i < num_mm6_monsters; ++i)
   {
     auto src = (MonsterDesc_mm6 *)((char *)data_mm6 + 4) + i;
-    auto dst = pMonsters + num_mm7_monsters + i;
+    MonsterDesc* dst = &pMonsters[num_mm7_monsters + i];
 
     dst->uMonsterHeight = src->uMonsterHeight;
     dst->uMonsterRadius = src->uMonsterRadius;

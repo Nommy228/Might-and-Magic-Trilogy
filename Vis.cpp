@@ -60,7 +60,7 @@ Vis_ObjectInfo *Vis::DetermineFacetIntersection(BLVFace *face, unsigned int pid,
   else if (uCurrentlyLoadedLevelType == LEVEL_Outdoor)
   {
     uint bmodel_id = pid >> 9;
-    auto v = (Vec3_int_ *)pOutdoor->pBModels[bmodel_id].pVertices.pVertices;
+    Vec3_int_* v = (Vec3_int_ *)pOutdoor->pBModels[bmodel_id].pVertices.pVertices;
     for (uint i = 0; i < face->uNumVertices; ++i)
     {
       static_DetermineFacetIntersection_array_F8F200[i].vWorldPosition.x = v[face->pVertexIDs[i]].x;
@@ -127,7 +127,7 @@ bool Vis::IsPolygonOccludedByBillboard(RenderVertexSoft *vertices, int num_verti
   //v6 = pRenderer->pBillboardRenderListD3D;
   for (uint i = 0; i < pRenderer->uNumBillboardsToDraw; ++i)
   {
-    auto billboard = pRenderer->pBillboardRenderListD3D + i;
+    RenderBillboardD3D* billboard = &pRenderer->pBillboardRenderListD3D[i];
     if (IsPointInsideD3DBillboard(billboard, x, y))
     {
       if (v13 == -1)
@@ -155,7 +155,7 @@ bool Vis::IsPolygonOccludedByBillboard(RenderVertexSoft *vertices, int num_verti
     //v9 = a1;
     //do
     //{
-    auto v = vertices + i;
+    RenderVertexSoft* v = &vertices[i];
 
     if (v->vWorldViewProjX < min_x)
       min_x = v->vWorldViewProjX;
@@ -216,12 +216,12 @@ void Vis::PickBillboards_Mouse(float fPickDepth, float fX, float fY, Vis_Selecti
 {
   for (uint i = 0; i < pRenderer->uNumBillboardsToDraw; ++i)
   {
-    auto d3d_billboard = &pRenderer->pBillboardRenderListD3D[i];
+    RenderBillboardD3D* d3d_billboard = &pRenderer->pBillboardRenderListD3D[i];
     if (is_part_of_selection((void *)i, filter) && IsPointInsideD3DBillboard(d3d_billboard, fX, fY))
     {
       if (DoesRayIntersectBillboard(fPickDepth, i))
       {
-        auto billboard = &pBillboardRenderList[d3d_billboard->uParentBillboardID];
+        RenderBillboard* billboard = &pBillboardRenderList[d3d_billboard->uParentBillboardID];
 
         list->AddObject((void *)d3d_billboard->uParentBillboardID, VisObjectType_Sprite, billboard->sZValue);
       }
@@ -322,7 +322,7 @@ void Vis::PickIndoorFaces_Mouse(float fDepth, RenderVertexSoft *pRay, Vis_Select
     {
       if ( pFaceID < (signed int)pIndoor->uNumFaces )
       {
-        auto face = pIndoor->pFaces + pFaceID;
+        BLVFace* face = &pIndoor->pFaces[pFaceID];
         if ( is_part_of_selection(face, filter) )
         {
           if ( !pGame->pIndoorCameraD3D->IsCulled(face) )
@@ -372,10 +372,10 @@ void Vis::PickOutdoorFaces_Mouse(float fDepth, RenderVertexSoft *pRay, Vis_Selec
     if (!reachable && only_reachable)
       continue;
 
-    auto bmodel = &pOutdoor->pBModels[i];
+    BSPModel* bmodel = &pOutdoor->pBModels[i];
     for (uint j = 0; j < bmodel->uNumFaces; ++j)
     {
-      auto face = &bmodel->pFaces[j];
+      ODMFace* face = &bmodel->pFaces[j];
       if (is_part_of_selection(face, filter))
       {
         BLVFace blv_face;
@@ -1373,13 +1373,13 @@ void Vis::PickBillboards_Keyboard(float pick_depth, Vis_SelectionList *list, Vis
 {
   for (int i = 0; i < pRenderer->uNumBillboardsToDraw; ++i)
   {
-    auto d3d_billboard = &pRenderer->pBillboardRenderListD3D[i];
+    RenderBillboardD3D* d3d_billboard = &pRenderer->pBillboardRenderListD3D[i];
 
     if (is_part_of_selection((void *)i, filter))
     {
       if (DoesRayIntersectBillboard(pick_depth, i))
       {
-        auto billboard = &pBillboardRenderList[d3d_billboard->uParentBillboardID];
+        RenderBillboard* billboard = &pBillboardRenderList[d3d_billboard->uParentBillboardID];
 
         list->AddObject((void *)d3d_billboard->uParentBillboardID, VisObjectType_Sprite, billboard->sZValue);
       }
@@ -1467,13 +1467,13 @@ bool Vis::is_part_of_selection(void *uD3DBillboardIdx_or_pBLVFace_or_pODMFace, V
       bool no_event = true;
       if (uCurrentlyLoadedLevelType == LEVEL_Outdoor)
       {
-        auto face = (ODMFace *)uD3DBillboardIdx_or_pBLVFace_or_pODMFace;
+        ODMFace* face = (ODMFace *)uD3DBillboardIdx_or_pBLVFace_or_pODMFace;
         no_event = face->sCogTriggeredID == 0;
         face_attrib = face->uAttributes;
       }
       else if (uCurrentlyLoadedLevelType == LEVEL_Indoor) 
       {
-        auto face = (BLVFace *)uD3DBillboardIdx_or_pBLVFace_or_pODMFace;
+        BLVFace* face = (BLVFace *)uD3DBillboardIdx_or_pBLVFace_or_pODMFace;
         no_event = pIndoor->pFaceExtras[face->uFaceExtraID].uEventID == 0;
         face_attrib = face->uAttributes;
       }
@@ -1684,10 +1684,10 @@ void Vis::PickOutdoorFaces_Keyboard(float pick_depth, Vis_SelectionList *list, V
     if (!v17)
       continue;
 
-    auto bmodel = pOutdoor->pBModels + i;
+    BSPModel* bmodel = &pOutdoor->pBModels[i];
     for (uint j = 0; j < bmodel->uNumFaces; ++j)
     {
-      auto face = &bmodel->pFaces[j];
+      ODMFace* face = &bmodel->pFaces[j];
 
       if (is_part_of_selection(face, filter) )
       {
@@ -1695,7 +1695,7 @@ void Vis::PickOutdoorFaces_Keyboard(float pick_depth, Vis_SelectionList *list, V
         blv_face.FromODM(face);
 
         int pid = PID(OBJECT_BModel, j | (i << 6));
-        if (auto object_info = DetermineFacetIntersection(&blv_face, pid, pick_depth))
+        if (Vis_ObjectInfo* object_info = DetermineFacetIntersection(&blv_face, pid, pick_depth))
           list->AddObject(object_info->object, object_info->object_type, object_info->sZValue);
       }
     }

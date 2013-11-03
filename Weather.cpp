@@ -217,7 +217,7 @@ bool Weather::OnPlayerTurn(__int16 a2)
   screen_x = viewparams->uScreen_topL_X;
   screen_z_minus_4 = viewparams->uScreen_BttmR_X - 4;
 
-  auto _this = this->field_0;
+  short* _this = this->field_0;
   while ( 1 )
   {
     v6 = &_this[2 * v4];

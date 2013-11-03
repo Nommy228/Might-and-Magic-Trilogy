@@ -454,7 +454,7 @@ bool DecalBuilder::ApplyBloodsplatDecals_IndoorFace(unsigned int uFaceID)
   if (!pBloodsplatContainer->std__vector_pBloodsplats_size)
     return true;
   
-  auto pFace = &pIndoor->pFaces[uFaceID];
+  BLVFace* pFace = &pIndoor->pFaces[uFaceID];
 
   if (pFace->uAttributes & 0x400000)
     return true;
@@ -462,7 +462,7 @@ bool DecalBuilder::ApplyBloodsplatDecals_IndoorFace(unsigned int uFaceID)
     return true;
   for (uint i = 0; i < pBloodsplatContainer->std__vector_pBloodsplats_size; ++i)
   {
-    auto pBloodsplat = pBloodsplatContainer->std__vector_pBloodsplats + i;
+    Bloodsplat* pBloodsplat = &pBloodsplatContainer->std__vector_pBloodsplats[i];
     if (pFace->pBounding.x1 - pBloodsplat->radius < pBloodsplat->x &&
         pFace->pBounding.x2 + pBloodsplat->radius > pBloodsplat->x &&
         pFace->pBounding.y1 - pBloodsplat->radius < pBloodsplat->y &&
@@ -741,7 +741,7 @@ void DecalBuilder::DrawBloodsplats()
   ErrD3D(pRenderer->pRenderD3D->pDevice->SetRenderState(D3DRENDERSTATE_DESTBLEND, D3DBLEND_ONE));
   ErrD3D(pRenderer->pRenderD3D->pDevice->SetRenderState(D3DRENDERSTATE_DITHERENABLE, FALSE));
 
-  auto pTex = pGame->pIndoorCameraD3D->LoadTextureAndGetHardwarePtr("hwsplat04");
+  IDirect3DTexture2* pTex = pGame->pIndoorCameraD3D->LoadTextureAndGetHardwarePtr("hwsplat04");
   ErrD3D(pRenderer->pRenderD3D->pDevice->SetTexture(0, pTex));
  
   DrawDecals(0.00039999999);

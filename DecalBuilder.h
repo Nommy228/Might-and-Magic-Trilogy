@@ -140,7 +140,7 @@ struct DecalBuilder
     char *v2; // eax@1
     signed int v3; // ecx@1
 
-    auto v1 = this;
+    DecalBuilder* v1 = this;
     /*_eh_vector_constructor_iterator_(
     this->std__vector_pDecals,
     3104,

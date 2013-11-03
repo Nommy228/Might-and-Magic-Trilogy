@@ -57,7 +57,7 @@ void Viewport::SetScreen( signed int sTL_X, signed int sTL_Y, signed int sBR_X, 
     if ( pRenderer->pRenderD3D == 0 )
         this->uScreenCenterY = this->uScreen_BR_Y - fixpoint_mul(field_30, uScreenHeight);
     else
-        this->uScreenCenterY = uScreenHeight/2;
+        this->uScreenCenterY = (br_y + tl_y)/2;
     SetViewport(this->uScreen_TL_X, this->uScreen_TL_Y, this->uScreen_BR_X, this->uScreen_BR_Y);
     }
 
@@ -358,7 +358,7 @@ void OnGameViewportClick()
     {
       if ( (unsigned int)v0 < 0x2000000 )
       {
-        stru_50C198.LootActor(&pActors[v16]);
+        pActors[v16].LootActor();
         return;
       }
       if ( !pParty->pPickedItem.uItemID )

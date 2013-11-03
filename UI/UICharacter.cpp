@@ -479,15 +479,15 @@ static int CharacterUI_SkillsTab_Draw__DrawSkillTable(Player *player, int x, int
   int num_skills_drawn = 0;
   for (int i = 0; i < skill_list_size; ++i)
   {
-    auto skill = (PLAYER_SKILL_TYPE)skill_list[i];
+    PLAYER_SKILL_TYPE skill = (PLAYER_SKILL_TYPE)skill_list[i];
     for (uint j = 0; j < pGUIWindow_CurrentMenu->uNumControls; ++j)
     {
-      auto v8 = pGUIWindow_CurrentMenu->pControlsHead;
+      GUIButton* v8 = pGUIWindow_CurrentMenu->pControlsHead;
 
       for (int v7 = j; v7 > 0; --v7)
         v8 = v8->pNext;
 
-      auto v9 = v8->field_1C;
+      int v9 = v8->field_1C;
       if ((short)(v8->field_1C) >= 0)
         continue;
       if ( (v9 & 0x7FFF) != skill )
@@ -496,8 +496,8 @@ static int CharacterUI_SkillsTab_Draw__DrawSkillTable(Player *player, int x, int
       ++num_skills_drawn;
       y_offset = v8->uY;
 
-      auto skill_value = player->pActiveSkills[skill];
-      auto skill_level = skill_value & 0x3F;
+      ushort skill_value = player->pActiveSkills[skill];
+      int skill_level = skill_value & 0x3F;
 
       uint skill_color = 0;
       uint skill_mastery_color = 0;
@@ -777,7 +777,7 @@ void CharacterUI_DrawPaperdoll(Player *player)
       pRenderer->DrawMaskToZBuffer(pPaperdoll_BodyX, pPaperdoll_BodyY, pIcons_LOD->GetTexture(papredoll_dbods[uPlayerID - 1]), player->pEquipment.uArmor);
     //Рука не занята или ...
     if ( !player->GetItem(&PlayerEquipment::uMainHand)
-         || ( player->GetMainHandItem()->GetItemEquipType() != EQUIP_MAIN_HAND)
+         || ( player->GetMainHandItem()->GetItemEquipType() != EQUIP_TWO_HANDED)
          && (player->GetMainHandItem()->GetItemEquipType() != PLAYER_SKILL_SPEAR
          || player->GetItem(&PlayerEquipment::uShield)) )
       pRenderer->DrawTextureTransparent(pPaperdoll_BodyX + pPaperdoll_LeftHand[pBodyComplection][0], pPaperdoll_BodyY + pPaperdoll_LeftHand[pBodyComplection][1],
@@ -1062,7 +1062,7 @@ void CharacterUI_DrawPaperdoll(Player *player)
     }
     //--------------------------------------------(Hand/Рука)------------------------------------------------------
     if ( !player->GetItem(&PlayerEquipment::uMainHand)
-        || ( player->GetMainHandItem()->GetItemEquipType() != EQUIP_MAIN_HAND)
+        || ( player->GetMainHandItem()->GetItemEquipType() != EQUIP_TWO_HANDED)
         && (player->GetMainHandItem()->GetPlayerSkillType() != PLAYER_SKILL_SPEAR
         || player->GetItem(&PlayerEquipment::uShield)) )
       pRenderer->DrawTextureTransparent(pPaperdoll_BodyX + pPaperdoll_LeftHand[pBodyComplection][0],
@@ -1130,7 +1130,7 @@ void CharacterUI_DrawPaperdoll(Player *player)
       //---------------------------------------------(Hand2/Рука2)--------------------------------------------------
       if ( player->GetItem(&PlayerEquipment::uMainHand) )
       {
-        if ( player->GetMainHandItem()->GetItemEquipType() == EQUIP_MAIN_HAND
+        if ( player->GetMainHandItem()->GetItemEquipType() == EQUIP_TWO_HANDED
              || player->GetMainHandItem()->GetPlayerSkillType() == PLAYER_SKILL_SPEAR
              && !player->GetItem(&PlayerEquipment::uShield) )
           pRenderer->DrawTextureTransparent(pPaperdoll_BodyX + pPaperdoll_SecondLeftHand[pBodyComplection][0],
@@ -1161,7 +1161,7 @@ void CharacterUI_DrawPaperdoll(Player *player)
         if ( index >= 0 && index < 17 )
         {
           if ( player->GetItem(&PlayerEquipment::uMainHand)
-            && (player->GetMainHandItem()->GetItemEquipType() == EQUIP_MAIN_HAND
+            && (player->GetMainHandItem()->GetItemEquipType() == EQUIP_TWO_HANDED
             ||  player->GetMainHandItem()->GetPlayerSkillType() == PLAYER_SKILL_SPEAR
             && !player->GetItem(&PlayerEquipment::uShield) ))//без щита
           {
@@ -1528,7 +1528,7 @@ void CharacterUI_DrawPaperdoll(Player *player)
   if ( player->GetItem(&PlayerEquipment::uMainHand))
   {
     item = player->GetMainHandItem();
-    if ( item->GetItemEquipType() == EQUIP_MAIN_HAND
+    if ( item->GetItemEquipType() == EQUIP_TWO_HANDED
         || item->GetPlayerSkillType() == PLAYER_SKILL_SPEAR
         && !player->GetItem(&PlayerEquipment::uShield) )
       pRenderer->DrawTextureTransparent(pPaperdoll_BodyX + pPaperdoll_SecondLeftHand[pBodyComplection][0], 
@@ -1575,12 +1575,13 @@ void CharacterUI_InventoryTab_Draw(Player *player, bool a2)
     v17 = uCellX + ((v15 - pTexture->uTextureWidth) >> 1) + pSRZBufferLineOffsets[uCellY + (( (int)((pTexture->uTextureHeight - 14) & 0xFFFFFFE0) - pTexture->uTextureHeight + 32) >> 1)];   //added typecast. without it the value in the brackets got cat to unsigned which messed stuff up
     if (player->pInventoryItemList[player->pInventoryMatrix[i] - 1].uAttributes & 0xF0)
     {
+      Texture *loadedTextureptr = nullptr;
       switch (player->pInventoryItemList[player->pInventoryMatrix[i] - 1].uAttributes & 0xF0)
       {
-        case ITEM_AURA_EFFECT_RED:    pTexture = pIcons_LOD->LoadTexturePtr("sptext01", TEXTURE_16BIT_PALETTE); break;
-        case ITEM_AURA_EFFECT_BLUE:   pTexture = pIcons_LOD->LoadTexturePtr("sp28a", TEXTURE_16BIT_PALETTE);    break;
-        case ITEM_AURA_EFFECT_GREEN:  pTexture = pIcons_LOD->LoadTexturePtr("sp30a", TEXTURE_16BIT_PALETTE);    break;
-        case ITEM_AURA_EFFECT_PURPLE: pTexture = pIcons_LOD->LoadTexturePtr("sp91a", TEXTURE_16BIT_PALETTE);    break;
+        case ITEM_AURA_EFFECT_RED:    loadedTextureptr = pIcons_LOD->LoadTexturePtr("sptext01", TEXTURE_16BIT_PALETTE); break;
+        case ITEM_AURA_EFFECT_BLUE:   loadedTextureptr = pIcons_LOD->LoadTexturePtr("sp28a", TEXTURE_16BIT_PALETTE);    break;
+        case ITEM_AURA_EFFECT_GREEN:  loadedTextureptr = pIcons_LOD->LoadTexturePtr("sp30a", TEXTURE_16BIT_PALETTE);    break;
+        case ITEM_AURA_EFFECT_PURPLE: loadedTextureptr = pIcons_LOD->LoadTexturePtr("sp91a", TEXTURE_16BIT_PALETTE);    break;
       }
       _50C9A8_item_enchantment_timer -= pEventTimer->uTimeElapsed;
       if (_50C9A8_item_enchantment_timer <= 0)
@@ -1589,7 +1590,8 @@ void CharacterUI_InventoryTab_Draw(Player *player, bool a2)
         LOBYTE(player->pInventoryItemList[player->pInventoryMatrix[i] - 1].uAttributes) &= 0xF;
         ptr_50C9A4_ItemToEnchant = 0;
       }
-      pRenderer->DrawAura(uCellX, uCellY, pTexture, pTexture, GetTickCount() * 0.1, 0, 255);
+
+      pRenderer->DrawAura(uCellX, uCellY, pTexture, loadedTextureptr, GetTickCount() * 0.1, 0, 255);
       ZBuffer_Fill(&pRenderer->pActiveZBuffer[v17], item_texture_id, player->pInventoryMatrix[i]);
     }
     else
@@ -1611,7 +1613,7 @@ void CharacterUI_InventoryTab_Draw(Player *player, bool a2)
 
 static void CharacterUI_DrawItem(int x, int y, ItemGen *item, int id)
 {
-  auto item_texture = pIcons_LOD->LoadTexturePtr(item->GetIconName(), TEXTURE_16BIT_PALETTE);
+  Texture* item_texture = pIcons_LOD->LoadTexturePtr(item->GetIconName(), TEXTURE_16BIT_PALETTE);
 
   if (item->uAttributes & 0xF0) // enchant animation
   {
@@ -1767,7 +1769,7 @@ void CharacterUI_LoadPaperdollTextures()
   memset(byte_5111F6.data(), 0, sizeof(byte_5111F6));
   for (uint i = 0; i < 4; ++i)
   {
-    auto player = &pParty->pPlayers[i];
+    Player* player = &pParty->pPlayers[i];
 
     if (player->HasItem(ITEM_ARTIFACT_GOVERNORS_ARMOR, 1))    byte_5111F6[0] = 1;
     if (player->HasItem(ITEM_ARTIFACT_YORUBA, 1))             byte_5111F6[1] = 1;
@@ -2345,7 +2347,7 @@ void  OnPaperdollLeftClick()
   _this.Reset();
   v1 = pPlayers[uActiveCharacter]->pEquipment.uMainHand;
   v2 = pPlayers[uActiveCharacter]->pEquipment.uShield;
-  if ( v1 && pPlayers[uActiveCharacter]->pInventoryItemList[v1 - 1].GetItemEquipType() == EQUIP_MAIN_HAND )
+  if ( v1 && pPlayers[uActiveCharacter]->pInventoryItemList[v1 - 1].GetItemEquipType() == EQUIP_TWO_HANDED )
     v51 = v1;
   v3 = pParty->pPickedItem.uItemID;
   if ( pParty->pPickedItem.uItemID )
@@ -2474,7 +2476,7 @@ void  OnPaperdollLeftClick()
           _this.uBodyAnchor = 1;
           memcpy(&pPlayers[uActiveCharacter]->pInventoryItemList[v2], &_this, 0x24u);
           pPlayers[uActiveCharacter]->pEquipment.uShield = v2 + 1;
-          if ( v51 == EQUIP_OFF_HAND )
+          if ( v51 == EQUIP_SINGLE_HANDED )
             return;
         }
         else
@@ -2503,7 +2505,7 @@ void  OnPaperdollLeftClick()
         pPlayers[uActiveCharacter]->pEquipment.uMainHand = 0;
         return;
 //-------------------------taken in hand(взять в руку)-------------------------------------------
-      case EQUIP_OFF_HAND:
+      case EQUIP_SINGLE_HANDED:
       case EQUIP_WAND:
         if ( pPlayers[uActiveCharacter]->HasUnderwaterSuitEquipped()
           && pParty->pPickedItem.uItemID != 64
@@ -2608,7 +2610,7 @@ void  OnPaperdollLeftClick()
         }
         break;
 //---------------------------take two hands(взять двумя руками)---------------------------------
-      case EQUIP_MAIN_HAND:
+      case EQUIP_TWO_HANDED:
         if ( pPlayers[uActiveCharacter]->HasUnderwaterSuitEquipped() )
         {
           pAudioPlayer->PlaySound(SOUND_error, 0, 0, -1, 0, 0, 0, 0);

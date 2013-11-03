@@ -8804,7 +8804,7 @@ void Render::DrawTerrainD3D(int a1, int a2, int a3, int unk4)
           {
             if ( this_3 )
             {
-              v36 = sr_424CD7(v34);
+              v36 = ODM_NearClip(v34);
               pTile->uNumVertices = v36;
               ODMRenderParams::Project(v36);
             }
@@ -8948,7 +8948,7 @@ LABEL_162:
       {
         if ( this_3a )
         {
-          v56 = sr_424CD7(v55);
+          v56 = ODM_NearClip(v55);
         }
         else
         {
@@ -9072,7 +9072,7 @@ LABEL_112:
         goto LABEL_154;
       if ( this_3b )
       {
-        v73 = sr_424CD7(v72);
+        v73 = ODM_NearClip(v72);
       }
       else
       {
@@ -9335,7 +9335,7 @@ LABEL_16:
   while ( v20 < (signed int)v5 );
   if ( v20 >= (signed int)v5 )
     return 0;
-  result = sr_424CD7(v5);
+  result = ODM_NearClip(v5);
   if ( result > 0 )
   {
     __asm { fild    pBLVRenderParams->field_40 }

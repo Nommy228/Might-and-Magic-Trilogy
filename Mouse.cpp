@@ -180,7 +180,7 @@ void Mouse::AllocCursorSystemMem()
 //----- (00469C0D) --------------------------------------------------------
 void *Mouse::DoAllocCursorMem()
 {
-  auto tex = pIcons_LOD->GetTexture(uCursorTextureID);
+  Texture* tex = pIcons_LOD->GetTexture(uCursorTextureID);
   return malloc(4 * tex->uTextureWidth * tex->uTextureHeight);
 }
 
@@ -329,7 +329,7 @@ void Mouse::DrawCursorToTarget()
   if (!pCursorBitmap3_sysmembits_16bit)
     return;
 
-  auto pSrc = pCursorBitmap3_sysmembits_16bit;
+  ushort* pSrc = pCursorBitmap3_sysmembits_16bit;
   for (uint y = field_44; y < field_4C; ++y)
     for (uint x = field_40; x < field_48; ++x)
       pRenderer->pTargetSurface[y * pRenderer->uTargetSurfacePitch + x] = *pSrc++;
@@ -583,7 +583,7 @@ LABEL_50:
     v5 = pRenderer->pActiveZBuffer[pX + pSRZBufferLineOffsets[pY]];
   v6 = (unsigned __int16)v5;
 
-  auto type = PID_TYPE(v6);
+  uint type = PID_TYPE(v6);
   if (type == OBJECT_Actor
     && uActiveCharacter
     && v5 < 0x2000000

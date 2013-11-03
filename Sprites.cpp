@@ -91,7 +91,7 @@ void SpriteFrameTable::InitializeSprite( signed int uSpriteID )
             {
             v3 = uSpriteID;
 
-            auto uFlags = pSpriteSFrames[v3].uFlags;
+            int uFlags = pSpriteSFrames[v3].uFlags;
             if (!(uFlags & 0x0080))  //not loaded
                 {
                 pSpriteSFrames[v3].uFlags |= 0x80; //set loaded
@@ -394,11 +394,11 @@ void SpriteFrameTable::FromFile(void *data_mm6, void *data_mm7, void *data_mm8)
 
   pSpritePFrames = (SpriteFrame **)malloc(4 * uNumSpriteFrames);
 
-  auto mm7_frames_size = num_mm7_frames * sizeof(SpriteFrame);
+  uint mm7_frames_size = num_mm7_frames * sizeof(SpriteFrame);
   memcpy(pSpriteSFrames, (char *)data_mm7 + 8, mm7_frames_size);
   memcpy(pSpriteEFrames, (char *)data_mm7 + 8 + mm7_frames_size, 2 * num_mm7_eframes);
 
-  auto mm6_frames_size = num_mm6_frames * sizeof(SpriteFrame_mm6);
+  uint mm6_frames_size = num_mm6_frames * sizeof(SpriteFrame_mm6);
   for (uint i = 0; i < num_mm6_frames; ++i)
   {
     memcpy(pSpriteSFrames + num_mm7_frames + i, (char *)data_mm6 + 8 + i * sizeof(SpriteFrame_mm6), sizeof(SpriteFrame_mm6));
@@ -406,7 +406,7 @@ void SpriteFrameTable::FromFile(void *data_mm6, void *data_mm7, void *data_mm8)
   }
   memcpy(pSpriteEFrames + num_mm7_frames, (char *)data_mm6 + 8 + mm6_frames_size, 2 * num_mm6_eframes);
 
-  auto mm8_frames_size = num_mm8_frames * sizeof(SpriteFrame);
+  uint mm8_frames_size = num_mm8_frames * sizeof(SpriteFrame);
   memcpy(pSpriteSFrames + num_mm6_frames + num_mm7_frames, (char *)data_mm8 + 8, mm8_frames_size);
   memcpy(pSpriteEFrames + num_mm6_frames + num_mm7_frames, (char *)data_mm8 + 8 + mm8_frames_size, 2 * num_mm8_eframes);
 
