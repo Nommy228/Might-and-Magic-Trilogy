@@ -410,6 +410,15 @@ bool OSWindow::Initialize(const wchar_t *title, int window_width, int window_hei
     return false;
   }
 
+  HDC hDC = GetDC(NULL);
+  int bitsPerPixel = GetDeviceCaps(hDC, BITSPIXEL);
+  int planes = GetDeviceCaps(hDC, PLANES);
+  ReleaseDC(NULL, hDC);
+  if (bitsPerPixel != 16 || planes != 1)
+  {
+	SetColorDepth(16);
+  }
+
   SetWindowedMode(window_width, window_height);
   Show();
 
@@ -788,4 +797,38 @@ bool OSWindow::OnOSMenu(int item_id)
   }
 
   return true;
+}
+
+bool OSWindow::SetColorDepth(int bit)
+{
+		dm.dmSize = sizeof(DEVMODE);
+		if (!EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &dm))
+		{
+			printf("EnumDisplaySettings failed:%d\n", GetLastError());
+			return false;
+		}
+ 		dm.dmBitsPerPel = bit;
+		dm.dmFields = DM_BITSPERPEL;
+		if (ChangeDisplaySettings(&dm, CDS_TEST) !=DISP_CHANGE_SUCCESSFUL)
+		{
+			printf("\nIllegal graphics mode: %d\n", GetLastError());
+			return false;
+		}
+		if (ChangeDisplaySettings(&dm, 0) == DISP_CHANGE_SUCCESSFUL)
+		{
+			ChangedColorDepth = true;
+		}
+}
+
+void OSWindow::Delete()
+{
+	Deinitialize();
+}
+
+void OSWindow::Deinitialize()
+{
+	if( ChangedColorDepth )
+	{
+		SetColorDepth(32);
+	}
 }
