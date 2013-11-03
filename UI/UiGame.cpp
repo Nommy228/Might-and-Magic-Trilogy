@@ -615,9 +615,9 @@ void GameUI_DrawDialogue()
       pButton->uHeight = pTextHeight;
       v42 = pButton->uY + pTextHeight - 1;
       pButton->uW = v42;
-      pTextColor = ui_game_dialogue_option_highlight_color;
-      if ( pDialogueWindow->pCurrentPosActiveItem != i )
-        pTextColor = ui_game_dialogue_option_normal_color;
+      pTextColor = ui_game_dialogue_option_normal_color;
+      if ( pDialogueWindow->pCurrentPosActiveItem == i )
+		pTextColor = ui_game_dialogue_option_highlight_color;
       window.DrawTitleText(pFontArrus, 0, pButton->uY, pTextColor, pButton->pButtonName, 3);
     }
   }

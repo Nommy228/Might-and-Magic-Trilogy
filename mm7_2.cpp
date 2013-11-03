@@ -6011,7 +6011,7 @@ LABEL_42:
               v16 = (signed __int16)pSpriteObjects[uLayingItemID].uSoundID + 4;
             v124 = 8 * v153;
             LOBYTE(v124) = v124 | 2;
-            v125 = word_4EE088_sound_ids[pSpriteObjects[uLayingItemID].spell_id - 1] + 1;
+            v125 = word_4EE088_sound_ids[pSpriteObjects[uLayingItemID].spell_id] + 1;
             pAudioPlayer->PlaySound((SoundID)v125, v124, 0, -1, 0, v16, 0, 0);
             return 0;
           }

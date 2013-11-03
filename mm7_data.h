@@ -478,7 +478,7 @@ extern std::array<unsigned int, 2> pHiredNPCsIconsOffsetsX;
 extern std::array<unsigned int, 2> pHiredNPCsIconsOffsetsY;
 extern std::array<int, 2> dword_4EE07C; // weak
 extern _UNKNOWN unk_4EE084; // weak
-extern std::array<__int16, 100> word_4EE088_sound_ids; // weak
+extern std::array<__int16, 101> word_4EE088_sound_ids; // weak
 extern std::array<short, 28> word_4EE150;
 extern int dword_4EED78; // weak
 extern _UNKNOWN unk_4EED80; // weak
