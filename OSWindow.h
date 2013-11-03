@@ -6,7 +6,7 @@ class OSWindow: public UIControl
 {
   public:
     static OSWindow *Create(const wchar_t *title, int window_width, int window_height);
-
+	void Delete();
 
     void SetFullscreenMode();
     void SetWindowedMode(int new_window_width, int new_window_height);
@@ -38,11 +38,15 @@ class OSWindow: public UIControl
 
   protected:
     bool Initialize(const wchar_t *title, int window_width, int window_height);
+	void Deinitialize();
+	bool SetColorDepth(int bit);
     bool WinApiMessageProc(UINT msg, WPARAM wparam, LPARAM lparam, LRESULT *result);
 
     HWND  api_handle;
+	DEVMODE dm;
 
   private:
+	bool ChangedColorDepth;
     static LPARAM __stdcall WinApiMsgRouter(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
     HMENU CreateDebugMenuPanel();

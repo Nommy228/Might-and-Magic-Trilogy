@@ -757,6 +757,7 @@ void Game::Deinitialize()
     WriteWindowsRegistryInt("window X", Rect.left);
     WriteWindowsRegistryInt("window Y", Rect.top);
   }
+  window->Delete();
   WriteWindowsRegistryInt("valAlwaysRun", bAlwaysRun);
   pItemsTable->Release();
   pNPCStats->Release();
