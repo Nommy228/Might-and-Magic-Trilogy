@@ -42,7 +42,7 @@
 std::array<Actor, 500> pActors;
 size_t uNumActors;
 
-std::array<stru319, 2000> stru_50C198; // idb
+stru319 stru_50C198; // idb
 
 
 std::array<uint, 5> dword_4DF380_hostilityRanges = {0,1024,2560,5120,10240};

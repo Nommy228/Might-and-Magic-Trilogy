@@ -87,14 +87,14 @@ GUIProgressBar *__cdecl crt_construct_576E30()
 
 void __cdecl crt_init_globals_46BD9F()
 {
-  pPartyActionQueue.uNumActions = 0;
+  pPartyActionQueue->uNumActions = 0;
 }
 
 void constructors()
 {
 	sub_401022();
 	sub_423B4A();
-	crt_init_globals_46BD9F()
+	crt_init_globals_46BD9F();
 
 	//no call to these anywhere
 	uGameUIFontMain_initialize();
