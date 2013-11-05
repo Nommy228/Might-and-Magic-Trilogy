@@ -857,10 +857,6 @@ double dbl_4F5372; // weak
 int dword_4F5428[777]; // weak
 int dword_4F542C[777]; // weak
 _UNKNOWN crtunk_4F54B8; // weak
-std::array<int, 52> dword_4F5B24_ys; // idb
-std::array<int, 52> dword_4F5BF4_xs; // idb
-std::array<int, 52> dword_4F5CC8_ys; // idb
-std::array<int, 52> dword_4F5D98_xs; // idb
 std::array<int, 500> ai_array_4F5E68;
 std::array<int, 500> ai_array_4F6638_actor_ids;
 std::array<int, 500> ai_near_actors_targets_pid;

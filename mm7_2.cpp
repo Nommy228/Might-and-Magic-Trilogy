@@ -4350,6 +4350,7 @@ bool MM_Main(const wchar_t *pCmdLine)
   uCPUSpeed = Rect.bottom;*/
   uCPUSpeed = 2048; // about 2GHz
 
+  constructors();
 
   if (!MM7_Initialize(640, 480))
   {

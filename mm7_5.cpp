@@ -1034,6 +1034,9 @@ bool __fastcall sub_4075DB(int x, int y, int z, BLVFace *a4)
   signed int a3a; // [sp+24h] [bp+8h]@14
   int a4a; // [sp+28h] [bp+Ch]@2
 
+  std::array<int, 52> dword_4F5CC8_ys; // idb
+  std::array<int, 52> dword_4F5D98_xs; // idb
+
   //__debugbreak();
 
   v5 = a4->uAttributes;
@@ -1128,6 +1131,9 @@ bool __fastcall sub_4077F1(int a1, int a2, int a3, ODMFace *a4, BSPVertexBuffer 
   int a4a; // [sp+28h] [bp+Ch]@2
   signed int a5a; // [sp+2Ch] [bp+10h]@14
 
+  std::array<int, 52> dword_4F5B24_ys; // idb
+  std::array<int, 52> dword_4F5BF4_xs; // idb
+  
   __debugbreak();
 
   v5 = a4->uAttributes;

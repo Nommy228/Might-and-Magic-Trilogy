@@ -4978,7 +4978,7 @@ void Render::DrawIndoorSkyPolygon(signed int uNumVertices, struct Polygon *pSkyP
       {
         d3d_vertex_buffer[i].pos.x = array_507D30[i].vWorldViewProjX;
         d3d_vertex_buffer[i].pos.y = array_507D30[i].vWorldViewProjY;
-        d3d_vertex_buffer[i].pos.z = 1.0 - 1.0 / array_507D30[i].vWorldViewPosition.y;
+        d3d_vertex_buffer[i].pos.z = 1.0 - 1.0 / (array_507D30[i].vWorldViewPosition.x * 0.061758894);
         d3d_vertex_buffer[i].rhw = array_507D30[i]._rhw;
         d3d_vertex_buffer[i].diffuse = 8 * v5 | ((8 * v5 | (v5 << 11)) << 8);
         d3d_vertex_buffer[i].specular = 0;
@@ -5051,6 +5051,7 @@ void Render::DrawIndoorSky(unsigned int uNumVertices, unsigned int uFaceID)
   int v72; // [sp+14Ch] [bp-28h]@7
   float v73; // [sp+150h] [bp-24h]@16
   unsigned int v74; // [sp+154h] [bp-20h]@3
+  unsigned int v74_; // [sp+154h] [bp-20h]@3
   RenderVertexSoft *v75; // [sp+158h] [bp-1Ch]@3
   float v76; // [sp+15Ch] [bp-18h]@9
   int v77; // [sp+160h] [bp-14h]@9
@@ -5060,7 +5061,7 @@ void Render::DrawIndoorSky(unsigned int uNumVertices, unsigned int uFaceID)
   const void *v81; // [sp+170h] [bp-4h]@7
 
   pFace = &pIndoor->pFaces[uFaceID];
-  //for floor and wall-------------------
+  //for floor and wall(for example Selesta)-------------------
   if (pFace->uPolygonType == POLYGON_InBetweenFloorAndWall || pFace->uPolygonType == POLYGON_Floor)
   {
     int v69 = (GetTickCount() / 32) - pGame->pIndoorCameraD3D->vPartyPos.x;
@@ -5085,8 +5086,8 @@ void Render::DrawIndoorSky(unsigned int uNumVertices, unsigned int uFaceID)
                        * 65535.0)
                       * (sin(v5) * -16192.0 - (double)pGame->pIndoorCameraD3D->vPartyPos.z));
 
+  stru_8019C8._48653D_frustum_blv(65536, 0, 0, 0, 65536, 0);
   pSkyPolygon.Create_48607B(&stru_8019C8);
-  pSkyPolygon.ptr_38->_48653D_frustum_blv(65536, 0, 0, 0, 65536, 0);
   pSkyPolygon.uTileBitmapID = pFace->uBitmapID;
 
   pSkyPolygon.pTexture = pBitmaps_LOD->GetTexture(pSkyPolygon.uTileBitmapID);
@@ -5113,27 +5114,22 @@ void Render::DrawIndoorSky(unsigned int uNumVertices, unsigned int uFaceID)
   v63 = 224 * pMiscTimer->uTotalGameTimeElapsed & v13;
   v66 = 224 * pMiscTimer->uTotalGameTimeElapsed & v12;
   v78 = 0;
-  v81 = 0;
+  //v81 = 0;
   float v68 = 1.0 / (double)pSkyPolygon.pTexture->uTextureHeight;
   if ( (signed int)pSkyPolygon.uNumVertices <= 0 )
-  {
-    pRenderer->DrawIndoorSkyPolygon(pSkyPolygon.uNumVertices, &pSkyPolygon,
-       pBitmaps_LOD->pHardwareTextures[(signed __int16)pSkyPolygon.uTileBitmapID]);
     return;
-  }
 
-  //v14 = (char *)&array_507D30[0].vWorldViewProjY;
   int _507D30_idx = 0;
-  while ( 2 )
+  for ( _507D30_idx; _507D30_idx < pSkyPolygon.uNumVertices; _507D30_idx++ )
   {
     //v15 = (void *)(v72 * (v70 - (int)array_507D30[_507D30_idx].vWorldViewProjY));
     v77 = (unsigned __int64)(pSkyPolygon.ptr_38->viewing_angle_from_west_east * (signed __int64)(v72 * (v70 - array_507D30[_507D30_idx].vWorldViewProjY))) >> 16;
     v74 = v77 + pSkyPolygon.ptr_38->angle_from_north;
 
     v77 = (unsigned __int64)(pSkyPolygon.ptr_38->viewing_angle_from_north_south * (signed __int64)(v72 * (v70 - array_507D30[_507D30_idx].vWorldViewProjY))) >> 16;
-    v75 = (RenderVertexSoft *)(v77 + pSkyPolygon.ptr_38->angle_from_east);
+    v74_ = v77 + pSkyPolygon.ptr_38->angle_from_east;
 
-    v79 = (void *)(((unsigned __int64)(pSkyPolygon.v_18.z * (signed __int64)v72 * (v70 - array_507D30[_507D30_idx].vWorldViewProjY))) >> 16);
+    v79 = (void *)(((unsigned __int64)(pSkyPolygon.v_18.z * (signed __int64)v72 * (v70 - (int)array_507D30[_507D30_idx].vWorldViewProjY))) >> 16);
     v17 = v72 * (pBLVRenderParams->uViewportCenterX - (int)array_507D30[_507D30_idx].vWorldViewProjX);
     v18 = array_507D30[_507D30_idx].vWorldViewProjY - 1.0;
     v19 = -pSkyPolygon.field_24;
@@ -5147,7 +5143,7 @@ void Render::DrawIndoorSky(unsigned int uNumVertices, unsigned int uFaceID)
       if ( !X )
         goto LABEL_14;
       v21 = abs(v19 >> 14);
-      if ( v21 <= abs(X) )
+      if ( v21 <= abs(X) )//0x800 <= 0x28652
         break;
       if ( SLODWORD(v76) <= (signed int)pViewport->uViewportTL_Y )
         break;
@@ -5165,53 +5161,35 @@ LABEL_14:
     {
       LODWORD(v23) = v77 << 16;
       HIDWORD(v23) = v77 >> 16;//v23 = 0xfffffe0000000000
-	  int i = HIDWORD(v23) / X;
-      v79 = (void *)(v23 / X);//X = FFFF96A3(FFFF9014)
+      v79 = (void *)(v23 / X);//X = FFFF9014(-28652)
       v77 = v17;
-      v77 = v17;
-
-      LODWORD(v76) = v74 + ((unsigned __int64)(pSkyPolygon.ptr_38->angle_from_west * (signed __int64)v17) >> 16);
-      LODWORD(v80) = v66 + ((signed int)((unsigned __int64)(SLODWORD(v76) * v23 / X) >> 16) >> 4);
-      //v24 = (double)SLODWORD(v80) * 0.000015259022;
+      signed __int64 s = v74 + ((pSkyPolygon.ptr_38->angle_from_west * (signed __int64)v17) >> 16);// s = 0xFFFFFFFF FFFF3EE6
+      LODWORD(v80) = v66 + ((signed int)((unsigned __int64)(SLODWORD(s) * (v23 / X)) >> 16) >> 4);
       array_507D30[_507D30_idx].u = ((double)SLODWORD(v80) * 0.000015259022) * (1.0 / (double)pSkyPolygon.pTexture->uTextureWidth);
 
-      v75 = (RenderVertexSoft *)((char *)v75 + ((unsigned __int64)(pSkyPolygon.ptr_38->angle_from_south * (signed __int64)v17) >> 16));
-      LODWORD(v80) = v63 + ((signed int)((unsigned __int64)((signed int)v75 * v23 / X) >> 16) >> 4);
+      signed __int64 s2 = (signed __int64)(v74_ + ((unsigned __int64)(pSkyPolygon.ptr_38->angle_from_south * (signed __int64)v17) >> 16));
+      LODWORD(v80) = v63 + ((signed int)((unsigned __int64)(SLODWORD(s2) * (v23 / X)) >> 16) >> 4);
       array_507D30[_507D30_idx].v = ((double)SLODWORD(v80) * 0.000015259022) * v68;
 
-      v77 = (unsigned __int64)(SLODWORD(v76) * v23 / X) >> 16;
-      LODWORD(v73) = (unsigned __int64)((signed int)v75 * v23 / X) >> 16;
-      //v14 += 48;
-      v81 = (char *)v81 + 1;
-      //v26 = __OFSUB__((int)v81, pSkyPolygon.uNumVertices);
-      //v25 = (signed int)((char *)v81 - pSkyPolygon.uNumVertices) < 0;
+      v77 = (unsigned __int64)(SLODWORD(s) * (v23 / X)) >> 16;
+      LODWORD(v73) = (unsigned __int64)(SLODWORD(s2) * (v23 / X)) >> 16;
       array_507D30[_507D30_idx]._rhw = 65536.0 / (double)(signed int)v79;
-	  /*
-      v18 = v17 / v38;
-      if ( v18 < 0 )
-        v18 = pODMRenderParams->shading_dist_mist;
 
-      v37 = v35 + ((unsigned __int64)(pSkyPolygon.ptr_38->angle_from_west * (signed __int64)v13) >> 16);
-      v35 = 224 * pMiscTimer->uTotalGameTimeElapsed + ((signed int)((unsigned __int64)(v37 * (signed __int64)v18) >> 16) >> 3);
-      array_50AC10[i].u = (double)v35 / ((double)pSkyPolygon.pTexture->uTextureWidth * 65536.0);
-
-      v36 = v36 + ((unsigned __int64)(pSkyPolygon.ptr_38->angle_from_south * (signed __int64)v13) >> 16);
-      v35 = 224 * pMiscTimer->uTotalGameTimeElapsed + ((signed int)((unsigned __int64)(v36 * (signed __int64)v18) >> 16) >> 3);
-      array_50AC10[i].v = (double)v35 / ((double)pSkyPolygon.pTexture->uTextureHeight * 65536.0);
-
-      array_50AC10[i].vWorldViewPosition.x = (double)0x2000;//pODMRenderParams->shading_dist_mist
-      array_50AC10[i]._rhw = 1.0 / (double)(v18 >> 16);
-	  */
-      _507D30_idx++;
-      if ( (int)v81 >= pSkyPolygon.uNumVertices )
-      {
-        pRenderer->DrawIndoorSkyPolygon(pSkyPolygon.uNumVertices, &pSkyPolygon,
-           pBitmaps_LOD->pHardwareTextures[(signed __int16)pSkyPolygon.uTileBitmapID]);
-        return;
-      }
+      //if ( (int)v81 >= pSkyPolygon.uNumVertices )
+      //{
+      //  pRenderer->DrawIndoorSkyPolygon(pSkyPolygon.uNumVertices, &pSkyPolygon,
+      //     pBitmaps_LOD->pHardwareTextures[(signed __int16)pSkyPolygon.uTileBitmapID]);
+      //  return;
+      //}
       continue;
     }
     break;
+  }
+  if ( _507D30_idx >= pSkyPolygon.uNumVertices )
+  {
+    pRenderer->DrawIndoorSkyPolygon(pSkyPolygon.uNumVertices, &pSkyPolygon,
+       pBitmaps_LOD->pHardwareTextures[(signed __int16)pSkyPolygon.uTileBitmapID]);
+    return;
   }
   LODWORD(v73) = 0;
   v80 = v76;
@@ -5219,67 +5197,60 @@ LABEL_14:
   {
     v28 = (double)SLODWORD(v76);
     LODWORD(v76) = (int)(char *)array_50AC10 + 28;
-    v29 = (char *)&array_50AC10[0].vWorldViewProjX;
-    v30 = (char *)&array_507D30[1].vWorldViewProjY;
-    v79 = array_50AC10;
-    v81 = array_507D30;
-    v78 = pSkyPolygon.uNumVertices;
-    do
+	uint i = 0;
+    for ( v78 = pSkyPolygon.uNumVertices; v78; --v78 )
     {
-      v31 = v28 < *((float *)v30 - 12);
-      v32 = v28 == *((float *)v30 - 12);
       ++LODWORD(v73);
-      memcpy(v79, v81, 0x30u);
-      v79 = (char *)v79 + 48;
+      memcpy(&array_50AC10[i], &array_507D30[i], 0x30u);
       LODWORD(v76) += 48;
-      v29 += 48;
-      if ( v31 | v32 || v28 >= *(float *)v30 )
+      if ( v28 < array_507D30[i].vWorldViewProjY | v28 == array_507D30[i].vWorldViewProjY
+        || v28 >= array_507D30[i + 1].vWorldViewProjY )
       {
-        if ( v28 >= *((float *)v30 - 12) || v28 <= *(float *)v30 )
-          goto LABEL_28;
-        v33 = (*((float *)v30 - 1) - *((float *)v30 - 13)) * v28 / (*(float *)v30 - *((float *)v30 - 12))
-            + *((float *)v30 - 1);
+        if ( v28 >= array_507D30[i].vWorldViewProjY || v28 <= array_507D30[i + 1].vWorldViewProjY )
+        {
+          i++;
+          continue;
+        }
+        v33 = (array_507D30[i + 1].vWorldViewProjX - array_507D30[i].vWorldViewProjX) * v28 / (array_507D30[i + 1].vWorldViewProjY - array_507D30[i].vWorldViewProjY)
+            + array_507D30[i + 1].vWorldViewProjX;
       }
       else
       {
-        v33 = (*((float *)v30 - 13) - *((float *)v30 - 1)) * v28 / (*((float *)v30 - 12) - *(float *)v30)
-            + *((float *)v30 - 13);
+        v33 = (array_507D30[i].vWorldViewProjX - array_507D30[i + 1].vWorldViewProjX) * v28 / (array_507D30[i].vWorldViewProjY - array_507D30[i + 1].vWorldViewProjY)
+            + array_507D30[i].vWorldViewProjX;
       }
-      *(float *)v29 = v33;
-      v79 = (char *)v79 + 48;
-      v29 += 48;
+      array_50AC10[i + 1].vWorldViewProjX = v33;
       ++LODWORD(v73);
       *(unsigned int *)LODWORD(v76) = v28;
       LODWORD(v76) += 48;
-LABEL_28:
-      v81 = (char *)v81 + 48;
-      v30 += 48;
-      --v78;
+      i++;
     }
-    while ( v78 );
   }
   if ( SLODWORD(v73) <= 0 )
     goto LABEL_40;
-  v34 = (char *)&array_50AC10[0].vWorldViewProjY;
+  //v34 = (char *)&array_50AC10[0].vWorldViewProjY;
+  uint j = 0;
   v65 = v77 >> 14;
-  HIDWORD(v69) = LODWORD(v73);
-  do
+  //HIDWORD(v69) = LODWORD(v73);
+  for ( int t = (int)LODWORD(v73); t > 1; t-- )
   {
-    v35 = (const void *)(v72 * (v70 - (unsigned __int64)(signed __int64)*(float *)v34));
-    v78 = pSkyPolygon.ptr_38->viewing_angle_from_west_east;
-    v81 = (const void *)((unsigned __int64)(v78 * (signed __int64)(signed int)v35) >> 16);
+    v35 = (const void *)(v72 * (v70 - (unsigned __int64)(signed __int64)array_50AC10[j].vWorldViewProjY));
+
+    //v78 = pSkyPolygon.ptr_38->viewing_angle_from_west_east;
+    v81 = (const void *)((unsigned __int64)(pSkyPolygon.ptr_38->viewing_angle_from_west_east * (signed __int64)(signed int)v35) >> 16);
     v36 = (int)((char *)v81 + pSkyPolygon.ptr_38->angle_from_north);
+
     v81 = v35;
     v74 = v36;
-    v78 = pSkyPolygon.ptr_38->viewing_angle_from_north_south;
-    v81 = (const void *)((unsigned __int64)(v78 * (signed __int64)(signed int)v35) >> 16);
+    //v78 = pSkyPolygon.ptr_38->viewing_angle_from_north_south;
+    v81 = (const void *)((unsigned __int64)(pSkyPolygon.ptr_38->viewing_angle_from_north_south * (signed __int64)(signed int)v35) >> 16);
     v78 = (int)v35;
     v75 = (RenderVertexSoft *)((char *)v81 + pSkyPolygon.ptr_38->angle_from_east);
     v81 = (const void *)pSkyPolygon.v_18.z;
     v78 = (unsigned __int64)(pSkyPolygon.v_18.z * (signed __int64)(signed int)v35) >> 16;
     v37 = (const void *)(v72
-                       * (pBLVRenderParams->uViewportCenterX - (unsigned __int64)(signed __int64)*((float *)v34 - 1)));
-    v38 = (signed __int64)(*(float *)v34 - 1.0);
+                       * (pBLVRenderParams->uViewportCenterX - (unsigned __int64)(signed __int64)array_50AC10[j].vWorldViewProjX));
+    v38 = (signed __int64)(array_50AC10[j].vWorldViewProjY - 1.0);
     v81 = 0;
     LODWORD(v76) = v38;
     v39 = v72 * (v70 - v38);
@@ -5309,7 +5280,7 @@ LABEL_36:
       v81 = (const void *)((unsigned __int64)(pSkyPolygon.v_18.z
                                             * (signed __int64)(signed int)(signed __int64)(((double)v70
                                                                                           - ((double)(2 * LODWORD(v76))
-                                                                                           - *(float *)v34))
+                                                                                           - array_50AC10[j].vWorldViewProjY))
                                                                                          * (double)v72)) >> 16);
       X = (int)((char *)v81 + pSkyPolygon.v_18.x);
     }
@@ -5317,72 +5288,61 @@ LABEL_36:
     HIDWORD(v42) = v77 >> 16;
     v79 = (void *)(v42 / X);
     v81 = v37;
-    v78 = pSkyPolygon.ptr_38->angle_from_west;
-    v81 = (const void *)((unsigned __int64)(v78 * (signed __int64)(signed int)v37) >> 16);
-    v43 = v74 + ((unsigned __int64)(v78 * (signed __int64)(signed int)v37) >> 16);
+
+    //v78 = pSkyPolygon.ptr_38->angle_from_west;
+    v81 = (const void *)((unsigned __int64)(pSkyPolygon.ptr_38->angle_from_west * (signed __int64)(signed int)v37) >> 16);
+    v43 = v74 + ((unsigned __int64)(pSkyPolygon.ptr_38->angle_from_west * (signed __int64)(signed int)v37) >> 16);
     v74 = (unsigned int)v37;
     LODWORD(v76) = v43;
-    v78 = pSkyPolygon.ptr_38->angle_from_south;
-    v75 = (RenderVertexSoft *)((char *)v75 + ((unsigned __int64)(v78 * (signed __int64)(signed int)v37) >> 16));
+
+    //v78 = pSkyPolygon.ptr_38->angle_from_south;
+    v75 = (RenderVertexSoft *)((char *)v75 + ((unsigned __int64)(pSkyPolygon.ptr_38->angle_from_south * (signed __int64)(signed int)v37) >> 16));
     v74 = (unsigned __int64)(v43 * v42 / X) >> 16;
     v81 = (const void *)((unsigned __int64)((signed int)v75 * v42 / X) >> 16);
-    v34 += 48;
+
+    //v34 += 48;
     v78 = v66 + ((signed int)v74 >> 4);
-    v44 = HIDWORD(v69)-- == 1;
+    //v44 = HIDWORD(v69)-- == 1;
     v45 = (double)v78 * 0.000015259022;
     v78 = v63 + ((signed int)((unsigned __int64)((signed int)v75 * v42 / X) >> 16) >> 4);
-    *((float *)v34 - 10) = v45 * (1.0 / (double)pSkyPolygon.pTexture->uTextureWidth);
-    *((float *)v34 - 9) = (double)v78 * 0.000015259022 * v68;
-    v46 = (double)(signed int)v79;
-    *((float *)v34 - 16) = 0.000015258789 * v46;
-    *((float *)v34 - 11) = 65536.0 / v46;
+    array_50AC10[j].u = v45 * (1.0 / (double)pSkyPolygon.pTexture->uTextureWidth);
+    array_50AC10[j].v = (double)v78 * 0.000015259022 * v68;
+    //v46 = (double)(signed int)v79;
+    array_50AC10[j].vWorldViewPosition.x = 0.000015258789 * (double)(signed int)v79;
+    array_50AC10[j]._rhw = 65536.0 / (double)(signed int)v79;
+	++j;
   }
-  while ( !v44 );
+  //while ( !v44 );
 LABEL_40:
-  v47 = 0;
+  uint i = 0;
   if ( SLODWORD(v73) > 0 )
   {
     v48 = (double)SLODWORD(v80);
-    v75 = array_507D30;
-    v49 = array_50AC10;
-    HIDWORD(v69) = LODWORD(v73);
-    do
+    for ( HIDWORD(v69) = LODWORD(v73); HIDWORD(v69); --HIDWORD(v69) )
     {
-      if ( v48 >= v49->vWorldViewProjY )
+      if ( v48 >= array_50AC10[i].vWorldViewProjY )
       {
-        v50 = v75;
-        ++v47;
-        ++v75;
-        memcpy(v50, v49, 0x30u);
+        ++i;
+        memcpy(&array_507D30[i], &array_50AC10[i], 0x30u);
       }
-      ++v49;
-      --HIDWORD(v69);
     }
-    while ( HIDWORD(v69) );
   }
-  pSkyPolygon.uNumVertices = v47;
-  pRenderer->DrawIndoorSkyPolygon(v47, &pSkyPolygon, pBitmaps_LOD->pHardwareTextures[(signed __int16)pSkyPolygon.uTileBitmapID]);
-  *(float *)&v74 = 0.0;
+  pSkyPolygon.uNumVertices = i;
+  pRenderer->DrawIndoorSkyPolygon(pSkyPolygon.uNumVertices, &pSkyPolygon, pBitmaps_LOD->pHardwareTextures[(signed __int16)pSkyPolygon.uTileBitmapID]);
+  int pNumVertices = 0;
   if ( SLODWORD(v73) > 0 )
   {
     v51 = (double)SLODWORD(v80);
-    v75 = array_507D30;
-    v52 = array_50AC10;
-    for ( v80 = v73; v80; --v80 )
+    for ( v80 = v73; v80 != 0.0; --LODWORD(v80) )
     {
-      if ( v51 <= v52->vWorldViewProjY )
+      if ( v51 <= array_50AC10[pNumVertices].vWorldViewProjY )
       {
-        v53 = v75;
-        ++v74;
-        ++v75;
-        memcpy(v53, v52, 0x30u);
+        ++pNumVertices;
+        memcpy(&array_507D30[pNumVertices], &array_50AC10[pNumVertices], 0x30u);
       }
-      ++v52;
-      //--LODWORD(v80);
     }
-    //while ( v80 != 0.0 );
   }
-  pRenderer->DrawIndoorSkyPolygon(v74, &pSkyPolygon, pBitmaps_LOD->pHardwareTextures[(signed __int16)pSkyPolygon.uTileBitmapID]);
+  pRenderer->DrawIndoorSkyPolygon(pNumVertices, &pSkyPolygon, pBitmaps_LOD->pHardwareTextures[(signed __int16)pSkyPolygon.uTileBitmapID]);
 }
 
 

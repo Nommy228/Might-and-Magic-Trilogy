@@ -165,6 +165,7 @@
     <ClCompile Include="..\..\mm7_4.cpp" />
     <ClCompile Include="..\..\mm7_5.cpp" />
     <ClCompile Include="..\..\mm7_6.cpp" />
+    <ClCompile Include="..\..\mm7_7.cpp" />
     <ClCompile Include="..\..\mm7_data.cpp" />
     <ClCompile Include="..\..\Monsters.cpp" />
     <ClCompile Include="..\..\Mouse.cpp" />

@@ -487,7 +487,7 @@ void IndoorLocation::ExecDraw_d3d(unsigned int uFaceID, IndoorCameraD3D_Vec4 *pV
   //int v25; // eax@38
   //char *v26; // edi@38
   IDirect3DTexture2 *v27; // eax@42
-  Texture *v28; // [sp+Ch] [bp-1Ch]@15
+  //Texture *v28; // [sp+Ch] [bp-1Ch]@15
   //int i; // [sp+10h] [bp-18h]@38
   //LightmapBuilder *pStru4; // [sp+14h] [bp-14h]@16
   //IndoorCameraD3D *v31; // [sp+18h] [bp-10h]@16
@@ -497,9 +497,6 @@ void IndoorLocation::ExecDraw_d3d(unsigned int uFaceID, IndoorCameraD3D_Vec4 *pV
   int a4a; // [sp+34h] [bp+Ch]@25
   //unsigned int a4b; // [sp+34h] [bp+Ch]@38
 
-  //v4 = uFaceID;
-  //a7 = pVertices;
-  //uFaceID_ = uFaceID;
   if (uFaceID >= pIndoor->uNumFaces)
     return;
 
@@ -507,7 +504,6 @@ void IndoorLocation::ExecDraw_d3d(unsigned int uFaceID, IndoorCameraD3D_Vec4 *pV
   static RenderVertexSoft static_vertices_F7B628[64];
   static stru154 stru_F7B60C; // idb
 
-    //v9 = &pIndoor->pFaces[uFaceID];
   BLVFace* pFace = &pIndoor->pFaces[uFaceID];
   if (pFace->uNumVertices < 3)
     return;
@@ -521,8 +517,6 @@ void IndoorLocation::ExecDraw_d3d(unsigned int uFaceID, IndoorCameraD3D_Vec4 *pV
 
   if (!pFace->GetTexture())
     return;
-
-  v28 = pFace->GetTexture();
 
   if (!pGame->pIndoorCameraD3D->IsCulled(pFace))
   {
@@ -551,8 +545,7 @@ void IndoorLocation::ExecDraw_d3d(unsigned int uFaceID, IndoorCameraD3D_Vec4 *pV
         pGame->pIndoorCameraD3D->ViewTransfrom_OffsetUV(static_vertices_F7B628, uNumVerticesa, array_507D30, &stru_F8AD28);
         pGame->pIndoorCameraD3D->Project(array_507D30, uNumVerticesa, 0);
         pGame->pLightmapBuilder->std__vector_000004_size = 0;
-        if (stru_F8AD28.uNumLightsApplied > 0 ||
-            pDecalBuilder->uNumDecals > 0)
+        if (stru_F8AD28.uNumLightsApplied > 0 || pDecalBuilder->uNumDecals > 0)
         {
           stru_F7B60C.face_plane.vNormal.x = pFace->pFacePlane.vNormal.x;
           stru_F7B60C.polygonType = pFace->uPolygonType;
@@ -570,10 +563,7 @@ void IndoorLocation::ExecDraw_d3d(unsigned int uFaceID, IndoorCameraD3D_Vec4 *pV
         if (pFace->Fluid())
         {
           if (pFace->uBitmapID == pRenderer->hd_water_tile_id)
-          {
-            v23 = pRenderer->pHDWaterBitmapIDs[pRenderer->hd_water_current_frame];
-            v27 = pBitmaps_LOD->pHardwareTextures[v23];
-          }
+            v27 = pBitmaps_LOD->pHardwareTextures[pRenderer->pHDWaterBitmapIDs[pRenderer->hd_water_current_frame]];
           else
           {
             //auto v24 = GetTickCount() / 4;
@@ -585,72 +575,52 @@ void IndoorLocation::ExecDraw_d3d(unsigned int uFaceID, IndoorCameraD3D_Vec4 *pV
             for (uint i = 0; i < uNumVerticesa; ++i)
               //array_507D30[i].v += (double)(pBitmaps_LOD->pTextures[pFace->uBitmapID].uHeightMinus1 & (unsigned int)(stru_5C6E00->SinCos(v25) >> 8));
               array_507D30[i].v += pBitmaps_LOD->pTextures[pFace->uBitmapID].uHeightMinus1 * cosf(angle);
-            v23 = pFace->uBitmapID;
-            v27 = pBitmaps_LOD->pHardwareTextures[v23];
+            v27 = pBitmaps_LOD->pHardwareTextures[pFace->uBitmapID];
           }
         }
         else if (pFace->uAttributes & 0x4000)
-        {
-          v23 = pTextureFrameTable->GetFrameTexture(pFace->uBitmapID, pBLVRenderParams->field_0_timer_);
-          v27 = pBitmaps_LOD->pHardwareTextures[v23];
-        }
+          v27 = pBitmaps_LOD->pHardwareTextures[pTextureFrameTable->GetFrameTexture(pFace->uBitmapID, pBLVRenderParams->field_0_timer_)];
         else
         {
           v17 = 0xFF808080;
-          v23 = pFace->uBitmapID;
-          v27 = pBitmaps_LOD->pHardwareTextures[v23];
+          v27 = pBitmaps_LOD->pHardwareTextures[pFace->uBitmapID];
         }
 
         if (pFace->uAttributes & FACE_INDOOR_SKY)
           pRenderer->DrawIndoorSky(uNumVerticesa, uFaceID);
         else
-          pRenderer->DrawIndoorPolygon(uNumVerticesa, pFace, v27, v28, PID(OBJECT_BModel, uFaceID), v17, 0);
+          pRenderer->DrawIndoorPolygon(uNumVerticesa, pFace, v27, pFace->GetTexture(), PID(OBJECT_BModel, uFaceID), v17, 0);
         return;
       }
     }
   }
 }
 
-
-
-
 //----- (004B0E07) --------------------------------------------------------
 unsigned int __fastcall sub_4B0E07(unsigned int uFaceID)
 {
-  BLVFace *v1; // edi@1
-  BLVFaceExtra *v2; // ecx@1
-  Texture *v3; // esi@1
-  unsigned int v4; // eax@1
-  unsigned int v5; // ecx@1
   unsigned int result; // eax@1
-  unsigned int v7; // ecx@5
 
-  v1 = &pIndoor->pFaces[uFaceID];
-  v2 = &pIndoor->pFaceExtras[v1->uFaceExtraID];
-  v3 = pBitmaps_LOD->GetTexture(v1->uBitmapID);
-  stru_F8AD28.pDeltaUV[0] = v2->sTextureDeltaU;
-  stru_F8AD28.pDeltaUV[1] = v2->sTextureDeltaV;
-  v4 = GetTickCount();
-  v5 = v1->uAttributes;
-  result = v4 >> 3;
-  if ( v5 & 4 )
+  stru_F8AD28.pDeltaUV[0] = pIndoor->pFaceExtras[pIndoor->pFaces[uFaceID].uFaceExtraID].sTextureDeltaU;
+  stru_F8AD28.pDeltaUV[1] = pIndoor->pFaceExtras[pIndoor->pFaces[uFaceID].uFaceExtraID].sTextureDeltaV;
+  result = GetTickCount() >> 3;
+  if ( pIndoor->pFaces[uFaceID].uAttributes & 4 )
   {
-    stru_F8AD28.pDeltaUV[1] -= result & v3->uHeightMinus1;
+    stru_F8AD28.pDeltaUV[1] -= result & pBitmaps_LOD->GetTexture(pIndoor->pFaces[uFaceID].uBitmapID)->uHeightMinus1;
   }
   else
   {
-    if ( v5 & 0x20 )
-      stru_F8AD28.pDeltaUV[1] += result & v3->uHeightMinus1;
+    if ( pIndoor->pFaces[uFaceID].uAttributes & 0x20 )
+      stru_F8AD28.pDeltaUV[1] += result & pBitmaps_LOD->GetTexture(pIndoor->pFaces[uFaceID].uBitmapID)->uHeightMinus1;
   }
-  v7 = v1->uAttributes;
-  if ( BYTE1(v7) & 8 )
+  if ( BYTE1(pIndoor->pFaces[uFaceID].uAttributes) & 8 )
   {
-    stru_F8AD28.pDeltaUV[0] -= result & v3->uWidthMinus1;
+    stru_F8AD28.pDeltaUV[0] -= result & pBitmaps_LOD->GetTexture(pIndoor->pFaces[uFaceID].uBitmapID)->uWidthMinus1;
   }
   else
   {
-    if ( v7 & 0x40 )
-      stru_F8AD28.pDeltaUV[0] += result & v3->uWidthMinus1;
+    if ( pIndoor->pFaces[uFaceID].uAttributes & 0x40 )
+      stru_F8AD28.pDeltaUV[0] += result & pBitmaps_LOD->GetTexture(pIndoor->pFaces[uFaceID].uBitmapID)->uWidthMinus1;
   }
   return result;
 }
