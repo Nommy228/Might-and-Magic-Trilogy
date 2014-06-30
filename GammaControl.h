@@ -1,6 +1,5 @@
 #pragma once
 #include "lib\legacy_dx\d3d.h"
-#include "OSAPI.h"
 
 #pragma pack(push, 1)
 class GammaController
@@ -17,9 +16,6 @@ public:
   int InitGammaRamp(DDGAMMARAMP *pRamp);
 
   /*protected*/void InitializeFromSurface(struct IDirectDrawSurface4 *a2);
-
-  static bool IsGammaSupported();
-
 
 
 

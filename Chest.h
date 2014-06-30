@@ -60,6 +60,8 @@ struct Chest //0x14cc
   static bool Open(signed int uChestID);
   static void DrawChestUI(signed int uChestID);
   static void ToggleFlag(signed int uChestID, unsigned __int16 uFlag, unsigned int bToggle);
+  static void ChestUI_WritePointedObjectStatusString();
+  static void OnChestLeftClick();
 
   unsigned __int16 uChestBitmapID; //0
   unsigned __int16 uFlags; //2

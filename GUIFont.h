@@ -32,6 +32,8 @@ struct GUIFont
                                         unsigned __int16 *pPixels, unsigned int uPixelsWidth);
 
   static char * FitTwoFontStringINWindow(const char *pString, GUIFont *pFontMain, GUIFont *pFontSecond, GUIWindow* pWindow, int startPixlOff, int a6);
+  static void uGameUIFontMain_initialize();
+  static void uGameUIFontShadow_initialize();
 
   unsigned char cFirstChar;  //0
   unsigned char cLastChar;  //1

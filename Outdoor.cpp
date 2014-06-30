@@ -1,7 +1,6 @@
-#ifdef _MSC_VER
 #define _CRT_SECURE_NO_WARNINGS
-#endif
-
+#include "ErrorHandling.h"
+#include "mm7_unsorted_subs.h"
 #include "stru6.h"
 #include "Weather.h"
 #include "Sprites.h"
@@ -15,16 +14,17 @@
 #include "GUIProgressBar.h"
 #include "AudioPlayer.h"
 #include "DecorationList.h"
-#include "Math.h"
+#include "OurMath.h"
 #include "ObjectList.h"
 #include "Game.h"
 #include "Actor.h"
 #include "Chest.h"
 #include "stru123.h"
-#include "Time.h"
+#include "Timer.h"
 #include "Viewport.h"
 #include "Events.h"
 #include "ParticleEngine.h"
+#include "TurnEngine.h"
 
 #include "mm7_data.h"
 #include "MM7.h"
@@ -36,6 +36,8 @@
 #include "BSPModel.h"
 #include "GUIWindow.h"
 #include "Level/Decoration.h"
+#include "OurMath.h"
+#include "ZlibWrapper.h"
 
 MapStartPoint uLevel_StartingPointType; // weak
 
@@ -83,16 +85,12 @@ int dword_4EC2AC=7; // weak
 //----- (0047A59E) --------------------------------------------------------
 void OutdoorLocation::ExecDraw(unsigned int bRedraw)
 {
-  //unsigned int v2; // ebx@1
-  int v3; // ST18_4@3
-  int v4; // ST04_4@19
-  int v5; // eax@19
 
   pGame->pIndoorCameraD3D->debug_flags = 0;
   if (viewparams->draw_d3d_outlines)
     pGame->pIndoorCameraD3D->debug_flags |= ODM_RENDER_DRAW_D3D_OUTLINES;
 
-  if (bRedraw || pRenderer->pRenderD3D)
+  if (bRedraw || true/*pRenderer->pRenderD3D*/)
   {
     //pODMRenderParams->RotationToInts();
     sub_481ED9_MessWithODMRenderParams();
@@ -111,16 +109,16 @@ void OutdoorLocation::ExecDraw(unsigned int bRedraw)
   pOutdoor->UpdateFog();
   //pGame->pIndoorCameraD3D->sr_Reset_list_0037C();
 
-  if (pRenderer->pRenderD3D) // d3d - redraw always
+  //if (pRenderer->pRenderD3D) // d3d - redraw always
   {
     pRenderer->DrawOutdoorSkyD3D();
     pRenderer->DrawBuildingsD3D();
     pRenderer->RenderTerrainD3D();
+    //pRenderer->DrawBezierTerrain();
   }
-  else
+  /*else
   {
-    __debugbreak(); // no SW Rendering
-    /*if (!bRedraw)
+    if (!bRedraw)
       pRenderer->OnOutdoorRedrawSW();
     else
     {
@@ -128,8 +126,8 @@ void OutdoorLocation::ExecDraw(unsigned int bRedraw)
       pRenderer->DrawBezierTerrain();
       sr_sub_486F92_MessWithEdgesAndSpans();
       pODMRenderParams->ApplyLightmapsSW();
-    }*/
-  }
+    }
+  }*/
 
 
   pMobileLightsStack->uNumLightsActive = 0;
@@ -142,14 +140,10 @@ void OutdoorLocation::ExecDraw(unsigned int bRedraw)
   pGame->PushStationaryLights(-1);
   pGame->PrepareBloodsplats();
   if (bRedraw)
-  {
-    v4 = WorldPosToGridCellZ(pParty->vPosition.y);
-    v5 = WorldPosToGridCellX(pParty->vPosition.x);
-    pOutdoor->UpdateDiscoveredArea(v5, v4, 1);
-  }
+    pOutdoor->UpdateDiscoveredArea(WorldPosToGridCellX(pParty->vPosition.x), WorldPosToGridCellZ(pParty->vPosition.y), 1);
   pGame->uFlags2 &= 0xFFFFFFFEu;
-  if (pRenderer->pRenderD3D && pRenderer->bUsingSpecular)
-    pGame->pLightmapBuilder->uFlags |= 1u;
+  if (/*pRenderer->pRenderD3D*/true && pRenderer->bUsingSpecular)
+    pGame->pLightmapBuilder->uFlags |= 1;
   else
     pGame->pLightmapBuilder->uFlags &= 0xFFFFFFFEu;
 
@@ -175,42 +169,38 @@ void OutdoorLocation::Draw()
   pOutdoor->ExecDraw(redrawWorld);
 
   pGame->DrawParticles();
-  pWeather->Draw();
+  //pWeather->Draw();//если раскомментировать скорость снега быстрее
   trail_particle_generator.UpdateParticles();
 }
 
 //----- (00488E23) --------------------------------------------------------
 double OutdoorLocation::GetFogDensityByTime()
 {
-  int v1; // eax@3
-  double v2; // st7@3
-
-  if ( pParty->uCurrentHour < 5 )
-    goto LABEL_9;
-  if ( pParty->uCurrentHour >= 6 )
+  if ( pParty->uCurrentHour < 5 )//ночь
   {
-    if ( pParty->uCurrentHour < 0x14 )
-    {
-      pWeather->bNight = 0;
-      v2 = 0.0;
-      return v2 * 0.016666668;
-    }
-    if ( pParty->uCurrentHour < 0x15 )
-    {
-      v1 = 0;
-      v2 = (double)(pParty->uCurrentHour - 20) * 60.0 + (double)(signed int)pParty->uCurrentMinute;
-      goto LABEL_4;
-    }
-LABEL_9:
-    v2 = 60.0;
-    pWeather->bNight = 1;
-    return v2 * 0.016666668;
+    pWeather->bNight = true;
+    return 60.0 * 0.016666668;
   }
-  v1 = 0;
-  v2 = 60.0 - (double)(60 * pParty->uCurrentHour + pParty->uCurrentMinute - 300);
-LABEL_4:
-  pWeather->bNight = v1;
-  return v2 * 0.016666668;
+  else if ( pParty->uCurrentHour >= 5 && pParty->uCurrentHour < 6 )//рассвет
+  {
+    pWeather->bNight = false;
+    return (60.0 - (double)(60 * pParty->uCurrentHour + pParty->uCurrentMinute - 300)) * 0.016666668;
+  }
+  else if ( pParty->uCurrentHour >= 6 && pParty->uCurrentHour < 20 )//день
+  {
+    pWeather->bNight = false;
+     return 0.0;
+  }
+  else if ( pParty->uCurrentHour >= 20 && pParty->uCurrentHour < 21 )//сумерки
+  {
+    pWeather->bNight = false;
+    return ((double)(pParty->uCurrentHour - 20) * 60.0 + (double)(signed int)pParty->uCurrentMinute) * 0.016666668;
+  }
+  else//ночь
+  {
+    pWeather->bNight = true;
+    return 60.0 * 0.016666668;
+  }
 }
 
 //----- (00488EB1) --------------------------------------------------------
@@ -219,7 +209,7 @@ int OutdoorLocation::GetSomeOtherTileInfo(int sX, int sY)
   //OutdoorLocation *v3; // esi@1
   unsigned int v4; // edi@1
   unsigned int v5; // eax@1
-  int result; // eax@5
+//  int result; // eax@5
 
 /*  v3 = this;
   v4 = WorldPosToGridCellZ(sY);
@@ -239,11 +229,11 @@ int OutdoorLocation::GetSomeOtherTileInfo(int sX, int sY)
 // 47F458: using guessed type int __stdcall WorldPosToGridCellZ(int);
 
 //----- (00488EEF) --------------------------------------------------------
-unsigned int OutdoorLocation::GetTileTexture(int sX, int sY)
+unsigned int OutdoorLocation::GetTileTexture(signed int sX, signed int sY)
 {
   //OutdoorLocation *v3; // esi@1
-  unsigned int v4; // edi@1
-  unsigned int v5; // eax@1
+  signed int v4; // edi@1
+  signed int v5; // eax@1
 //  unsigned int result; // eax@5
 
   /*v3 = this;
@@ -294,8 +284,7 @@ bool OutdoorLocation::Initialize(const char *pFilename, int File, size_t uRespaw
     pSprites_LOD->DeleteSomeOtherSprites();
     pSpriteFrameTable->ResetSomeSpriteFlags();
     pIcons_LOD->ReleaseAll2();
-    sub_46080D();
-    TryLoadLevelFromLOD();
+
     if ( !Load(pFilename, (ODMFace *)File, uRespawnInterval, thisa) )
     {
       MessageBoxA(0, "Error!", "Couldn't Load Map!", 0);
@@ -382,58 +371,32 @@ MapStartPoint foot_travel_arrival_points[15][4] =
 //----- (0048902E) --------------------------------------------------------
 bool OutdoorLocation::GetTravelDestination(signed int sPartyX, signed int sPartyZ, char *pOut, signed int a5)
 {
-  OutdoorLocation *v5; // esi@1
-  char *v6; // eax@3
-  int v7; // eax@3
-  //int v8; // edx@3
-  signed int v9; // esi@7
-  //int v10; // esi@23
-  signed int v11; // eax@23
-  //int v12; // ST14_4@25
-  signed int v14; // [sp-4h] [bp-84h]@6
+  char *mapNumberAsStr; // eax@3
+  int mapNumberAsInt; // eax@3
+  signed int direction; // esi@7
+  signed int destinationMap; // eax@23
   char Str[140]; // [sp+8h] [bp-78h]@3
-  //int a5a; // [sp+94h] [bp+14h]@3
 
-  OutdoorLocation* Source = this;
+  strcpy(Str, this->pLevelFilename);//настоящая локация
+  _strlwr(Str);
+  mapNumberAsStr = strtok(Str, "out");
+  mapNumberAsStr[2] = 0;
+  mapNumberAsInt = atoi(mapNumberAsStr);
+  if ( a5 < 10 || strlen(this->pLevelFilename) != 9 || mapNumberAsInt < 1 || mapNumberAsInt > 15 ) //длина  .odm и количество локаций
+    return 0;
+  if ( sPartyX < -22528 )//граница карты
+    direction = 4;
+  else if ( sPartyX > 22528 )
+    direction = 3;
+  else if ( sPartyZ < -22528 )
+    direction = 2;
+  else if ( sPartyZ > 22528 )
+    direction = 1;
+  else
+    return false;
 
-  v5 = Source;
-  if ( a5 < 10
-    || strlen(Source->pLevelFilename) != 9
-    || (strcpy(Str, v5->pLevelFilename),
-        _strlwr(Str),
-        v6 = strtok(Str, "out"),
-        v6[2] = 0,
-        v7 = atoi(v6),
-        //v8 = v7,
-        //a5a = v7,
-        v7 < 1)
-    || v7 > 15 )
-    return 0;
-  if ( sPartyX < -22528 )
+  if ( mapNumberAsInt == MAP_AVLEE && direction == 4) // to Shoals
   {
-    v14 = 4;
-LABEL_7:
-    v9 = v14;
-    goto LABEL_14;
-  }
-  if ( sPartyX > 22528 )
-  {
-    v14 = 3;
-    goto LABEL_7;
-  }
-  if ( sPartyZ < -22528 )
-  {
-    v14 = 2;
-    goto LABEL_7;
-  }
-  if ( sPartyZ <= 22528 )
-    return 0;
-  v9 = 1;
-LABEL_14:
-  if ( v7 == 14 )
-  {
-    if ( v9 == 4 ) // to & from Shoals
-    {
       if ( pPlayers[1]->HasUnderwaterSuitEquipped() &&
            pPlayers[2]->HasUnderwaterSuitEquipped() &&
            pPlayers[3]->HasUnderwaterSuitEquipped() &&
@@ -442,37 +405,28 @@ LABEL_14:
         uDefaultTravelTime_ByFoot = 1;
         strcpy(pOut, "out15.odm");
         uLevel_StartingPointType = MapStartPoint_East;
-LABEL_18:
         LOWORD(pParty->uFlags) &= 0xFD7Bu;
-        return 1;
+        return true;
       }
-      //v8 = v7;
-    }
   }
-  else
+  else if ( mapNumberAsInt == MAP_SHOALS && direction == 3 ) //from Shoals
   {
-    if ( v7 == 15 && v9 == 3 )
-    {
-      uDefaultTravelTime_ByFoot = 1;
-      strcpy(pOut, "out14.odm");
-      uLevel_StartingPointType = MapStartPoint_West;
-      goto LABEL_18;
-    }
+    uDefaultTravelTime_ByFoot = 1;
+    strcpy(pOut, "out14.odm");//Авли
+    uLevel_StartingPointType = MapStartPoint_West;
+    LOWORD(pParty->uFlags) &= 0xFD7Bu;
+    return true;
   }
-  //v10 = v9 + 4 * v7;
-  //v11 = (unsigned __int8)aTiletableLoadU[v10 + 39];
-  v11 = foot_travel_destinations[v7 - 1][v9 - 1];
-  if (v11 == MAP_INVALID)
+  destinationMap = foot_travel_destinations[mapNumberAsInt - 1][direction - 1];
+  if (destinationMap == MAP_INVALID)
     return false;
 
-  assert(v11 <= MAP_SHOALS);
+  assert(destinationMap <= MAP_SHOALS);
 
-  uDefaultTravelTime_ByFoot = foot_travel_times[v7 - 1][v9 - 1];
-  uLevel_StartingPointType = foot_travel_arrival_points[v7 - 1][v9 - 1];
-  sprintf(pOut, "out%02d.odm", v11);
-  return 1;
-  //}
-  //return 0;
+  uDefaultTravelTime_ByFoot = foot_travel_times[mapNumberAsInt - 1][direction - 1];
+  uLevel_StartingPointType = foot_travel_arrival_points[mapNumberAsInt - 1][direction - 1];
+  sprintf(pOut, "out%02d.odm", destinationMap); //локация направления
+  return true;
 }
 // 6BD07C: using guessed type int uDefaultTravelTime_ByFoot;
 // 6BE35C: using guessed type int uLevel_StartingPointType;
@@ -480,92 +434,64 @@ LABEL_18:
 //----- (0048917E) --------------------------------------------------------
 void OutdoorLocation::MessWithLUN()
 {
-  OutdoorLocation *v1; // esi@1
-  unsigned int *v2; // ebp@1
-  unsigned int v3; // eax@1
-  unsigned __int16 v4; // ax@1
-  signed int v5; // ebx@1
-
-  v1 = this;
-  v2 = this->pSpriteIDs_LUN;
   this->pSpriteIDs_LUN[0] = -1;
+  this->pSpriteIDs_LUN[1] = 0;
   this->pSpriteIDs_LUN[2] = pSpriteFrameTable->FastFindSprite("LUN1-4");
-  v1->pSpriteIDs_LUN[4] = pSpriteFrameTable->FastFindSprite("LUN1-2");
-  v1->pSpriteIDs_LUN[6] = pSpriteFrameTable->FastFindSprite("LUN3-4");
-  v1->uSpriteID_LUNFULL = pSpriteFrameTable->FastFindSprite("LUNFULL");
-  v1->uSpriteID_LUN3_4_cp = pSpriteFrameTable->FastFindSprite("LUN3-4");
-  v1->uSpriteID_LUN1_2_cp = pSpriteFrameTable->FastFindSprite("LUN1-2");
-  v3 = pSpriteFrameTable->FastFindSprite("LUN1-4");
-  v1->field_D60 = -1;
-  v1->uSpriteID_LUN1_4_cp = v3;
-  v1->field_CF0 = 4;
-  v1->field_CF8 = 4;
-  v1->field_D00 = 4;
-  LOWORD(v3) = *(short *)v2;
-  v1->pSpriteIDs_LUN[1] = 0;
-  v1->pSpriteIDs_LUN[3] = 0;
-  v1->pSpriteIDs_LUN[5] = 0;
-  v1->pSpriteIDs_LUN[7] = 0;
-  v1->field_CE8 = 0;
-  LOWORD(v1->field_D3C) = v3;
-  v1->field_D40 = 0;
-  v1->field_D44 = 0;
-  v1->field_D48 = 0;
-  v1->field_D4C = 131072;
-  v1->field_D5C = 0;
-  v1->field_D64 = 0;
-  v4 = pSpriteFrameTable->FastFindSprite("LUN-SUN");
-  v1->field_D28 = -1;
-  v1->field_D08 = 0;
-  v1->field_D0C = 0;
-  v1->field_D10 = 0;
-  v1->field_D24 = 0;
-  v1->field_D2C = 0;
-  v1->uSpriteID_LUN_SUN = v4;
-  v1->field_D14 = -131072;
-  v5 = 8;
-  do
-  {
-    pSpriteFrameTable->InitializeSprite(*v2);
-    v2 += 2;
-    --v5;
-  }
-  while ( v5 );
-  pSpriteFrameTable->InitializeSprite(v1->uSpriteID_LUN_SUN);
+  this->pSpriteIDs_LUN[3] = 0;
+  this->pSpriteIDs_LUN[4] = pSpriteFrameTable->FastFindSprite("LUN1-2");
+  this->pSpriteIDs_LUN[5] = 0;
+  this->pSpriteIDs_LUN[6] = pSpriteFrameTable->FastFindSprite("LUN3-4");
+  this->pSpriteIDs_LUN[7] = 0;
+  this->uSpriteID_LUNFULL = pSpriteFrameTable->FastFindSprite("LUNFULL");
+  this->uSpriteID_LUN1_2_cp = pSpriteFrameTable->FastFindSprite("LUN1-2");
+  this->uSpriteID_LUN1_4_cp = pSpriteFrameTable->FastFindSprite("LUN1-4");
+  this->uSpriteID_LUN3_4_cp = pSpriteFrameTable->FastFindSprite("LUN3-4");
+  this->field_D60 = -1;
+  this->field_CF0 = 4;
+  this->field_CF8 = 4;
+  this->field_D00 = 4;
+  this->field_CE8 = 0;
+  this->field_D3C = (int)this->pSpriteIDs_LUN;
+  this->field_D40 = 0;
+  this->field_D44 = 0;
+  this->field_D48 = 0;
+  this->field_D4C = 131072;
+  this->field_D5C = 0;
+  this->field_D64 = 0;
+  this->field_D28 = -1;
+  this->field_D08 = 0;
+  this->field_D0C = 0;
+  this->field_D10 = 0;
+  this->field_D24 = 0;
+  this->field_D2C = 0;
+  this->uSpriteID_LUN_SUN = pSpriteFrameTable->FastFindSprite("LUN-SUN");
+  this->field_D14 = -131072;
+  for ( uint i = 0; i < 8; i++ )
+    pSpriteFrameTable->InitializeSprite(this->pSpriteIDs_LUN[i]);//v2 += 2;
+  pSpriteFrameTable->InitializeSprite(this->uSpriteID_LUN_SUN);
 }
 
 //----- (004892E6) --------------------------------------------------------
 void OutdoorLocation::UpdateSunlightVectors()
 {
-  //unsigned int result; // eax@1
-  OutdoorLocation *v2; // esi@1
   unsigned int v3; // edi@3
-  //int v4; // ebx@3
-  int v5; // eax@3
-  //int v6; // eax@3
-  //int v7; // ecx@3
   double v8; // st7@4
 
-  v2 = this;
   if ( pParty->uCurrentHour >= 5 && pParty->uCurrentHour < 21 )
   {
     v3 = pParty->uCurrentMinute + 60 * (pParty->uCurrentHour - 5);
-    //v4 = (signed int)(v3 * stru_5C6E00->uIntegerPi) / 960;
-    v5 = stru_5C6E00->Cos((signed int)(v3 * stru_5C6E00->uIntegerPi) / 960);
-    v2->inv_sunlight_y = 0;
-    v2->inv_sunlight_x = v5;
-    //v6 = stru_5C6E00->Sin(v4);
-    //v7 = v2->field_D18;
-    v2->inv_sunlight_z = stru_5C6E00->Sin((signed int)(v3 * stru_5C6E00->uIntegerPi) / 960);
-    v2->vSunlight.x = -v2->inv_sunlight_x;
-    v2->vSunlight.y = -v2->inv_sunlight_y;
-    v2->vSunlight.z = -v2->inv_sunlight_z;
-    if ( (signed int)v3 >= 480 )
-      v8 = (double)(signed int)(960 - v3);
+    this->inv_sunlight_y = 0;
+    this->inv_sunlight_x = stru_5C6E00->Cos((v3 * stru_5C6E00->uIntegerPi) / 960);
+    this->inv_sunlight_z = stru_5C6E00->Sin((v3 * stru_5C6E00->uIntegerPi) / 960);
+    this->vSunlight.x = -this->inv_sunlight_x;
+    this->vSunlight.y = -this->inv_sunlight_y;
+    this->vSunlight.z = -this->inv_sunlight_z;
+    if ( v3 >= 480 )
+      v8 = 960 - v3;
     else
-      v8 = (double)(signed int)v3;
-    v2->max_terrain_dimming_level = (signed __int64)(20.0 - v8 / 480.0 * 20.0);
-    v2->uLastSunlightUpdateMinute = pParty->uCurrentMinute;
+      v8 = v3;
+    this->max_terrain_dimming_level = (int)(20.0 - v8 / 480.0 * 20.0);
+    this->uLastSunlightUpdateMinute = pParty->uCurrentMinute;
   }
 }
 
@@ -578,48 +504,33 @@ void OutdoorLocation::UpdateFog()
 //----- (004893CF) --------------------------------------------------------
 int OutdoorLocation::GetNumFoodRequiredToRestInCurrentPos(int x, signed int y, int z)
 {
-  OutdoorLocation *v4; // ebx@1
-  signed int v5; // edi@4
-  int v6; // eax@4
   int v7; // eax@4
-  int v8; // eax@4
-  int v9; // eax@5
-  int v10; // eax@6
-  int v11; // eax@7
-  int v12; // eax@8
-  int v15; // [sp+8h] [bp-8h]@2
-  int v16; // [sp+Ch] [bp-4h]@2
+  int is_on_water; // [sp+8h] [bp-8h]@2
+  int bmodel_standing_on_pid; // [sp+Ch] [bp-4h]@2
 
-  v4 = this;
-  if ( pParty->uFlags & 8
-    || (v15 = 0,
-        v16 = 0,
-        ODM_GetFloorLevel(x, y, z, pParty->uDefaultPartyHeight, &v15, &v16, 0),
-        v16)
-    || v15 )
+  is_on_water = 0;
+  bmodel_standing_on_pid = 0;
+  ODM_GetFloorLevel(x, y, z, pParty->uDefaultPartyHeight, &is_on_water, &bmodel_standing_on_pid, 0);
+  if ( pParty->uFlags & 8 || bmodel_standing_on_pid || is_on_water )//на bmodel,и или на воде
     return 2;
-  v5 = WorldPosToGridCellX(pParty->vPosition.x);
-  v6 = WorldPosToGridCellZ(pParty->vPosition.y);
-  v7 = _47ED83(v5, v6 - 1);
-  v8 = pTileTable->pTiles[GetTileIdByTileMapId(v7)].tileset;
-  if ( v8 )
+  v7 = _47ED83(WorldPosToGridCellX(pParty->vPosition.x), WorldPosToGridCellZ(pParty->vPosition.y) - 1);
+  switch ( pTileTable->pTiles[GetTileIdByTileMapId(v7)].tileset )
   {
-    v9 = v8 - 1;
-    if ( !v9 )
+    case Tileset_Grass://на траве
+      return 1;
+    case Tileset_Snow://на снегу
       return 3;
-    v10 = v9 - 1;
-    if ( !v10 )
+    case Tilset_Desert://на песке
       return 5;
-    v11 = v10 - 1;
-    if ( !v11 || (v12 = v11 - 3) == 0 )
+    case Tileset_3:
+    case Tileset_Dirt:// на грязи
       return 4;
-    if ( v12 == 1 )
-      return 3;
-    return 2;
+    case Tileset_Water:// on water(на воде)
+      return 3;//еденицы еды
+    default:
+      return 2;
   }
-  return 1;
 }
-
 
 //----- (00489487) --------------------------------------------------------
 void OutdoorLocation::SetFog()
@@ -665,23 +576,13 @@ void OutdoorLocation::SetFog()
 }
 
 //----- (00482170) --------------------------------------------------------
-bool ODMFace::IsBackfaceCulled(ODMFace *a1, RenderVertexSoft *a2, struct Polygon *a3)
+bool ODMFace::IsBackfaceNotCulled(RenderVertexSoft *a2, struct Polygon *polygon)
 {
-  struct Polygon *v3; // edi@1
-  RenderVertexSoft *v4; // esi@1
-  unsigned int v5; // edx@1
-  RenderVertexSoft *v6; // ecx@2
+  unsigned int numOfVertices; // edx@1
+  RenderVertexSoft *currVertex; // ecx@2
   double v7; // st7@5
   double v8; // st6@5
   double v9; // st5@5
-  double v10; // st6@9
-  double v11; // st5@9
-  double v12; // st4@9
-  bool result; // eax@16
-  double v14; // ST2C_8@17
-  double v15; // ST20_8@17
-  double v16; // ST0C_8@17
-  double v17; // ST0C_8@17
   float v18; // [sp+8h] [bp-38h]@5
   float v19; // [sp+10h] [bp-30h]@5
   float v20; // [sp+14h] [bp-2Ch]@5
@@ -699,81 +600,59 @@ bool ODMFace::IsBackfaceCulled(ODMFace *a1, RenderVertexSoft *a2, struct Polygon
   float a3d; // [sp+48h] [bp+8h]@17
   float a3e; // [sp+48h] [bp+8h]@17
 
-  v3 = a3;
-  v4 = a2;
-  v5 = a3->uNumVertices;
-  if ( (signed int)v5 < 3 )
-    goto LABEL_20;
-  v6 = &v4[v5 - 1];
-  if ( v4->vWorldPosition.z == v4[1].vWorldPosition.z && v4[1].vWorldPosition.z == v6->vWorldPosition.z )
-    *(int *)&a3->flags |= 0x10u;
-  v19 = v4[1].vWorldViewPosition.x - v4->vWorldViewPosition.x;
-  v18 = v4[1].vWorldViewPosition.y - v4->vWorldViewPosition.y;
-  v20 = v4[1].vWorldViewPosition.z - v4->vWorldViewPosition.z;
-  v21 = v6->vWorldViewPosition.x - v4->vWorldViewPosition.x;
-  v22 = v6->vWorldViewPosition.y - v4->vWorldViewPosition.y;
-  v23 = v6->vWorldViewPosition.z - v4->vWorldViewPosition.z;
-  v28 = v4[1].vWorldPosition.x - v4->vWorldPosition.x;
-  v27 = v4[1].vWorldPosition.y - v4->vWorldPosition.y;
-  a3a = v4[1].vWorldPosition.z - v4->vWorldPosition.z;
-  v7 = v6->vWorldPosition.x - v4->vWorldPosition.x;
-  v8 = v6->vWorldPosition.y - v4->vWorldPosition.y;
-  v9 = v6->vWorldPosition.z - v4->vWorldPosition.z;
-  v26 = v27 * v9 - v8 * a3a;
-  v24 = v7 * a3a - v9 * v28;
-  v25 = v8 * v28 - v7 * v27;
-  if ( v26 == 0.0 && v24 == 0.0 && v25 == 0.0 )
+  numOfVertices = polygon->uNumVertices;
+  if ( numOfVertices < 3 )
+    return false;
+  currVertex = &a2[numOfVertices - 1];
+  if ( a2->vWorldPosition.z == a2[1].vWorldPosition.z && a2[1].vWorldPosition.z == currVertex->vWorldPosition.z )
+    polygon->flags |= 0x10u;
+
+  v28 = a2[1].vWorldPosition.x - a2->vWorldPosition.x;
+  v27 = a2[1].vWorldPosition.y - a2->vWorldPosition.y;
+  a3a = a2[1].vWorldPosition.z - a2->vWorldPosition.z;
+
+
+  for (int i = 0; i < numOfVertices; i++)
   {
-    while ( 1 )
-    {
-      --v5;
-      if ( (signed int)v5 < 2 )
-        break;
-      v10 = v6->vWorldPosition.x - v4->vWorldPosition.x;
-      v11 = v6->vWorldPosition.y - v4->vWorldPosition.y;
-      v12 = v6->vWorldPosition.z - v4->vWorldPosition.z;
-      v26 = v27 * v12 - v11 * a3a;
-      v24 = v10 * a3a - v12 * v28;
-      v25 = v11 * v28 - v10 * v27;
-      if ( v26 != 0.0 )
-        break;
-      if ( v24 != 0.0 || v25 != 0.0 )
-        break;
-      --v6;
-    }
-    v21 = v6->vWorldViewPosition.x - v4->vWorldViewPosition.x;
-    v22 = v6->vWorldViewPosition.y - v4->vWorldViewPosition.y;
-    v23 = v6->vWorldViewPosition.z - v4->vWorldViewPosition.z;
+    v7 = currVertex->vWorldPosition.x - a2->vWorldPosition.x;
+    v8 = currVertex->vWorldPosition.y - a2->vWorldPosition.y;
+    v9 = currVertex->vWorldPosition.z - a2->vWorldPosition.z;
+    v26 = v27 * v9 - v8 * a3a;
+    v24 = v7 * a3a - v9 * v28;
+    v25 = v8 * v28 - v7 * v27;
+    if ( v24 != 0.0 || v25 != 0.0 || v26 != 0.0 )
+      break;
+    currVertex--;
   }
-  if ( ((double)pGame->pIndoorCameraD3D->vPartyPos.x - v4->vWorldPosition.x) * v26
-     + ((double)pGame->pIndoorCameraD3D->vPartyPos.z - v4->vWorldPosition.z) * v25
-     + ((double)pGame->pIndoorCameraD3D->vPartyPos.y - v4->vWorldPosition.y) * v24 > 0.0 )
+
+  if ( ((double)pGame->pIndoorCameraD3D->vPartyPos.x - a2->vWorldPosition.x) * v26
+    + ((double)pGame->pIndoorCameraD3D->vPartyPos.z - a2->vWorldPosition.z) * v25
+    + ((double)pGame->pIndoorCameraD3D->vPartyPos.y - a2->vWorldPosition.y) * v24 > 0.0 )
   {
+
+    v19 = a2[1].vWorldViewPosition.x - a2->vWorldViewPosition.x;
+    v18 = a2[1].vWorldViewPosition.y - a2->vWorldViewPosition.y;
+    v20 = a2[1].vWorldViewPosition.z - a2->vWorldViewPosition.z;
+    v21 = currVertex->vWorldViewPosition.x - a2->vWorldViewPosition.x;
+    v22 = currVertex->vWorldViewPosition.y - a2->vWorldViewPosition.y;
+    v23 = currVertex->vWorldViewPosition.z - a2->vWorldViewPosition.z;
+
     a3b = v23 * v18 - v22 * v20;
-    v14 = a3b + 6.7553994e15;
-    v3->v_18.x = LODWORD(v14);
+    polygon->v_18.x = bankersRounding(a3b);
     a3c = v21 * v20 - v23 * v19;
-    v15 = a3c + 6.7553994e15;
-    v3->v_18.y = LODWORD(v15);
+    polygon->v_18.y = bankersRounding(a3c);
     a3d = v22 * v19 - v21 * v18;
-    v16 = a3d + 6.7553994e15;
-    v3->v_18.z = LODWORD(v16);
-    v3->_normalize_v_18();
-    a3e = -((double)v3->v_18.x * v4->vWorldViewPosition.x)
-        - (double)v3->v_18.y * v4->vWorldViewPosition.y
-        - (double)v3->v_18.z * v4->vWorldViewPosition.z;
-    v17 = a3e + 6.7553994e15;
-    v3->field_24 = LODWORD(v17);
-    result = 1;
+    polygon->v_18.z = bankersRounding(a3d);
+    polygon->_normalize_v_18();
+    a3e = -((double)polygon->v_18.x * a2->vWorldViewPosition.x)
+      - (double)polygon->v_18.y * a2->vWorldViewPosition.y
+      - (double)polygon->v_18.z * a2->vWorldViewPosition.z;
+    polygon->field_24 = bankersRounding(a3e);
+    return true;
   }
   else
-  {
-LABEL_20:
-    result = 0;
-  }
-  return result;
+    return false;
 }
-
 
 //----- (0047C7A9) --------------------------------------------------------
 void OutdoorLocationTerrain::_47C7A9()
@@ -789,34 +668,21 @@ void OutdoorLocationTerrain::_47C7A9()
 //----- (0047C7C2) --------------------------------------------------------
 void OutdoorLocationTerrain::Release()//очистить локацию
 {
-  if (pHeightmap)
-  {
-    free(this->pHeightmap);
-    pHeightmap = nullptr;
-  }
-  if (pTilemap)
-  {
-    free(pTilemap);
-    pTilemap = nullptr;
-  }
-  if (pAttributemap)
-  {
-    free(pAttributemap);
-    pAttributemap = nullptr;
-  }
-  if (pDmap)
-  {
-    free(pDmap);
-    pDmap = nullptr;
-  }
+  free(this->pHeightmap);
+  pHeightmap = nullptr;
+  free(pTilemap);
+  pTilemap = nullptr;
+  free(pAttributemap);
+  pAttributemap = nullptr;
+  free(pDmap);
+  pDmap = nullptr;
 
   _47C7A9();
 }
 
 //----- (0047C80A) --------------------------------------------------------
 void OutdoorLocationTerrain::FillDMap( int X, int Y, int W, int Z )
-    {
-  OutdoorLocationTerrain *pOutLocTerrain; // ebx@1
+{
   double v6; // st7@1
   double v7; // st7@2
   double v8; // st7@2
@@ -826,7 +692,7 @@ void OutdoorLocationTerrain::FillDMap( int X, int Y, int W, int Z )
   int v12; // ecx@6
   int v13; // edi@7
   int v14; // edx@9
-  int v15; // eax@15
+//  int v15; // eax@15
   unsigned __int8 *pMapHeight; // ebx@15
   int v17; // eax@15
   int v18; // ecx@15
@@ -854,27 +720,24 @@ void OutdoorLocationTerrain::FillDMap( int X, int Y, int W, int Z )
   int v40; // [sp+18h] [bp-30h]@15
   int v41; // [sp+1Ch] [bp-2Ch]@15
   int v42; // [sp+20h] [bp-28h]@15
-  OutdoorLocationTerrain *pOutLocTerrain2; // [sp+24h] [bp-24h]@1
   int v44; // [sp+28h] [bp-20h]@21
   float v45; // [sp+2Ch] [bp-1Ch]@1
   float v46; // [sp+30h] [bp-18h]@1
   float v47; // [sp+34h] [bp-14h]@1
-  int v48; // [sp+38h] [bp-10h]@7
+  //int v48; // [sp+38h] [bp-10h]@7
   int v49; // [sp+3Ch] [bp-Ch]@10
   int v50; // [sp+40h] [bp-8h]@9
   float v51; // [sp+44h] [bp-4h]@15
   float v52; // [sp+44h] [bp-4h]@21
   float v53; // [sp+50h] [bp+8h]@15
   float v54; // [sp+50h] [bp+8h]@21
-  int v55; // [sp+54h] [bp+Ch]@15
+//  int v55; // [sp+54h] [bp+Ch]@15
   float v56; // [sp+54h] [bp+Ch]@15
   float v57; // [sp+54h] [bp+Ch]@21
 
   v46 = -64.0;
   v47 = -64.0;
-  pOutLocTerrain = this;
   v45 = 64.0;
-  pOutLocTerrain2 = this;
   v6 = sqrt(12288.0);
   if ( v6 != 0.0 )
   {
@@ -898,38 +761,36 @@ void OutdoorLocationTerrain::FillDMap( int X, int Y, int W, int Z )
     W ^= X ^ W;
     v11 = W ^ v12;
   }
-  v13 = result - 1;
-  v48 = result - 1;
+  //v48 = result - 1;
   if ( result - 1 <= Z )
   {
     v39 = v11 - 1;
-    do
+    for ( v13 = result - 1; v13 <= Z; v13++ )
     {
-      v14 = v39;
       v50 = v39;
       if ( v39 <= W )
       {
         result = (v39 - 63) << 9;
         v49 = (v39 - 63) << 9;
-        do
+        for ( v14 = v39; v14 <= W; v14++ )
         {
           if ( v13 >= 0 && result >= -32256 && v13 <= 127 && result <= 32768 )
           {
-            v15 = pOutLocTerrain->field_10;
-            v55 = v15;
-            pMapHeight = pOutLocTerrain->pHeightmap;
-            v17 = (int)(&pMapHeight[v13 * v15] + v14);
+            //v15 = pOutLocTerrain->field_10;
+            //v55 = pOutLocTerrain->field_10;
+            pMapHeight = this->pHeightmap;
+            v17 = (int)(&pMapHeight[v13 * this->field_10] + v14);
             v18 = -v13;
             v19 = (64 - v13) << 9;
             v20 = 32 * *(char *)v17;
             v21 = 32 * *(char *)(v17 + 1);
+
             v22 = (v18 + 63) << 9;
             v41 = v22;
-            v23 = (int)(&pMapHeight[v55 * (v48 + 1)] + v50);
+            v23 = (int)(&pMapHeight[this->field_10 * (v13 + 1)] + v14);
             v24 = v22 - v19;
             v40 = 32 * *(char *)v23;
             v42 = 32 * *(char *)(v23 + 1);
-
 
             v25 = v49 - 512 - v49;
             v26 = (double)-((v20 - v21) * v24);
@@ -951,9 +812,9 @@ void OutdoorLocationTerrain::FillDMap( int X, int Y, int W, int Z )
               v31 = 0.0;
             if ( v31 > 31.0 )
               v31 = 31.0;
-            v44 = 2 * (v50 + v48 * pOutLocTerrain2->field_10);
-            pOutLocTerrain = pOutLocTerrain2;
-            *((char *)pOutLocTerrain2->pDmap + v44 + 1) = (signed __int64)v31;
+            v44 = 2 * (v14 + v13 * this->field_10);
+            //pOutLocTerrain = pOutLocTerrain2;
+            *((char *)this->pDmap + v44 + 1) = (signed __int64)v31;
 
             v32 = v49 - (v49 - 512);
             v33 = (double)-((v42 - v40) * (v19 - v41));
@@ -975,22 +836,21 @@ void OutdoorLocationTerrain::FillDMap( int X, int Y, int W, int Z )
               v38 = 0.0;
             if ( v38 > 31.0 )
               v38 = 31.0;
-            v13 = v48;
-            *((char *)pOutLocTerrain2->pDmap + v44) = (signed __int64)v38;
-            v14 = v50;
+            //v13 = v48;
+            *((char *)this->pDmap + v44) = (signed __int64)v38;
+            //v14 = v50;
             result = v49;
           }
-          ++v14;
+          //++v14;
           result += 512;
-          v50 = v14;
+          //v50 = v14;
           v49 = result;
         }
-        while ( v14 <= W );
       }
-      ++v13;
-      v48 = v13;
+      //++v13;
+      //v48 = v13;
     }
-    while ( v13 <= Z );
+    //while ( v13 <= Z );
   }
 }
 
@@ -998,49 +858,46 @@ void OutdoorLocationTerrain::FillDMap( int X, int Y, int W, int Z )
 int OutdoorLocationTerrain::_47CB57(int a1, int a2, int a3)
 {
   signed int result; // eax@2
-  unsigned __int16 *v5; // edx@3
-  double v6; // st7@3
-  char v7; // bl@3
-  int v8; // eax@3
-  int v9; // eax@4
-  int v10; // eax@5
-  double v11; // st6@7
-  signed int v12; // edi@7
-  int v13; // esi@9
-  char *v14; // esi@10
-  signed int v15; // ecx@10
-  char v16[256]; // [sp+4h] [bp-124h]@9
-  unsigned __int16 *v17; // [sp+104h] [bp-24h]@3
-  unsigned int v18; // [sp+108h] [bp-20h]@3
-  unsigned int v19; // [sp+10Ch] [bp-1Ch]@3
-  unsigned int v20; // [sp+110h] [bp-18h]@3
-  unsigned int v21; // [sp+114h] [bp-14h]@3
-  float v22; // [sp+118h] [bp-10h]@3
-  float v23; // [sp+11Ch] [bp-Ch]@3
-  int i; // [sp+120h] [bp-8h]@3
-  unsigned int v25; // [sp+124h] [bp-4h]@5
-  signed int a2a; // [sp+134h] [bp+Ch]@3
-  unsigned int a2b; // [sp+134h] [bp+Ch]@7
-  float a3a; // [sp+138h] [bp+10h]@7
-  int a3b; // [sp+138h] [bp+10h]@9
+//  unsigned __int16 *v5; // edx@3
+//  double v6; // st7@3
+//  int v8; // eax@3
+//  int v9; // eax@4
+//  int v10; // eax@5
+//  double v11; // st6@7
+//  signed int v12; // edi@7
+//  int v13; // esi@9
+//  char *v14; // esi@10
+//  signed int v15; // ecx@10
+//  char v16[256]; // [sp+4h] [bp-124h]@9
+//  unsigned __int16 *v17; // [sp+104h] [bp-24h]@3
+//  float v22; // [sp+118h] [bp-10h]@3
+//  float v23; // [sp+11Ch] [bp-Ch]@3
+//  int i; // [sp+120h] [bp-8h]@3
+//  unsigned int v25; // [sp+124h] [bp-4h]@5
+//  signed int a2a; // [sp+134h] [bp+Ch]@3
+//  unsigned int a2b; // [sp+134h] [bp+Ch]@7
+//  float a3a; // [sp+138h] [bp+10h]@7
+//  int a3b; // [sp+138h] [bp+10h]@9
 
-  if ( pRenderer->pRenderD3D )
-  {
+  int num_r_bits = 5;
+  int num_g_bits = 6;
+  int num_b_bits = 5;
+
+  int r_mask = 0xF800;
+  int g_mask = 0x7E0;
+  int b_mask = 0x1F;
+
+  //if ( pRenderer->pRenderD3D )
     result = 0;
-  }
-  else
+  /*else
   {
+    __debugbreak();
     v5 = PaletteManager::Get_Dark_or_Red_LUT(a2, 0, 1);
     v6 = 0.0;
-    v7 = LOBYTE(pRenderer->uTargetBBits);
-    v19 = pRenderer->uTargetRMask;
-    v21 = pRenderer->uTargetGMask;
     v22 = 0.0;
-    v20 = pRenderer->uTargetBMask;
     v8 = 0;
     v17 = v5;
     v23 = 0.0;
-    v18 = pRenderer->uTargetBBits;
     a2a = 0;
     for ( i = 0; i < a3; ++i )
     {
@@ -1048,11 +905,11 @@ int OutdoorLocationTerrain::_47CB57(int a1, int a2, int a3)
       if ( v9 )
       {
         v10 = v5[v9];
-        v6 = v6 + (double)((signed int)(v19 & v10) >> (LOBYTE(pRenderer->uTargetBBits) + LOBYTE(pRenderer->uTargetGBits)));
+        v6 = v6 + (double)((signed int)(r_mask & v10) >> (num_b_bits + num_g_bits));
         ++a2a;
-        v25 = v20 & v10;
-        v22 = (double)((signed int)(v21 & v10) >> SLOBYTE(pRenderer->uTargetBBits)) + v22;
-        v23 = (double)(signed int)(v20 & v10) + v23;
+        v25 = b_mask & v10;
+        v22 = (double)((signed int)(g_mask & v10) >> num_b_bits) + v22;
+        v23 = (double)(signed int)(b_mask & v10) + v23;
       }
       v8 = i + 1;
     }
@@ -1061,16 +918,15 @@ int OutdoorLocationTerrain::_47CB57(int a1, int a2, int a3)
     v25 = (signed __int64)(a3a * v22);
     i = (signed __int64)(a3a * v23);
     v12 = 0;
-    a2b = pRenderer->uTargetBBits + pRenderer->uTargetGBits;
+    a2b = num_b_bits + num_g_bits;
     while ( 1 )
     {
       v13 = v17[v12];
-      a3b = abs((__int64)(signed __int64)(v11 * v6) - ((signed int)(v19 & v17[v12]) >> a2b));
-      BYTE3(a3b) = abs((signed)v25 - ((signed int)(v21 & v13) >> v7)) + a3b;
-      v16[v12++] = abs((signed)i - (signed)(v20 & v13)) + BYTE3(a3b);
+      a3b = abs((__int64)(signed __int64)(v11 * v6) - ((signed int)(r_mask & v17[v12]) >> a2b));
+      BYTE3(a3b) = abs((signed)v25 - ((signed int)(g_mask & v13) >> num_b_bits)) + a3b;
+      v16[v12++] = abs((signed)i - (signed)(b_mask & v13)) + BYTE3(a3b);
       if ( v12 >= 256 )
         break;
-      v7 = v18;
     }
     result = 0;
     v14 = (char *)&pPaletteManager->field_D1600[42][23][116];
@@ -1085,28 +941,24 @@ int OutdoorLocationTerrain::_47CB57(int a1, int a2, int a3)
       ++v15;
     }
     while ( v15 < 256 );
-  }
+  }*/
   return result;
 }
-// 47CB57: using guessed type char var_124[256];
 
 //----- (0047CCE2) --------------------------------------------------------
 bool OutdoorLocationTerrain::ZeroLandscape()
 {
-  OutdoorLocationTerrain *v1; // esi@1
-
-  v1 = this;
   memset(this->pHeightmap, 0, 0x4000u);
-  memset(v1->pTilemap, 90, 0x4000u);
-  memset(v1->pAttributemap, 0, 0x4000u);
-  memset(v1->pDmap, 0, 0x8000u);
-  v1->field_12 = 128;
-  v1->field_10 = 128;
-  v1->field_16 = 7;
-  v1->field_14 = 7;
-  v1->field_1C = 127;
-  v1->field_18 = 127;
-  return 1;
+  memset(this->pTilemap, 90, 0x4000u);
+  memset(this->pAttributemap, 0, 0x4000u);
+  memset(this->pDmap, 0, 0x8000u);
+  this->field_12 = 128;
+  this->field_10 = 128;
+  this->field_16 = 7;
+  this->field_14 = 7;
+  this->field_1C = 127;
+  this->field_18 = 127;
+  return true;
 }
 
 //----- (0047CD44) --------------------------------------------------------
@@ -1125,76 +977,66 @@ bool OutdoorLocationTerrain::Initialize()
 //----- (0047CDE2) --------------------------------------------------------
 void OutdoorLocation::CreateDebugLocation()
 {
-  OutdoorLocation *v1; // esi@1
+  //OutdoorLocation *v1; // esi@1
   void *v2; // eax@1
   void *v3; // ST14_4@1
   void *v4; // eax@1
   void *v5; // ST14_4@1
   void *v6; // eax@1
-  unsigned int v7; // eax@1
+  //unsigned int v7; // eax@1
   //char v8; // zf@1
 
-  v1 = this;
+  //v1 = this;
   strcpy(this->pLevelFilename, "blank");
-  strcpy(v1->pLocationFileName, "i6.odm");
-  strcpy(v1->pLocationFileDescription, "MM6 Outdoor v1.00");
-  v1->uNumBModels = 0;
-  v1->pTileTypes[0].tileset = Tileset_Grass;
-  v1->pTileTypes[1].tileset = Tileset_Water;
-  v1->pTileTypes[2].tileset = Tileset_6;
-  v1->pTileTypes[3].tileset = Tileset_RoadGrassCobble;
-  v1->LoadTileGroupIds();
-  v1->LoadRoadTileset();
-  free(v1->pBModels);
-  free(v1->pSpawnPoints);
-  v1->pBModels = 0;
-  v1->pSpawnPoints = 0;
-  v1->pTerrain.Initialize();
-  v1->pTerrain.ZeroLandscape();
-  v1->pTerrain.FillDMap(0, 0, 128, 128);
-  free(v1->pCmap);
-  v1->pCmap = 0;
+  strcpy(this->pLocationFileName, "i6.odm");
+  strcpy(this->pLocationFileDescription, "MM6 Outdoor v1.00");
+  this->uNumBModels = 0;
+  this->pTileTypes[0].tileset = Tileset_Grass;
+  this->pTileTypes[1].tileset = Tileset_Water;
+  this->pTileTypes[2].tileset = Tileset_6;
+  this->pTileTypes[3].tileset = Tileset_RoadGrassCobble;
+  this->LoadTileGroupIds();
+  this->LoadRoadTileset();
+  free(this->pBModels);
+  free(this->pSpawnPoints);
+  this->pBModels = 0;
+  this->pSpawnPoints = 0;
+  this->pTerrain.Initialize();
+  this->pTerrain.ZeroLandscape();
+  this->pTerrain.FillDMap(0, 0, 128, 128);
+  free(this->pCmap);
+  this->pCmap = 0;
   v2 = malloc(0x8000u);
-  v3 = v1->pOMAP;
-  v1->pCmap = v2;
+  v3 = this->pOMAP;
+  this->pCmap = v2;
   free(v3);
-  v1->pOMAP = 0;
+  this->pOMAP = 0;
   v4 = malloc(0x10000u);
-  v1->pOMAP = (unsigned int *)v4;
+  this->pOMAP = (unsigned int *)v4;
   memset(v4, 0, 0x10000u);
-  v5 = v1->pFaceIDLIST;
-  v1->numFaceIDListElems = 0;
+  v5 = this->pFaceIDLIST;
+  this->numFaceIDListElems = 0;
   free(v5);
-  v1->pFaceIDLIST = 0;
+  this->pFaceIDLIST = 0;
   v6 = malloc(2);
-  v1->pFaceIDLIST = (unsigned __int16 *)v6;
+  this->pFaceIDLIST = (unsigned __int16 *)v6;
   *(short *)v6 = 0;
-  strcpy(v1->pSkyTextureName, pDefaultSkyTexture.data());
-  v1->uSky_TextureID = pBitmaps_LOD->LoadTexture(v1->pSkyTextureName);
-  strcpy(v1->pGroundTileset, byte_6BE124_cfg_textures_DefaultGroundTexture.data());
-  v7 = pBitmaps_LOD->LoadTexture(v1->pGroundTileset);
-  v1->uMainTile_BitmapID = v7;
+  strcpy(this->pSkyTextureName, pDefaultSkyTexture.data());
+  this->sSky_TextureID = pBitmaps_LOD->LoadTexture(this->pSkyTextureName);
+  strcpy(this->pGroundTileset, byte_6BE124_cfg_textures_DefaultGroundTexture.data());
+  //v7 = pBitmaps_LOD->LoadTexture(this->pGroundTileset);
+  this->sMainTile_BitmapID = pBitmaps_LOD->LoadTexture(this->pGroundTileset);
 
-  if ( v1->uSky_TextureID == -1 )
+  if ( this->sSky_TextureID == -1 )
     Error("Invalid Sky Tex Handle");
 
-  if ( v1->uMainTile_BitmapID == -1 )
+  if ( this->sMainTile_BitmapID == -1 )
     Error("Invalid Ground Tex Handle");
 }
-
-
 
 //----- (0047CF9C) --------------------------------------------------------
 void OutdoorLocation::Release()
 {
-  //OutdoorLocation *v1; // esi@1
-  //signed int v2; // edi@1
-  //int v3; // ebx@2
-  //void *v4; // ST24_4@4
-  //char *v5; // ebx@4
-  //void **v6; // esi@4
-
-  //v1 = this;
   strcpy(pLevelFilename, "blank");
   strcpy(pLocationFileName, "default.odm");
   strcpy(pLocationFileDescription, "MM6 Outdoor v1.00");
@@ -1211,35 +1053,20 @@ void OutdoorLocation::Release()
     uNumBModels = 0;
   }
 
-  if (pSpawnPoints)
-  {
-    free(pSpawnPoints);
-    pSpawnPoints = nullptr;
-  }
+  free(pSpawnPoints);
+  pSpawnPoints = nullptr;
   uNumSpawnPoints = 0;
 
   pTerrain.Release();
 
-  if (pCmap)
-  {
-    free(pCmap);
-    pCmap = nullptr;
-  }
-  if (pOMAP)
-  {
-    free(pOMAP);
-    pOMAP = nullptr;
-  }
-  if (pFaceIDLIST)
-  {
-    free(pFaceIDLIST);
-    pFaceIDLIST = nullptr;
-  }
-  if (pTerrainNormals)
-  {
-    free(pTerrainNormals);
-    pTerrainNormals = nullptr;
-  }
+  free(pCmap);
+  pCmap = nullptr;
+  free(pOMAP);
+  pOMAP = nullptr;
+  free(pFaceIDLIST);
+  pFaceIDLIST = nullptr;
+  free(pTerrainNormals);
+  pTerrainNormals = nullptr;
 }
 
 //----- (0047D0A6) --------------------------------------------------------
@@ -1342,12 +1169,12 @@ bool OutdoorLocation::Load(const char *pFilename, ODMFace *File, size_t pNumItem
   //unsigned int v99; // eax@147
   //int v100; // ecx@150
   //unsigned int v101; // eax@157
-  int v102; // edi@159
+//  int v102; // edi@159
   //void *v103; // [sp-14h] [bp-B94h]@55
   //void *v104; // [sp-10h] [bp-B90h]@59
   //size_t v105; // [sp-Ch] [bp-B8Ch]@59
   //char *v106; // [sp-8h] [bp-B88h]@59
-  int v107; // [sp-4h] [bp-B84h]@12
+//  int v107; // [sp-4h] [bp-B84h]@12
   int v108; // [sp+0h] [bp-B80h]@10
   char Src[968]; // [sp+10h] [bp-B70h]@110
   char Dst[968]; // [sp+3D8h] [bp-7A8h]@50
@@ -1667,16 +1494,16 @@ LABEL_33:
       v108 = 0;
       v107 = (int)pDefaultSkyTexture;
     }
-    uSky_TextureID = pBitmaps_LOD->LoadTexture((const char *)v107, (enum TEXTURE_TYPE)v108);
+    sSky_TextureID = pBitmaps_LOD->LoadTexture((const char *)v107, (enum TEXTURE_TYPE)v108);
     strcpy(pGroundTileset, byte_6BE124_cfg_textures_DefaultGroundTexture);
     v34 = pTileTable->GetTileById(pTileTypes[0].uTileID);
     v35 = pBitmaps_LOD->LoadTexture(v34->pTileName);
-    v36 = uSky_TextureID;
-    uMainTile_BitmapID = v35;
+    v36 = sSky_TextureID;
+    sMainTile_BitmapID = v35;
     if ( v36 != -1 )
       pBitmaps_LOD->pTextures[v36].palette_id2 = pPaletteManager->LoadPalette(pBitmaps_LOD->pTextures[v36].palette_id1);
 
-    v37 = uMainTile_BitmapID;
+    v37 = sMainTile_BitmapID;
     if ( v37 != -1 )
       pBitmaps_LOD->pTextures[v37].palette_id2 = pPaletteManager->LoadPalette(pBitmaps_LOD->pTextures[v37].palette_id1);
 
@@ -1778,11 +1605,7 @@ LABEL_33:
 
   //v43 = (char *)v43 + 16384;
   //v108 = (int)ptr_D4;
-  if (pCmap)
-  {
-    free(pCmap);
-    pCmap = nullptr;
-  }
+  free(pCmap);
   pCmap = malloc(0x8000);
   pTerrain.FillDMap(0, 0, 128, 128);
 
@@ -1824,12 +1647,12 @@ LABEL_33:
   for (uint i = 0; i < uNumBModels; ++i)
   {
     //v48 = 0;
-    BSPModel* model = &pBModels[i];
+    //BSPModel* model = &pBModels[i];
 
-    model->pVertices.pVertices = nullptr;
-    model->pFaces = nullptr;
-    model->pFacesOrdering = nullptr;
-    model->pNodes = nullptr;
+    pBModels[i].pVertices.pVertices = nullptr;
+    pBModels[i].pFaces = nullptr;
+    pBModels[i].pFacesOrdering = nullptr;
+    pBModels[i].pNodes = nullptr;
       //FileName[0] = 0;
       //v108 = (int)&pBModels[i];
       //sprintf(FileName, "%s", v108);
@@ -1840,35 +1663,35 @@ LABEL_33:
       //v107 = 12 * v50->pVertices.uNumVertices;
       //v106 = (char *)v50->pVertices.pVertices;
     assert(sizeof(Vec3_int_) == 12);
-    uint verticesSize = model->pVertices.uNumVertices * sizeof(Vec3_int_);
-    model->pVertices.pVertices = (Vec3_int_ *)malloc(verticesSize);
-    memcpy(model->pVertices.pVertices, pSrc, verticesSize);
+    uint verticesSize = pBModels[i].pVertices.uNumVertices * sizeof(Vec3_int_);
+    pBModels[i].pVertices.pVertices = (Vec3_int_ *)malloc(verticesSize);
+    memcpy(pBModels[i].pVertices.pVertices, pSrc, verticesSize);
     pSrc += verticesSize;
       //v51 = &pBModels[v48];
       //v108 = (int)FileName;
       //v107 = 308 * v51->uNumFaces;
       //v106 = (char *)v51->pFaces;
     assert(sizeof(ODMFace) == 308);
-    uint facesSize = model->uNumFaces * sizeof(ODMFace);
-    model->pFaces = (ODMFace *)malloc(facesSize);
-    memcpy(model->pFaces, pSrc, facesSize);
+    uint facesSize = pBModels[i].uNumFaces * sizeof(ODMFace);
+    pBModels[i].pFaces = (ODMFace *)malloc(facesSize);
+    memcpy(pBModels[i].pFaces, pSrc, facesSize);
     pSrc += facesSize;
       //v52 = &pBModels[v48];
       //v108 = (int)FileName;
       //v107 = 2 * v52->uNumFaces;
       //v106 = (char *)v52->pFacesOrdering;
-    uint facesOrderingSize = model->uNumFaces * sizeof(short);
-    model->pFacesOrdering = (unsigned __int16 *)malloc(facesOrderingSize);
-    memcpy(model->pFacesOrdering, pSrc, facesOrderingSize);
+    uint facesOrderingSize = pBModels[i].uNumFaces * sizeof(short);
+    pBModels[i].pFacesOrdering = (unsigned __int16 *)malloc(facesOrderingSize);
+    memcpy(pBModels[i].pFacesOrdering, pSrc, facesOrderingSize);
     pSrc += facesOrderingSize;
       //v53 = &pBModels[v48];
       //v108 = (int)FileName;
       //v107 = 8 * v53->uNumNodes;
       //v106 = (char *)v53->pNodes;
     assert(sizeof(BSPNode) == 8);
-    uint nodesSize = model->uNumNodes * sizeof(BSPNode);
-    model->pNodes = (BSPNode *)malloc(nodesSize);
-    memcpy(model->pNodes, pSrc, nodesSize);
+    uint nodesSize = pBModels[i].uNumNodes * sizeof(BSPNode);
+    pBModels[i].pNodes = (BSPNode *)malloc(nodesSize);
+    memcpy(pBModels[i].pNodes, pSrc, nodesSize);
     pSrc += nodesSize;
       //v54 = &pBModels[v48];
       //v108 = 12 * v54->pVertices.uNumVertices;
@@ -1895,50 +1718,50 @@ LABEL_33:
       //memcpy(v59, uSourceLen, (size_t)pFilename);
       //uSourceLen = (char *)uSourceLen + (int)pFilename;
     //ptr = (FILE *)malloc(10 * model->uNumFaces);
-    const char* textureFilenames = (const char *)malloc(10 * model->uNumFaces);
+    const char* textureFilenames = (const char *)malloc(10 * pBModels[i].uNumFaces);
       //pFilename = (char *)(10 * pBModels[v48].uNumFaces);
-    memcpy((char *)textureFilenames, pSrc, 10 * model->uNumFaces);
-    pSrc += 10 * model->uNumFaces;
+    memcpy((char *)textureFilenames, pSrc, 10 * pBModels[i].uNumFaces);
+    pSrc += 10 * pBModels[i].uNumFaces;
       //v144 = 0;
       //uSourceLen = (char *)uSourceLen + (int)pFilename;
       //v60 = pBModels;
-    for (uint j = 0; j < model->uNumFaces; ++j)
+    for (uint j = 0; j < pBModels[i].uNumFaces; ++j)
     {
       const char* texFilename = &textureFilenames[j * 10];
     //v149 = 0;
     //Str2 = (char *)ptr;
 
-      ODMFace* face = &model->pFaces[j];
+      //ODMFace* face = &pBModels[i].pFaces[j];
       //pFilename = (char *)v149 + (unsigned int)v60[v48].pFaces;
-      if (~face->uAttributes & FACE_DONT_CACHE_TEXTURE)
+      if ( !(pBModels[i].pFaces[j].uAttributes & FACE_DONT_CACHE_TEXTURE))
       {
         v62 = pBitmaps_LOD->LoadTexture(texFilename);
 //        v63 = (ODMFace *)pFilename;
         goto LABEL_68;
       }
       //v61 = pTextureFrameTable->FindTextureByName(texFilename);
-      face->uTextureID = pTextureFrameTable->FindTextureByName(texFilename);
-      if (!face->uTextureID)
+      pBModels[i].pFaces[j].uTextureID = pTextureFrameTable->FindTextureByName(texFilename);
+      if (!pBModels[i].pFaces[j].uTextureID)
       {
         v62 = pBitmaps_LOD->LoadTexture(texFilename);
         //v63 = (ODMFace *)pFilename;
-        face->uAttributes &= ~FACE_DONT_CACHE_TEXTURE;
+        pBModels[i].pFaces[j].uAttributes &= ~FACE_DONT_CACHE_TEXTURE;
 LABEL_68:
-        face->uTextureID = v62;
+        pBModels[i].pFaces[j].uTextureID = v62;
         //v145 = (signed __int16)v62 != -1 ? &pBitmaps_LOD->pTextures[(signed __int16)v62] : 0;
         //v108 = ((signed __int16)v62 != -1 ? pBitmaps_LOD->pTextures[(signed __int16)v62].palette_id1 : 36);
         if ((signed __int16)v62 != -1)
           pBitmaps_LOD->pTextures[v62].palette_id2 = pPaletteManager->LoadPalette(pBitmaps_LOD->pTextures[v62].palette_id1);
         goto LABEL_69;
       }
-      pTextureFrameTable->LoadAnimationSequenceAndPalettes(face->uTextureID);
+      pTextureFrameTable->LoadAnimationSequenceAndPalettes(pBModels[i].pFaces[j].uTextureID);
 LABEL_69:
-      if (face->sCogTriggeredID)
+      if (pBModels[i].pFaces[j].sCogTriggeredID)
       {
-        if (face->HasEventHint())
-          face->uAttributes |= 0x1000;
+        if (pBModels[i].pFaces[j].HasEventHint())
+          pBModels[i].pFaces[j].uAttributes |= FACE_UNKNOW;
         else
-          face->uAttributes &= ~0x1000;
+          pBModels[i].pFaces[j].uAttributes &= ~FACE_UNKNOW;
       }
       //++v144;
       //v60 = pBModels;
@@ -1958,7 +1781,7 @@ LABEL_69:
 //LABEL_75:
   pGameLoadingUI_ProgressBar->Progress();
 
-  memcpy(&uNumLevelDecorations, pSrc, 4u);
+  memcpy(&uNumLevelDecorations, pSrc, 4);
   //uSourceLen = (char *)uSourceLen + 4;
   if (uNumLevelDecorations > 3000)
     MessageBoxW(nullptr, L"Can't load file!",
@@ -1988,11 +1811,8 @@ LABEL_69:
 
   //uSourceLen = (char *)uSourceLen + 4;
   //v108 = (int)pFaceIDLIST;
-  if (pFaceIDLIST)
-  {
-    free(pFaceIDLIST);
-    pFaceIDLIST = nullptr;
-  }
+  free(pFaceIDLIST);
+  pFaceIDLIST = nullptr;
   //v66 = field_DC;
   //pFaceIDLIST = 0;
   //v67 = malloc(0, 2 * v66, "IDLIST");
@@ -2010,11 +1830,7 @@ LABEL_69:
   //v108 = (int)pOMAP;
   //free((void *)v108);
   //pOMAP = 0;
-  if (pOMAP)
-  {
-    free(pOMAP);
-    pOMAP = nullptr;
-  }
+  free(pOMAP);
   //v69 = malloc(0, 0x10000u, "OMAP");
   pOMAP = (unsigned int *)malloc(0x10000);
   //v108 = 65536;
@@ -2048,8 +1864,8 @@ LABEL_69:
   //v73 = strlen(pContainer);
   strcpy(Str + strlen(Str) - 4, ".ddm");
   //strcpy((char *)v141 + v73, (const char *)v108);
-  v39 = pNew_LOD->FindContainer(Str, 1);//
-  fread(&header, 0x10u, 1u, v39);
+  v39 = pNew_LOD->FindContainer(Str, 1);//error
+  fread(&header, 0x10u, 1, v39);
   Str2 = 0;
   if (header.uVersion != 91969 ||
       header.pMagic[0] != 'm' ||
@@ -2089,8 +1905,6 @@ LABEL_69:
     pSrc += sizeof(DDM_DLV_Header);
     //v74 = (int)((char *)v75 + 40);
   }
-  //v76 = uNumBModels;
-  //v77 = actualNumFacesInLevel = 0;
   uint actualNumFacesInLevel = 0;
   for (uint i = 0; i < uNumBModels; ++i)
     actualNumFacesInLevel += pBModels[i].uNumFaces;
@@ -2111,8 +1925,8 @@ LABEL_69:
     }
   }
 
-  if ( BYTE1(dword_6BE364_game_settings_1) & 0x20 )
-    pNumItems = 29030400;
+  if (dword_6BE364_game_settings_1 & GAME_SETTINGS_2000)
+    pNumItems = 0x1BAF800;
   if ( Str2 )
   {
     memset(Dst, 0, 0x3C8u);
@@ -2162,9 +1976,9 @@ LABEL_120:
   //v108 = (int)".odm";
   //v83 = strlen(pContainer);
   //strcpy((char *)v141 + v83, (const char *)v108);
-  memcpy(uUndiscoveredArea, pSrc, 0x3C8);
+  memcpy(uFullyRevealedCellOnMap, pSrc, 0x3C8);
   //v84 = (const void *)(v74 + 968);
-  memcpy(uDicovered_area, pSrc + 0x3C8, 0x3C8);
+  memcpy(uPartiallyRevealedCellOnMap, pSrc + 0x3C8, 0x3C8);
   pSrc += 2 * 0x3C8;
   //v85 = (char *)v84 + 968;
 
@@ -2172,93 +1986,44 @@ LABEL_120:
 
   if ( *(int *)thisa )
   {
-    memcpy(uUndiscoveredArea, Dst, 0x3C8u);
-    memcpy(uDicovered_area, Src, 0x3C8u);
+    memcpy(uFullyRevealedCellOnMap, Dst, 0x3C8u);
+    memcpy(uPartiallyRevealedCellOnMap, Src, 0x3C8u);
   }
 
-  //v25 = uNumBModels == 0;
-  //v26 = (uNumBModels & 0x80000000u) != 0;
-  //v151 = 0;
   for (uint i = 0; i < uNumBModels; ++i)
   {
     BSPModel model = pBModels[i];
-    //pNumItems = 0;
-    //do
-    //{
-      //v86 = pBModels;
-      //thisa = 0;
-      //v87 = (unsigned int)((char *)v86 + pNumItems);
     for (uint j = 0; j < model.uNumFaces; ++j)
     {
       ODMFace face = model.pFaces[j];
-
-      //if ( *(int *)(v87 + 76) > 0 )
-      //{
-        //File = 0;
-        //do
-        //{
-          //v106 = (char *)&File->uAttributes + *(int *)(v87 + 84);
       memcpy(&face.uAttributes, pSrc, 4);
       pSrc += 4;
-          //v88 = pBModels;
-          //++File;
-          //v85 = (char *)v85 + 4;
-          //++thisa;
-          //v87 = (unsigned int)((char *)v88 + pNumItems);
-        //}
-        //while ( thisa < *(int *)(v87 + 76) );
     }
 
-      //v89 = pBModels;
-      //thisa = 0;
     for (uint j = 0; j < model.uNumFaces; ++j)
     {
       ODMFace face = model.pFaces[j];
-        //pFilename = 0;
-        //do
-        //{
-          //v90 = (ODMFace *)&pFilename[*(unsigned int *)((char *)&v89->pFaces + pNumItems)];
-          //File = v90;
       if (face.sCogTriggeredID)
       {
         if (face.HasEventHint())
-          face.uAttributes |= 0x1000u;
+          face.uAttributes |= FACE_UNKNOW3;
         else
           face.uAttributes &= 0xFFFFEFFFu;
       }
-          //++thisa;
-          //v89 = pBModels;
-          //pFilename += 308;
-        //}
-        //while ( thisa < *(signed int *)((char *)&v89->uNumFaces + pNumItems) );
     }
-      //++v151;
-      //pNumItems += 188;
-    //}
-    //while ( v151 < (signed int)uNumBModels );
   }
 
   pGameLoadingUI_ProgressBar->Progress();
 
-  //v151 = 0;
   for (uint i = 0; i < uNumLevelDecorations; ++i)
   {
-    //thisa = (int)&pLevelDecorations[0].field_2;
-    //do
-    //{
     memcpy(&pLevelDecorations[i].uFlags, pSrc, 2);
     pSrc += 2;
-      //thisa += 32;
-      //v85 = (char *)v85 + 2;
-      //++v151;
-    //}
-    //while ( v151 < (signed int)uNumLevelDecorations );
   }
 
   pGameLoadingUI_ProgressBar->Progress();
 
   memcpy(&uNumActors, pSrc, 4);
-  //v91 = (char *)v85 + 4;
   if (uNumActors > 500)
     MessageBoxW(nullptr, L"Can't load file!",
                 L"E:\\WORK\\MSDEV\\MM7\\MM7\\Code\\Odmap.cpp:939", 0);
@@ -2310,30 +2075,22 @@ LABEL_120:
 
   pTileTable->InitializeTileset(Tileset_Dirt);
   pTileTable->InitializeTileset(Tileset_Snow);
-  //v108 = pTileTypes[0].uTileGroup;
   pTileTable->InitializeTileset(pTileTypes[0].tileset);
-  //v108 = pTileTypes[1].uTileGroup;
   pTileTable->InitializeTileset(pTileTypes[1].tileset);
-  //v108 = pTileTypes[2].uTileGroup;
   pTileTable->InitializeTileset(pTileTypes[2].tileset);
-  //v108 = pTileTypes[3].uTileGroup;
   pTileTable->InitializeTileset(pTileTypes[3].tileset);
   strcpy(pGroundTileset, byte_6BE124_cfg_textures_DefaultGroundTexture.data());
-  //v97 = pTileTypes[0].uTileID;
-  //v108 = 0;
   TileDesc* v98 = pTileTable->GetTileById(pTileTypes[0].uTileID);
-  //v99 = pBitmaps_LOD->LoadTexture(v98->pTileName, TEXTURE_DEFAULT);
-  uMainTile_BitmapID = pBitmaps_LOD->LoadTexture(v98->pTileName, TEXTURE_DEFAULT);
-  if (uMainTile_BitmapID != -1)
-    pBitmaps_LOD->pTextures[uMainTile_BitmapID].palette_id2 = pPaletteManager->LoadPalette(pBitmaps_LOD->pTextures[uMainTile_BitmapID].palette_id1);
+  sMainTile_BitmapID = pBitmaps_LOD->LoadTexture(v98->pTileName, TEXTURE_DEFAULT);
+  if (sMainTile_BitmapID != -1)
+    pBitmaps_LOD->pTextures[sMainTile_BitmapID].palette_id2 = pPaletteManager->LoadPalette(pBitmaps_LOD->pTextures[sMainTile_BitmapID].palette_id1);
 
   _47F0E2();
 
-LABEL_150:
-  //v100 = HIDWORD(uLastVisitDay);
-  //LODWORD(v142) = LODWORD(uLastVisitDay);
-  //HIDWORD(v142) = v100;
-  if (loc_time.uLastVisitDay)
+//LABEL_150:
+  if ( pWeather->bRenderSnow ) //Ritor1: it's include for snow
+    strcpy(loc_time.sky_texture_name, "sky19");
+  else if (loc_time.uLastVisitDay)
   {
     if ( (signed int)((signed int)(signed __int64)((double)loc_time.uLastVisitDay * 0.234375) / 60 / 60 / 24) % 28 != pParty->uDaysPlayed )
     {
@@ -2345,13 +2102,12 @@ LABEL_150:
     }
   }
   else
-  {
     strcpy(loc_time.sky_texture_name, "plansky3");
-  }
+
   //v101 = pBitmaps_LOD->LoadTexture(field_4F8);
-  uSky_TextureID = pBitmaps_LOD->LoadTexture(loc_time.sky_texture_name);
-  if (uSky_TextureID != -1)
-    pBitmaps_LOD->pTextures[uSky_TextureID].palette_id2 = pPaletteManager->LoadPalette(pBitmaps_LOD->pTextures[uSky_TextureID].palette_id1);
+  sSky_TextureID = pBitmaps_LOD->LoadTexture(loc_time.sky_texture_name);
+  if (sSky_TextureID != -1)
+    pBitmaps_LOD->pTextures[sSky_TextureID].palette_id2 = pPaletteManager->LoadPalette(pBitmaps_LOD->pTextures[sSky_TextureID].palette_id1);
 
   pPaletteManager->RecalculateAll();
   pSoundList->LoadSound(53, 0);
@@ -2360,40 +2116,39 @@ LABEL_150:
   pSoundList->LoadSound(96, 0);
   pSoundList->LoadSound(64, 0);
   pSoundList->LoadSound(103, 0);
-  for (int i=0; i<3;++i) 
+  for (int i=0; i < 3;++i) 
   {
-    
-      switch ( pTileTypes[i].tileset )
-      {
-        case Tileset_Grass:
-            pSoundList->LoadSound(54, 0);
-            pSoundList->LoadSound(93, 0);
-            break;
-        case Tileset_Snow:
-          pSoundList->LoadSound(58, 0);
-          pSoundList->LoadSound(97, 0);
-          break;
-        case Tileset_2:
-          pSoundList->LoadSound(52, 0);
-          pSoundList->LoadSound(91, 0);
-          break;
-        case Tileset_3:
-          pSoundList->LoadSound(51, 0);
-          pSoundList->LoadSound(90, 0);
-          break;
-        case Tileset_Water:
-          pSoundList->LoadSound(62, 0);
-          pSoundList->LoadSound(101, 0);
-          break;
-        case Tileset_6:
-          pSoundList->LoadSound(49, 0);
-          pSoundList->LoadSound(88, 0);
-          break;
-        case Tileset_Swamp:
-          pSoundList->LoadSound(61, 0);
-          pSoundList->LoadSound(100, 0);
-          break;
-      }   
+    switch ( pTileTypes[i].tileset )
+    {
+      case Tileset_Grass:
+        pSoundList->LoadSound(54, 0);
+        pSoundList->LoadSound(93, 0);
+        break;
+      case Tileset_Snow:
+        pSoundList->LoadSound(58, 0);
+        pSoundList->LoadSound(97, 0);
+        break;
+      case Tilset_Desert:
+        pSoundList->LoadSound(52, 0);
+         pSoundList->LoadSound(91, 0);
+        break;
+      case Tileset_3:
+        pSoundList->LoadSound(51, 0);
+        pSoundList->LoadSound(90, 0);
+        break;
+      case Tileset_Water:
+        pSoundList->LoadSound(62, 0);
+        pSoundList->LoadSound(101, 0);
+        break;
+      case Tileset_6:
+        pSoundList->LoadSound(49, 0);
+        pSoundList->LoadSound(88, 0);
+        break;
+      case Tileset_Swamp:
+        pSoundList->LoadSound(61, 0);
+        pSoundList->LoadSound(100, 0);
+        break;
+    }
   }
   return true;
 }
@@ -2409,32 +2164,28 @@ int OutdoorLocation::GetTileIdByTileMapId(signed int a2)
     v3 = (a2 - 90) / 36;
     if ( v3 && v3 != 1 && v3 != 2 )
     {
-      if ( v3 == 3 )
+      if ( v3 == Tileset_3 )
         result = this->pTileTypes[3].uTileID;
       else
         result = a2;
     }
     else
-    {
       result = this->pTileTypes[v3].uTileID;
-    }
   }
   else
-  {
     result = 0;
-  }
   return result;
 }
 
 //----- (0047ED08) --------------------------------------------------------
-unsigned int OutdoorLocation::DoGetTileTexture(unsigned int uX, unsigned int uY)
+unsigned int OutdoorLocation::DoGetTileTexture(signed int sX, signed int sY)
 {
   int v3; // esi@5
-  unsigned int result; // eax@9
+//  unsigned int result; // eax@9
 
-  assert(uX < 128 && uY < 128);
+  assert(sX < 128 && sY < 128);
 
- v3 = this->pTerrain.pTilemap[uY * 128 + uX];
+ v3 = this->pTerrain.pTilemap[sY * 128 + sX];
  if (v3 < 198) // < Tileset_3
  {
   if (v3 >= 90)
@@ -2444,7 +2195,7 @@ unsigned int OutdoorLocation::DoGetTileTexture(unsigned int uX, unsigned int uY)
    v3 = v3 + this->pTileTypes[3].uTileID - 198;
 
   #pragma region "New: seasons change"
-  extern bool change_seasons;
+
   if (change_seasons)
     switch (pParty->uCurrentMonth)
     {
@@ -2490,23 +2241,23 @@ int OutdoorLocation::_47ED83(signed int a2, signed int a3)
 }
 
 //----- (0047EDB3) --------------------------------------------------------
-int OutdoorLocation::ActuallyGetSomeOtherTileInfo(unsigned int uX, unsigned int uY)
+int OutdoorLocation::ActuallyGetSomeOtherTileInfo(signed int sX, signed int sY)
 {
-  assert(uX < 128 && uY < 128);
+  assert(sX < 128 && sY < 128);
   int v3; // esi@5
 
-  v3 = this->pTerrain.pTilemap[uY * 128 + uX];
+  v3 = this->pTerrain.pTilemap[sY * 128 + sX];
   if ( v3 >= 90 )
     v3 = v3 + this->pTileTypes[(v3 - 90) / 36].uTileID - 36 * ((v3 - 90) / 36) - 90;
   return pTileTable->pTiles[v3].uAttributes;
 }
 
 //----- (0047EE16) --------------------------------------------------------
-int OutdoorLocation::DoGetHeightOnTerrain(unsigned int uX, unsigned int uZ)
+int OutdoorLocation::DoGetHeightOnTerrain(signed int sX, signed int sZ)
 {
-  assert(uX < 128 && uZ < 128);
+  assert(sX < 128 && sZ < 128);
 
-  return 32 * pTerrain.pHeightmap[uZ * 128 + uX];
+  return 32 * pTerrain.pHeightmap[sZ * 128 + sX];
 }
 
 //----- (0047EE49) --------------------------------------------------------
@@ -2514,7 +2265,7 @@ int OutdoorLocation::GetSoundIdByPosition( signed int X_pos, signed int Y_pos, i
     {
   signed int v4; // eax@5
   signed int v5; // eax@7
-  int v6; // eax@8
+//  int v6; // eax@8
   signed int v8; // eax@9
   int modif=0;
 
@@ -2552,115 +2303,53 @@ int OutdoorLocation::GetSoundIdByPosition( signed int X_pos, signed int Y_pos, i
 //----- (0047EF60) --------------------------------------------------------
 int OutdoorLocation::UpdateDiscoveredArea(int X_grid_pos, int Y_grid_poa, int a4)
 {
-  int v4; // ecx@1
-  int v5; // edx@2
-  int v6; // edi@2
-  int v7; // esi@2
-  int v8; // eax@4
-  int v9; // ebx@4
-  int v10; // eax@5
-  int v11; // eax@7
-  int v12; // esi@12
-  char v13; // al@12
-  int v15; // [sp+4h] [bp-14h]@7
-  int v16; // [sp+8h] [bp-10h]@5
-  int v17; // [sp+Ch] [bp-Ch]@2
-  OutdoorLocation *v18; // [sp+10h] [bp-8h]@1
-  int v19; // [sp+14h] [bp-4h]@2
-  int i; // [sp+24h] [bp+Ch]@5
-
-  v18 = this;
-  v4 = Y_grid_poa - 10;
-  if ( Y_grid_poa - 10 < Y_grid_poa + 10 )
+  for (int i = -10; i < 10; i++)
   {
-    v5 = v4 - Y_grid_poa;
-    v6 = (Y_grid_poa - 30);
-    v7 = X_grid_pos;
-    v19 = v4 - Y_grid_poa;
-    v17 = Y_grid_poa + 10 - v4;
-    while ( 1 )
+    int currYpos = Y_grid_poa + i - 20;
+    for (int j = -10; j < 10; j++)
     {
-      v8 = abs(v5);
-      v9 = v7 - 10;
-      if ( v7 - 10 < v7 + 10 )
+      int currXpos = X_grid_pos + j - 20;
+      int distanceSquared = i * i + j * j;
+      if ( distanceSquared <= 100 && currYpos >= 0 && currYpos <= 87 && currXpos >= 0 && currXpos <= 87 )
       {
-        v16 = v8 * v8;
-        v10 = v9 - v7;
-        for ( i = v9 - v7; ; v10 = i )
-        {
-          v11 = abs(v10);
-          v15 = v11 * v11 + v16;
-          if ( v15 <= 100 && v9 >= 20 && v9 <= 107 && v6 >= 0 && v6 <= 87 )
-          {
-            v13 = 1 << (7 - (v9 - 20) % 8);
-            v18->uDicovered_area[v6][(v9 - 20)/8] |= v13;
-            if ( v15 <= 49 )
-              v18->uUndiscoveredArea[v6][(v9 - 20)/8] |= v13;
-            v7 = X_grid_pos;
-          }
-          ++v9;
-          ++i;
-          if ( v9 >= v7 + 10 )
-            break;
-        }
+        unsigned char v13 = 1 << (7 - currXpos % 8);
+        this->uPartiallyRevealedCellOnMap[currYpos][currXpos / 8] |= v13;
+        if ( distanceSquared <= 49 )
+          this->uFullyRevealedCellOnMap[currYpos][currXpos / 8] |= v13;
       }
-      ++v6 ;
-      ++v19;
-      --v17;
-      if ( !v17 )
-        break;
-      v5 = v19;
     }
   }
   return 1;
 }
 
-//----- (0047F04C) --------------------------------------------------------
-bool OutdoorLocation::_47F04C(signed int x_pos, signed int y_pos)
-{
-  bool result; // eax@5
 
+//----- (0047F04C) --------------------------------------------------------
+bool OutdoorLocation::IsMapCellFullyRevealed(signed int x_pos, signed int y_pos)
+{
   if ( x_pos < 0 || x_pos >= 88 || y_pos < 0 || y_pos >= 88 )
-    result = 0;
+    return false;
   else
-    result = (uUndiscoveredArea[y_pos][x_pos/8] & (unsigned __int8)(1 << (7 - (x_pos) % 8))) != 0;
-  return result;
+    return (uFullyRevealedCellOnMap[y_pos][x_pos/8] & (1 << (7 - (x_pos) % 8))) != 0;
 }
 
 //----- (0047F097) --------------------------------------------------------
-bool OutdoorLocation::_47F097(signed int x_pos, signed int y_pos)
+bool OutdoorLocation::IsMapCellPartiallyRevealed(signed int x_pos, signed int y_pos)
 {
-  bool result; // eax@5
-
   if ( x_pos < 0 || x_pos >= 88 || y_pos < 0 || y_pos >= 88 )
-    result = 0;
+    return false;
   else
-    result = (uDicovered_area[y_pos][x_pos/8] & (unsigned __int8)(1 << (7 - (x_pos) % 8))) != 0;
-  return result;
+    return (uPartiallyRevealedCellOnMap[y_pos][x_pos/8] & (1 << (7 - (x_pos) % 8))) != 0;
 }
 
 //----- (0047F0E2) --------------------------------------------------------
 bool OutdoorLocation::_47F0E2()
 {
-  signed int v1; // edi@1
-  OutdoorLocation *v2; // ebx@1
-  Texture *v3; // ebp@2
-
-  v1 = 0;
-  v2 = this;
-  if ( (signed int)pBitmaps_LOD->uNumLoadedFiles > 0 )
+  for ( uint i = 0; i < (signed int)pBitmaps_LOD->uNumLoadedFiles; ++i )
   {
-    v3 = pBitmaps_LOD->pTextures;
-    do
-    {
-      if ( v1 != -1 ? (int)v3 : 0 )
-        v3->uDecompressedSize = v2->pTerrain._47CB57((int)v3->pLevelOfDetail0_prolly_alpha_mask,
-                                                      v3->palette_id2,
-                                                      v3->uTextureWidth * v3->uTextureHeight);
-      ++v1;
-      ++v3;
-    }
-    while ( v1 < (signed int)pBitmaps_LOD->uNumLoadedFiles );
+    //if ( i != -1 ? (int)&pBitmaps_LOD->pTextures[i] : 0 )
+      pBitmaps_LOD->pTextures[i].uDecompressedSize = this->pTerrain._47CB57((int)pBitmaps_LOD->pTextures[i].pLevelOfDetail0_prolly_alpha_mask,
+                                                    pBitmaps_LOD->pTextures[i].palette_id2,
+                                                    pBitmaps_LOD->pTextures[i].uTextureWidth * pBitmaps_LOD->pTextures[i].uTextureHeight);
   }
   return 1;
 }
@@ -2669,9 +2358,6 @@ bool OutdoorLocation::_47F0E2()
 bool OutdoorLocation::PrepareDecorations()
 {
   signed int v1; // ebx@1
-  __int16 v4; // ax@5
-  int v5; // eax@7
-  __int16 v6; // ax@14
   signed int v8; // [sp+Ch] [bp-4h]@1
 
   v1 = 0;
@@ -2684,12 +2370,10 @@ bool OutdoorLocation::PrepareDecorations()
     LevelDecoration* decor = &pLevelDecorations[i];
 
       pDecorationList->InitializeDecorationSprite(decor->uDecorationDescID);
-      v4 = pDecorationList->pDecorations[decor->uDecorationDescID].uSoundID;
-      if ( v4 && _6807E0_num_decorations_with_sounds_6807B8 < 9 )
+      if ( pDecorationList->pDecorations[decor->uDecorationDescID].uSoundID && _6807E0_num_decorations_with_sounds_6807B8 < 9 )
       {
-        pSoundList->LoadSound(v4, 0);
-        v5 = _6807E0_num_decorations_with_sounds_6807B8++;
-        _6807B8_level_decorations_ids[v5] = i;
+        pSoundList->LoadSound(pDecorationList->pDecorations[decor->uDecorationDescID].uSoundID, 0);
+        _6807B8_level_decorations_ids[_6807E0_num_decorations_with_sounds_6807B8++] = i;
       }
       if ( v8 && decor->uCog == 20 )
         decor->uFlags |= LEVEL_DECORATION_OBELISK_CHEST;
@@ -2699,8 +2383,7 @@ bool OutdoorLocation::PrepareDecorations()
         {
           if ( v1 < 124 )
           {
-            v6 = v1 + 75;
-            decor->_idx_in_stru123 = v6;
+            decor->_idx_in_stru123 = v1 + 75;
             if ( !stru_5E4C90_MapPersistVars._decor_events[v1++] )
               decor->uFlags |= LEVEL_DECORATION_INVISIBLE;
           }
@@ -2714,107 +2397,94 @@ bool OutdoorLocation::PrepareDecorations()
 // 6807E0: using guessed type int _6807E0_num_decorations_6807B8;
 
 //----- (0047F223) --------------------------------------------------------
-int OutdoorLocation::_47F223_LooksLikeGenerateMonsterLoot()
+void OutdoorLocation::ArrangeSpriteObjects()
 {
-  signed int v1; // ebx@1
-  char *v2; // esi@2
-  int v3; // eax@7
   OutdoorLocation *v5; // [sp+0h] [bp-4h]@1
 
   v5 = this;
-  v1 = 0;
   if ( (signed int)uNumSpriteObjects > 0 )
   {
-    v2 = (char *)&pSpriteObjects[0].uObjectDescID;
-    do
+    for ( int i = 0; i < (signed int)uNumSpriteObjects; ++i )
     {
-      if ( *(short *)v2 )
+      if ( pSpriteObjects[i].uObjectDescID )
       {
-        if ( !(v2[24] & 8) && !(pObjectList->pObjects[*(short *)v2].uFlags & 0x10) )
-          *(int *)(v2 + 10) = GetTerrainHeightsAroundParty2(*(int *)(v2 + 2), *(int *)(v2 + 6), (int *)&v5, 0);
-        v3 = *(int *)(v2 + 34);
-        if ( v3 )
+        if ( !(pSpriteObjects[i].uAttributes & 8) && !(pObjectList->pObjects[pSpriteObjects[i].uObjectDescID].uFlags & 0x10) )
+          pSpriteObjects[i].vPosition.z = GetTerrainHeightsAroundParty2(pSpriteObjects[i].vPosition.x, pSpriteObjects[i].vPosition.y, (int *)&v5, 0);
+        if ( pSpriteObjects[i].stru_24.uItemID )
         {
-          if ( v3 != 220 && pItemsTable->pItems[v3].uEquipType == 14 && !*(int *)(v2 + 38) )
-            *(int *)(v2 + 38) = rand() % 15 + 5;
-          pItemsTable->SetSpecialBonus((ItemGen *)(v2 + 34));
+          if ( pSpriteObjects[i].stru_24.uItemID != 220
+            && pItemsTable->pItems[pSpriteObjects[i].stru_24.uItemID].uEquipType == EQUIP_POTION
+            && !pSpriteObjects[i].stru_24.uEnchantmentType )
+             pSpriteObjects[i].stru_24.uEnchantmentType = rand() % 15 + 5;
+          pItemsTable->SetSpecialBonus(&pSpriteObjects[i].stru_24);
         }
       }
-      ++v1;
-      v2 += 112;
     }
-    while ( v1 < (signed int)uNumSpriteObjects );
   }
   pGameLoadingUI_ProgressBar->Progress();
-  return 1;
 }
 
 //----- (0047F2D3) --------------------------------------------------------
 bool OutdoorLocation::InitalizeActors(int a1)
 {
-  Actor *v3; // esi@2
-  int v4; // eax@3
-  __int16 v5; // ax@11
   int alert_status; // [sp+348h] [bp-8h]@1
-  int v9; // [sp+34Ch] [bp-4h]@1
+//  int v9; // [sp+34Ch] [bp-4h]@1
 
   alert_status = 0;
-  for(int i=0; i<uNumActors; ++i) 
+  for( int i = 0; i < uNumActors; ++i ) 
+  {
+    if ( !(pActors[i].uAttributes & 0x100000) )
+    {
+      if ( alert_status != 1 )
       {
-      v4 = pActors[i].uAttributes;
-      if ( !(v4 & 0x100000) )
-          {
-          if ( alert_status != 1 )
-              {
-              pActors[i].uCurrentActionTime = 0;
-              pActors[i].uCurrentActionLength = 0;
-              if ( v4 & 0x10000 )
-                  pActors[i].uAIState = AIState::Disabled;
-              if ( pActors[i].uAIState != AIState::Removed && pActors[i].uAIState != AIState::Disabled &&
-                    (pActors[i].sCurrentHP == 0 || pActors[i].pMonsterInfo.uHP == 0) )
-                  pActors[i].uAIState = AIState::Dead;
-              pActors[i].vVelocity.x = 0;
-              pActors[i].vVelocity.y = 0;
-              pActors[i].vVelocity.z = 0;
-              pActors[i].UpdateAnimation();
-			  pActors[i].pMonsterInfo.uHostilityType = MonsterInfo::Hostility_Friendly;
-              pActors[i].PrepareSprites(0);
-              }
-          else
-              {
-              pActors[i].uAIState = AIState::Disabled;
-              pActors[i].uAttributes = v4 | 0x10000;
-              }
-          }
-      else if ( a1 == 0 )
-          {
+        pActors[i].uCurrentActionTime = 0;
+        pActors[i].uCurrentActionLength = 0;
+        if ( pActors[i].uAttributes & 0x10000 )
           pActors[i].uAIState = AIState::Disabled;
-          pActors[i].uAttributes = v4 | 0x10000;
-          }
-      else if ( alert_status != 0 )
-          {
-          pActors[i].uCurrentActionTime = 0;
-          pActors[i].uCurrentActionLength = 0;
-          if ( v4 & 0x10000 )
-              pActors[i].uAIState = AIState::Disabled;
-          v5 = pActors[i].uAIState;
-          if ( pActors[i].uAIState != AIState::Removed && pActors[i].uAIState != AIState::Disabled && 
-              (pActors[i].sCurrentHP == 0 || pActors[i].pMonsterInfo.uHP == 0) )
-              pActors[i].uAIState = AIState::Dead;
-          pActors[i].vVelocity.x = 0;
-          pActors[i].vVelocity.y = 0;
-          pActors[i].vVelocity.z = 0;
-          pActors[i].UpdateAnimation();
-		  pActors[i].pMonsterInfo.uHostilityType = MonsterInfo::Hostility_Friendly;
-          pActors[i].PrepareSprites(0);
-          }
-      else 
-          {
-          pActors[i].uAIState = AIState::Disabled;
-          pActors[i].uAttributes = v4 | 0x10000;
-          alert_status = GetAlertStatus();
-          }
+        if ( pActors[i].uAIState != AIState::Removed && pActors[i].uAIState != AIState::Disabled &&
+           (pActors[i].sCurrentHP == 0 || pActors[i].pMonsterInfo.uHP == 0) )
+          pActors[i].uAIState = AIState::Dead;
+        pActors[i].vVelocity.x = 0;
+        pActors[i].vVelocity.y = 0;
+        pActors[i].vVelocity.z = 0;
+        pActors[i].UpdateAnimation();
+        pActors[i].pMonsterInfo.uHostilityType = MonsterInfo::Hostility_Friendly;
+        pActors[i].PrepareSprites(0);
       }
+      else
+      {
+        pActors[i].uAIState = AIState::Disabled;
+        pActors[i].uAttributes = pActors[i].uAttributes | 0x10000;
+      }
+    }
+    else if ( a1 == 0 )
+    {
+      pActors[i].uAIState = AIState::Disabled;
+      pActors[i].uAttributes = pActors[i].uAttributes | 0x10000;
+    }
+    else if ( alert_status != 0 )
+    {
+      pActors[i].uCurrentActionTime = 0;
+      pActors[i].uCurrentActionLength = 0;
+      if ( pActors[i].uAttributes & 0x10000 )
+        pActors[i].uAIState = AIState::Disabled;
+      if ( pActors[i].uAIState != AIState::Removed && pActors[i].uAIState != AIState::Disabled && 
+         (pActors[i].sCurrentHP == 0 || pActors[i].pMonsterInfo.uHP == 0) )
+        pActors[i].uAIState = AIState::Dead;
+      pActors[i].vVelocity.x = 0;
+      pActors[i].vVelocity.y = 0;
+      pActors[i].vVelocity.z = 0;
+      pActors[i].UpdateAnimation();
+      pActors[i].pMonsterInfo.uHostilityType = MonsterInfo::Hostility_Friendly;
+      pActors[i].PrepareSprites(0);
+    }
+    else 
+    {
+      pActors[i].uAIState = AIState::Disabled;
+      pActors[i].uAttributes = pActors[i].uAttributes | 0x10000;
+      alert_status = GetAlertStatus();
+    }
+  }
 
   pGameLoadingUI_ProgressBar->Progress();
   //no use for this
@@ -2845,19 +2515,14 @@ bool OutdoorLocation::LoadTileGroupIds()
 void OutdoorLocation::PrepareActorsDrawList()
 {
   unsigned int result; // eax@1
-  //Actor *v1; // edi@2
-  //__int16 v2; // ax@3
   int z; // esi@5
   float v4; // ST48_4@8
-  //double v5; // ST38_8@8
-  //float v6; // ST48_4@10
-  //double v7; // ST30_8@10
   unsigned int v8; // eax@11
   int v9; // edx@11
-  __int16 v10; // dx@11
-  unsigned int v11; // eax@13
+  //__int16 v10; // dx@11
+  //unsigned int v11; // eax@13
   signed int v12; // eax@16
-  __int16 v13; // cx@21
+  //__int16 v13; // cx@21
   SpriteFrame *v14; // eax@24
   SpriteFrame *v15; // ebx@25
   //int *v16; // eax@25
@@ -2872,19 +2537,19 @@ void OutdoorLocation::PrepareActorsDrawList()
   signed __int64 v25; // qtt@45
   int v26; // ST54_4@45
   int v27; // ecx@45
-  RenderBillboard *v28; // esi@45
+  //RenderBillboard *v28; // esi@45
   //__int16 v29; // ax@46
-  unsigned __int8 v30; // zf@46
-  unsigned __int8 v31; // sf@46
-  signed __int16 v32; // ax@49
-  signed int v33; // ecx@50
+//  unsigned __int8 v30; // zf@46
+//  unsigned __int8 v31; // sf@46
+//  signed __int16 v32; // ax@49
+//  signed int v33; // ecx@50
   int v34; // ecx@54
-  MonsterDesc *v35; // edx@54
-  int v36; // ecx@54
+  //MonsterDesc *v35; // edx@54
+  //int v36; // ecx@54
   //unsigned __int8 v37; // zf@54
   //unsigned __int8 v38; // sf@54
-  unsigned int v39; // [sp-8h] [bp-68h]@23
-  unsigned int v40; // [sp-4h] [bp-64h]@23
+  //unsigned int v39; // [sp-8h] [bp-68h]@23
+  //unsigned int v40; // [sp-4h] [bp-64h]@23
   int v41; // [sp+24h] [bp-3Ch]@11
   int v42; // [sp+28h] [bp-38h]@38
   int v43; // [sp+28h] [bp-38h]@45
@@ -2896,7 +2561,7 @@ void OutdoorLocation::PrepareActorsDrawList()
   signed int v49; // [sp+34h] [bp-2Ch]@5
   int v50; // [sp+34h] [bp-2Ch]@36
   int v51; // [sp+34h] [bp-2Ch]@41
-  int v52; // [sp+34h] [bp-2Ch]@50
+//  int v52; // [sp+34h] [bp-2Ch]@50
   int v53; // [sp+38h] [bp-28h]@36
   //int v54; // [sp+3Ch] [bp-24h]@2
   int y; // [sp+40h] [bp-20h]@5
@@ -2916,75 +2581,59 @@ void OutdoorLocation::PrepareActorsDrawList()
     //v1 = pActors;//[0].vPosition.z;
     //do
     //{
-    Actor* actor = &pActors[i];
+    //Actor* actor = &pActors[i];
 	  //v2 = actor->uAIState;
 
-	actor->uAttributes &= 0xFFFFFFF7u;
-    if (actor->uAIState == Removed || actor->uAIState == Disabled)
+    pActors[i].uAttributes &= 0xFFFFFFF7u;
+    if (pActors[i].uAIState == Removed || pActors[i].uAIState == Disabled)
       continue;
 
-	  z = actor->vPosition.z;
+	  z = pActors[i].vPosition.z;
       v49 = 0;
-	  x = actor->vPosition.x;
-	  y = actor->vPosition.y;
-      if (actor->uAIState == Summoned)
+	  x = pActors[i].vPosition.x;
+	  y = pActors[i].vPosition.y;
+      if (pActors[i].uAIState == Summoned)
       {
-		if (PID_TYPE(actor->uSummonerID) != OBJECT_Actor ||
-             pActors[PID_ID(actor->uSummonerID)].pMonsterInfo.uSpecialAbilityDamageDiceSides != 1 )
+		if (PID_TYPE(pActors[i].uSummonerID) != OBJECT_Actor ||
+             pActors[PID_ID(pActors[i].uSummonerID)].pMonsterInfo.uSpecialAbilityDamageDiceSides != 1 )
         {
-          z += floorf(actor->uActorHeight * 0.5f + 0.5f);
+          z += floorf(pActors[i].uActorHeight * 0.5f + 0.5f);
         }
         else
         {
           v49 = 1;
-		  pGame->pStru6Instance->_4A7F74(actor->vPosition.x, actor->vPosition.y, z);
-          v4 = (1.0 - (double)actor->uCurrentActionTime / (double)actor->uCurrentActionLength) *
-			   (double)(2 * actor->uActorHeight);
+		  pGame->pStru6Instance->_4A7F74(pActors[i].vPosition.x, pActors[i].vPosition.y, z);
+          v4 = (1.0 - (double)pActors[i].uCurrentActionTime / (double)pActors[i].uCurrentActionLength) *
+			   (double)(2 * pActors[i].uActorHeight);
           z -= floorf(v4 + 0.5f);
-          if ( z > actor->vPosition.z )
-            z = actor->vPosition.z;
+          if ( z > pActors[i].vPosition.z )
+            z = pActors[i].vPosition.z;
         }
       }
-      v8 = stru_5C6E00->Atan2(actor->vPosition.x - pGame->pIndoorCameraD3D->vPartyPos.x,
-                              actor->vPosition.y - pGame->pIndoorCameraD3D->vPartyPos.y);
-	  LOWORD(v9) = actor->uYawAngle;
+      v8 = stru_5C6E00->Atan2(pActors[i].vPosition.x - pGame->pIndoorCameraD3D->vPartyPos.x,
+                              pActors[i].vPosition.y - pGame->pIndoorCameraD3D->vPartyPos.y);
+	  LOWORD(v9) = pActors[i].uYawAngle;
       v41 = ((signed int)(stru_5C6E00->uIntegerPi + ((signed int)stru_5C6E00->uIntegerPi >> 3) + v9 - v8) >> 8) & 7;
-	  v10 = actor->uCurrentActionAnimation;
       if ( pParty->bTurnBasedModeOn )
       {
-        if ( v10 != 1 )
-        {
-LABEL_17:
-			v12 = actor->uCurrentActionTime;
-          goto LABEL_18;
-        }
-        v11 = pMiscTimer->uTotalGameTimeElapsed;
+        v12 = pActors[i].uCurrentActionTime;
+        if ( pActors[i].uCurrentActionAnimation == 1 )
+          v12 = 32 * i + pMiscTimer->uTotalGameTimeElapsed;
       }
       else
       {
-        if ( v10 != 1 )
-          goto LABEL_17;
-        v11 = pEventTimer->uTotalGameTimeElapsed;
+        v12 = pActors[i].uCurrentActionTime;
+        if ( pActors[i].uCurrentActionAnimation == 1 )
+          v12 = 32 * i + pEventTimer->uTotalGameTimeElapsed;
       }
-      v12 = 32 * i + v11;
-LABEL_18:
-      if ( (signed __int64)actor->pActorBuffs[ACTOR_BUFF_STONED].uExpireTime > 0 || (signed __int64)actor->pActorBuffs[ACTOR_BUFF_PARALYZED].uExpireTime > 0 )
+      if ( (signed __int64)pActors[i].pActorBuffs[ACTOR_BUFF_STONED].uExpireTime > 0 || (signed __int64)pActors[i].pActorBuffs[ACTOR_BUFF_PARALYZED].uExpireTime > 0 )
         v12 = 0;
-	  v13 = actor->uAIState;
-      if ( v13 == 17 && !v49 )
-      {
-        v40 = v12;
-        v39 = uSpriteID_Spell11;
-LABEL_24:
-        v14 = pSpriteFrameTable->GetFrame(v39, v40);
-        goto LABEL_25;
-      }
-      v40 = v12;
-	  v39 = actor->pSpriteIDs[v10];
-      if ( v13 != 16 )
-        goto LABEL_24;
-      v14 = pSpriteFrameTable->GetFrameBy_x(v39, v12);
-LABEL_25:
+      if ( pActors[i].uAIState == 17 && !v49 )
+        v14 = pSpriteFrameTable->GetFrame(uSpriteID_Spell11, v12);
+      else if ( pActors[i].uAIState == 16 )
+        v14 = pSpriteFrameTable->GetFrameBy_x(pActors[i].pSpriteIDs[pActors[i].uCurrentActionAnimation], v12);
+      else
+        v14 = pSpriteFrameTable->GetFrame(pActors[i].pSpriteIDs[pActors[i].uCurrentActionAnimation], v12);
       v62 = 0;
       v15 = v14;
       //v16 = (int *)v14->uFlags;
@@ -2998,41 +2647,36 @@ LABEL_25:
         v62 |= 4u;
       if ( v15->uGlowRadius )
       {
-        //LOBYTE(v16) = byte_4E94D3;
-        pMobileLightsStack->AddLight(x, y, z, 0, v15->uGlowRadius, 0xFFu, 0xFFu, 0xFFu, byte_4E94D3);
+        //LOBYTE(v16) = _4E94D3_light_type;
+        pMobileLightsStack->AddLight(x, y, z, 0, v15->uGlowRadius, 0xFFu, 0xFFu, 0xFFu, _4E94D3_light_type);
       }
       v17 = (x - pGame->pIndoorCameraD3D->vPartyPos.x) << 16;
       if (pGame->pIndoorCameraD3D->sRotationX)
       {
         v18 = (y - pGame->pIndoorCameraD3D->vPartyPos.y) << 16;
-        v47 = ((unsigned __int64)(v17 * (signed __int64)pGame->pIndoorCameraD3D->int_cosine_y) >> 16)
-            + ((unsigned __int64)(v18 * (signed __int64)pGame->pIndoorCameraD3D->int_sine_y) >> 16);
-        v50 = (unsigned __int64)(v17 * (signed __int64)pGame->pIndoorCameraD3D->int_sine_y) >> 16;
-        v53 = (unsigned __int64)(v18 * (signed __int64)pGame->pIndoorCameraD3D->int_cosine_y) >> 16;
+        v47 = (fixpoint_mul(v17, pGame->pIndoorCameraD3D->int_cosine_y) + fixpoint_mul(v18, pGame->pIndoorCameraD3D->int_sine_y));
+        v50 = fixpoint_mul(v17, pGame->pIndoorCameraD3D->int_sine_y);
+        v53 = fixpoint_mul(v18, pGame->pIndoorCameraD3D->int_cosine_y);
         v44 = (z - pGame->pIndoorCameraD3D->vPartyPos.z) << 16;
-        v19 = ((unsigned __int64)(v44 * (signed __int64)pGame->pIndoorCameraD3D->int_sine_x) >> 16)
-            + ((unsigned __int64)(v47 * (signed __int64)pGame->pIndoorCameraD3D->int_cosine_x) >> 16);
-        X = ((unsigned __int64)(v44 * (signed __int64)pGame->pIndoorCameraD3D->int_sine_x) >> 16)
-          + ((unsigned __int64)(v47 * (signed __int64)pGame->pIndoorCameraD3D->int_cosine_x) >> 16);
+        v19 = (fixpoint_mul(v44, pGame->pIndoorCameraD3D->int_sine_x) + fixpoint_mul(v47, pGame->pIndoorCameraD3D->int_cosine_x));
+        X = fixpoint_mul(v44, pGame->pIndoorCameraD3D->int_sine_x) + fixpoint_mul(v47, pGame->pIndoorCameraD3D->int_cosine_x);
         if ( v19 < 262144 || v19 > pODMRenderParams->shading_dist_mist << 16 )
           continue;
         v20 = v53 - v50;
         v42 = v53 - v50;
-        v21 = ((unsigned __int64)(v44 * (signed __int64)pGame->pIndoorCameraD3D->int_cosine_x) >> 16)
-            - ((unsigned __int64)(v47 * (signed __int64)pGame->pIndoorCameraD3D->int_sine_x) >> 16);
+        v21 = (fixpoint_mul(v44, pGame->pIndoorCameraD3D->int_cosine_x) - fixpoint_mul(v47, pGame->pIndoorCameraD3D->int_sine_x));
       }
       else
       {
         v48 = (y - pGame->pIndoorCameraD3D->vPartyPos.y) << 16;
-        v51 = (unsigned __int64)(v17 * (signed __int64)pGame->pIndoorCameraD3D->int_cosine_y) >> 16;
-        v22 = (unsigned __int64)(v48 * (signed __int64)pGame->pIndoorCameraD3D->int_sine_y) >> 16;
+        v51 = fixpoint_mul(v17, pGame->pIndoorCameraD3D->int_cosine_y);
+        v22 = fixpoint_mul(v48, pGame->pIndoorCameraD3D->int_sine_y);
         X = v22 + v51;
         if ( v22 + v51 < 262144 || v22 + v51 > pODMRenderParams->shading_dist_mist << 16 )
           continue;
-        v23 = (unsigned __int64)(((x - pGame->pIndoorCameraD3D->vPartyPos.x) << 16)
-                               * (signed __int64)pGame->pIndoorCameraD3D->int_sine_y) >> 16;
-        v20 = ((unsigned __int64)(v48 * (signed __int64)pGame->pIndoorCameraD3D->int_cosine_y) >> 16) - v23;
-        v42 = ((unsigned __int64)(v48 * (signed __int64)pGame->pIndoorCameraD3D->int_cosine_y) >> 16) - v23;
+        v23 = fixpoint_mul(((x - pGame->pIndoorCameraD3D->vPartyPos.x) << 16), pGame->pIndoorCameraD3D->int_sine_y);
+        v20 = fixpoint_mul(v48, pGame->pIndoorCameraD3D->int_cosine_y) - v23;
+        v42 = fixpoint_mul(v48, pGame->pIndoorCameraD3D->int_cosine_y) - v23;
         v21 = (z - pGame->pIndoorCameraD3D->vPartyPos.z) << 16;
       }
       v45 = v21;
@@ -3046,64 +2690,56 @@ LABEL_25:
         LODWORD(v25) = 0;
         HIDWORD(v25) = SLOWORD(pODMRenderParams->int_fov_rad);
         v57 = v25 / X;
-        v27 = pViewport->uScreenCenterX
-            - ((signed int)(((unsigned __int64)(v26 * (signed __int64)v42) >> 16) + 32768) >> 16);
-        v43 = pViewport->uScreenCenterX
-            - ((signed int)(((unsigned __int64)(v26 * (signed __int64)v42) >> 16) + 32768) >> 16);
-        v46 = pViewport->uScreenCenterY - ((signed int)(((unsigned __int64)(v25 / X * v45) >> 16) + 32768) >> 16);
+        v27 = pViewport->uScreenCenterX - ((signed int)(fixpoint_mul(v26, v42) + 32768) >> 16);
+        v43 = pViewport->uScreenCenterX - ((signed int)(fixpoint_mul(v26, v42) + 32768) >> 16);
+        v46 = pViewport->uScreenCenterY - ((signed int)(fixpoint_mul(v25 / X, v45) + 32768) >> 16);
         result = uNumBillboardsToDraw;
-        v28 = &pBillboardRenderList[uNumBillboardsToDraw];
+        //v28 = &pBillboardRenderList[uNumBillboardsToDraw];
         if (uNumBillboardsToDraw >= 500)
           return;
         ++uNumBillboardsToDraw;
         ++uNumSpritesDrawnThisFrame;
-		actor->uAttributes |= 8u;
-        v28->uHwSpriteID = v15->pHwSpriteIDs[v41];
-        v28->uIndoorSectorID = 0;
-        v28->uPalette = v15->uPaletteIndex;
-        v28->_screenspace_x_scaler_packedfloat = (unsigned __int64)(v15->scale * (signed __int64)v58) >> 16;
-        v30 = HIDWORD(actor->pActorBuffs[ACTOR_BUFF_SHRINK].uExpireTime) == 0;
-        v31 = SHIDWORD(actor->pActorBuffs[ACTOR_BUFF_SHRINK].uExpireTime) < 0;
-        v28->_screenspace_y_scaler_packedfloat = (unsigned __int64)(v15->scale * (signed __int64)v57) >> 16;
-        if ( v31 || v31 | v30 && LODWORD(actor->pActorBuffs[ACTOR_BUFF_SHRINK].uExpireTime) <= 0u )
+        pActors[i].uAttributes |= 8;
+        pBillboardRenderList[uNumBillboardsToDraw - 1].HwSpriteID = v15->pHwSpriteIDs[v41];
+        pBillboardRenderList[uNumBillboardsToDraw - 1].uIndoorSectorID = 0;
+        pBillboardRenderList[uNumBillboardsToDraw - 1].uPalette = v15->uPaletteIndex;
+        pBillboardRenderList[uNumBillboardsToDraw - 1]._screenspace_x_scaler_packedfloat = fixpoint_mul(v15->scale, v58);
+        pBillboardRenderList[uNumBillboardsToDraw - 1]._screenspace_y_scaler_packedfloat = fixpoint_mul(v15->scale, v57);
+        if ( pActors[i].pActorBuffs[ACTOR_BUFF_SHRINK].uExpireTime <= 0 )
         {
-          if ( (signed __int64)actor->pActorBuffs[ACTOR_BUFF_MASS_DISTORTION].uExpireTime > 0i64 )
+          if ( pActors[i].pActorBuffs[ACTOR_BUFF_MASS_DISTORTION].uExpireTime > 0 )
           {
-            v52 = (unsigned __int64)(pGame->pStru6Instance->_4A806F(actor)
-                                   * (signed __int64)v28->_screenspace_y_scaler_packedfloat) >> 16;
-LABEL_53:
+            pBillboardRenderList[uNumBillboardsToDraw - 1]._screenspace_y_scaler_packedfloat = fixpoint_mul(pGame->pStru6Instance->_4A806F(&pActors[i]),
+                   pBillboardRenderList[uNumBillboardsToDraw - 1]._screenspace_y_scaler_packedfloat);
             LOWORD(v27) = v43;
-            v28->_screenspace_y_scaler_packedfloat = v52;
           }
         }
         else
         {
-          v32 = actor->pActorBuffs[ACTOR_BUFF_SHRINK].uPower;
-          if ( v32 )
+          if ( pActors[i].pActorBuffs[ACTOR_BUFF_SHRINK].uPower )
           {
-            v33 = actor->pActorBuffs[ACTOR_BUFF_SHRINK].uPower;
-            v28->_screenspace_x_scaler_packedfloat = (unsigned __int64)(65536 / (unsigned __int16)v32 * (signed __int64)v28->_screenspace_x_scaler_packedfloat) >> 16;
-            v52 = (unsigned __int64)(65536 / v33 * (signed __int64)v28->_screenspace_y_scaler_packedfloat) >> 16;
-            goto LABEL_53;
+            pBillboardRenderList[uNumBillboardsToDraw - 1]._screenspace_y_scaler_packedfloat = fixpoint_mul(65536 / pActors[i].pActorBuffs[ACTOR_BUFF_SHRINK].uPower,
+                     pBillboardRenderList[uNumBillboardsToDraw - 1]._screenspace_y_scaler_packedfloat);
+            LOWORD(v27) = v43;
           }
         }
-        v28->uScreenSpaceX = v27;
-        v28->uScreenSpaceY = v46;
-        v28->world_x = x;
-        v28->world_y = y;
-        v28->world_z = z;
+        pBillboardRenderList[uNumBillboardsToDraw - 1].uScreenSpaceX = v27;
+        pBillboardRenderList[uNumBillboardsToDraw - 1].uScreenSpaceY = v46;
+        pBillboardRenderList[uNumBillboardsToDraw - 1].world_x = x;
+        pBillboardRenderList[uNumBillboardsToDraw - 1].world_y = y;
+        pBillboardRenderList[uNumBillboardsToDraw - 1].world_z = z;
         HIWORD(v34) = HIWORD(X);
         LOWORD(v34) = 0;
-        v28->dimming_level = 0;
-        v28->sZValue = v34 + PID(OBJECT_Actor, i);
-        v28->field_14_actor_id = i;
-        v35 = pMonsterList->pMonsters;
-		v36 = actor->pMonsterInfo.uID;
-        v28->field_1E = v62 | 0x200;
-        v28->pSpriteFrame = v15;
-        v28->uTintColor = pMonsterList->pMonsters[actor->pMonsterInfo.uID-1].uTintColor;//*((int *)&v35[v36] - 36);
-        if (actor->pActorBuffs[ACTOR_BUFF_STONED].uExpireTime)
-          v28->field_1E = v62 | 0x200;
+        pBillboardRenderList[uNumBillboardsToDraw - 1].dimming_level = 0;
+        pBillboardRenderList[uNumBillboardsToDraw - 1].sZValue = v34 + PID(OBJECT_Actor, i);
+        pBillboardRenderList[uNumBillboardsToDraw - 1].field_14_actor_id = i;
+        //v35 = pMonsterList->pMonsters;
+        //v36 = pActors[i].pMonsterInfo.uID;
+        pBillboardRenderList[uNumBillboardsToDraw - 1].field_1E = v62 | 0x200;
+        pBillboardRenderList[uNumBillboardsToDraw - 1].pSpriteFrame = v15;
+        pBillboardRenderList[uNumBillboardsToDraw - 1].sTintColor = pMonsterList->pMonsters[pActors[i].pMonsterInfo.uID - 1].sTintColor;//*((int *)&v35[v36] - 36);
+        if (pActors[i].pActorBuffs[ACTOR_BUFF_STONED].uExpireTime)
+          pBillboardRenderList[uNumBillboardsToDraw - 1].field_1E = v62 | 0x200;
       }
 //LABEL_58:
       //++v59;
@@ -3144,37 +2780,36 @@ int ODM_GetFloorLevel(int X, signed int Y, int Z, int __unused, int *pIsOnWater,
 {
   BSPModel *pBModel; // esi@4
   ODMFace *pFace; // ecx@11
-  int v14; // edx@20
+//  int v14; // edx@20
   signed int v18; // edx@26
   int v19; // eax@28
-  int v20; // edx@30
-  int v21; // ST1C_4@30
+//  int v20; // edx@30
+//  int v21; // ST1C_4@30
   signed int v22; // edx@30
   signed __int64 v23; // qtt@30
   int v24; // eax@36
   signed int v25; // ecx@38
-  int result; // eax@42
-  signed int v27; // ecx@43
-  int v28; // edi@44
+//  int result; // eax@42
+  signed int current_floor_level; // ecx@43
+//  int v28; // edi@44
   signed int v29; // edx@44
-  int v30; // esi@45
-  int v31; // eax@45
-  ODMFace *v32; // eax@57
-  int v33; // ecx@59
-  int v36; // [sp+14h] [bp-2Ch]@24
-  int v38; // [sp+1Ch] [bp-24h]@2
+//  int v30; // esi@45
+//  int v31; // eax@45
+//  int v33; // ecx@59
+//  int v36; // [sp+14h] [bp-2Ch]@24
+//  int v38; // [sp+1Ch] [bp-24h]@2
   int v39; // [sp+20h] [bp-20h]@9
   signed int pBModelNum; // [sp+28h] [bp-18h]@1
   int pFaceNum; // [sp+2Ch] [bp-14h]@8
-  bool v43; // [sp+30h] [bp-10h]@22
-  bool v44; // [sp+34h] [bp-Ch]@24
+  bool current_vertices_Y; // [sp+30h] [bp-10h]@22
+  bool next_vertices_Y; // [sp+34h] [bp-Ch]@24
   signed int v46; // [sp+3Ch] [bp-4h]@1
-  signed int v48; // [sp+58h] [bp+18h]@22
-  signed int v49; // [sp+58h] [bp+18h]@43
+  signed int number_hits; // [sp+58h] [bp+18h]@22
+  signed int next_floor_level; // [sp+58h] [bp+18h]@43
 
   v46 = 1;
-  dword_721160[0] = -1;
-  dword_721110[0] = -1;
+  current_BModel_id[0] = -1;
+  current_Face_id[0] = -1;
   odm_floor_level[0] = GetTerrainHeightsAroundParty2(X, Y, pIsOnWater, bWaterWalk);
   
   for ( pBModelNum = 0; pBModelNum < pOutdoor->uNumBModels; ++pBModelNum )
@@ -3189,64 +2824,70 @@ int ODM_GetFloorLevel(int X, signed int Y, int Z, int __unused, int *pIsOnWater,
         for ( pFaceNum = 0; pFaceNum < pBModel->uNumFaces; ++pFaceNum )
         {
           pFace = &pBModel->pFaces[pFaceNum];
+          if ( pFace->Ethereal() )
+            continue;
           if ( (pFace->uPolygonType == POLYGON_Floor || pFace->uPolygonType == POLYGON_InBetweenFloorAndWall)
-            && !(pFace->uAttributes & 0x20000000)
             && X <= pFace->pBoundingBox.x2 && X >= pFace->pBoundingBox.x1
             && Y <= pFace->pBoundingBox.y2 && Y >= pFace->pBoundingBox.y1 )
           {
-            
-              for ( uint i = 0; i < pFace->uNumVertices; ++i)
-              {
-                word_721040[2 * i] = pFace->pXInterceptDisplacements[i] + pBModel->pVertices.pVertices[pFace->pVertexIDs[i]].x;
-                word_720F70[2 * i] = pFace->pXInterceptDisplacements[i + 1] + pBModel->pVertices.pVertices[pFace->pVertexIDs[i]].y;
-                word_721040[2 * i + 1] = pFace->pXInterceptDisplacements[i] + pBModel->pVertices.pVertices[pFace->pVertexIDs[i + 1]].x;
-                word_720F70[2 * i + 1] = pFace->pXInterceptDisplacements[i + 1] + pBModel->pVertices.pVertices[pFace->pVertexIDs[i + 1]].y;
-              }
-            word_721040[2 * pFace->uNumVertices] = word_721040[0];
-            word_720F70[2 * pFace->uNumVertices] = word_720F70[0];
-            v43 = word_720F70[0] >= Y;
-            v48 = 0;
+            for ( uint i = 0; i < pFace->uNumVertices; ++i)
+            {
+              odm_floor_face_vert_coord_X[2 * i] = pFace->pXInterceptDisplacements[i] + pBModel->pVertices.pVertices[pFace->pVertexIDs[i]].x;
+              odm_floor_face_vert_coord_Y[2 * i] = pFace->pYInterceptDisplacements[i] + pBModel->pVertices.pVertices[pFace->pVertexIDs[i]].y;
+              odm_floor_face_vert_coord_X[2 * i + 1] = pFace->pXInterceptDisplacements[i] + pBModel->pVertices.pVertices[pFace->pVertexIDs[i + 1]].x;
+              odm_floor_face_vert_coord_Y[2 * i + 1] = pFace->pYInterceptDisplacements[i] + pBModel->pVertices.pVertices[pFace->pVertexIDs[i + 1]].y;
+            }
+            odm_floor_face_vert_coord_X[2 * pFace->uNumVertices] = odm_floor_face_vert_coord_X[0];
+            odm_floor_face_vert_coord_Y[2 * pFace->uNumVertices] = odm_floor_face_vert_coord_Y[0];
+
+            current_vertices_Y = odm_floor_face_vert_coord_Y[0] >= Y;
+            number_hits = 0;
             if ( 2 * pFace->uNumVertices > 0 )
             {
               for ( int i = 0; i < 2 * pFace->uNumVertices; ++i )
               {
-                if ( v48 >= 2 )
+                if ( number_hits >= 2 )
                   break;
-                v36 = word_720F70[i + 1];
-                v44 = word_720F70[i + 1] >= Y;
-                if ( v43 != v44 )
+                //v36 = odm_floor_face_vert_coord_Y[i + 1];
+                next_vertices_Y = odm_floor_face_vert_coord_Y[i + 1] >= Y;
+                if ( current_vertices_Y != next_vertices_Y )//проверка по Y
                 {
-                  v18 = word_721040[i + 1] >= X ? 0 : 2;
-                  v19 = v18 | (word_721040[i] < X);
+                  v18 = odm_floor_face_vert_coord_X[i + 1] >= X ? 0 : 2;
+                  v19 = v18 | (odm_floor_face_vert_coord_X[i] < X);
                   if ( v19 != 3 )
                   {
                     if ( !v19 )
-                      ++v48;
+                      ++number_hits;
                     else
                     {
-                      LODWORD(v23) = (Y - word_720F70[i]) << 16;
-                      HIDWORD(v23) = (Y - word_720F70[i]) >> 16;
-                      v22 = ((((word_721040[i + 1] - word_721040[i]) * v23 / (v36 - word_720F70[i])) >> 16) + word_721040[i]);
+                      LODWORD(v23) = (Y - odm_floor_face_vert_coord_Y[i]) << 16;
+                      HIDWORD(v23) = (Y - odm_floor_face_vert_coord_Y[i]) >> 16;
+                      v22 = ((((odm_floor_face_vert_coord_X[i + 1] - odm_floor_face_vert_coord_X[i]) * v23 / (odm_floor_face_vert_coord_Y[i + 1]
+                              - odm_floor_face_vert_coord_Y[i])) >> 16) + odm_floor_face_vert_coord_X[i]);
                       if ( v22 >= X) 
-                        ++v48;
+                        ++number_hits;
                     }
                   }
                 }
-                v43 = v44;
+                current_vertices_Y = next_vertices_Y;
               }
-              if ( v48 == 1 )
+              if ( number_hits == 1 )
               {
                 if ( v46 >= 20 )
                   break;
                 if ( pFace->uPolygonType == POLYGON_Floor )
                   v24 = pBModel->pVertices.pVertices[pFace->pVertexIDs[0]].z;
                 else
-                  v24 = ((unsigned __int64)(pFace->zCalc1 * (signed __int64)X) >> 16) + ((unsigned __int64)(pFace->zCalc2 * (signed __int64)Y) >> 16)
-                + HIWORD(pFace->zCalc3);
+                {
+                  int a = fixpoint_mul(pFace->zCalc1, X);
+                  int b = fixpoint_mul(pFace->zCalc2, Y);
+                  int c = ((signed __int64)pFace->zCalc3 >> 16);
+                  v24 = a + b + c;
+                }
                 v25 = v46++;
                 odm_floor_level[v25] = v24;
-                dword_721160[v25] = pBModelNum;
-                dword_721110[v25] = pFaceNum;
+                current_BModel_id[v25] = pBModelNum;
+                current_Face_id[v25] = pFaceNum;
               }
             }
           }
@@ -3260,51 +2901,43 @@ int ODM_GetFloorLevel(int X, signed int Y, int Z, int __unused, int *pIsOnWater,
     *bmodel_pid = 0;
     return odm_floor_level[0];
   }
-  v27 = 0;
+  current_floor_level = 0;
+  v29 = 0;
   if ( v46 <= 1 )
     *bmodel_pid = 0;
   else
   {
-    //v29 = 1;
-    for ( v49 = 1; v49 < v46; ++v49 )
+    current_floor_level = odm_floor_level[0];
+    for ( uint i = 1; i < v46; ++i )
     {
-      if ( odm_floor_level[v49] == odm_floor_level[0] )
+      next_floor_level = odm_floor_level[i];
+      if ( current_floor_level <= Z + 5 )
       {
-        v27 = v49;
-        //++v29;
-        break;
-      }
-      if ( odm_floor_level[0] > Z + 5 )
-      {
-        if ( odm_floor_level[v49] >= odm_floor_level[0] )
+        if ( next_floor_level > current_floor_level && next_floor_level <= Z + 5 )
         {
-          //++v29;
-          break;
+          current_floor_level = next_floor_level;
+          v29 = i;
         }
-        v27 = v49;
-        //++v29;
-        break;
       }
-      if ( odm_floor_level[v49] > odm_floor_level[0] && odm_floor_level[v49] <= Z + 5 )
+      else if ( next_floor_level < current_floor_level )
       {
-        v27 = v49;
-        //++v29;
+        current_floor_level = next_floor_level;
+        v29 = i;
       }
     }
-    if ( !v27 )
+    if ( !v29 )
       *bmodel_pid = 0;
     else
-      *bmodel_pid = dword_721110[v27] | (dword_721160[v27] << 6);
+      *bmodel_pid = current_Face_id[v29] | (current_BModel_id[v29] << 6);
   }
-  if ( v27 )
+  if ( v29 )
   {
-    v32 = &pOutdoor->pBModels[dword_721160[v27]].pFaces[dword_721110[v27]];
     *pIsOnWater = false;
-    if ( v32->Fluid())
+    if ( pOutdoor->pBModels[current_BModel_id[v29]].pFaces[current_Face_id[v29]].Fluid())
       *pIsOnWater = true;
   }
-  if ( odm_floor_level[v27] >= odm_floor_level[0] )
-    odm_floor_level[0] = odm_floor_level[v27];
+  if ( odm_floor_level[v29] >= odm_floor_level[0] )
+    odm_floor_level[0] = odm_floor_level[v29];
   return odm_floor_level[0];
 }
 
@@ -3333,12 +2966,13 @@ void ODM_GetTerrainNormalAt(int pos_x, int pos_z, Vec3_int_ *out)
        dz = abs(grid_pos_z1 - pos_z);
   if (dz >= dx)
   {
-    side1_dy = (double)(x1z1_y - x1z2_y);
-    side2_dy = (double)(x2z2_y - x1z2_y);
     side2_dx = (double)(grid_pos_x2 - grid_pos_x1);
-    side1_dx = (double)(grid_pos_x1 - grid_pos_x2);
     side2_dz = 0.0;//(double)(grid_pos_z2 - grid_pos_z2);  // bug?  z2 - z2 
+    side2_dy = (double)(x2z2_y - x1z2_y);
+
+    side1_dx = 0.0;//(double)(grid_pos_x1 - grid_pos_x1);
     side1_dz = (double)(grid_pos_z1 - grid_pos_z2);  //       z1 - z2 yes
+    side1_dy = (double)(x1z1_y - x1z2_y);
     //Log::Warning(L"%S %S %u\n", __FILE__, __FUNCTION__, __LINE__);
     /*       |\
        side1 |  \
@@ -3347,13 +2981,13 @@ void ODM_GetTerrainNormalAt(int pos_x, int pos_z, Vec3_int_ *out)
   }
   else
   {
-    side1_dy = (double)(x2z2_y - x2z1_y);
-    side2_dy = (double)(x1z1_y - x2z1_y);
     side2_dx = (double)(grid_pos_x1 - grid_pos_x2);
-    side1_dx = (double)(grid_pos_x2 - grid_pos_x1);
-    side2_dz = 0.0;//(double)(grid_pos_z1 - grid_pos_z1); 
-    side1_dz = (double)(grid_pos_z2 - grid_pos_z1);
+    side2_dz = 0.0;//(double)(grid_pos_z1 - grid_pos_z1);
+    side2_dy = (double)(x1z1_y - x2z1_y);
 
+    side1_dx = 0.0;//(double)(grid_pos_x2 - grid_pos_x1);
+    side1_dz = (double)(grid_pos_z2 - grid_pos_z1);
+    side1_dy = (double)(x2z2_y - x2z1_y);
     /*   side 2
          _____
          \    |
@@ -3379,144 +3013,6 @@ void ODM_GetTerrainNormalAt(int pos_x, int pos_z, Vec3_int_ *out)
     out->y = invmag * ny * 65536.0;
     out->z = invmag * nz * 65536.0;
   }
-}
-//----- (004014E6) --------------------------------------------------------
-void MakeActorAIList_ODM()
-{
-  int v1; // eax@4
-  int v2; // ebx@4
-  unsigned int v3; // ecx@4
-  int v4; // edx@5
-  int v5; // edx@7
-  unsigned int v6; // edx@9
-  unsigned int v7; // ST20_4@10
-  int v9; // edi@10
-  int v10; // ebx@14
-  int v21; // [sp+Ch] [bp-14h]@4
-  int v22; // [sp+10h] [bp-10h]@4
-
-  pParty->uFlags &= 0xFFFFFFCFu;
-
-  ai_arrays_size = 0;
-  for (uint i = 0; i < uNumActors; ++i)
-  {
-    Actor* actor = &pActors[i];
-
-    actor->uAttributes &= 0xFFFFFBFF;
-    if (!actor->CanAct())
-    {
-      actor->uAttributes &= 0xFFFFBFFF;
-      continue;
-    }
-
-    v22 = abs(pParty->vPosition.z - actor->vPosition.z);
-    v21 = abs(pParty->vPosition.y - actor->vPosition.y);
-    v1 = abs(pParty->vPosition.x - actor->vPosition.x);
-      v2 = v21;
-      v3 = v22;
-      if ( v1 < v21 )
-      {
-        v4 = v1;
-        v1 = v21;
-        v2 = v4;
-      }
-      if ( v1 < v22 )
-      {
-        v5 = v1;
-        v1 = v22;
-        v3 = v5;
-      }
-      if ( v2 < (signed int)v3 )
-      {
-        v6 = v3;
-        v3 = v2;
-        v2 = v6;
-      }
-      v7 = ((unsigned int)(11 * v2) >> 5) + (v3 >> 2) + v1;
-	  //v8 = actor->uActorRadius;
-      v9 = v7 - actor->uActorRadius;
-      //v23 = v7 - v8;
-      if ( v9 < 0 )
-      {
-        v9 = 0;
-        //v23 = 0;
-      }
-
-      if (v9 < 5632)
-      {
-        v10 = actor->uAttributes & 0xFEFFFFFF;
-        actor->uAttributes = v10;
-        if ( v10 & 0x80000 || actor->GetActorsRelation(0) )
-        {
-          //v11 = (pParty->uFlags & 0x10) == 0;
-          actor->uAttributes = v10 | 0x1000000;
-          if (v9 < 5120 )
-            pParty->SetYellowAlert();
-          if (v9 < 307)
-            pParty->SetRedAlert();
-        }
-		actor->uAttributes |= 0x00004000;
-        ai_near_actors_distances[ai_arrays_size] = v9;
-        ai_near_actors_ids[ai_arrays_size++] = i;
-      }
-      else
-		  actor->uAttributes &= 0xFFFFBFFF;
-  }
-
-  /*
-  result = v27;
-  if ( v27 > 0 )
-  {
-    v14 = 0;
-    v15 = 1;
-    v26 = 1;
-    do
-    {
-      while ( 1 )
-      {
-        v24 = v15;
-        if ( v15 >= result )
-          break;
-        v16 = ai_near_actors_distances[v14];
-        if ( v16 > ai_near_actors_distances[v15] )
-        {
-          v17 = &ai_near_actors_ids[v15];
-          v18 = ai_near_actors_ids[v14];
-          ai_near_actors_ids[v14] = *v17;
-          *v17 = v18;
-          v15 = v24;
-          ai_near_actors_distances[v14] = ai_near_actors_distances[v24];
-          ai_near_actors_distances[v24] = v16;
-        }
-        result = v27;
-        ++v15;
-      }
-      ++v14;
-      v15 = v26 + 1;
-      v26 = v15;
-    }
-    while ( v15 - 1 < result );
-  }*/
-
-  for (uint i = 0; i < ai_arrays_size; ++i)
-    for (uint j = 0; j < i; ++j)
-      if (ai_near_actors_distances[j] > ai_near_actors_distances[i])
-      {
-        int tmp = ai_near_actors_distances[j];
-        ai_near_actors_distances[j] = ai_near_actors_distances[i];
-        ai_near_actors_distances[i] = tmp;
-
-        tmp = ai_near_actors_ids[j];
-        ai_near_actors_ids[j] = ai_near_actors_ids[i];
-        ai_near_actors_ids[i] = tmp;
-      }
-
-
-  if (ai_arrays_size > 30)
-    ai_arrays_size = 30;
-
-  for (uint i = 0; i < ai_arrays_size; ++i)
-    pActors[ai_near_actors_ids[i]].uAttributes |= 0x0400;
 }
 //----- (0046BE0A) --------------------------------------------------------
 void ODM_UpdateUserInputAndOther()
@@ -3554,7 +3050,7 @@ void ODM_UpdateUserInputAndOther()
   check_event_triggers();
 }
 //----- (0041F54A) --------------------------------------------------------
-void LoadActualSkyFrame()
+void OutdoorLocation::LoadActualSkyFrame()
 {
   if ( pTexture_RestUI_CurrentSkyFrame )
     pTexture_RestUI_CurrentSkyFrame->Release();
@@ -3590,40 +3086,18 @@ void OutdoorLocation::subconstuctor()
   pOMAP = 0;
 }
 
-
-
-
 //----- (00481E55) --------------------------------------------------------
 void ODM_Project(unsigned int uNumVertices)
 {
-  double v1; // st7@2
-  double v2; // st6@2
-  double v3; // st5@2
-  int v4; // eax@2
-  unsigned int v5; // edx@2
-  double v6; // st4@3
-  double v7; // st3@3
-
-  if ( (signed int)uNumVertices > 0 )
-  {
-    v1 = (double)pODMRenderParams->int_fov_rad;
-    v2 = (double)pViewport->uScreenCenterX;
-    v3 = (double)pViewport->uScreenCenterY;
-    v4 = 0;
-    v5 = uNumVertices;
-    do
-    {
-      v6 = v1 * array_507D30[v4]._rhw;
-      v7 = v6 * array_507D30[v4].vWorldViewPosition.y;
-      memcpy(&array_50AC10[v4], &array_507D30[v4], sizeof(array_50AC10[v4]));
-      array_50AC10[v4].vWorldViewProjX = v2 - v7;
-      array_50AC10[v4].vWorldViewProjY = v3 - v6 * array_507D30[v4].vWorldViewPosition.z;
-      ++v4;
-      --v5;
-    }
-    while ( v5 );
-  }
-}
+  for ( uint i = 0; i < uNumVertices; i++ )
+   {
+    memcpy(&array_50AC10[i], &array_507D30[i], sizeof(array_50AC10[i]));
+    array_50AC10[i].vWorldViewProjX = (double)pViewport->uScreenCenterX 
+        - ((double)pODMRenderParams->int_fov_rad * array_507D30[i]._rhw) * array_507D30[i].vWorldViewPosition.y;
+    array_50AC10[i].vWorldViewProjY = (double)pViewport->uScreenCenterY
+        - ((double)pODMRenderParams->int_fov_rad * array_507D30[i]._rhw) * array_507D30[i].vWorldViewPosition.z;
+   }
+ }
 //----- (00485F64) --------------------------------------------------------
 void ODMRenderParams::Initialize()
 {
@@ -3647,4 +3121,1148 @@ void ODMRenderParams::Initialize()
   this->field_50 = 115;
   //sr_6BE060[1] = 1;
   //RotationToInts();
+}
+//----- (00473893) --------------------------------------------------------
+void ODM_ProcessPartyActions()
+{
+  int v1; // edi@1
+  int v2; // ebx@1
+  int floor_level; // eax@14
+  int v6; // esi@45
+  ODMFace *face; // ecx@45
+  //signed int v33; // eax@143
+  int v34; // esi@143
+  int v35; // esi@147
+  int v36; // eax@155
+//  signed int v37; // esi@159
+//  signed int v38; // eax@159
+//  signed int i; // esi@159
+  int v40; // esi@162
+  bool v42; // eax@180
+  signed int v43; // ecx@184
+  signed int v44; // edx@184
+  int v45; // ecx@200
+  BSPModel *pModel; // eax@203
+  bool pModel_;
+  ODMFace *pODMFace; // esi@203
+  int v48; // eax@203
+  int v54; // eax@215
+  int v55; // eax@217
+//  BSPModel *v58; // eax@228
+  //unsigned __int64 v59; // qax@228
+//  BSPModel *v60; // eax@228
+  //unsigned __int64 v61; // qax@228
+//  int v62; // eax@241
+  unsigned int v66; // esi@263
+  signed int v68; // ecx@263
+  int v69; // eax@263
+//  unsigned int v76; // edi@293
+  bool v77; // edx@297
+  bool v78; // ecx@303
+  int v79; // ecx@314
+  __int16 v80; // dx@317
+  //int v81; // ebx@318
+  //int v82; // ecx@318
+  int pTerrainHeight; // eax@321
+//  int v86; // [sp-20h] [bp-B4h]@246
+  int v87; // [sp-20h] [bp-B4h]@248
+//  signed int v88; // [sp-1Ch] [bp-B0h]@246
+//  unsigned int v89; // [sp-18h] [bp-ACh]@246
+//  signed int v90; // [sp-14h] [bp-A8h]@246
+//  signed int v91; // [sp-10h] [bp-A4h]@246
+//  int v92; // [sp-Ch] [bp-A0h]@246
+//  unsigned int v94; // [sp-8h] [bp-9Ch]@246
+//  int v96; // [sp-4h] [bp-98h]@246
+  int v97; // [sp+Ch] [bp-88h]@180
+  Vec3_int_ v98;
+  bool not_high_fall; // [sp+1Ch] [bp-78h]@33
+  int v102; // [sp+20h] [bp-74h]@1
+  int trigger_id; // [sp+24h] [bp-70h]@1
+  bool bFeatherFall; // [sp+28h] [bp-6Ch]@4
+  int bonus;
+  int on_ground; // [sp+2Ch] [bp-68h]@24
+  bool bWaterWalk; // [sp+30h] [bp-64h]@1
+  int ceiling_height; // [sp+3Ch] [bp-58h]@28
+  int v110; // [sp+40h] [bp-54h]@180
+  int v111; // [sp+44h] [bp-50h]@14
+  bool hovering; // [sp+48h] [bp-4Ch]@1
+  int v113; // [sp+4Ch] [bp-48h]@1
+  bool party_running_flag; // [sp+50h] [bp-44h]@1
+  int _walk_speed; // [sp+54h] [bp-40h]@48
+  int pX; // [sp+58h] [bp-3Ch]@1
+  int pY; // [sp+5Ch] [bp-38h]@1
+  int v118; // [sp+60h] [bp-34h]@1
+  int _angle_x; // [sp+68h] [bp-2Ch]@48
+  unsigned int v122; // [sp+70h] [bp-24h]@180
+  int pZ; // [sp+74h] [bp-20h]@1
+  bool party_walking_flag; // [sp+78h] [bp-1Ch]@1
+  int _angle_y; // [sp+7Ch] [bp-18h]@48
+  int v128; // [sp+88h] [bp-Ch]@1
+  int v129; // [sp+8Ch] [bp-8h]@92
+
+  v1 = 0;
+  trigger_id = 0;
+  v2 = 0;
+  //*(float *)&v128 = 0.0;
+  int fall_speed = pParty->uFallSpeed;
+  v128 = 0;
+  v129 = 0;
+  pX = pParty->vPosition.x;
+  pY = pParty->vPosition.y;
+  pZ = pParty->vPosition.z;
+  v113 = pParty->field_6F0;
+  hovering = false;
+  bool partyAtHighSlope = IsTerrainSlopeTooHigh(pParty->vPosition.x, pParty->vPosition.y);
+  party_running_flag = false;
+  party_walking_flag = false;
+  v102 = 0;
+  pModel_ = false;
+  bWaterWalk = false;
+
+  if (!pParty->FeatherFallActive())//Проверка падение пера
+  {
+    bFeatherFall = false;
+    for (int i = 0; i < 4; ++i)
+      if (pParty->pPlayers[i].WearsItemAnyWhere(ITEM_ARTIFACT_LADYS_ESCORT))  // seems like flying boots
+      {
+        bFeatherFall = true;
+        break;
+      }
+  }
+  else
+    bFeatherFall = true;
+
+  pParty->uFlags &= ~PARTY_FLAGS_1_STANDING_ON_WATER;
+  if (pParty->WaterWalkActive())//Проверка хождения по воде
+  {
+    //LOBYTE(pParty->uFlags) &= 0x7Fu;
+    bWaterWalk = true;
+    *(short *)&stru_5E4C90_MapPersistVars._decor_events[20 * pParty->pPartyBuffs[PARTY_BUFF_WATER_WALK].uOverlayID + 119] |= 1u;
+    if (!(pParty->pPartyBuffs[PARTY_BUFF_WATER_WALK].uFlags & 1) &&
+          pParty->pPlayers[pParty->pPartyBuffs[PARTY_BUFF_WATER_WALK].uCaster - 1].sMana <= 0 )
+      bWaterWalk = false;
+  }
+
+  int bmodel_standing_on_pid;
+  int is_on_water = false;
+  floor_level = ODM_GetFloorLevel(pX, pY, pZ, pParty->uPartyHeight, &is_on_water, &bmodel_standing_on_pid, bWaterWalk);
+  int is_not_on_bmodel = bmodel_standing_on_pid == 0;
+
+  v111 = floor_level;
+  if ( bFeatherFall )
+    pParty->uFallStartY = floor_level;
+  else
+    floor_level = pParty->uFallStartY;
+
+  if ( floor_level - pZ > 512 && !bFeatherFall && pZ <= v111 + 1 )//падение на 3D Model
+  {
+    if (pParty->uFlags & PARTY_FLAGS_1_LANDING)
+      pParty->uFlags &= ~PARTY_FLAGS_1_LANDING;
+    else for (int i = 0; i < 4; ++i)     // receive falling damage
+    {
+      if ( !pParty->pPlayers[i].HasEnchantedItemEquipped(72) && !pParty->pPlayers[i].WearsItem(ITEM_ARTIFACT_HERMES_SANDALS, EQUIP_BOOTS) )
+      {
+        pParty->pPlayers[i].ReceiveDamage(
+            (signed int)((pParty->uFallStartY - pZ) * (unsigned __int64)(pParty->pPlayers[i].GetMaxHealth() / 10)) / 256, DMGT_PHISYCAL);
+        bonus = 20 - pParty->pPlayers[i].GetParameterBonus(pParty->pPlayers[i].GetActualEndurance());
+        pParty->pPlayers[i].SetRecoveryTime((signed __int64)((double)bonus * flt_6BE3A4_debug_recmod1 * 2.133333333333333));
+      }
+    }
+  }
+
+  ceiling_height = -1;
+  if ( pParty->bFlying )
+    ceiling_height = GetCeilingHeight(pX, pY, pZ + pParty->uPartyHeight, (int)&v102);//высота потолка
+  //v107 = bmodel_standing_on_pid == 0;
+  on_ground = v111 + 1;
+  if ( pZ <= on_ground )//полёт: посадка
+  {
+    ceiling_height = -1;
+    pParty->bFlying = false;
+  }
+  else
+    hovering = true;
+  not_high_fall = pZ - v111 <= 32;
+
+  if ( bWalkSound && pParty->walk_sound_timer)//timer update
+  {
+    if (pParty->walk_sound_timer >= pEventTimer->uTimeElapsed)
+      pParty->walk_sound_timer -= pEventTimer->uTimeElapsed;
+    else
+      pParty->walk_sound_timer = 0;
+  }
+
+  if (!bUnderwater && pParty->pPartyBuffs[PARTY_BUFF_FLY].uExpireTime <= 0)// конец действия полёта
+    pParty->bFlying = false;
+
+  if (!hovering)//
+  {
+    if ( pParty->floor_face_pid != PID(OBJECT_BModel, bmodel_standing_on_pid) )
+    {
+      if (bmodel_standing_on_pid)
+      {
+        if ( (bmodel_standing_on_pid >> 6) < pOutdoor->uNumBModels )
+        {
+          face = pOutdoor->pBModels[bmodel_standing_on_pid >> 6].pFaces;
+          v6 = bmodel_standing_on_pid & 0x3F;
+          /*if ( *(char *)(v7->pFacePlane.vNormal.x + 308 * v6 + 31) & 4 )
+          {
+            pParty->field_6F4_packedid = PID(OBJECT_BModel,v108);
+            v103 = *(short *)(v7->pFacePlane.vNormal.x + 308 * v6 + 292);
+          }*/
+          if ( face[v6].uAttributes & FACE_PRESSURE_PLATE )
+          {
+            pParty->floor_face_pid = PID(OBJECT_BModel, bmodel_standing_on_pid);
+            trigger_id = face[v6].sCogTriggeredID; //
+          }
+        }
+      }
+    }
+    pParty->floor_face_pid = PID(OBJECT_BModel, bmodel_standing_on_pid);
+  }
+
+  _walk_speed = pParty->uWalkSpeed;
+  _angle_y = pParty->sRotationY;
+  _angle_x = pParty->sRotationX;
+  //v126 = pEventTimer->dt_in_some_format;
+  /*v119 = (Player **)((unsigned __int64)(pEventTimer->dt_in_some_format
+                                      * (signed __int64)((signed int)(pParty->field_20_prolly_turn_speed
+                                                                    * stru_5C6E00->uIntegerPi)
+                                                       / 180)) >> 16);*/
+  __int64 dturn = (unsigned __int64)(pEventTimer->dt_in_some_format * (signed __int64)((signed int)(pParty->y_rotation_speed * stru_5C6E00->uIntegerPi) / 180)) >> 16;
+  while (pPartyActionQueue->uNumActions)
+  {
+    switch (pPartyActionQueue->Next())
+    {
+      case PARTY_FlyUp://полёт вверх
+      {
+        if (!pParty->FlyActive() && !bUnderwater)
+          break;
+
+        pParty->bFlying = false;
+        if (bUnderwater ||
+            pParty->pPartyBuffs[PARTY_BUFF_FLY].uFlags & 1 ||
+            pParty->pPlayers[pParty->pPartyBuffs[PARTY_BUFF_FLY].uCaster - 1].sMana > 0 )
+        {
+          extern int max_flight_height;
+          if ( pParty->vPosition.z < max_flight_height || hovering )
+          {
+            pZ += 30;
+            v113 += 30;
+            pParty->bFlying = true;
+            if ( pZ > max_flight_height )
+            {
+              pZ = max_flight_height;
+              v113 = max_flight_height;
+            }
+            v1 = 0;
+            v2 = 0;
+            fall_speed = 0;
+            *(float *)&v128 = 0.0;
+            if ( v102 && pZ < ceiling_height && (signed int)(pParty->uPartyHeight + pZ) >= ceiling_height )//столкновение с потолком
+            {
+              pParty->field_6E0 = 0;
+              pParty->field_6E4 = 0;
+              pPartyActionQueue->uNumActions = 0;
+              pParty->uFlags |= PARTY_FLAGS_1_LANDING;
+              pParty->vPosition.z = ceiling_height - pParty->uPartyHeight - 31;
+              pParty->field_6F0 = pZ;
+              pParty->bFlying = false;
+              pZ = ceiling_height - pParty->uPartyHeight - 31;
+              v113 = pParty->field_6F0;
+            }
+            pParty->uFallSpeed = 0;
+            pModel_ = true;
+          }
+        }
+      }
+      break;
+
+      case PARTY_FlyDown://полёт вниз
+        if (pParty->FlyActive() || bUnderwater)
+        {
+          pParty->bFlying = false;
+          if ( bUnderwater
+            || pParty->pPartyBuffs[PARTY_BUFF_FLY].uFlags & 1
+            || pParty->pPlayers[pParty->pPartyBuffs[PARTY_BUFF_FLY].uCaster - 1].sMana > 0 )//*(int *)&pParty->pArtifactsFound[6972 * pParty->pPartyBuffs[PARTY_BUFF_FLY].uCaster + 10] > 0 )
+          {
+            pZ -= 30;
+            v113 -= 30;
+            pParty->uFallSpeed = 0;
+            fall_speed = 0;
+            pParty->bFlying = true;
+            pModel_ = true;
+            if ( pZ <= v111 )
+            {
+              pParty->bFlying = false;
+              pPartyActionQueue->uNumActions = 0;
+            }
+          }
+        }
+        break;
+
+      case PARTY_TurnLeft:
+        if (uTurnSpeed)
+          _angle_y += uTurnSpeed;   //descrete turn
+        else
+          _angle_y += dturn * fTurnSpeedMultiplier;  // time-based smooth turn
+
+        _angle_y &= stru_5C6E00->uDoublePiMask;
+      break;
+
+      case PARTY_TurnRight:
+        if (uTurnSpeed)
+          _angle_y -= uTurnSpeed;
+        else
+          _angle_y -= dturn * fTurnSpeedMultiplier;
+
+        _angle_y &= stru_5C6E00->uDoublePiMask;
+      break;
+
+      case PARTY_FastTurnLeft:
+        if (uTurnSpeed)
+          _angle_y += uTurnSpeed;
+        else
+          _angle_y += 2.0f * fTurnSpeedMultiplier * (double)dturn;
+
+        _angle_y &= stru_5C6E00->uDoublePiMask;
+      break;
+
+      case PARTY_FastTurnRight:
+        if (!uTurnSpeed)
+          _angle_y -= 2.0f * fTurnSpeedMultiplier * (double)dturn;
+        else
+          _angle_y -= uTurnSpeed;
+
+        _angle_y &= stru_5C6E00->uDoublePiMask;
+      break;
+
+      case PARTY_StrafeLeft://хождение боком в влево
+      {
+        *(float *)&v128 = pParty->uWalkSpeed;
+
+        float sin_y = sinf(2 * 3.141592653589 * _angle_y / 2048.0);
+        int dx = sin_y * pParty->uWalkSpeed * fWalkSpeedMultiplier;
+        v2 -= 3 * dx / 4;
+        
+        float cos_y = cosf(2 * 3.141592653589 * _angle_y / 2048.0);
+        int dy = cos_y * pParty->uWalkSpeed * fWalkSpeedMultiplier;
+        v1 += 3 * dy / 4;
+
+        v128 = v1;
+        party_walking_flag = true;
+      }
+      break;
+
+      case PARTY_StrafeRight://хождение боком в вправо
+      {
+        *(float *)&v128 = pParty->uWalkSpeed;
+
+        float sin_y = sinf(2 * 3.141592653589 * _angle_y / 2048.0);
+        int dx = sin_y * pParty->uWalkSpeed * fWalkSpeedMultiplier;
+        v2 += 3 * dx / 4;
+        
+        float cos_y = cosf(2 * 3.141592653589 * _angle_y / 2048.0);
+        int dy = cos_y * pParty->uWalkSpeed * fWalkSpeedMultiplier;
+        v1 -= 3 * dy / 4;
+
+        v128 = v1;
+        party_walking_flag = true;
+      }
+      break;
+
+      case PARTY_WalkForward:// идти вперёд
+      {
+        *(float *)&v128 = _walk_speed;
+
+        float sin_y = sinf(2 * 3.141592653589 * _angle_y / 2048.0),
+              cos_y = cosf(2 * 3.141592653589 * _angle_y / 2048.0);
+
+        int dx = cos_y * pParty->uWalkSpeed * fWalkSpeedMultiplier;
+        int dy = sin_y * pParty->uWalkSpeed * fWalkSpeedMultiplier;
+
+        if ( new_speed )
+        {
+          v2 += dx * 12;
+          v1 += dy * 12;
+        }
+        else
+        {
+          v2 += dx;
+          v1 += dy;
+        }
+
+        v128 = v1;
+        party_walking_flag = true;
+      }
+      break;
+
+      case PARTY_RunForward://бежать вперёд
+      {
+        *(float *)&v128 = _walk_speed;
+
+        float sin_y = sinf(2 * 3.141592653589 * _angle_y / 2048.0);
+        float cos_y = cosf(2 * 3.141592653589 * _angle_y / 2048.0);
+
+        int dx = cos_y * pParty->uWalkSpeed * fWalkSpeedMultiplier;
+        int dy = sin_y * pParty->uWalkSpeed * fWalkSpeedMultiplier;
+
+        if (pParty->bFlying)//лететь вперёд
+        {
+          v2 += 4 * dx;
+          v1 += 4 * dy;
+
+          v128 = v1;
+        }
+        else if (partyAtHighSlope && !bmodel_standing_on_pid)//сбегание со склона
+        {
+          v2 += dx;
+          v1 += dy;
+
+          v128 = v1;
+          party_walking_flag = true;
+        }
+        else
+        {
+          /*v2 += (unsigned __int64)(stru_5C6E00->Cos(_angle_y)
+                           * (signed __int64)(signed int)(2 * (unsigned __int64)(signed __int64)((double)_walk_speed * fWalkSpeedMultiplier))) >> 16;
+          v1 += (unsigned __int64)((signed int)stru_5C6E00->Sin(_angle_y)
+                           * (signed __int64)(signed int)(2 * (unsigned __int64)(signed __int64)((double)_walk_speed * fWalkSpeedMultiplier))) >> 16;*/
+
+          v2 += 2 * dx;
+          v1 += 2 * dy;
+          
+          v128 = v1;
+          party_running_flag = true;
+        }
+      }
+      break;
+
+
+      case PARTY_WalkBackward://идти назад
+      {
+        *(float *)&v128 = _walk_speed;
+
+        float sin_y = sinf(2 * 3.141592653589 * _angle_y / 2048.0),
+              cos_y = cosf(2 * 3.141592653589 * _angle_y / 2048.0);
+
+        int dx = cos_y * pParty->uWalkSpeed * fBackwardWalkSpeedMultiplier;
+        v2 -= dx;
+        
+        int dy = sin_y * pParty->uWalkSpeed * fBackwardWalkSpeedMultiplier;
+        v1 -= dy;
+
+        v128 = v1;
+        party_walking_flag = true;
+      }
+      break;
+
+
+      case PARTY_RunBackward://бежать назад
+      {
+        float sin_y = sinf(2 * 3.141592653589 * _angle_y / 2048.0),
+              cos_y = cosf(2 * 3.141592653589 * _angle_y / 2048.0);
+
+        int dx = cos_y * pParty->uWalkSpeed * fBackwardWalkSpeedMultiplier;        
+        int dy = sin_y * pParty->uWalkSpeed * fBackwardWalkSpeedMultiplier;
+
+        if (pParty->bFlying)
+        {
+          v2 -= 4 * dx;
+          v1 -= 4 * dy;
+          v128 = v1;
+        }
+        else
+        {
+          v2 -= dx;
+          v1 -= dy;
+
+          v128 = v1;
+          party_walking_flag = true;
+        }
+      }
+      break;
+
+      case PARTY_CenterView://смотреть прямо
+        _angle_x = 0;
+      break;
+
+      case PARTY_LookUp://смотреть вверх
+        _angle_x += (signed __int64)(flt_6BE150_look_up_down_dangle * 25.0);
+        if ( _angle_x > 128 )
+          _angle_x = 128;
+        if (uActiveCharacter)
+          pPlayers[uActiveCharacter]->PlaySound(SPEECH_63, 0);
+      break;
+
+      case PARTY_LookDown://смотреть вниз
+        _angle_x += (signed __int64)(flt_6BE150_look_up_down_dangle * -25.0);
+        if ( _angle_x < -128 )
+          _angle_x = -128;
+        if (uActiveCharacter)
+          pPlayers[uActiveCharacter]->PlaySound(SPEECH_64, 0);
+      break;
+
+      case PARTY_Jump://прыжок
+        if ( (!partyAtHighSlope || bmodel_standing_on_pid) && !hovering && pParty->field_24 && !(pParty->uFlags & 4) && !(pParty->uFlags & 0x200) )
+        {
+          //v126 = pParty->field_24 << 6;
+          hovering = true;
+          fall_speed = (signed __int64)((double)(pParty->field_24 << 6) * 1.5 + (double)fall_speed);
+        }
+      break;
+
+      case PARTY_Land://приземление(клавиша Home)
+        if (pParty->bFlying)
+        {
+          pParty->uFlags |= PARTY_FLAGS_1_LANDING;
+          pParty->uFallSpeed = 0;
+        }
+        pParty->bFlying = false;
+        pPartyActionQueue->uNumActions = 0;
+      break;
+
+      default:
+        assert(false);
+
+
+    }
+  }
+
+  pParty->sRotationY = _angle_y;
+  pParty->sRotationX = _angle_x;
+  //-------------------------------------------
+  if ( pParty->bFlying )
+  {
+    v129 = fixpoint_mul(4, stru_5C6E00->Cos(GetTickCount()));
+    pZ = v113 + v129;
+    if ( pModel_ )
+      pZ = v113; //взлетание выше
+    if (pParty->FlyActive())
+      stru_5E4C90_MapPersistVars._decor_events[20 * pParty->pPartyBuffs[PARTY_BUFF_FLY].uOverlayID + 119] &= 0xFE;
+    pParty->uFallStartY = pZ;
+  }
+  else if ( pZ < v111 )// подъём в горку
+  {
+    if ( is_on_water && fall_speed )
+      SpriteObject::sub_42F960_create_object(pX, pY, v111);
+    fall_speed = 0;
+    pZ = v111;
+    pParty->uFallStartY = v111;
+    v113 = pZ;
+    if (pParty->FlyActive())
+      stru_5E4C90_MapPersistVars._decor_events[20 * pParty->pPartyBuffs[PARTY_BUFF_FLY].uOverlayID + 119] |= 1;
+  }
+  else
+  {
+    v113 = pZ;
+    if (pParty->FlyActive())
+      stru_5E4C90_MapPersistVars._decor_events[20 * pParty->pPartyBuffs[PARTY_BUFF_FLY].uOverlayID + 119] |= 1;
+  }
+  //------------------------------------------
+  if (hovering && !pParty->bFlying)//расчёт скорости падения
+  {
+    //v33 = -(pEventTimer->uTimeElapsed * GetGravityStrength());
+    v34 = fall_speed + 2 * -(pEventTimer->uTimeElapsed * GetGravityStrength());
+    fall_speed += 2 * -(pEventTimer->uTimeElapsed * GetGravityStrength());
+  }
+  else if (!partyAtHighSlope)
+    v34 = fall_speed;
+  else if (!hovering)
+  {
+    if ( !bmodel_standing_on_pid )
+    {
+      // rolling down the hill
+      // how it's done: you get a little bit pushed in the air along terrain normal, getting in the air
+      // and falling to the gravity, gradually sliding downwards. nice trick
+      pZ = v111;
+      ODM_GetTerrainNormalAt(pX, pY, &v98);
+      v35 = fall_speed + (8 * -(pEventTimer->uTimeElapsed * GetGravityStrength()));
+      v129 = abs(v2 * v98.x + v1 * v98.y + v35 * v98.z) >> 16;
+      v2 += fixpoint_mul(v129, v98.x);
+      v1 += fixpoint_mul(v129, v98.y);
+      v34 = v35 + fixpoint_mul(v129, v98.z);
+      v128 = v1;
+      fall_speed = v34;
+    }
+  }
+  else
+    v34 = fall_speed;
+
+  if ( hovering )//блок для крика падения
+  {
+    if ( !bUnderwater && v34 <= 0)
+    {
+      if ( v34 < -500 && !pParty->bFlying && pParty->vPosition.z - v111 > 1000 && !pParty->FeatherFallActive())
+      { // falling scream
+        for (int i = 0; i < 4; ++i)
+        {
+          if (!pParty->pPlayers[i].HasEnchantedItemEquipped(72)
+           && !pParty->pPlayers[i].WearsItem(ITEM_ARTIFACT_HERMES_SANDALS, EQUIP_BOOTS)
+           && pParty->pPlayers[i].CanAct())
+            pParty->pPlayers[i].PlaySound(SPEECH_Falling_scream, 0);//крик падения
+        }
+      }
+    }
+  }
+  else
+    pParty->uFallStartY = pZ;
+
+  if ( v2 * v2 + v1 * v1 < 400 && !partyAtHighSlope )
+  {
+    *(float *)&v128 = 0.0;
+    v2 = 0;
+  }
+//--(столкновения)-------------------------------------------------------------------
+  stru_721530.field_84 = -1;
+  stru_721530.field_70 = 0;
+  stru_721530.prolly_normal_d = pParty->field_14_radius;
+  stru_721530.field_8_radius = pParty->field_14_radius / 2;
+  stru_721530.field_0 = 1;
+  stru_721530.height = pParty->uPartyHeight - 32;
+  for ( uint i = 0; i < 100; i++ )
+  {
+    stru_721530.position.x = pX;
+    stru_721530.position.y = pY;
+    stru_721530.position.z = stru_721530.height + pZ + 1;
+
+    stru_721530.normal.x = pX;
+    stru_721530.normal.y = pY;
+    stru_721530.normal.z = stru_721530.prolly_normal_d + pZ + 1;
+
+    stru_721530.velocity.x = v2;
+    stru_721530.velocity.y = v128;
+    stru_721530.velocity.z = fall_speed;
+
+    stru_721530.uSectorID = 0;
+    v36 = 0;
+    if ( pParty->bTurnBasedModeOn == true && pTurnEngine->turn_stage == TE_MOVEMENT )
+      v36 = 13312;
+    if ( stru_721530._47050A(v36) )
+      break;
+    _46E889_collide_against_bmodels(1);
+    //v37 = WorldPosToGridCellZ(pParty->vPosition.y);
+    //v38 = WorldPosToGridCellX(pParty->vPosition.x);
+    _46E26D_collide_against_sprites(WorldPosToGridCellX(pParty->vPosition.x), WorldPosToGridCellZ(pParty->vPosition.y));
+    _46ED8A_collide_against_sprite_objects(4);
+    for ( uint actor_id = 0; actor_id < (signed int)uNumActors; ++actor_id )
+      Actor::_46DF1A_collide_against_actor(actor_id, 0);
+    if ( stru_721530.field_7C >= stru_721530.field_6C )
+    {
+      _angle_x = stru_721530.normal2.x;
+      _angle_y = stru_721530.normal2.y;
+      v40 = stru_721530.normal2.z - stru_721530.prolly_normal_d - 1;
+    }
+    else
+    {
+      _angle_x = pX + fixpoint_mul(stru_721530.field_7C, stru_721530.direction.x);
+      _angle_y = pY + fixpoint_mul(stru_721530.field_7C, stru_721530.direction.y);
+      //pModel = (BSPModel *)fixpoint_mul(stru_721530.field_7C, stru_721530.direction.z);
+      v40 = fixpoint_mul(stru_721530.field_7C, stru_721530.direction.z) + pZ;
+    }
+    v122 = v40;
+    ODM_GetFloorLevel(_angle_x, _angle_y, v40, pParty->uPartyHeight, &is_on_water, &bmodel_standing_on_pid, 0);
+    v129 = ODM_GetFloorLevel(_angle_x, pY, v40, pParty->uPartyHeight, &is_on_water, &v97, 0);
+    int v119 = ODM_GetFloorLevel(pX, _angle_y, v40, pParty->uPartyHeight, &is_on_water, &v110, 0);
+    bool v42_ = (BSPModel *)IsTerrainSlopeTooHigh(_angle_x, pY);
+    v42 = IsTerrainSlopeTooHigh(pX, _angle_y);
+    is_not_on_bmodel = false;
+    //v118 = v42;
+    if ( !v97 && !v110 && !bmodel_standing_on_pid )
+      is_not_on_bmodel = true;
+    v43 = 1;
+    v44 = 1;
+    if ( bUnderwater || !is_not_on_bmodel )
+    {
+      pX = _angle_x;
+      if ( v43 )
+        pY = _angle_y;
+    }
+    else
+    {
+      if ( v42_ && v129 > pZ )
+        v44 = 0;
+      if ( v42 && v119 > pZ )
+        v43 = 0;
+      if ( v44 )
+      {
+        pX = _angle_x;
+        if ( v43 )
+          pY = _angle_y;
+      }
+      else if ( v43 )
+        pY = _angle_y;
+      else
+      {
+        int new_ = ODM_GetFloorLevel(_angle_x, _angle_y, v40, pParty->uPartyHeight, &is_on_water, &bmodel_standing_on_pid, 0);
+        if ( IsTerrainSlopeTooHigh(_angle_x, _angle_y) && new_ <= pZ )
+        {
+          v43 = 1;
+          pX = _angle_x;
+          if ( v43 )
+            pY = _angle_y;
+        }
+      }
+    }
+    if ( stru_721530.field_7C >= stru_721530.field_6C )
+    {
+      if ( !is_not_on_bmodel )
+      {
+        pX = stru_721530.normal2.x;
+        pY = stru_721530.normal2.y;
+      }
+      pZ = stru_721530.normal2.z - stru_721530.prolly_normal_d - 1;
+      break;
+    }
+    stru_721530.field_70 += stru_721530.field_7C;
+    pX = _angle_x;
+    pY = _angle_y;
+    v45 = stru_721530.uFaceID;
+    pZ = v40;
+
+    if ( PID_TYPE(stru_721530.uFaceID) == OBJECT_Actor)
+    {
+      if (pParty->Invisible())
+        pParty->pPartyBuffs[PARTY_BUFF_INVISIBILITY].Reset();
+      viewparams->bRedrawGameUI = true;
+    }
+
+    if ( PID_TYPE(stru_721530.uFaceID) == OBJECT_Decoration)
+    {
+      v129 = stru_5C6E00->Atan2(_angle_x - pLevelDecorations[(signed int)stru_721530.uFaceID >> 3].vPosition.x,
+                               _angle_y - pLevelDecorations[(signed int)stru_721530.uFaceID >> 3].vPosition.y);
+      v2 = fixpoint_mul(stru_5C6E00->Cos(v129), integer_sqrt(v2 * v2 + v128 * v128));
+      v122 = fixpoint_mul(stru_5C6E00->Sin(v129), integer_sqrt(v2 * v2 + v128 * v128));
+      v128 = fixpoint_mul(stru_5C6E00->Sin(v129), integer_sqrt(v2 * v2 + v128 * v128));
+    }
+
+    if ( PID_TYPE(stru_721530.uFaceID) == OBJECT_BModel)
+    {
+      pParty->bFlying = false;
+      pModel = &pOutdoor->pBModels[(signed int)stru_721530.uFaceID >> 9];
+      pODMFace = &pModel->pFaces[((signed int)stru_721530.uFaceID >> 3) & 0x3F];
+      v48 = pODMFace->pBoundingBox.z2 - pODMFace->pBoundingBox.z1;
+      v129 = v48 <= 32;
+      v119 = pODMFace->pFacePlane.vNormal.z < 46378;
+      if ( bUnderwater == 1 )
+        v119 = 0;
+      if ( pODMFace->uPolygonType == POLYGON_Floor )
+      {
+        if ( fall_speed < 0 )
+          fall_speed = 0;
+        pZ = pModel->pVertices.pVertices[pODMFace->pVertexIDs[0]].z + 1;
+        if ( v2 * v2 + v128 * v128 < 400 )
+        {
+          v2 = 0;
+          *(float *)&v128 = 0.0;
+        }
+        if ( pParty->floor_face_pid != v45 && pODMFace->Pressure_Plate() )
+        {
+          pParty->floor_face_pid = v45;
+          trigger_id = pODMFace->sCogTriggeredID; 
+        }
+      }
+      if ( !v129 && (pODMFace->uPolygonType != POLYGON_InBetweenFloorAndWall || v119) )// упёрся в столб
+      {
+        v118 = abs(v128 * pODMFace->pFacePlane.vNormal.y + fall_speed * pODMFace->pFacePlane.vNormal.z
+             + v2 * pODMFace->pFacePlane.vNormal.x) >> 16;
+        if ((stru_721530.speed >> 3) > v118 )
+          v118 = stru_721530.speed >> 3;
+        v2 += fixpoint_mul(v118, pODMFace->pFacePlane.vNormal.x);
+        v128 += fixpoint_mul(v118, pODMFace->pFacePlane.vNormal.y);
+        v54 = 0;
+        if ( !v119 )
+          v54 = fixpoint_mul(v118, pODMFace->pFacePlane.vNormal.z);
+        pParty->uFallSpeed += v54;
+        v55 = stru_721530.prolly_normal_d - ((signed int)(pODMFace->pFacePlane.dist + v122 * pODMFace->pFacePlane.vNormal.z
+                    + _angle_y * pODMFace->pFacePlane.vNormal.y + _angle_x * pODMFace->pFacePlane.vNormal.x) >> 16);
+        if ( v55 > 0 )
+        {
+          pX = _angle_x + fixpoint_mul(pODMFace->pFacePlane.vNormal.x, v55);
+          pY = _angle_y + fixpoint_mul(pODMFace->pFacePlane.vNormal.y, v55);
+          if ( !v119 )
+            pZ = v122 + fixpoint_mul(pODMFace->pFacePlane.vNormal.z, v55);
+        }
+        if ( pParty->floor_face_pid != stru_721530.uFaceID && pODMFace->Pressure_Plate() )
+        {
+          pParty->floor_face_pid = stru_721530.uFaceID;
+          trigger_id = pODMFace->sCogTriggeredID; //
+        }
+      }
+      if ( pODMFace->uPolygonType == POLYGON_InBetweenFloorAndWall )
+      {
+        v118 = abs(v128 * pODMFace->pFacePlane.vNormal.y
+             + fall_speed * pODMFace->pFacePlane.vNormal.z + v2 * pODMFace->pFacePlane.vNormal.x) >> 16;
+        if ((stru_721530.speed >> 3) > v118 )
+          v118 = stru_721530.speed >> 3;
+        v2 += fixpoint_mul(v118, pODMFace->pFacePlane.vNormal.x);
+        v128 += fixpoint_mul(v118, pODMFace->pFacePlane.vNormal.y);
+        fall_speed += fixpoint_mul(v118, pODMFace->pFacePlane.vNormal.z);
+        if ( v2 * v2 + v128 * v128 >= 400 )
+        {
+          if ( pParty->floor_face_pid != stru_721530.uFaceID && pODMFace->Pressure_Plate() )
+          {
+            pParty->floor_face_pid = stru_721530.uFaceID;
+            trigger_id = pODMFace->sCogTriggeredID; //
+          }
+        }
+        else
+        {
+          v2 = 0;
+          fall_speed = 0;
+          *(float *)&v128 = 0.0;
+        }
+      }
+    }
+    v2 = fixpoint_mul(58500, v2);
+    v128 = fixpoint_mul(58500, v128);
+    v122 = fixpoint_mul(58500, v122);
+    fall_speed = fixpoint_mul(58500, fall_speed);
+  }
+
+  //Воспроизведение звуков ходьбы/бега------------------------
+  uint pX_ = abs(pParty->vPosition.x - pX);
+  uint pY_ = abs(pParty->vPosition.y - pY);
+  uint pZ_ = abs(pParty->vPosition.z - pZ);
+  if ( bWalkSound && pParty->walk_sound_timer <= 0 )
+  {
+    pAudioPlayer->_4AA258(804);//stop sound
+    if ( party_running_flag && (!hovering || not_high_fall) )
+    {
+      if ( integer_sqrt(pX_ * pX_ + pY_ * pY_ + pZ_ * pZ_) >= 16 )
+      {
+        if ( !is_not_on_bmodel && pOutdoor->pBModels[pParty->floor_face_pid >> 9].pFaces[(pParty->floor_face_pid >> 3) & 0x3F].Visible() )
+          pAudioPlayer->PlaySound(SOUND_RunAlong3DModel, 804, 1, -1, 0, 0, 0, 0);//бег на 3D Modelи
+        else
+        {
+          v87 = pOutdoor->GetSoundIdByPosition(WorldPosToGridCellX(pParty->vPosition.x), WorldPosToGridCellZ(pParty->vPosition.y) - 1, 1);
+          pAudioPlayer->PlaySound((SoundID)v87, 804, 1, -1, 0, 0, 0, 0);//бег по земле 56
+        }
+        pParty->walk_sound_timer = 96;//таймер для бега
+      }
+    }
+    else if( party_walking_flag && (!hovering || not_high_fall) )
+    {
+      if ( integer_sqrt(pX_ * pX_ + pY_ * pY_ + pZ_ * pZ_) >= 8 )
+      {
+        if ( !is_not_on_bmodel && pOutdoor->pBModels[pParty->floor_face_pid >> 9].pFaces[(pParty->floor_face_pid >> 3) & 0x3F].Visible() )
+          pAudioPlayer->PlaySound(SOUND_WalkAlong3DModel, 804, 1, -1, 0, 0, 0, 0);// хождение на 3D Modelи
+        else
+        {
+          v87 = pOutdoor->GetSoundIdByPosition(WorldPosToGridCellX(pParty->vPosition.x), WorldPosToGridCellZ(pParty->vPosition.y) - 1, 0);
+          pAudioPlayer->PlaySound((SoundID)v87, 804, 1, -1, 0, 0, 0, 0);// хождение по земле
+        }
+        pParty->walk_sound_timer = 144;//таймер для ходьбы
+      }
+    }
+  }
+  if ( integer_sqrt(pX_ * pX_ + pY_ * pY_ + pZ_ * pZ_) < 8 )//отключить  звук ходьбы при остановке
+    pAudioPlayer->_4AA258(804);
+//------------------------------------------------------------------------
+  if ( !hovering || !not_high_fall )//  или не высокое падение
+    pParty->uFlags &= ~PARTY_FLAGS_1_FALLING;
+  else
+    pParty->uFlags |= PARTY_FLAGS_1_FALLING;
+  int pMap_X = WorldPosToGridCellX(pParty->vPosition.x);
+  int pMap_Y = WorldPosToGridCellZ(pParty->vPosition.y) - 1;
+  unsigned int v114_a = WorldPosToGridCellX(pX);
+  v66 = WorldPosToGridCellZ(pY) - 1;
+  unsigned int v122_a = (~(unsigned int)pOutdoor->ActuallyGetSomeOtherTileInfo(pMap_X, pMap_Y) / 2) & 1;
+  v122 = (~(unsigned int)pOutdoor->ActuallyGetSomeOtherTileInfo(v114_a, pMap_Y) / 2) & 1;
+  v69 = (~(unsigned int)pOutdoor->ActuallyGetSomeOtherTileInfo(pMap_X, v66) / 2) & 1;
+
+  //-(обновление координат группы)---------------------------------------
+  v68 = 0;
+  if ( v114_a == pMap_X && v66 == pMap_Y && v122 && v69 )
+    v68 = 1;
+  if ( !is_not_on_bmodel ) // на bmodel,и
+    v68 = 1;
+  if ( v68 )
+  {
+    pParty->vPosition.x = pX;
+    pParty->vPosition.y = pY;
+    pParty->vPosition.z = pZ;
+    pParty->field_6F0 = v113;
+    pParty->uFallSpeed = fall_speed;
+    if ( pZ > 8160 ) //ограничение высоты
+    {
+      pZ = 8160;
+      pParty->uFallStartY = 8160;
+      pParty->vPosition.z = 8160;
+    }
+
+    if ( !trigger_id //падение на землю
+      || (EventProcessor(trigger_id, 0, 1),
+         pParty->vPosition.x == pX)
+      && pParty->vPosition.y == pY
+      && pParty->vPosition.z == pZ )
+    {
+      if ( pParty->vPosition.z < v111 )
+      {
+        pParty->uFallSpeed = 0;
+        //v73 = v105;
+        pParty->vPosition.z = on_ground;
+        if ( pParty->uFallStartY - pZ > 512 && !bFeatherFall && pZ <= on_ground && !bUnderwater )//Fall to the ground(падение на землю с высоты)
+        {
+          if ( pParty->uFlags & PARTY_FLAGS_1_LANDING )
+            pParty->uFlags &= ~PARTY_FLAGS_1_LANDING;
+          else
+          {
+            for ( uint i = 1; i <= 4; ++i )
+            {
+              pPlayers[i]->ReceiveDamage((signed int)((pParty->uFallStartY - pZ) * (unsigned __int64)(signed __int64)((double)pPlayers[i]->GetMaxHealth() * 0.1)) / 256,
+                DMGT_PHISYCAL);
+              v110 = 20 - pPlayers[i]->GetParameterBonus(pPlayers[i]->GetActualEndurance());
+              pPlayers[i]->SetRecoveryTime((signed __int64)((double)v110 * flt_6BE3A4_debug_recmod1 * 2.133333333333333));
+            }
+            //v73 = pParty->vPosition.z;
+          }
+        }
+        pParty->uFallStartY = pZ;
+      }
+      if ( v102 && pParty->vPosition.z < ceiling_height )
+      {
+        if ( (signed int)(pParty->uPartyHeight + pParty->vPosition.z) >= ceiling_height )
+        {
+          pParty->vPosition.z = ceiling_height - pParty->uPartyHeight - 1;
+          pParty->field_6F0 = ceiling_height - pParty->uPartyHeight - 1;
+        }
+      }
+      pParty->uFlags &= ~0x204;
+    }
+    return;
+  }
+//-----------------------------------------------------------------
+  //v76 = pParty->bFlying;
+  if ( pParty->bFlying || !not_high_fall || bWaterWalk || !v122_a )// полёт или высокое падение или хождение по воде или 
+    v77 = 1;
+  else
+    v77 = v122 != 0;
+  bool party_drowning_flag = false;
+  if ( !pParty->bFlying && not_high_fall && !bWaterWalk ) //не полёт и не высокое падение и не хождение по воде
+  {
+    if ( v122_a )
+      v78 = v69 != 0;
+    else
+    {
+      party_drowning_flag = true;//утопление
+      v78 = true;
+    }
+  }
+  else
+    v78 = true;
+
+  if ( v77 )
+    pParty->vPosition.x = pX;
+  if ( v78 )
+    pParty->vPosition.y = pY;
+
+  if ( v78 || v77)
+  {
+    if ( bWaterWalk )
+    {
+      pParty->uFlags &= ~PARTY_FLAGS_1_STANDING_ON_WATER;
+      //v79 = 20 * pParty->pPartyBuffs[PARTY_BUFF_WATER_WALK].uOverlayID + 6180178;
+      //*(short *)&stru_5E4C90._decor_events[20 * pParty->pPartyBuffs[PARTY_BUFF_WATER_WALK].uOverlayID + 119] |= 1u;
+      v79 = (int)&stru_5E4C90_MapPersistVars._decor_events[20 * pParty->pPartyBuffs[PARTY_BUFF_WATER_WALK].uOverlayID + 119];
+      *(short *)v79 |= 1;
+      if ( !v122 || !v69 )
+      {
+        if ( !pParty->bFlying )
+        {
+          v80 = *(short *)v79;
+          pParty->uFlags |= PARTY_FLAGS_1_STANDING_ON_WATER;
+          *(short *)v79 = v80 & 0xFFFE;
+        }
+      }
+    }
+  }
+  else if ( bWalkSound && pParty->walk_sound_timer <= 0 )
+  {
+    pAudioPlayer->_4AA258(804);
+    pParty->walk_sound_timer = 64;
+  }
+
+  //v81 = pZ;
+  //v82 = pZ;
+  pParty->vPosition.z = pZ;
+  if ( pZ > 8160 )//опять ограничение высоты
+  {
+    //v82 = 8160;
+    pParty->uFallStartY = 8160;
+    pParty->vPosition.z = 8160;
+  }
+  LOWORD(pParty->uFlags) &= 0xFDFBu;
+  pParty->uFallSpeed = fall_speed;
+  pParty->field_6F0 = v113;
+  if ( party_drowning_flag )//группа тонет
+  {
+    pTerrainHeight = GetTerrainHeightsAroundParty2(pParty->vPosition.x, pParty->vPosition.y, &v110, 1);
+    if ( pParty->vPosition.z <= pTerrainHeight + 1 )//положение группы всегда +1
+      pParty->uFlags |= PARTY_FLAGS_1_WATER_DAMAGE;
+  }
+
+  if ( !trigger_id//падение на воду
+    || (EventProcessor(trigger_id, 0, 1),
+       pParty->vPosition.x == pX)
+    && pParty->vPosition.y == pY
+    && pParty->vPosition.z == pZ )
+  {
+    if ( pParty->vPosition.z < v111 )
+    {
+      //v82 = on_ground;
+      pParty->uFallSpeed = 0;
+      pParty->vPosition.z = on_ground;
+      if ( pParty->uFallStartY - pZ > 512 && !bFeatherFall && pZ <= on_ground && !bUnderwater )//Fall to the water(падение на воду с высоты)
+      {
+        if ( pParty->uFlags & PARTY_FLAGS_1_LANDING )
+          pParty->uFlags &= ~PARTY_FLAGS_1_LANDING;
+        else
+        {
+          for ( uint i = 1; i <= 4; ++i )
+          {
+            v110 = pPlayers[i]->GetMaxHealth();
+            pPlayers[i]->ReceiveDamage((signed int)((pParty->uFallStartY - pZ) * (unsigned __int64)(signed __int64)((double)v110 * 0.1)) / 256,
+              DMGT_PHISYCAL);
+            v110 = 20 - pPlayers[i]->GetParameterBonus(pPlayers[i]->GetActualEndurance());
+            pPlayers[i]->SetRecoveryTime((signed __int64)((double)v110 * flt_6BE3A4_debug_recmod1 * 2.133333333333333));
+          }
+          //v82 = pParty->vPosition.z;
+        }
+      }
+      pParty->uFallStartY = pZ;
+    }
+    if ( v102 && pParty->vPosition.z < ceiling_height && (signed int)(pParty->uPartyHeight + pParty->vPosition.z) >= ceiling_height )
+    {
+      pParty->vPosition.z = pParty->vPosition.z + pParty->uPartyHeight - ceiling_height + 1;
+      pParty->field_6F0 = pParty->vPosition.z + pParty->uPartyHeight - ceiling_height + 1;
+    }
+  }
+}
+
+//----- (0046D8E3) --------------------------------------------------------
+int GetCeilingHeight(int Party_X, signed int Party_Y, int Party_ZHeight, int pFaceID)
+{
+  signed int v13; // eax@25
+  int v14; // edx@27
+  int v16; // ST18_4@29
+  signed int v17; // edx@29
+  signed __int64 v18; // qtt@29
+  int v19; // eax@35
+  signed int v20; // ecx@37
+  signed int v22; // ebx@42
+//  int v24; // edx@44
+//  int v25; // eax@44
+  int v27; // [sp+10h] [bp-34h]@21
+  bool v34; // [sp+30h] [bp-14h]@21
+  bool v35; // [sp+34h] [bp-10h]@23
+  signed int v37; // [sp+38h] [bp-Ch]@21
+  signed int v38; // [sp+38h] [bp-Ch]@42
+  signed int v39; // [sp+3Ch] [bp-8h]@1
+
+  dword_720ED0[0] = -1;
+  dword_720E80[0] = -1;
+  v39 = 1;
+  ceiling_height_level[0] = 10000;//нет потолка
+  for ( uint i = 0; i < (signed int)pOutdoor->uNumBModels; ++i )
+  {
+    if ( Party_X <= pOutdoor->pBModels[i].sMaxX && Party_X >= pOutdoor->pBModels[i].sMinX
+      && Party_Y <= pOutdoor->pBModels[i].sMaxY && Party_Y >= pOutdoor->pBModels[i].sMinY )
+    {
+      for ( uint j = 0; j < pOutdoor->pBModels[i].uNumFaces; ++j )
+      {
+        if ( (pOutdoor->pBModels[i].pFaces[j].uPolygonType == POLYGON_Ceiling
+           || pOutdoor->pBModels[i].pFaces[j].uPolygonType == POLYGON_InBetweenCeilingAndWall)
+           && !pOutdoor->pBModels[i].pFaces[j].Ethereal()
+           && Party_X <= pOutdoor->pBModels[i].pFaces[j].pBoundingBox.x2 && Party_X >= pOutdoor->pBModels[i].pFaces[j].pBoundingBox.x1
+           && Party_Y <= pOutdoor->pBModels[i].pFaces[j].pBoundingBox.y2 && Party_Y >= pOutdoor->pBModels[i].pFaces[j].pBoundingBox.y1 )
+        {
+          for ( uint v = 0; v < pOutdoor->pBModels[i].pFaces[j].uNumVertices; v++ )
+          {
+            word_720DB0_xs[2 * v] = pOutdoor->pBModels[i].pFaces[j].pXInterceptDisplacements[v] + LOWORD(pOutdoor->pBModels[i].pVertices.pVertices[pOutdoor->pBModels[i].pFaces[j].pVertexIDs[v]].x);
+            word_720CE0_ys[2 * v] = pOutdoor->pBModels[i].pFaces[j].pXInterceptDisplacements[v] + LOWORD(pOutdoor->pBModels[i].pVertices.pVertices[pOutdoor->pBModels[i].pFaces[j].pVertexIDs[v]].y);
+            word_720DB0_xs[2 * v + 1] = pOutdoor->pBModels[i].pFaces[j].pXInterceptDisplacements[v] + LOWORD(pOutdoor->pBModels[i].pVertices.pVertices[pOutdoor->pBModels[i].pFaces[j].pVertexIDs[v + 1]].x);
+            word_720CE0_ys[2 * v + 1] = pOutdoor->pBModels[i].pFaces[j].pXInterceptDisplacements[v] + LOWORD(pOutdoor->pBModels[i].pVertices.pVertices[pOutdoor->pBModels[i].pFaces[j].pVertexIDs[v + 1]].y);
+          }
+          v27 = 2 * pOutdoor->pBModels[i].pFaces[j].uNumVertices;
+          word_720DB0_xs[2 * pOutdoor->pBModels[i].pFaces[j].uNumVertices] = word_720DB0_xs[0];
+          word_720CE0_ys[2 * pOutdoor->pBModels[i].pFaces[j].uNumVertices] = word_720CE0_ys[0];
+          v34 = word_720CE0_ys[0] >= Party_Y;
+          v37 = 0;
+          for ( uint v = 0; v < v27; ++v )
+          {
+            if ( v37 >= 2 )
+              break;
+            v35 = word_720CE0_ys[v + 1] >= Party_Y;
+            if ( v34 != v35 )
+            {
+              v13 = word_720DB0_xs[v + 1] >= Party_X ? 0 : 2;
+              v14 = v13 | (word_720DB0_xs[v] < Party_X);
+              if ( v14 != 3 )
+              {
+                if ( !v14 || ( v16 = word_720CE0_ys[v + 1] - word_720CE0_ys[v],
+                  v17 = Party_Y - word_720CE0_ys[v],
+                  LODWORD(v18) = v17 << 16,
+                  HIDWORD(v18) = v17 >> 16,
+                  (signed int)(((unsigned __int64)(((signed int)word_720DB0_xs[v + 1]
+                  - (signed int)word_720DB0_xs[v]) * v18 / v16) >> 16) + word_720DB0_xs[v]) >= Party_X) )
+                  ++v37;
+              }
+            }
+            v34 = v35;
+          }
+          if ( v37 == 1 )
+          {
+            if ( v39 >= 20 )
+              break;
+            if ( pOutdoor->pBModels[i].pFaces[j].uPolygonType == POLYGON_Ceiling )
+              v19 = pOutdoor->pBModels[i].pVertices.pVertices[pOutdoor->pBModels[i].pFaces[j].pVertexIDs[0]].z;
+            else
+              v19 = fixpoint_mul(pOutdoor->pBModels[i].pFaces[j].zCalc1, Party_X) + fixpoint_mul(pOutdoor->pBModels[i].pFaces[j].zCalc2, Party_Y)
+                  + HIWORD(pOutdoor->pBModels[i].pFaces[j].zCalc3);
+            v20 = v39++;
+            ceiling_height_level[v20] = v19;
+            dword_720ED0[v20] = i;
+            dword_720E80[v20] = j;
+          }
+        }
+      }
+    }
+  }
+  if ( !v39 )
+  {
+    pFaceID = 0;
+    return ceiling_height_level[0];
+  }
+  v22 = 0;
+  for ( v38 = 0; v38 < v39; ++v38 )
+  {
+    if ( ceiling_height_level[v38] == ceiling_height_level[0] )
+      v22 = v38;
+    else if ( ceiling_height_level[v38] < ceiling_height_level[0] && ceiling_height_level[0] > Party_ZHeight + 15 )
+      v22 = v38;
+    else if ( ceiling_height_level[v38] > ceiling_height_level[0] && ceiling_height_level[v38] <= Party_ZHeight + 15 )
+      v22 = v38;
+  }
+  if ( v22 )
+  {
+    *(int *)pFaceID = dword_720E80[v22] | (dword_720ED0[v22] << 6);
+    return ceiling_height_level[v22];//если есть преграда
+  }
+  pFaceID = 0;
+  return ceiling_height_level[v22];// нет никакой преграды
+}
+
+
+//----- (00464839) --------------------------------------------------------
+char Is_out15odm_underwater()
+{
+  return _stricmp(pCurrentMapName, "out15.odm") == 0;
+}
+
+//----- (00464851) --------------------------------------------------------
+void SetUnderwaterFog()
+{
+  day_fogrange_1 = 50;
+  day_fogrange_2 = 5000;
 }

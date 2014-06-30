@@ -30,6 +30,7 @@ enum ITEM_FLAGS :unsigned int
   ITEM_AURA_EFFECT_BLUE = 0x20,//32
   ITEM_AURA_EFFECT_GREEN = 0x40,//64
   ITEM_AURA_EFFECT_PURPLE = 0x80,//128
+  ITEM_ENCHANT_ANIMATION = 0xF0,//240
   ITEM_STOLEN = 0x100,
   ITEM_HARDENED = 0x200,
 };
@@ -195,7 +196,7 @@ typedef struct CEnchantment
 {
   unsigned __int16 Player::* statPtr;
   int statBonus;
-  CEnchantment(int bonus, unsigned __int16 Player::* skillPtr = NULL):
+  CEnchantment(int bonus, unsigned __int16 Player::* skillPtr = nullptr):
   statBonus(bonus),
   statPtr(skillPtr)
   {
@@ -215,7 +216,7 @@ struct ItemGen //0x24
     int enchId, 
     CHARACTER_ATTRIBUTE_TYPE attrId, 
     int bonusValue = 0, 
-    unsigned __int16 Player::* skillPtr = NULL);
+    unsigned __int16 Player::* skillPtr = nullptr);
 
   static std::map<int, std::map<CHARACTER_ATTRIBUTE_TYPE, CEnchantment*>* > regularBonusMap;
   static std::map<int, std::map<CHARACTER_ATTRIBUTE_TYPE, CEnchantment*>* > specialBonusMap;
@@ -250,7 +251,7 @@ struct ItemGen //0x24
   unsigned __int8 GetDamageDice();
   unsigned __int8 GetDamageRoll();
   unsigned __int8 GetDamageMod();
-
+  bool MerchandiseTest(int _2da_idx);
   int uItemID; //0
   int uEnchantmentType; //4
   int m_enchantmentStrength;  //8
@@ -514,3 +515,7 @@ struct stru351_summoned_item
   int field_18_expire_year;
 };
 #pragma pack(pop)
+
+
+int GetItemTextureFilename(char *pOut, signed int item_id, int index, int shoulder);
+void FillAviableSkillsToTeach(int _this);

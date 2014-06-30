@@ -1,10 +1,8 @@
-#ifdef _MSC_VER
 #define _CRT_SECURE_NO_WARNINGS
-#endif
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include "ErrorHandling.h"
 
 #include "Monsters.h"
 #include "FrameTableInc.h"
@@ -279,17 +277,17 @@ int ParseSpecialAttack(char *spec_att_str)
          return  4;
     else if ( strstr(spec_att_str, "insane") )
          return  5;
-    else if ( strstr(spec_att_str, "poison1") )
+    else if ( strstr(spec_att_str, "poison weak") )
          return  6;
-    else if ( strstr(spec_att_str, "poison2") )
+    else if ( strstr(spec_att_str, "poison medium") )
         return  7;
-    else if ( strstr(spec_att_str, "poison3") )
+    else if ( strstr(spec_att_str, "poison severe") )
         return  8;
-    else if ( strstr(spec_att_str, "disease1") )  
+    else if ( strstr(spec_att_str, "disease weak") )  
         return  9;
-    else if ( strstr(spec_att_str, "disease2") )
+    else if ( strstr(spec_att_str, "disease medium") )
         return  10;
-    else if ( strstr(spec_att_str, "disease3") )
+    else if ( strstr(spec_att_str, "disease severe") )
         return  11;
     else if ( strstr(spec_att_str, "paralyze") )
         return  12;
@@ -440,7 +438,7 @@ bool MonsterList::FromFileTxt(const char *Args)
       Argsb = atoi(v25.pProperties[13]) & 0xFF;
       v26 = atoi(v25.pProperties[14]) & 0xFF;
       v18 = atoi(v25.pProperties[15]);
-      v2->pMonsters[v2->uNumMonsters].uTintColor = v18 | ((v26 | ((Argsb | (v17 << 8)) << 8)) << 8);
+      v2->pMonsters[v2->uNumMonsters].sTintColor = v18 | ((v26 | ((Argsb | (v17 << 8)) << 8)) << 8);
       v19 = 0;
       do
       {
@@ -478,7 +476,7 @@ void MonsterList::FromFile(void *data_mm6, void *data_mm7, void *data_mm8)
     dst->uMonsterRadius = src->uMonsterRadius;
     dst->uMovementSpeed = src->uMovementSpeed;
     dst->uToHitRadius = src->uToHitRadius;
-    dst->uTintColor = 0xFFFFFFFF;
+    dst->sTintColor = -1;
     memcpy(dst->pSoundSampleIDs, src->pSoundSampleIDs, sizeof(src->pSoundSampleIDs));
     memcpy(dst->pMonsterName, src->pMonsterName, sizeof(src->pMonsterName));
     memcpy(dst->pSpriteNames, src->pSpriteNames, sizeof(src->pSpriteNames));
@@ -526,7 +524,7 @@ void MonsterStats::InitializePlacements()
   unsigned int temp_str_len;
   char* tmp_pos;
   int decode_step;
-  int item_counter;
+//  int item_counter;
 
   pMonsterPlacementTXT_Raw = (char *)pEvents_LOD->LoadRaw("placemon.txt", 0);
   strtok(pMonsterPlacementTXT_Raw, "\r");
@@ -567,22 +565,20 @@ void MonsterStats::InitializePlacements()
 //----- (0045501E) --------------------------------------------------------
 void MonsterStats::Initialize()
     {
-    int i,j;
+    int i;//,j;
     char* test_string;
     unsigned char c;
     bool break_loop;
     unsigned int temp_str_len;
     char* tmp_pos;
     int decode_step;
-    int item_counter;
+//    int item_counter;
     int curr_rec_num;
     char parse_str[64]; 
     char Src[120];
     FrameTableTxtLine parsed_field;
 
-    if ( pMonstersTXT_Raw )
-        free(pMonstersTXT_Raw);
-    pMonstersTXT_Raw = NULL;
+    free(pMonstersTXT_Raw);
     pMonstersTXT_Raw = (char *)pEvents_LOD->LoadRaw("monsters.txt", 0);
     strtok(pMonstersTXT_Raw, "\r");
     strtok(NULL, "\r");
@@ -1086,8 +1082,8 @@ void MonsterStats::Initialize()
                     break;
                     case 38:
                     {
-                    int param_num;
-                    char type_flag;
+//                    int param_num;
+//                    char type_flag;
                     pInfos[curr_rec_num].uSpecialAbilityType=0;
                     pInfos[curr_rec_num].uSpecialAbilityDamageDiceBonus=0;
                     strcpy(parse_str,test_string);
@@ -1278,3 +1274,4 @@ ret_false:
   }
   return result;
 }
+

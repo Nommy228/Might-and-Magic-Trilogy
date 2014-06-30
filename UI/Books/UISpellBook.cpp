@@ -1,7 +1,4 @@
-#ifdef _MSC_VER
 #define _CRT_SECURE_NO_WARNINGS
-#endif
-
 #include "..\..\MM7.h"
 #include "..\..\Render.h"
 #include "..\..\Mouse.h"
@@ -78,7 +75,7 @@ void DrawSpellBookContent(Player *player)
   unsigned int pX_coord; // esi@18
   unsigned int pY_coord; // edi@18
   Texture *pPageTexture; // eax@21
-  signed int v22; // [sp-4h] [bp-24h]@22
+//  signed int v22; // [sp-4h] [bp-24h]@22
   POINT a2; // [sp+18h] [bp-8h]@13
 
   static unsigned int texture_tab_coord1[9][2]=
@@ -107,7 +104,7 @@ void DrawSpellBookContent(Player *player)
           {
             pX_coord = pViewport->uViewportTL_X +  pIconPos[player->lastOpenedSpellbookPage][pSpellbookSpellIndices[player->lastOpenedSpellbookPage][i]].Xpos;
             pY_coord = pViewport->uViewportTL_Y +  pIconPos[player->lastOpenedSpellbookPage][pSpellbookSpellIndices[player->lastOpenedSpellbookPage][i]].Ypos;
-            if ( BYTE1(pTexture->pBits) & 2 )
+            if ( pTexture->pBits & 0x200 )
               pRenderer->DrawTextureTransparent(pX_coord, pY_coord, pTexture);
             else
               pRenderer->DrawTextureIndexed(pX_coord, pY_coord, pTexture);
@@ -127,17 +124,17 @@ void DrawSpellBookContent(Player *player)
     {
       pX_coord = pViewport->uViewportTL_X + pIconPos[player->lastOpenedSpellbookPage][pSpellbookSpellIndices[player->lastOpenedSpellbookPage][v10]].Xpos;
       pY_coord = pViewport->uViewportTL_Y + pIconPos[player->lastOpenedSpellbookPage][pSpellbookSpellIndices[player->lastOpenedSpellbookPage][v10]].Ypos;
-      if ( BYTE1(SBPageCSpellsTextureList[v10]->pBits) & 2 )
+      if ( SBPageCSpellsTextureList[v10]->pBits & 0x200 )
         pRenderer->DrawTextureTransparent(pX_coord, pY_coord, SBPageCSpellsTextureList[v10]);
       else
         pRenderer->DrawTextureIndexed(pX_coord, pY_coord, SBPageCSpellsTextureList[v10]);
     }
   }
-  pX_coord = (unsigned int)&player->pActiveSkills[12];
-  pY_coord = (unsigned int)&player->pActiveSkills[12];
+  //pX_coord = (unsigned int)&player->pActiveSkills[PLAYER_SKILL_FIRE];
+  //pY_coord = (unsigned int)&player->pActiveSkills[PLAYER_SKILL_FIRE];
   for ( uint i = 0; i < 9; i++ )
   {
-    if ( player->pActiveSkills[12 + i] )
+    if ( player->pActiveSkills[PLAYER_SKILL_FIRE + i] )
     {
       if ( player->lastOpenedSpellbookPage == i )
       {

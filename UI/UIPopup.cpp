@@ -1,8 +1,9 @@
-#ifdef _MSC_VER
 #define _CRT_SECURE_NO_WARNINGS
-#endif
-
+#include "UIPopup.h"
+#include "Books\UIMapBook.h"
+#include "UIShops.h"
 #include "..\MM7.h"
+#include "..\mm7_unsorted_subs.h"
 
 #include "..\Mouse.h"
 
@@ -20,7 +21,7 @@
 #include "..\ObjectList.h"
 #include "..\Chest.h"
 #include "..\PaletteManager.h"
-#include "..\Time.h"
+#include "..\Timer.h"
 #include "..\texts.h"
 
 #include "..\mm7_data.h"
@@ -125,9 +126,13 @@ void GameUI_DrawItemInfo( struct ItemGen* inspect_item )
   int v85;
   char *Str; // [sp+270h] [bp-8h]@65
 
+  int r_mask = 0xF800;
+  int g_mask = 0x7E0;
+  int b_mask = 0x1F;
+
   if (!inspect_item->uItemID)
     return;
-  iteminfo_window.Hint = 0;
+  iteminfo_window.Hint = nullptr;
   iteminfo_window.uFrameWidth = 384;
   iteminfo_window.uFrameHeight = 180;
   iteminfo_window.uFrameY = 40;
@@ -203,9 +208,9 @@ void GameUI_DrawItemInfo( struct ItemGen* inspect_item )
       pText = (char *)inspect_item->GetIdentifiedName();
     else
       pText = pItemsTable->pItems[inspect_item->uItemID].pUnidentifiedName;
-    iteminfo_window.DrawTitleText(pFontArrus, 0, 0xCu, TargetColor(0xFFu, 0xFFu, 0x9Bu), pText, 3);
+    iteminfo_window.DrawTitleText(pFontArrus, 0, 0xCu, Color16(0xFFu, 0xFFu, 0x9Bu), pText, 3);
     iteminfo_window.DrawTitleText(pFontArrus, 0x64u, ((signed int)iteminfo_window.uFrameHeight >> 1) - pFontArrus->CalcTextHeight(pGlobalTXT_LocalizationStrings[32], &iteminfo_window, 0, 0) / 2,
-                   TargetColor(0xFFu, 0x19u, 0x19u), pGlobalTXT_LocalizationStrings[32], 3); //"Broken Item"
+                   Color16(0xFFu, 0x19u, 0x19u), pGlobalTXT_LocalizationStrings[32], 3); //"Broken Item"
     pRenderer->ResetTextureClipRect();
     if ( !areWeLoadingTexture )
     {
@@ -224,9 +229,9 @@ void GameUI_DrawItemInfo( struct ItemGen* inspect_item )
     iteminfo_window.uFrameZ = iteminfo_window.uFrameX + iteminfo_window.uFrameWidth - 1;
     iteminfo_window.uFrameW = iteminfo_window.uFrameY + iteminfo_window.uFrameHeight - 1;
     pRenderer->DrawTextureTransparent(iteminfo_window.uFrameX + v78, v81 + iteminfo_window.uFrameY + 30, pIcons_LOD->LoadTexturePtr(inspect_item->GetIconName(), TEXTURE_16BIT_PALETTE));
-    iteminfo_window.DrawTitleText(pFontArrus, 0, 0xCu, TargetColor(0xFFu, 0xFFu, 0x9Bu), pItemsTable->pItems[inspect_item->uItemID].pUnidentifiedName, 3);
+    iteminfo_window.DrawTitleText(pFontArrus, 0, 0xCu, Color16(0xFFu, 0xFFu, 0x9Bu), pItemsTable->pItems[inspect_item->uItemID].pUnidentifiedName, 3);
     iteminfo_window.DrawTitleText(pFontArrus, 0x64u, ((signed int)iteminfo_window.uFrameHeight >> 1) - pFontArrus->CalcTextHeight(pGlobalTXT_LocalizationStrings[232], &iteminfo_window, 0, 0) / 2,
-                        TargetColor(0xFFu, 0x19u, 0x19u), pGlobalTXT_LocalizationStrings[232], 3);//"Not Identified"
+                        Color16(0xFFu, 0x19u, 0x19u), pGlobalTXT_LocalizationStrings[232], 3);//"Not Identified"
     pRenderer->ResetTextureClipRect();
     if ( !areWeLoadingTexture )
     {
@@ -292,7 +297,7 @@ void GameUI_DrawItemInfo( struct ItemGen* inspect_item )
     else if ( inspect_item->uEnchantmentType )
       sprintf(out_text + 200, "%s: %s +%d", pGlobalTXT_LocalizationStrings[210], pItemsTable->pEnchantments[inspect_item->uEnchantmentType-1].pBonusStat, inspect_item->m_enchantmentStrength); //"Special"
     else  if ( inspect_item->uSpecEnchantmentType )
-      sprintf(out_text + 200, "%s: %s", pGlobalTXT_LocalizationStrings[210], pItemsTable->pSpecialEnchantments[inspect_item->uSpecEnchantmentType-1].pBonusStatement, inspect_item->m_enchantmentStrength);
+      sprintf(out_text + 200, "%s: %s", pGlobalTXT_LocalizationStrings[210], pItemsTable->pSpecialEnchantments[inspect_item->uSpecEnchantmentType-1].pBonusStatement);
     else if ( inspect_item->uNumCharges )
       sprintf(out_text + 200, "%s: %lu", pGlobalTXT_LocalizationStrings[464], inspect_item->uNumCharges); //"Charges"
   }
@@ -314,7 +319,7 @@ void GameUI_DrawItemInfo( struct ItemGen* inspect_item )
                                      TEXTURE_16BIT_PALETTE)->uTextureHeight + v81 + 54;
   if ( (signed int)Str > (signed int)iteminfo_window.uFrameHeight )
     iteminfo_window.uFrameHeight = (unsigned int)Str;
-  if ( inspect_item->uAttributes & 8 && (inspect_item->uSpecEnchantmentType || inspect_item->uEnchantmentType) )
+  if ( inspect_item->uAttributes & ITEM_TEMP_BONUS && (inspect_item->uSpecEnchantmentType || inspect_item->uEnchantmentType) )
     iteminfo_window.uFrameHeight += LOBYTE(pFontComic->uFontHeight);
   v85 = 0;
   if ( pFontArrus->uFontHeight )
@@ -355,7 +360,7 @@ void GameUI_DrawItemInfo( struct ItemGen* inspect_item )
     iteminfo_window.DrawText(pFontSmallnum, 100, v34, 0, v28, 0, 0, 0);
   iteminfo_window.uFrameX += 12;
   iteminfo_window.uFrameWidth -= 24;
-  iteminfo_window.DrawTitleText(pFontArrus, 0, 0xCu, TargetColor(0xFFu, 0xFFu, 0x9Bu), inspect_item->GetIdentifiedName(), 3);
+  iteminfo_window.DrawTitleText(pFontArrus, 0, 0xCu, Color16(0xFFu, 0xFFu, 0x9Bu), inspect_item->GetIdentifiedName(), 3);
   iteminfo_window.uFrameWidth += 24;
   iteminfo_window.uFrameX -= 12;
   if ( v77 )
@@ -366,7 +371,7 @@ void GameUI_DrawItemInfo( struct ItemGen* inspect_item )
   }
   else
   {
-    if ( (inspect_item->uAttributes & 8) && (inspect_item->uSpecEnchantmentType || inspect_item->uEnchantmentType) )
+    if ( (inspect_item->uAttributes & ITEM_TEMP_BONUS) && (inspect_item->uSpecEnchantmentType || inspect_item->uEnchantmentType) )
     {
       init_summoned_item(&v67, inspect_item->uExpireTime - pParty->uTimePlayed);
       strcpy(pTmpBuf.data(), "Duration:");
@@ -393,11 +398,11 @@ void GameUI_DrawItemInfo( struct ItemGen* inspect_item )
     }
     sprintf(pTmpBuf.data(), "%s: %lu", pGlobalTXT_LocalizationStrings[465], inspect_item->GetValue());
     iteminfo_window.DrawText(pFontComic, 100, iteminfo_window.uFrameHeight - LOBYTE(pFontComic->uFontHeight), 0, pTmpBuf.data(), 0, 0, 0);
-    if ( BYTE1(inspect_item->uAttributes) & 1 )
+    if ( inspect_item->uAttributes & ITEM_STOLEN )
       pText = pGlobalTXT_LocalizationStrings[187]; //"Stolen"
     else
     {
-      if ( !(BYTE1(inspect_item->uAttributes) & 2) )
+      if ( !(inspect_item->uAttributes & ITEM_HARDENED) )
       {
         pRenderer->ResetTextureClipRect();
         if ( !areWeLoadingTexture )
@@ -409,7 +414,7 @@ void GameUI_DrawItemInfo( struct ItemGen* inspect_item )
       }
       pText = pGlobalTXT_LocalizationStrings[651]; //"Hardened"
     }
-    LOWORD(inspect_item->uAttributes) = LOWORD(pRenderer->uTargetRMask);
+    LOWORD(inspect_item->uAttributes) = r_mask;
     iteminfo_window.DrawText(pFontComic, pFontComic->GetLineWidth(pTmpBuf.data()) + 132,
           iteminfo_window.uFrameHeight - LOBYTE(pFontComic->uFontHeight), inspect_item->uAttributes, pText, 0, 0, 0);
     pRenderer->ResetTextureClipRect();
@@ -425,22 +430,22 @@ void GameUI_DrawItemInfo( struct ItemGen* inspect_item )
 // 506128: using guessed type int areWeLoadingTexture;
 
 //----- (0041E360) --------------------------------------------------------
-void MonsterPopup_Draw(unsigned int uActorID, GUIWindow *window)
+void MonsterPopup_Draw(unsigned int uActorID, GUIWindow *pWindow)
 {
-  int v8; // eax@4
+//  int v8; // eax@4
   unsigned __int16 v9; // dx@4
   SpriteFrame *v10; // edi@17
   unsigned int v18; // ecx@19
   unsigned int v19; // eax@21
-  char *v20; // esi@28
-  int v21; // edx@29
-  unsigned __int16 *v22; // ecx@29
-  int v23; // eax@29
-  int v25; // esi@32
-  char *v26; // edx@34
-  unsigned __int8 v27; // sf@36
-  unsigned __int8 v28; // of@36
-  SpellBuff *v40; // eax@60
+//  char *v20; // esi@28
+//  int v21; // edx@29
+//  unsigned __int16 *v22; // ecx@29
+//  int v23; // eax@29
+//  int v25; // esi@32
+//  char *v26; // edx@34
+//  unsigned __int8 v27; // sf@36
+//  unsigned __int8 v28; // of@36
+//  SpellBuff *v40; // eax@60
   int skill_points; // edi@61
   unsigned int skill_level; // eax@61
   int pTextHeight; // edi@90
@@ -450,11 +455,12 @@ void MonsterPopup_Draw(unsigned int uActorID, GUIWindow *window)
   RECT v84; // [sp+ECh] [bp-100h]@26
   const char *string_name[10]; // [sp+FCh] [bp-F0h]@145
   const char *content[11]; // [sp+124h] [bp-C8h]@127
+  unsigned char resistances[11]; // [sp+124h] [bp-C8h]@127
   RenderBillboardTransform_local0 v106; // [sp+150h] [bp-9Ch]@3
   unsigned int v107; // [sp+1A0h] [bp-4Ch]@18
-  unsigned __int16 *v108; // [sp+1A4h] [bp-48h]@34
-  unsigned int v109; // [sp+1A8h] [bp-44h]@32
-  LPVOID v110; // [sp+1ACh] [bp-40h]@28
+//  unsigned __int16 *v108; // [sp+1A4h] [bp-48h]@34
+//  unsigned int v109; // [sp+1A8h] [bp-44h]@32
+//  LPVOID v110; // [sp+1ACh] [bp-40h]@28
   bool for_effects; // [sp+1C0h] [bp-2Ch]@3
   bool normal_level; // [sp+1D0h] [bp-1Ch]@18
   bool expert_level; // [sp+1C4h] [bp-28h]@18
@@ -462,18 +468,21 @@ void MonsterPopup_Draw(unsigned int uActorID, GUIWindow *window)
   bool grandmaster_level; // [sp+1B4h] [bp-38h]@3
   const char *pText; // [sp+1D4h] [bp-18h]@18
   int pTextColorID; // [sp+1E4h] [bp-8h]@18
-  int a4; // [sp+1E8h] [bp-4h]@18
+//  int a4; // [sp+1E8h] [bp-4h]@18
   int v115;
 
   bool monster_full_informations = false;
   static Actor pMonsterInfoUI_Doll;
+  if ( !uActiveCharacter ) //
+    uActiveCharacter = 1;
+
   /*if ( !(bMonsterInfoUI_bDollInitialized & 1) )
   {
     bMonsterInfoUI_bDollInitialized |= 1u;
     Actor::Actor(&pMonsterInfoUI_Doll);
     atexit(nullsub_3);
   }*/
-  v106.uParentBillboardID = -1;
+  v106.sParentBillboardID = -1;
   v115 = monster_popup_y_offsets[((signed __int16)pActors[uActorID].pMonsterInfo.uID - 1) / 3] - 40;
   if ( pActors[uActorID].pMonsterInfo.uID == pMonsterInfoUI_Doll.pMonsterInfo.uID )
     v9 = pMonsterInfoUI_Doll.uCurrentActionLength;
@@ -482,9 +491,8 @@ void MonsterPopup_Draw(unsigned int uActorID, GUIWindow *window)
     memcpy(&pMonsterInfoUI_Doll, &pActors[uActorID], sizeof(pMonsterInfoUI_Doll));
     pMonsterInfoUI_Doll.uCurrentActionAnimation = ANIM_Bored;
     pMonsterInfoUI_Doll.uCurrentActionTime = 0;
-    v8 = rand();
-    v9 = v8 % 256 + 128;
-    pMonsterInfoUI_Doll.uCurrentActionLength = v8 % 256 + 128;
+    v9 = rand() % 256 + 128;
+    pMonsterInfoUI_Doll.uCurrentActionLength = v9;
   }
 
   if ( (signed int)pMonsterInfoUI_Doll.uCurrentActionTime > (signed __int16)v9 )
@@ -509,23 +517,23 @@ void MonsterPopup_Draw(unsigned int uActorID, GUIWindow *window)
   v106.pTarget = pRenderer->pTargetSurface;
   v106.pTargetZ = pRenderer->pActiveZBuffer;
   v106.uTargetPitch = pRenderer->uTargetSurfacePitch;
-  v106.uViewportX = window->uFrameX + 13;
-  v106.uViewportY = window->uFrameY + 52;
-  v106.uViewportW = (window->uFrameY + 52) + 128;
+  v106.uViewportX = pWindow->uFrameX + 13;
+  v106.uViewportY = pWindow->uFrameY + 52;
+  v106.uViewportW = (pWindow->uFrameY + 52) + 128;
   v106.uViewportZ = v106.uViewportX + 128;
   v106.uScreenSpaceX = (signed int)(v106.uViewportX + 128 + v106.uViewportX) / 2;
   v106._screenspace_x_scaler_packedfloat = 65536;
   v106._screenspace_y_scaler_packedfloat = 65536;
-  v106.uScreenSpaceY = v115 + (window->uFrameY + 52) + pSprites_LOD->pSpriteHeaders[v10->pHwSpriteIDs[0]].uHeight;
+  v106.uScreenSpaceY = v115 + (pWindow->uFrameY + 52) + pSprites_LOD->pSpriteHeaders[v10->pHwSpriteIDs[0]].uHeight;
   v106.pPalette = PaletteManager::Get_Dark_or_Red_LUT(v10->uPaletteIndex, 0, 1);
   v106.sZValue = 0;
   v106.uFlags = 0;
-  pRenderer->SetRasterClipRect(0, 0, 0x27Fu, 0x1DFu);
-  pRenderer->RasterLine2D(v106.uViewportX - 1, v106.uViewportY - 1, v106.uViewportX + 129, v106.uViewportY - 1, TargetColor(0xE1u, 255, 0x9Bu));
-  pRenderer->RasterLine2D( v106.uViewportX + 129,  v106.uViewportY - 1,  v106.uViewportX + 129,    v106.uViewportW + 1, TargetColor(0xE1u, 255, 0x9Bu));
-  pRenderer->RasterLine2D(v106.uViewportX + 129, v106.uViewportW + 1, v106.uViewportX - 1, v106.uViewportW + 1, TargetColor(0xE1u, 255, 0x9Bu));
-  pRenderer->RasterLine2D(v106.uViewportX - 1, v106.uViewportW + 1, v106.uViewportX - 1, v106.uViewportY - 1, TargetColor(0xE1u, 255, 0x9Bu));
-  if ( pRenderer->pRenderD3D )
+  pRenderer->SetRasterClipRect(0, 0, window->GetWidth() - 1, window->GetHeight() - 1);
+  pRenderer->RasterLine2D(v106.uViewportX - 1, v106.uViewportY - 1, v106.uViewportX + 129, v106.uViewportY - 1, Color16(0xE1u, 255, 0x9Bu));//горизонтальная верхняя линия
+  pRenderer->RasterLine2D(v106.uViewportX - 1, v106.uViewportW + 1, v106.uViewportX - 1, v106.uViewportY - 1, Color16(0xE1u, 255, 0x9Bu));//горизонтальная нижняя линия
+  pRenderer->RasterLine2D(v106.uViewportX + 129, v106.uViewportW + 1, v106.uViewportX - 1, v106.uViewportW + 1, Color16(0xE1u, 255, 0x9Bu));//левая вертикальная линия
+  pRenderer->RasterLine2D(v106.uViewportX + 129, v106.uViewportY - 1, v106.uViewportX + 129, v106.uViewportW + 1, Color16(0xE1u, 255, 0x9Bu));//правая вертикальная линия
+  //if ( pRenderer->pRenderD3D )
   {
     v106.uScreenSpaceY = v115 + v106.uViewportY + pSprites_LOD->pHardwareSprites[v10->pHwSpriteIDs[0]].uBufferHeight;
     memset(&Dst, 0, 0x64u);
@@ -556,16 +564,16 @@ void MonsterPopup_Draw(unsigned int uActorID, GUIWindow *window)
       dst_z = v106.uViewportZ;
     if (dst_w > v106.uViewportW)
       dst_w = v106.uViewportW;
-    pRenderer->FillRectFast(v106.uViewportX, v106.uViewportY, v106.uViewportZ - v106.uViewportX, v106.uViewportW - v106.uViewportY, pRenderer->uTargetBMask | pRenderer->uTargetGMask);
-    pRenderer->FillRectFast(v106.uViewportX, v106.uViewportY, v106.uViewportZ - v106.uViewportX, v106.uViewportW - v106.uViewportY, pRenderer->uTargetBMask | pRenderer->uTargetGMask);
+    pRenderer->FillRectFast(v106.uViewportX, v106.uViewportY, v106.uViewportZ - v106.uViewportX, v106.uViewportW - v106.uViewportY, 0x7FF);
+    pRenderer->FillRectFast(v106.uViewportX, v106.uViewportY, v106.uViewportZ - v106.uViewportX, v106.uViewportW - v106.uViewportY, 0x7FF);
     v84.left = v106.uViewportX;
     v84.top = v106.uViewportY;
     v84.right = v106.uViewportZ;
     v84.bottom = v106.uViewportW;
     ErrD3D(pRenderer->pBackBuffer4->Blt(&v84, 0, 0, 16778240u, &Dst));
-    if ( pRenderer->uTargetGBits == 5 )
+    /*if ( pRenderer->uTargetGBits == 5 )
     {
-      __debugbreak(); // no monster popup for r5g5b5 yet
+      __debugbreak(); // no monster popup for r5g5b5 will be
       memset(&pDesc, 0, 0x7Cu);
       pDesc.dwSize = 124;
       if ( pRenderer->LockSurface_DDraw4(pSprites_LOD->pHardwareSprites[v10->pHwSpriteIDs[0]].pTextureSurface, &pDesc, DDLOCK_WAIT))
@@ -575,7 +583,7 @@ void MonsterPopup_Draw(unsigned int uActorID, GUIWindow *window)
         if (dst_y < dst_w)
         {
           v21 = dst_x;
-          v22 = &pRenderer->pTargetSurface[dst_y * pRenderer->uTargetSurfacePitch + dst_x];
+          //v22 = &pRenderer->pTargetSurface[dst_y * pRenderer->uTargetSurfacePitch + dst_x];
           ushort* _v22_2 = v22;
           v23 = i - dst_y;
           v115 = i - dst_y;
@@ -610,7 +618,7 @@ void MonsterPopup_Draw(unsigned int uActorID, GUIWindow *window)
         pSprites_LOD->pHardwareSprites[v10->pHwSpriteIDs[0]].pTextureSurface->Unlock(0);
       }
     }
-    else
+    else*/
     {
       memset(&pDesc, 0, 0x7Cu);
       pDesc.dwSize = 124;
@@ -620,7 +628,7 @@ void MonsterPopup_Draw(unsigned int uActorID, GUIWindow *window)
         uint num_top_scanlines_above_frame_y = i - dst_y;
         for (uint y = dst_y; y < dst_w; ++y)
         {
-          ushort* dst = &pRenderer->pTargetSurface[y * pRenderer->uTargetSurfacePitch + dst_x];
+          //ushort* dst = &pRenderer->pTargetSurface[y * pRenderer->uTargetSurfacePitch + dst_x];
 
           uint src_y = num_top_scanlines_above_frame_y + y;
           for (uint x = dst_x; x < dst_z; ++x)
@@ -630,19 +638,20 @@ void MonsterPopup_Draw(unsigned int uActorID, GUIWindow *window)
             uint idx = pDesc.dwHeight * src_y / pSprites_LOD->pHardwareSprites[v10->pHwSpriteIDs[0]].uAreaHeight * (pDesc.lPitch / sizeof(short)) +
                        pDesc.dwWidth  * src_x / pSprites_LOD->pHardwareSprites[v10->pHwSpriteIDs[0]].uAreaWidth;
             uint b = src[idx] & 0x1F;
-            *dst++ = b | 2 * (src[idx] & 0xFFE0);
+            //*dst++ = b | 2 * (src[idx] & 0xFFE0);
+            pRenderer->WritePixel16(x, y, b | 2 * (src[idx] & 0xFFE0));
           }
         }
         pSprites_LOD->pHardwareSprites[v10->pHwSpriteIDs[0]].pTextureSurface->Unlock(0);
       }
     }
   }
-  else
+  /*else
   {
     pRenderer->FillRectFast(v106.uViewportX, v106.uViewportY, v106.uViewportZ - v106.uViewportX, v106.uViewportW - v106.uViewportY, 0);
     if ( v10->pHwSpriteIDs[0] >= 0 )
       pSprites_LOD->pSpriteHeaders[v10->pHwSpriteIDs[0]].DrawSprite_sw(&v106, 0);
-  }
+  }*/
 //name and profession
   if ( pActors[uActorID].sNPC_ID )
   {
@@ -658,9 +667,9 @@ void MonsterPopup_Draw(unsigned int uActorID, GUIWindow *window)
     else
       strncpy(pTmpBuf.data(), pMonsterStats->pInfos[pActors[uActorID].pMonsterInfo.uID].pName, 2000);
   }
-  window->DrawTitleText(pFontComic, 0, 0xCu, TargetColor(0xFFu, 0xFFu, 0x9Bu), pTmpBuf.data(), 3);
+  pWindow->DrawTitleText(pFontComic, 0, 0xCu, Color16(0xFFu, 0xFFu, 0x9Bu), pTmpBuf.data(), 3);
   //health bar
-  Actor::DrawHealthBar(&pActors[uActorID], window);
+  Actor::DrawHealthBar(&pActors[uActorID], pWindow);
 
   normal_level = 0;
   expert_level = 0;
@@ -730,9 +739,9 @@ void MonsterPopup_Draw(unsigned int uActorID, GUIWindow *window)
     for_effects = 1;
   }
 
-  window->DrawText(pFontSmallnum, 12, 196, TargetColor(0xE1u, 255, 0x9Bu), pGlobalTXT_LocalizationStrings[631], 0, 0, 0);//Effects
-  if ( !for_effects )
-    window->DrawText(pFontSmallnum, 28, LOBYTE(pFontSmallnum->uFontHeight) + 193, TargetColor(0xE1u, 255, 0x9Bu), pGlobalTXT_LocalizationStrings[630], 0, 0, 0);//?
+  pWindow->DrawText(pFontSmallnum, 12, 196, Color16(0xE1u, 255, 0x9Bu), pGlobalTXT_LocalizationStrings[631], 0, 0, 0);//Effects
+  if ( !for_effects && false)
+    pWindow->DrawText(pFontSmallnum, 28, LOBYTE(pFontSmallnum->uFontHeight) + 193, Color16(0xE1u, 255, 0x9Bu), pGlobalTXT_LocalizationStrings[630], 0, 0, 0);//?
   else
   {
     pText = "";
@@ -741,86 +750,86 @@ void MonsterPopup_Draw(unsigned int uActorID, GUIWindow *window)
     {
       if ( pActors[uActorID].pActorBuffs[i].uExpireTime > 0 )
       {
-        switch ( i - 1 )
+        switch ( i )
         {
-          case 0:
+          case ACTOR_BUFF_CHARM:
             pTextColorID = 60;
             pText = pGlobalTXT_LocalizationStrings[591];//Charmed
             break;
-          case 1:
+          case ACTOR_BUFF_SUMMONED:
             pTextColorID = 82;
             pText = pGlobalTXT_LocalizationStrings[649];//Summoned
             break;
-          case 2:
+          case ACTOR_BUFF_SHRINK:
             pTextColorID = 92;
             pText = pGlobalTXT_LocalizationStrings[592];//Shrunk
             break;
-          case 3:
+          case ACTOR_BUFF_AFRAID:
             pTextColorID = 63;
             pText = pGlobalTXT_LocalizationStrings[4];//Afraid
             break;
-          case 4:
+          case ACTOR_BUFF_STONED:
             pText = pGlobalTXT_LocalizationStrings[220];//Stoned
             pTextColorID = 81;
             break;
-          case 5:
+          case ACTOR_BUFF_PARALYZED:
             pText = pGlobalTXT_LocalizationStrings[162];//Paralyzed
             pTextColorID = 81;
             break;
-          case 6:
+          case ACTOR_BUFF_SLOWED:
             pText = pGlobalTXT_LocalizationStrings[593];//Slowed
             pTextColorID = 35;
             break;
-          case 8:
+          case ACTOR_BUFF_BERSERK:
             pText = pGlobalTXT_LocalizationStrings[608];//Berserk
             pTextColorID = 62;
             break;
-          case 7:
-          case 9:
+          case ACTOR_BUFF_SOMETHING_THAT_HALVES_AC:
+          case ACTOR_BUFF_MASS_DISTORTION:
             pText = "";
             pTextColorID = 0;
             continue;
-          case 10:
+          case ACTOR_BUFF_FATE:
             pTextColorID = 47;
             pText = pGlobalTXT_LocalizationStrings[221];//Fate
             break;
-          case 11:
+          case ACTOR_BUFF_ENSLAVED:
             pTextColorID = 66;
             pText = pGlobalTXT_LocalizationStrings[607];//Enslaved
             break;
-          case 12:
+          case ACTOR_BUFF_DAY_OF_PROTECTION:
             pTextColorID = 85;
             pText = pGlobalTXT_LocalizationStrings[610];//Day of Protection
             break;
-          case 13:
+          case ACTOR_BUFF_HOUR_OF_POWER:
             pTextColorID = 86;
             pText = pGlobalTXT_LocalizationStrings[609];//Hour of Power
             break;
-          case 14:
+          case ACTOR_BUFF_SHIELD:
             pTextColorID = 17;
             pText = pGlobalTXT_LocalizationStrings[279];//Shield
             break;
-          case 15:
+          case ACTOR_BUFF_STONESKIN:
             pTextColorID = 38;
             pText = pGlobalTXT_LocalizationStrings[442];//Stoneskin
             break;
-          case 16:
+          case ACTOR_BUFF_BLESS:
             pTextColorID = 46;
             pText = pGlobalTXT_LocalizationStrings[443];//Bless
             break;
-          case 17:
+          case ACTOR_BUFF_HEROISM:
             pTextColorID = 51;
             pText = pGlobalTXT_LocalizationStrings[440];//Heroism
             break;
-          case 18:
+          case ACTOR_BUFF_HASTE:
             pTextColorID = 5;
             pText = pGlobalTXT_LocalizationStrings[441];//Haste
             break;
-          case 19:
+          case ACTOR_BUFF_PAIN_REFLECTION:
             pTextColorID = 95;
             pText = pGlobalTXT_LocalizationStrings[229];//Pain Reflection
             break;
-          case 20:
+          case ACTOR_BUFF_PAIN_HAMMERHANDS:
             pTextColorID = 73;
             pText = pGlobalTXT_LocalizationStrings[228];//Hammerhands
             break;
@@ -828,32 +837,32 @@ void MonsterPopup_Draw(unsigned int uActorID, GUIWindow *window)
             pText = "";
             break;
         }
-        if ( pText != "" )
+        if ( _stricmp(pText, "" ))
         {
-          window->DrawText(pFontSmallnum, 28, pTextHeight, GetSpellColor(pTextColorID), pText, 0, 0, 0);
+          pWindow->DrawText(pFontSmallnum, 28, pTextHeight, GetSpellColor(pTextColorID), pText, 0, 0, 0);
           pTextHeight = pTextHeight + *(char *)((int)pFontSmallnum + 5) - 3;
         }
       }
     }
-    if ( pText == "" )
-      window->DrawText(pFontSmallnum, 28, pTextHeight, TargetColor(0xE1u, 255, 0x9Bu), pGlobalTXT_LocalizationStrings[153], 0, 0, 0);//Нет
+    if ( !_stricmp(pText,"" ))
+      pWindow->DrawText(pFontSmallnum, 28, pTextHeight, Color16(0xE1u, 255, 0x9Bu), pGlobalTXT_LocalizationStrings[153], 0, 0, 0);//Нет
   }
 
   if ( normal_level )
   {
     sprintf(pTmpBuf.data(), "%s\f%05u\t100%d\n", pGlobalTXT_LocalizationStrings[108], 0, pActors[uActorID].pMonsterInfo.uHP);
-    window->DrawText(pFontSmallnum, 150, (int)v106.uViewportY, TargetColor(0xE1u, 255, 0x9Bu), pTmpBuf.data(), 0, 0, 0);
+    pWindow->DrawText(pFontSmallnum, 150, (int)v106.uViewportY, Color16(0xE1u, 255, 0x9Bu), pTmpBuf.data(), 0, 0, 0);
     pTextHeight = v106.uViewportY + LOBYTE(pFontSmallnum->uFontHeight) - 3;
     sprintf(pTmpBuf.data(), "%s\f%05u\t100%d\n", pGlobalTXT_LocalizationStrings[12], 0, pActors[uActorID].pMonsterInfo.uAC);//Armor Class
   }
   else
   {
-    sprintf(pTmpBuf.data(), "%s\f%05u\t100%s\n", pGlobalTXT_LocalizationStrings[108], 0, pGlobalTXT_LocalizationStrings[630]);//?
-    window->DrawText(pFontSmallnum, 150, (int)v106.uViewportY, TargetColor(0xE1u, 255, 0x9Bu), pTmpBuf.data(), 0, 0, 0);
+    sprintf(pTmpBuf.data(), "%s\f%05u\t100%s\n", pGlobalTXT_LocalizationStrings[108], 0, pGlobalTXT_LocalizationStrings[630]);//?   - [630] actually displays a question mark
+    pWindow->DrawText(pFontSmallnum, 150, (int)v106.uViewportY, Color16(0xE1u, 255, 0x9Bu), pTmpBuf.data(), 0, 0, 0);
     pTextHeight = v106.uViewportY + LOBYTE(pFontSmallnum->uFontHeight) - 3;
-    sprintf(pTmpBuf.data(), "%s\f%05u\t100%s\n", pGlobalTXT_LocalizationStrings[12], 0, (unsigned int)pGlobalTXT_LocalizationStrings[630]);//?
+    sprintf(pTmpBuf.data(), "%s\f%05u\t100%s\n", pGlobalTXT_LocalizationStrings[12], 0, pGlobalTXT_LocalizationStrings[630]);//?   - [630] actually displays a question mark
   }
-  window->DrawText(pFontSmallnum, 150, pTextHeight, TargetColor(0xE1u, 255, 0x9Bu), pTmpBuf.data(), 0, 0, 0);
+  pWindow->DrawText(pFontSmallnum, 150, pTextHeight, Color16(0xE1u, 255, 0x9Bu), pTmpBuf.data(), 0, 0, 0);
   pTextHeight = pTextHeight + LOBYTE(pFontSmallnum->uFontHeight) - 6 + LOBYTE(pFontSmallnum->uFontHeight);
 
   content[0] = pGlobalTXT_LocalizationStrings[87];
@@ -871,7 +880,7 @@ void MonsterPopup_Draw(unsigned int uActorID, GUIWindow *window)
   if ( expert_level )
   {
     sprintf(pTmpBuf.data(), "%s\f%05u\t080%s\n", pGlobalTXT_LocalizationStrings[18], 0, content[pActors[uActorID].pMonsterInfo.uAttack1Type]);//Attack
-    window->DrawText(pFontSmallnum, 150, (int)pTextHeight, TargetColor(0xE1u, 255, 0x9Bu), pTmpBuf.data(), 0, 0, 0);
+    pWindow->DrawText(pFontSmallnum, 150, (int)pTextHeight, Color16(0xE1u, 255, 0x9Bu), pTmpBuf.data(), 0, 0, 0);
     pTextHeight = pTextHeight + LOBYTE(pFontSmallnum->uFontHeight) - 3;
     if ( pActors[uActorID].pMonsterInfo.uAttack1DamageBonus )
       sprintf(pTmpBuf.data(), "%s\f%05u\t080%dd%d+%d\n", pGlobalTXT_LocalizationStrings[53],
@@ -883,17 +892,17 @@ void MonsterPopup_Draw(unsigned int uActorID, GUIWindow *window)
   else
   {
     sprintf(pTmpBuf.data(), "%s\f%05u\t080%s\n", pGlobalTXT_LocalizationStrings[18], 0, pGlobalTXT_LocalizationStrings[630]);
-    window->DrawText(pFontSmallnum, 150, (int)pTextHeight, TargetColor(0xE1u, 255, 0x9Bu), pTmpBuf.data(), 0, 0, 0);
+    pWindow->DrawText(pFontSmallnum, 150, (int)pTextHeight, Color16(0xE1u, 255, 0x9Bu), pTmpBuf.data(), 0, 0, 0);
     pTextHeight = pTextHeight + LOBYTE(pFontSmallnum->uFontHeight) - 3;
     sprintf(pTmpBuf.data(), "%s\f%05u\t080%s\n", pGlobalTXT_LocalizationStrings[53], 0, pGlobalTXT_LocalizationStrings[630]);
   }
-  window->DrawText(pFontSmallnum, 150, pTextHeight, TargetColor(0xE1u, 255, 0x9Bu), pTmpBuf.data(), 0, 0, 0);
+  pWindow->DrawText(pFontSmallnum, 150, pTextHeight, Color16(0xE1u, 255, 0x9Bu), pTmpBuf.data(), 0, 0, 0);
   pTextHeight = pTextHeight + LOBYTE(pFontSmallnum->uFontHeight) - 6 + LOBYTE(pFontSmallnum->uFontHeight);
 
   if ( !master_level )
   {
     sprintf(pTmpBuf.data(), "%s\f%05u\t080%s\n", pGlobalTXT_LocalizationStrings[628], 0, pGlobalTXT_LocalizationStrings[630]);//"Spell" "?"
-    window->DrawText(pFontSmallnum, 150, (int)pTextHeight, TargetColor(0xE1u, 255, 0x9Bu), pTmpBuf.data(), 0, 0, 0);
+    pWindow->DrawText(pFontSmallnum, 150, (int)pTextHeight, Color16(0xE1u, 255, 0x9Bu), pTmpBuf.data(), 0, 0, 0);
     pTextHeight = pTextHeight + LOBYTE(pFontSmallnum->uFontHeight) - 3;
   }
   else
@@ -904,24 +913,24 @@ void MonsterPopup_Draw(unsigned int uActorID, GUIWindow *window)
     if ( pActors[uActorID].pMonsterInfo.uSpell1ID )
     {
       sprintf(pTmpBuf.data(), "%s\f%05u\t070%s\n", pText, 0, pSpellStats->pInfos[pActors[uActorID].pMonsterInfo.uSpell1ID].pShortName);//"%s\f%05u\t060%s\n"
-      window->DrawText(pFontSmallnum, 150, (int)pTextHeight, TargetColor(0xE1u, 255, 0x9Bu), pTmpBuf.data(), 0, 0, 0);
+      pWindow->DrawText(pFontSmallnum, 150, (int)pTextHeight, Color16(0xE1u, 255, 0x9Bu), pTmpBuf.data(), 0, 0, 0);
       pTextHeight = pTextHeight + LOBYTE(pFontSmallnum->uFontHeight) - 3;
     }
     if ( pActors[uActorID].pMonsterInfo.uSpell2ID )
     {
       sprintf(pTmpBuf.data(), "\f%05u\t070%s\n", 0, pSpellStats->pInfos[pActors[uActorID].pMonsterInfo.uSpell2ID].pShortName);//"%s\f%05u\t060%s\n"
-      window->DrawText(pFontSmallnum, 150, (int)pTextHeight, TargetColor(0xE1u, 255, 0x9Bu), pTmpBuf.data(), 0, 0, 0);
+      pWindow->DrawText(pFontSmallnum, 150, (int)pTextHeight, Color16(0xE1u, 255, 0x9Bu), pTmpBuf.data(), 0, 0, 0);
       pTextHeight = pTextHeight + LOBYTE(pFontSmallnum->uFontHeight) - 3;
     }
     if ( !pActors[uActorID].pMonsterInfo.uSpell1ID && !pActors[uActorID].pMonsterInfo.uSpell2ID )
     {
       sprintf(pTmpBuf.data(), "%s\f%05u\t070%s\n", pGlobalTXT_LocalizationStrings[628], 0, pGlobalTXT_LocalizationStrings[153]);//"%s\f%05u\t060%s\n"
-      window->DrawText(pFontSmallnum, 150, (int)pTextHeight, TargetColor(0xE1u, 255, 0x9Bu), pTmpBuf.data(), 0, 0, 0);
+      pWindow->DrawText(pFontSmallnum, 150, (int)pTextHeight, Color16(0xE1u, 255, 0x9Bu), pTmpBuf.data(), 0, 0, 0);
       pTextHeight = pTextHeight + LOBYTE(pFontSmallnum->uFontHeight) - 3;
     }
   }
   pTextHeight = pTextHeight + LOBYTE(pFontSmallnum->uFontHeight) - 3;
-  window->DrawText(pFontSmallnum, 150, pTextHeight, TargetColor(0xE1u, 255, 0x9Bu), pGlobalTXT_LocalizationStrings[626], 0, 0, 0);//Immune
+  pWindow->DrawText(pFontSmallnum, 150, pTextHeight, Color16(0xE1u, 255, 0x9Bu), pGlobalTXT_LocalizationStrings[626], 0, 0, 0);//Immune
   pTextHeight = pTextHeight + LOBYTE(pFontSmallnum->uFontHeight) - 3;
 
   string_name[0] = pGlobalTXT_LocalizationStrings[87];//Fire
@@ -935,34 +944,34 @@ void MonsterPopup_Draw(unsigned int uActorID, GUIWindow *window)
   string_name[8] = pGlobalTXT_LocalizationStrings[54];
   string_name[9] = pGlobalTXT_LocalizationStrings[624];
 
-  content[0] = (char *)pActors[uActorID].pMonsterInfo.uResFire;
-  content[1] = (char *)pActors[uActorID].pMonsterInfo.uResAir;
-  content[2] = (char *)pActors[uActorID].pMonsterInfo.uResWater;
-  content[3] = (char *)pActors[uActorID].pMonsterInfo.uResEarth;
-  content[4] = (char *)pActors[uActorID].pMonsterInfo.uResMind;
-  content[5] = (char *)pActors[uActorID].pMonsterInfo.uResSpirit;
-  content[6] = (char *)pActors[uActorID].pMonsterInfo.uResBody;
-  content[7] = (char *)pActors[uActorID].pMonsterInfo.uResLight;
-  content[8] = (char *)pActors[uActorID].pMonsterInfo.uResPhysical;
-  content[9] = (char *)pActors[uActorID].pMonsterInfo.uResDark;
+  resistances[0] = pActors[uActorID].pMonsterInfo.uResFire;
+  resistances[1] = pActors[uActorID].pMonsterInfo.uResAir;
+  resistances[2] = pActors[uActorID].pMonsterInfo.uResWater;
+  resistances[3] = pActors[uActorID].pMonsterInfo.uResEarth;
+  resistances[4] = pActors[uActorID].pMonsterInfo.uResMind;
+  resistances[5] = pActors[uActorID].pMonsterInfo.uResSpirit;
+  resistances[6] = pActors[uActorID].pMonsterInfo.uResBody;
+  resistances[7] = pActors[uActorID].pMonsterInfo.uResLight;
+  resistances[8] = pActors[uActorID].pMonsterInfo.uResPhysical;
+  resistances[9] = pActors[uActorID].pMonsterInfo.uResDark;
 
   if ( grandmaster_level )
   {
     for ( uint i = 0; i < 10; i++ )
     {
-      if ( content[i] == (char *)200 )
+      if ( resistances[i] == 200 )
       {
         pText = pGlobalTXT_LocalizationStrings[625];//Immune
       }
       else
       {
-        if ( content[i] )
+        if ( resistances[i] )
           pText = pGlobalTXT_LocalizationStrings[627];//Resistant
         else
           pText = pGlobalTXT_LocalizationStrings[153];//None
       }
       sprintf(pTmpBuf.data(), "%s\f%05u\t070%s\n", string_name[i], 0, pText);
-      window->DrawText(pFontSmallnum, 170, pTextHeight, TargetColor(0xE1u, 255, 0x9Bu), pTmpBuf.data(), 0, 0, 0);
+      pWindow->DrawText(pFontSmallnum, 170, pTextHeight, Color16(0xE1u, 255, 0x9Bu), pTmpBuf.data(), 0, 0, 0);
       pTextHeight = pTextHeight + LOBYTE(pFontSmallnum->uFontHeight) - 3;
     }
   }
@@ -971,7 +980,7 @@ void MonsterPopup_Draw(unsigned int uActorID, GUIWindow *window)
     for ( uint i = 0; i < 10; ++i )
     {
       sprintf(pTmpBuf.data(), "%s\f%05u\t070%s\n", string_name[i], 0, pGlobalTXT_LocalizationStrings[630]); // "?"
-      window->DrawText(pFontSmallnum, 170, pTextHeight, TargetColor(0xE1u, 255, 0x9Bu), pTmpBuf.data(), 0, 0, 0);
+      pWindow->DrawText(pFontSmallnum, 170, pTextHeight, Color16(0xE1u, 255, 0x9Bu), pTmpBuf.data(), 0, 0, 0);
       pTextHeight = pTextHeight + LOBYTE(pFontSmallnum->uFontHeight) - 3;
     }
   }
@@ -980,7 +989,7 @@ void MonsterPopup_Draw(unsigned int uActorID, GUIWindow *window)
   {
     sprintf(pTmpBuf.data(), "%s: %d", pGlobalTXT_LocalizationStrings[650], pActors[uActorID].sCurrentHP);//Current Hit Points
     pFontSmallnum->GetLineWidth(pTmpBuf.data());
-    window->DrawTitleText(pFontSmallnum, 0, window->uFrameHeight - LOBYTE(pFontSmallnum->uFontHeight) - 12, 0, pTmpBuf.data(), 3);
+    pWindow->DrawTitleText(pFontSmallnum, 0, pWindow->uFrameHeight - LOBYTE(pFontSmallnum->uFontHeight) - 12, 0, pTmpBuf.data(), 3);
   }
 }
 
@@ -1024,7 +1033,7 @@ const char *CharacterUI_GetSkillDescText(unsigned int uPlayerID, PLAYER_SKILL_TY
   }
   else
   {
-    sprintf(Source, "\f%05d", TargetColor(0xFFu, 0xFFu, 0xFFu));
+    sprintf(Source, "\f%05d", Color16(0xFFu, 0xFFu, 0xFFu));
     strcat(a2, Source);
     strcat(a2, "%s: +%d");
     sprintf(static_sub_417BB5_out_string, a2, pSkillDesc[uPlayerSkillType],
@@ -1247,7 +1256,7 @@ void  DrawSpellDescriptionPopup(int spell_index)
   spell_info_window.uFrameX = 90;
   spell_info_window.uFrameZ = 417;
   spell_info_window.uFrameW = v3 + 67;
-  spell_info_window.Hint = 0;
+  spell_info_window.Hint = nullptr;
   v5 = pFontSmallnum->GetLineWidth(pGlobalTXT_LocalizationStrings[LOCSTR_NORMAL]);
   if ( pFontSmallnum->GetLineWidth(pGlobalTXT_LocalizationStrings[LOCSTR_MASTER]) > v5 )
     v5 = pFontSmallnum->GetLineWidth(pGlobalTXT_LocalizationStrings[LOCSTR_MASTER]);
@@ -1271,14 +1280,15 @@ void  DrawSpellDescriptionPopup(int spell_index)
   spell_info_window.uFrameHeight -= 12;
   spell_info_window.uFrameZ = spell_info_window.uFrameX + spell_info_window.uFrameWidth - 1;
   spell_info_window.uFrameW = spell_info_window.uFrameHeight + spell_info_window.uFrameY - 1;
-  spell_info_window.DrawTitleText(pFontArrus, 0x78u, 0xCu, TargetColor(0xFFu, 0xFFu, 0x9Bu), spell->pName, 3);
+  spell_info_window.DrawTitleText(pFontArrus, 0x78u, 0xCu, Color16(0xFFu, 0xFFu, 0x9Bu), spell->pName, 3);
   spell_info_window.DrawText(pFontSmallnum, 120, 44, 0, pTmpBuf2.data(), 0, 0, 0);
   spell_info_window.uFrameWidth = 108;
   spell_info_window.uFrameZ = spell_info_window.uFrameX + 107;
-  spell_info_window.DrawTitleText(pFontComic, 0xCu, 0x4Bu, 0, pSkillNames[pPlayers[uActiveCharacter]->lastOpenedSpellbookPage + 12], 3);
+  int skill_level = SkillToMastery(pPlayers[uActiveCharacter]->pActiveSkills[pPlayers[uActiveCharacter]->lastOpenedSpellbookPage + 12]);
+  spell_info_window.DrawTitleText(pFontComic, 12, 75, 0, pSkillNames[pPlayers[uActiveCharacter]->lastOpenedSpellbookPage + 12], 3);
   sprintf( pTmpBuf.data(),  "%s\n%d",    pGlobalTXT_LocalizationStrings[LOCSTR_SP_COST],
-       pSpellDatas[spell_index + 11 * pPlayers[uActiveCharacter]->lastOpenedSpellbookPage + 1].mana_per_skill[pPlayers[uActiveCharacter]->pActiveSkills[pPlayers[uActiveCharacter]->lastOpenedSpellbookPage + PLAYER_SKILL_FIRE]]);
-  spell_info_window.DrawTitleText(pFontComic, 0xCu, spell_info_window.uFrameHeight - LOBYTE(pFontComic->uFontHeight) - 16, 0, pTmpBuf.data(), 3);
+       pSpellDatas[spell_index + 11 * pPlayers[uActiveCharacter]->lastOpenedSpellbookPage + 1].mana_per_skill[skill_level - 1]);
+  spell_info_window.DrawTitleText(pFontComic, 12, spell_info_window.uFrameHeight - LOBYTE(pFontComic->uFontHeight) - 16, 0, pTmpBuf.data(), 3);
   dword_507B00_spell_info_to_draw_in_popup = 0;
 }
     // 507B00: using guessed type int dword_507B00_spell_info_to_draw_in_popup;
@@ -1295,7 +1305,7 @@ void UI_OnMouseRightClick(Vec2_int_ *_this)
   unsigned int pX; // [sp+70h] [bp-8h]@3
   unsigned int pY; // [sp+74h] [bp-4h]@3
 
-  if ( pCurrentScreen == SCREEN_VIDEO )
+  if ( pCurrentScreen == SCREEN_VIDEO || GetCurrentMenuID() == MENU_MAIN )
     return;
   if ( _this )
   {
@@ -1306,7 +1316,7 @@ void UI_OnMouseRightClick(Vec2_int_ *_this)
   {
     pMouse->GetClickPos(&pX, &pY);
   }
-  if ( pRenderer->bWindowMode )
+  //if ( pRenderer->bWindowMode )
   {
     GetCursorPos(&Point);
     ScreenToClient(window->GetApiHandle(), &Point);
@@ -1368,7 +1378,7 @@ void UI_OnMouseRightClick(Vec2_int_ *_this)
         popup_window.ptr_1C = (void *)((signed int)pX / 118);
         if ( (signed int)pX / 118 < 4 )//portaits zone
         {
-          popup_window.Hint = 0;
+          popup_window.Hint = nullptr;
           popup_window.uFrameWidth = 400;
           popup_window.uFrameHeight = 200;
           popup_window.uFrameX = 38;
@@ -1383,7 +1393,7 @@ void UI_OnMouseRightClick(Vec2_int_ *_this)
         {
           if ( (signed int)pX >= 476 && (signed int)pX <= 636 && (signed int)pY >= 240 && (signed int)pY <= 300 )//buff_tooltip zone
           {
-            popup_window.Hint = 0;
+            popup_window.Hint = nullptr;
             popup_window.uFrameWidth = 400;
             popup_window.uFrameHeight = 200;
             popup_window.uFrameX = 38;
@@ -1418,25 +1428,25 @@ void UI_OnMouseRightClick(Vec2_int_ *_this)
       }
       else//game zone
       {
-        popup_window.Hint = 0;
+        popup_window.Hint = nullptr;
         popup_window.uFrameWidth = 320;
         popup_window.uFrameHeight = 320;
         popup_window.uFrameX = pX - 350;
         if ( (signed int)pX <= 320 )
           popup_window.uFrameX = pX + 30;
         popup_window.uFrameY = 40;
-        if ( pRenderer->pRenderD3D )
-          LOWORD(v5) = pGame->pVisInstance->get_picked_object_zbuf_val();
-        else
-          v5 = pRenderer->pActiveZBuffer[pX + pSRZBufferLineOffsets[pY]];
+        //if ( pRenderer->pRenderD3D )
+          v5 = pGame->pVisInstance->get_picked_object_zbuf_val();
+        /*else
+          v5 = pRenderer->pActiveZBuffer[pX + pSRZBufferLineOffsets[pY]];*/
         if (PID_TYPE((unsigned __int16)v5) == OBJECT_Actor)
         {
-          if ( pRenderer->uNumSceneBegins )
+          /*if ( pRenderer->uNumSceneBegins )
           {
             popup_window.DrawMessageBox(1);
             MonsterPopup_Draw(PID_ID((unsigned __int16)v5), &popup_window);
           }
-          else
+          else*/
           {
             pRenderer->BeginScene();
             popup_window.DrawMessageBox(1);
@@ -1499,7 +1509,7 @@ void UI_OnMouseRightClick(Vec2_int_ *_this)
     }
     case SCREEN_PARTY_CREATION:
     {
-      popup_window.Hint = 0;
+      popup_window.Hint = nullptr;
       pStr = 0;
       for ( pButton = pGUIWindow_CurrentMenu->pControlsHead; pButton; pButton = pButton->pNext)
       {
@@ -1556,7 +1566,7 @@ void UI_OnMouseRightClick(Vec2_int_ *_this)
       if ( popup_window.Hint )
       {
         pHint = popup_window.Hint;
-        popup_window.Hint = 0;
+        popup_window.Hint = nullptr;
         popup_window.uFrameWidth = 384;
         popup_window.uFrameHeight = 256;
         popup_window.uFrameX = 128;
@@ -1571,7 +1581,7 @@ void UI_OnMouseRightClick(Vec2_int_ *_this)
         popup_window.uFrameHeight -= 12;
         popup_window.uFrameZ = popup_window.uFrameX + popup_window.uFrameWidth - 1;
         popup_window.uFrameW = popup_window.uFrameY + popup_window.uFrameHeight - 1;
-        sprintf(pTmpBuf.data(), "\f%05d%s\f00000\n", TargetColor(0xFF, 0xFF, 0x9B), pStr);
+        sprintf(pTmpBuf.data(), "\f%05d%s\f00000\n", Color16(0xFF, 0xFF, 0x9B), pStr);
         popup_window.DrawTitleText(pFontCreate, 0, 0, 0, pTmpBuf.data(), 3);
         popup_window.DrawText(pFontSmallnum, 1, pFontLucida->uFontHeight, 0, pHint, 0, 0, 0);
       }
@@ -1863,7 +1873,7 @@ void Inventory_ItemPopupAndAlchemy()
 
       int rot_x, rot_y, rot_z;
       Vec3_int_::Rotate(64, pParty->sRotationY, pParty->sRotationX, v39, &rot_x, &rot_y, &rot_z);
-      sub_42F7EB_DropItemAt(0x41Bu, rot_x, rot_y, rot_z, 0, 1, 0, 0, 0);
+      SpriteObject::sub_42F7EB_DropItemAt(0x41Bu, rot_x, rot_y, rot_z, 0, 1, 0, 0, 0);
       if ( dword_4E455C )
       {
         if ( pPlayers[uActiveCharacter]->CanAct() )
@@ -1889,7 +1899,7 @@ void Inventory_ItemPopupAndAlchemy()
 
       int rot_x, rot_y, rot_z;
       Vec3_int_::Rotate(64, pParty->sRotationY, pParty->sRotationX, v39, &rot_x, &rot_y, &rot_z);
-      sub_42F7EB_DropItemAt(0x41Bu, rot_x, rot_y, rot_z, 0, 1, 0, 0, 0);
+      SpriteObject::sub_42F7EB_DropItemAt(0x41Bu, rot_x, rot_y, rot_z, 0, 1, 0, 0, 0);
       if ( dword_4E455C )
       {
         if ( pPlayers[uActiveCharacter]->CanAct() )
@@ -1916,7 +1926,7 @@ void Inventory_ItemPopupAndAlchemy()
 
       int rot_x, rot_y, rot_z;
       Vec3_int_::Rotate(64, pParty->sRotationY, pParty->sRotationX, v39, &rot_x, &rot_y, &rot_z);
-      sub_42F7EB_DropItemAt(0x41Bu, rot_x, rot_y, rot_z, 0, 1, 0, 0, 0);
+      SpriteObject::sub_42F7EB_DropItemAt(0x41Bu, rot_x, rot_y, rot_z, 0, 1, 0, 0, 0);
       if ( dword_4E455C )
       {
         if ( pPlayers[uActiveCharacter]->CanAct() )
@@ -1931,7 +1941,7 @@ void Inventory_ItemPopupAndAlchemy()
     if ( damage_level == 4 )
     {
       pPlayers[uActiveCharacter]->RemoveItemAtInventoryIndex(pOut_y);
-      pPlayers[uActiveCharacter]->SetCondition(0x10u, 0);
+      pPlayers[uActiveCharacter]->SetCondition(Condition_Eradicated, 0);
       pPlayers[uActiveCharacter]->ItemsEnchant(0);
       pAudioPlayer->PlaySound(SOUND_8, 0, 0, -1, 0, 0, 0, 0);
 
@@ -1943,7 +1953,7 @@ void Inventory_ItemPopupAndAlchemy()
 
       int rot_x, rot_y, rot_z;
       Vec3_int_::Rotate(64, pParty->sRotationY, pParty->sRotationX, v39, &rot_x, &rot_y, &rot_z);
-      sub_42F7EB_DropItemAt(0x41Bu, rot_x, rot_y, rot_z, 0, 1, 0, 0, 0);
+      SpriteObject::sub_42F7EB_DropItemAt(0x41Bu, rot_x, rot_y, rot_z, 0, 1, 0, 0, 0);
       if ( dword_4E455C )
       {
         if ( pPlayers[uActiveCharacter]->CanAct() )
@@ -1998,3 +2008,30 @@ void Inventory_ItemPopupAndAlchemy()
   return;
 }
 
+
+//----- (0045828B) --------------------------------------------------------
+unsigned int __fastcall GetSpellColor(signed int a1)
+{
+  if ( a1 == 0 )
+    return Color16(0, 0, 0);
+  if ( a1 < 12 )
+    return Color16(255, 85, 0);
+  if ( a1 < 23 )
+    return Color16(150, 212, 255);
+  if ( a1 < 34 )
+    return Color16(0, 128, 255);
+  if ( a1 < 45 )
+    return Color16(128, 128, 128);
+  if ( a1 < 56 )
+    return Color16(225, 225, 225);
+  if ( a1 < 67 )
+    return Color16(235, 15, 255);
+  if ( a1 < 78 )
+    return Color16(255, 128, 0);
+  if ( a1 < 89 )
+    return Color16(255, 255, 155);
+  if ( a1 < 100 )
+    return Color16(192, 192, 240);
+  else
+    __debugbreak();
+}

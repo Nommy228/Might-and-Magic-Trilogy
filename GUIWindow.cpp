@@ -1,16 +1,15 @@
-#ifdef _MSC_VER
 #define _CRT_SECURE_NO_WARNINGS
-#endif
-
+#include "ErrorHandling.h"
+#include "mm7_unsorted_subs.h"
 #include "GUIWindow.h"
 #include "GUIFont.h"
 #include "Party.h"
 #include "LOD.h"
 #include "Keyboard.h"
-#include "Math.h"
+#include "OurMath.h"
 #include "VideoPlayer.h"
 #include "MapInfo.h"
-#include "Time.h"
+#include "Timer.h"
 #include "AudioPlayer.h"
 #include "Mouse.h"
 #include "Viewport.h"
@@ -28,6 +27,7 @@
 #include "Outdoor.h"
 #include "Game.h"
 #include "IconFrameTable.h"
+#include "Actor.h"
 
 
 #include "mm7_data.h"
@@ -64,6 +64,7 @@ std::array<RGBColor, 20> spell_tooltip_colors={{
 
 
 int pWindowList_at_506F50_minus1_indexing_buttons____and_an_int_[1]; // idb
+struct GUIWindow *pWindow_MMT_MainMenu;
 struct GUIWindow *pWindow_MainMenu;
 std::array<struct GUIWindow, 20> pWindowList;
 
@@ -83,40 +84,26 @@ void GUIMessageQueue::Flush()
     uNumMessages = pMessages[0].field_8 != 0;
 }
 
-
 //----- (004356B9) --------------------------------------------------------
 void GUIMessageQueue::PopMessage(enum UIMessageType *pType, int *pParam, int *a4)
 {
-  signed int v4; // edx@1
-  GUIMessage *v5; // eax@2
-
-  v4 = 0;
   if ( this->uNumMessages )
   {
-    v5 = this->pMessages;
     *pType = this->pMessages[0].eType;
     *pParam = this->pMessages[0].param;
     *a4 = this->pMessages[0].field_8;
     if ( (signed int)(this->uNumMessages - 1) > 0 )
     {
-      do
+      for ( uint i = 0; i < (signed int)(this->uNumMessages - 1); ++i )
       {
-        v5->eType = v5[1].eType;
-        v5->param = v5[1].param;
-        v5->field_8 = v5[1].field_8;
-        ++v4;
-        ++v5;
+        this->pMessages[i].eType = this->pMessages[i + 1].eType;
+        this->pMessages[i].param = this->pMessages[i + 1].param;
+        this->pMessages[i].field_8 = this->pMessages[i + 1].field_8;
       }
-      while ( v4 < (signed int)(this->uNumMessages - 1) );
     }
     --this->uNumMessages;
   }
 }
-
-
-
-
-
 
 //----- (0041B4E1) --------------------------------------------------------
 int __fastcall GUI_ReplaceHotkey(unsigned __int8 uOldHotkey, unsigned __int8 uNewHotkey, char bFirstCall)
@@ -163,9 +150,6 @@ int __fastcall GUI_ReplaceHotkey(unsigned __int8 uOldHotkey, unsigned __int8 uNe
   return result;
 }
 
-
-
-
 //----- (0041B438) --------------------------------------------------------
 GUIButton *__fastcall GUI_HandleHotkey(unsigned __int8 uHotkey)
 {
@@ -190,7 +174,7 @@ GUIButton *__fastcall GUI_HandleHotkey(unsigned __int8 uHotkey)
 		return result;
 	  }
 	}
-	if ( !v4->uFrameX && !v4->uFrameY && (v4->uFrameWidth == 640 && v4->uFrameHeight == 480) )
+	if ( !v4->uFrameX && !v4->uFrameY && (v4->uFrameWidth == window->GetWidth() && v4->uFrameHeight == window->GetWidth()) )
 	  break;
   }
   return 0;
@@ -229,7 +213,7 @@ void GUIWindow::_41D73D_draw_buff_tooltip()
     {
       remaing_time = pParty->pPartyBuffs[i].uExpireTime- pParty->uTimePlayed;//!!!
       Y_pos = string_count * pFontComic->uFontHeight + 40; 
-      text_color = TargetColor(spell_tooltip_colors[i].R, spell_tooltip_colors[i].G, spell_tooltip_colors[i].B);
+      text_color = Color16(spell_tooltip_colors[i].R, spell_tooltip_colors[i].G, spell_tooltip_colors[i].B);
       DrawText(pFontComic, 52, Y_pos, text_color, aSpellNames[i], 0, 0, 0);
       DrawBuff_remaining_time_string(Y_pos, this, remaing_time, pFontComic); 
       ++string_count;
@@ -341,13 +325,12 @@ void GUIWindow::Release()
 
         pIcons_LOD->SyncLoadedFilesCount();
         pCurrentScreen = pMainScreenNum;
+        break;
 		}
   case WINDOW_null:
     return;
 	default:
-		{
 		break;
-		}
   }
   //v8 = this->pControlsHead;
   if ( this->pControlsHead )
@@ -374,11 +357,6 @@ void GUIWindow::Release()
   pVisibleWindowsIdxs[uNumVisibleWindows] = 0;
   uNumVisibleWindows = uNumVisibleWindows - 1;
 }
-
-
-
-
-
 
 //----- (0041CD3B) --------------------------------------------------------
 GUIButton *GUIWindow::GetControl(unsigned int uID)
@@ -622,7 +600,7 @@ void GUIWindow::InitializeBookView()
       memset(Journal_limitation_factor.data(), 0, 100);
       if ( books_primary_item_per_page < 29 )
       {
-        for ( int i = books_primary_item_per_page; i < books_primary_item_per_page + 31; i++ )
+        for ( int i = books_primary_item_per_page; i < books_primary_item_per_page + 29; i++ )
         {
           if ( pParty->PartyTimes.HistoryEventTimes[i] > 0 )
           {
@@ -649,30 +627,14 @@ void GUIWindow::InitializeBookView()
 void GUIWindow::DrawMessageBox(int arg0)
 {
   unsigned int v2; // edi@1
-  GUIWindow *v3; // ebx@1
   signed int v4; // esi@2
   unsigned int v5; // eax@2
-  unsigned int v6; // edx@4
-  unsigned int v7; // ecx@6
-  unsigned int v8; // eax@9
-  __int32 v9; // eax@10
-  unsigned int v10; // eax@18
-  LONG v11; // ecx@18
-  unsigned int v12; // edx@18
-  unsigned int v13; // eax@18
-  const char *v14; // ecx@18
-  int v15; // eax@19
   unsigned int v16; // esi@19
-  const char *v17; // ebx@25
-  int v18; // eax@26
-  GUIWindow v19; // [sp+Ch] [bp-60h]@18
-  POINT a2; // [sp+60h] [bp-Ch]@8
-  unsigned int v21; // [sp+68h] [bp-4h]@18
+  GUIWindow current_window; // [sp+Ch] [bp-60h]@18
+  POINT cursor; // [sp+60h] [bp-Ch]@8
   unsigned int v22; // [sp+74h] [bp+8h]@2
-  unsigned int v23; // [sp+74h] [bp+8h]@18
 
   v2 = 0;
-  v3 = this;
   if ( arg0 )
   {
     v4 = pViewport->uViewportTL_X;
@@ -683,111 +645,85 @@ void GUIWindow::DrawMessageBox(int arg0)
   else
   {
     v4 = 0;
-    v5 = 640;
-    v22 = 480;
+    v5 = window->GetWidth();
+    v22 = window->GetHeight();
   }
-  v6 = this->uFrameX;
+  pMouse->GetCursorPos(&cursor);
   if ( (signed int)this->uFrameX >= v4 )
   {
-    v7 = this->uFrameWidth;
-    if ( (signed int)(v7 + v6) <= (signed int)v5 )
-      goto LABEL_9;
-    v3->uFrameX = v5 - v7;
+    if ( (signed int)(this->uFrameWidth + this->uFrameX) > (signed int)v5 )
+    {
+      this->uFrameX = v5 - this->uFrameWidth;
+      this->uFrameY = cursor.y + 30;
+    }
   }
   else
   {
     this->uFrameX = v4;
+    this->uFrameY = cursor.y + 30;
   }
-  v3->uFrameY = pMouse->GetCursorPos(&a2)->y + 30;
-LABEL_9:
-  v8 = v3->uFrameY;
-  if ( (signed int)v8 >= (signed int)v2 )
+
+  if ( (signed int)this->uFrameY >= (signed int)v2 )
   {
-    if ( (signed int)(v8 + v3->uFrameHeight) <= (signed int)v22 )
-      goto LABEL_14;
-    v9 = pMouse->GetCursorPos(&a2)->y - v3->uFrameHeight - 30;
+    if ( (signed int)(this->uFrameY + this->uFrameHeight) > (signed int)v22 )
+      this->uFrameY = cursor.y - this->uFrameHeight - 30;
   }
   else
-  {
-    v9 = pMouse->GetCursorPos(&a2)->y + 30;
-  }
-  v3->uFrameY = v9;
-LABEL_14:
-  if ( (signed int)v3->uFrameY < (signed int)v2 )
-    v3->uFrameY = v2;
-  if ( (signed int)v3->uFrameX < v4 )
-    v3->uFrameX = v4;
-  v10 = v3->uFrameWidth;
-  v11 = v3->uFrameX;
-  v12 = v3->uFrameY;
-  v21 = v10;
-  a2.y = v11;
-  v3->uFrameZ = v10 + v11 - 1;
-  v13 = v3->uFrameHeight;
-  v3->uFrameW = v13 + v12 - 1;
-  memcpy(&v19, v3, sizeof(v19));
-  v19.uFrameX += 12;
-  v19.uFrameWidth -= 24;
-  v19.uFrameY += 12;
-  v19.uFrameHeight -= 12;
-  v19.uFrameZ = v19.uFrameWidth + v19.uFrameX - 1;
-  v23 = v12;
-  v19.uFrameW = v19.uFrameHeight + v19.uFrameY - 1;
-  v14 = v3->Hint;
-  if ( v14 )
-  {
-    v15 = pFontLucida->CalcTextHeight(v14, &v19, 0, 0);
-    v12 = v23;
-    v16 = v15 + 24;
-  }
+    this->uFrameY = cursor.y + 30;
+  if ( (signed int)this->uFrameY < (signed int)v2 )
+    this->uFrameY = v2;
+  if ( (signed int)this->uFrameX < v4 )
+    this->uFrameX = v4;
+  this->uFrameZ = this->uFrameWidth + this->uFrameX - 1;
+  this->uFrameW = this->uFrameHeight + this->uFrameY - 1;
+  memcpy(&current_window, this, sizeof(current_window));
+  current_window.uFrameX += 12;
+  current_window.uFrameWidth -= 24;
+  current_window.uFrameY += 12;
+  current_window.uFrameHeight -= 12;
+  current_window.uFrameZ = current_window.uFrameWidth + current_window.uFrameX - 1;
+  current_window.uFrameW = current_window.uFrameHeight + current_window.uFrameY - 1;
+  if ( this->Hint )
+    v16 = pFontLucida->CalcTextHeight(this->Hint, &current_window, 0, 0) + 24;
   else
-  {
-    v16 = v13;
-  }
+    v16 = this->uFrameHeight;
   if ( (signed int)v16 < 64 )
     v16 = 64;
-  if ( (signed int)(v16 + v12) > 479 )
-    v16 = 479 - v12;
-  DrawPopupWindow(a2.y, v12, v21, v16);
-  v17 = v3->Hint;
-  if ( v17 )
-  {
-    v18 = pFontLucida->CalcTextHeight(v17, &v19, 0, 0);
-    v19.DrawTitleText(pFontLucida, 0, (signed int)(v16 - v18) / 2 - 14, 0, v17, 3);
-  }
+  if ( (signed int)(v16 + this->uFrameY) > 479 )
+    v16 = 479 - this->uFrameY;
+  DrawPopupWindow(this->uFrameX, this->uFrameY, this->uFrameWidth, v16);
+  if ( this->Hint )
+    current_window.DrawTitleText(pFontLucida, 0, (signed int)(v16 - pFontLucida->CalcTextHeight(this->Hint, &current_window, 0, 0)) / 2 - 14, 0, this->Hint, 3);
 }
-
-
-
 
 //----- (00411B59) --------------------------------------------------------
 void __fastcall LoadThumbnailLloydTexture(unsigned int uSlot, unsigned int uPlayer)
 {
-  unsigned int v2; // esi@1
-  unsigned int v3; // edi@1
+  //unsigned int v2; // esi@1
+  //unsigned int v3; // edi@1
   FILE *v4; // ebx@1
   FILE *v5; // eax@2
   char pContainerName[64]; // [sp+Ch] [bp-44h]@1
-  unsigned int v7; // [sp+4Ch] [bp-4h]@1
+  //unsigned int v7; // [sp+4Ch] [bp-4h]@1
 
-  v2 = uSlot;
-  v7 = uPlayer;
-  v3 = uSlot + 1;
+  //v2 = uSlot;
+  //v7 = uPlayer;
+  //v3 = uSlot + 1;
   sprintf(pContainerName, "data\\lloyd%d%d.pcx", uPlayer, uSlot + 1);
   v4 = fopen(pContainerName, "rb");
   if ( v4 )
   {
-    pSavegameThumbnails[v2].LoadFromFILE(v4, 0, 1u);
+    pSavegameThumbnails[uSlot].LoadFromFILE(v4, 0, 1);
     fclose(v4);
   }
   else
   {
-    sprintf(pContainerName, "lloyd%d%d.pcx", v7, v3);
+    sprintf(pContainerName, "lloyd%d%d.pcx", uPlayer, uSlot + 1);
     v5 = pNew_LOD->FindContainer(pContainerName, 1);
     if ( v5 )
-      pSavegameThumbnails[v2].LoadFromFILE(v5, 0, 0);
+      pSavegameThumbnails[uSlot].LoadFromFILE(v5, 0, 0);
     else
-      *((int *)&pSavegameThumbnails.data()->pPixels + 10 * v2) = 0;
+      *((int *)&pSavegameThumbnails.data()->pPixels + 10 * uSlot) = 0;
   }
 }
 
@@ -870,8 +806,8 @@ void GUIWindow::HouseDialogManager()
   memcpy(&pWindow, this, sizeof(pWindow));
   pWindow.uFrameWidth -= 18;
   pWindow.uFrameZ -= 18;
-  pWhiteColor = TargetColor(0xFFu, 0xFFu, 0xFFu);
-  pColor2 = TargetColor(0x15u, 0x99u, 0xE9u);
+  pWhiteColor = Color16(0xFFu, 0xFFu, 0xFFu);
+  pColor2 = Color16(0x15u, 0x99u, 0xE9u);
   pRenderer->DrawTextureIndexed(0x1DDu, 0, pTexture_Dialogue_Background);
   pRenderer->DrawTextureTransparent(0x1D4u, 0, &pIcons_LOD->pTextures[uTextureID_right_panel_loop]);
   if ( pDialogueNPCCount != uNumDialogueNPCPortraits || !uHouse_ExitPic )
@@ -902,9 +838,7 @@ void GUIWindow::HouseDialogManager()
         pRenderer->DrawTextureIndexed(476, 451, &pIcons_LOD->pTextures[uTextureID_x_ok_u]);
       }
       else
-      {
         pRenderer->DrawTextureIndexed(471, 445, &pIcons_LOD->pTextures[uExitCancelTextureId]);
-      }
       return;
     }
     if ( current_npc_text )
@@ -927,9 +861,7 @@ void GUIWindow::HouseDialogManager()
         pRenderer->DrawTextureIndexed(476, 451, &pIcons_LOD->pTextures[uTextureID_x_ok_u]);
       }
       else
-      {
         pRenderer->DrawTextureIndexed(471, 445, &pIcons_LOD->pTextures[uExitCancelTextureId]);
-      }
       return;
     }
     for ( v8 = 0; v8 < uNumDialogueNPCPortraits; ++v8 )
@@ -966,9 +898,7 @@ void GUIWindow::HouseDialogManager()
         pRenderer->DrawTextureIndexed(476, 451, &pIcons_LOD->pTextures[uTextureID_x_ok_u]);
       }
       else
-      {
         pRenderer->DrawTextureIndexed(471, 445, &pIcons_LOD->pTextures[uExitCancelTextureId]);
-      }
       return;
   }
   v4 = (char *)pDialogueNPCCount - 1;
@@ -983,15 +913,11 @@ void GUIWindow::HouseDialogManager()
       pRenderer->DrawTextureIndexed(476, 451, &pIcons_LOD->pTextures[uTextureID_x_ok_u]);
     }
     else
-    {
       pRenderer->DrawTextureIndexed(471, 445, &pIcons_LOD->pTextures[uExitCancelTextureId]);
-    }
     return;
   }
   if ( v4 || !dword_591080 )//на изумрудном острове заходит на корабле пока не выполнены квесты
-  {
     SimpleHouseDialog();
-  }
   else
   {
     sprintfex( pTmpBuf.data(), pGlobalTXT_LocalizationStrings[429],
@@ -1060,9 +986,7 @@ void GUIWindow::HouseDialogManager()
     pRenderer->DrawTextureIndexed(476, 451, &pIcons_LOD->pTextures[uTextureID_x_ok_u]);
   }
   else
-  {
     pRenderer->DrawTextureIndexed(471, 445, &pIcons_LOD->pTextures[uExitCancelTextureId]);
-  }
 }
 
 //----- (004B1854) --------------------------------------------------------
@@ -1116,16 +1040,14 @@ void GUIWindow::DrawShops_next_generation_time_string( __int64 next_generation_t
     sprintfex(pTmpBuf2.data(), "%d %s ", (int)seconds, text);
     strcat(pTmpBuf.data(), pTmpBuf2.data());
   }
-  this->DrawTitleText(pFontArrus, 0, (212 - pFontArrus->CalcTextHeight(pTmpBuf.data(), this, 0, 0)) / 2 + 101, TargetColor(0xFFu, 0xFFu, 0x9Bu), pTmpBuf.data(), 3);
+  this->DrawTitleText(pFontArrus, 0, (212 - pFontArrus->CalcTextHeight(pTmpBuf.data(), this, 0, 0)) / 2 + 101, Color16(0xFFu, 0xFFu, 0x9Bu), pTmpBuf.data(), 3);
 }
-
-
 
 //----- (0044D406) --------------------------------------------------------
 void GUIWindow::DrawTitleText( GUIFont *a2, signed int uHorizontalMargin, unsigned int uVerticalMargin, unsigned __int16 uDefaultColor, 
                                const char *pInString, unsigned int uLineSpacing )
 {
-  GUIWindow *pWindow; // esi@1
+  //GUIWindow *pWindow; // esi@1
   unsigned int v8; // ebx@1
   char *v9; // eax@1
   unsigned int v11; // edi@1
@@ -1134,14 +1056,14 @@ void GUIWindow::DrawTitleText( GUIFont *a2, signed int uHorizontalMargin, unsign
   GUIFont *pFont; // [sp+Ch] [bp-4h]@1
   const char *Stra; // [sp+24h] [bp+14h]@5
 
-  pWindow = this;
+  //pWindow = this;
   pFont = a2;
   v8 = this->uFrameWidth - uHorizontalMargin;
   ui_current_text_color = uDefaultColor;
   v9 = FitTextInAWindow(pInString, a2, this, uHorizontalMargin, 0);
   Stra = strtok(v9, "\n");
-  v11 = uHorizontalMargin + pWindow->uFrameX;
-  v12 = uVerticalMargin + pWindow->uFrameY;
+  v11 = uHorizontalMargin + this->uFrameX;
+  v12 = uVerticalMargin + this->uFrameY;
   while ( 1 )
   {
     if ( !Stra )
@@ -1149,17 +1071,15 @@ void GUIWindow::DrawTitleText( GUIFont *a2, signed int uHorizontalMargin, unsign
     v13 = (signed int)(v8 - pFont->GetLineWidth(Stra)) >> 1;
     if ( v13 < 0 )
       v13 = 0;
-    pFont->DrawTextLine(uDefaultColor, v11 + v13, v12, Stra, 640);
+    pFont->DrawTextLine(uDefaultColor, v11 + v13, v12, Stra, window->GetWidth());
     v12 += pFont->uFontHeight - uLineSpacing;
     Stra = strtok(0, "\n");
   }
 }
 // 5C6DB4: using guessed type int ui_current_text_color;
 
-
-
 //----- (0044CE08) --------------------------------------------------------
-void GUIWindow::DrawText( GUIFont *a2, signed int uX, int uY, unsigned int uFontColor, const char *Str, int a7, int a8, unsigned int uFontShadowColor )
+void GUIWindow::DrawText( GUIFont *a2, signed int uX, int uY, unsigned int uFontColor, const char *Str, int a7, int a8, signed int uFontShadowColor )
     {
   GUIWindow *v9; // edi@1
   GUIFont *v10; // ebx@1
@@ -1173,8 +1093,8 @@ void GUIWindow::DrawText( GUIFont *a2, signed int uX, int uY, unsigned int uFont
   int v18; // edi@32
   int v19; // esi@38
   std::string v21; // [sp-18h] [bp-50h]@2
-  const char *v22; // [sp-8h] [bp-40h]@2
-  int v23; // [sp-4h] [bp-3Ch]@2
+//  const char *v22; // [sp-8h] [bp-40h]@2
+//  int v23; // [sp-4h] [bp-3Ch]@2
   char Dest[6]; // [sp+Ch] [bp-2Ch]@32
   //char v25; // [sp+Fh] [bp-29h]@32
   //char v26; // [sp+11h] [bp-27h]@34
@@ -1204,9 +1124,7 @@ void GUIWindow::DrawText( GUIFont *a2, signed int uX, int uY, unsigned int uFont
     if ( !uX )
       uX = 12;
     if ( a8 )
-    {
       v32 = Str;
-    }
     else
     {
       v11 = (int)FitTextInAWindow(Str, v10, v9, uX, 0);
@@ -1232,7 +1150,7 @@ void GUIWindow::DrawText( GUIFont *a2, signed int uX, int uY, unsigned int uFont
             switch ( (unsigned __int8)v11 )
             {
               case 9u:
-                strncpy(Dest, &v32[v14 + 1], 3u);
+                strncpy(Dest, &v32[v14 + 1], 3);
                 Dest[3] = 0;
                 pInString += 3;
                 v29 = atoi(Dest);
@@ -1246,17 +1164,21 @@ void GUIWindow::DrawText( GUIFont *a2, signed int uX, int uY, unsigned int uFont
                 v13 = uY + v31->uFrameY;
                 v12 = uX + v29 + v31->uFrameX;
                 if ( a8 )
-                  goto LABEL_36;
+                {
+                  v11 = v11 + v13 - 3;
+                  if ( v11 > a8 )
+                    return;
+                }
                 break;
               case 0xCu:
-                strncpy(Dest, &v32[v14 + 1], 5u);
+                strncpy(Dest, &v32[v14 + 1], 5);
                 Dest[5] = 0;
                 v11 = atoi(Dest);
                 pInString += 5;
                 uFontColor = v11;
                 break;
               case 0xDu:
-                strncpy(Dest, &v32[v14 + 1], 3u);
+                strncpy(Dest, &v32[v14 + 1], 3);
                 Dest[3] = 0;
                 pInString += 3;
                 v18 = atoi(Dest);
@@ -1266,7 +1188,6 @@ void GUIWindow::DrawText( GUIFont *a2, signed int uX, int uY, unsigned int uFont
                 if ( a8 )
                 {
                   v11 = LOBYTE(v10->uFontHeight);
-LABEL_36:
                   v11 = v11 + v13 - 3;
                   if ( v11 > a8 )
                     return;
@@ -1287,24 +1208,11 @@ LABEL_36:
                   v12 += v10->pMetrics[v15].uLeftSpacing;
                 v17 = (int)((char *)&v10[1] + v10->font_pixels_offset[v15]);
                 if ( (short)uFontColor )
-                  pRenderer->DrawText(
-                    v12,
-                    v13,
-                    (unsigned __int8 *)v17,
-                    v16,
-                    LOBYTE(v10->uFontHeight),
-                    v10->pFontPalettes[0],
-                    uFontColor,
-                    uFontShadowColor);
+                  pRenderer->DrawText(v12, v13, (unsigned __int8 *)v17, v16, LOBYTE(v10->uFontHeight),
+                    v10->pFontPalettes[0], uFontColor, uFontShadowColor);
                 else
-                  pRenderer->DrawTextPalette(
-                    v12,
-                    v13,
-                    (unsigned char*)v17,
-                    v16,
-                    LOBYTE(v10->uFontHeight),
-                    v10->pFontPalettes[0],
-                    a7);
+                  pRenderer->DrawTextPalette(v12, v13, (unsigned char*)v17, v16, LOBYTE(v10->uFontHeight),
+                    v10->pFontPalettes[0], a7);
                 LOBYTE(v11) = v30;
                 v12 += v28;
                 if ( (signed int)pInString < (signed int)v30 )
@@ -1327,33 +1235,32 @@ LABEL_36:
 
 //----- (0044CB4F) --------------------------------------------------------
 int GUIWindow::DrawTextInRect( GUIFont *pFont, unsigned int uX, unsigned int uY, unsigned int uColor, const char *text, int rect_width, int reverse_text )
-    {
-
+{
   int pLineWidth; // ebx@1
   int text_width; // esi@3
   unsigned __int8 v12; // cl@7
   signed int v13; // esi@19
   signed int v14; // ebx@19
   unsigned __int8 v15; // cl@21
-  int v16; // eax@22
-  int v17; // ecx@22
-  int v18; // ecx@23
-  int v19; // ecx@24
+//  int v16; // eax@22
+//  int v17; // ecx@22
+//  int v18; // ecx@23
+//  int v19; // ecx@24
   unsigned int v20; // ecx@26
   unsigned char* v21; // eax@28
-  int v22; // ebx@34
+//  int v22; // ebx@34
   int v23; // eax@34
   int v24; // ebx@36
   char Str[6]; // [sp+Ch] [bp-20h]@34
-  char v26; // [sp+Fh] [bp-1Dh]@34
-  char v27; // [sp+11h] [bp-1Bh]@35
+//  char v26; // [sp+Fh] [bp-1Dh]@34
+//  char v27; // [sp+11h] [bp-1Bh]@35
   int v28; // [sp+20h] [bp-Ch]@17
   GUIWindow *pWindow; // [sp+24h] [bp-8h]@1
   size_t pNumLen; // [sp+28h] [bp-4h]@1
   size_t Str1a; // [sp+40h] [bp+14h]@5
-  size_t Str1b; // [sp+40h] [bp+14h]@19
-  const char *Sourcea; // [sp+44h] [bp+18h]@20
-  int v34; // [sp+48h] [bp+1Ch]@26
+//  size_t Str1b; // [sp+40h] [bp+14h]@19
+//  const char *Sourcea; // [sp+44h] [bp+18h]@20
+//  int v34; // [sp+48h] [bp+1Ch]@26
   int i;
 
 
@@ -1370,7 +1277,7 @@ int GUIWindow::DrawTextInRect( GUIFont *pFont, unsigned int uX, unsigned int uY,
   if ( reverse_text )
     _strrev(pTmpBuf2.data());
   Str1a = 0;
-  for (i=0; i<pNumLen; ++i)
+  for ( i = 0; i < pNumLen; ++i )
     {
       if ( text_width >= rect_width )
         break;
@@ -1392,7 +1299,7 @@ int GUIWindow::DrawTextInRect( GUIFont *pFont, unsigned int uX, unsigned int uY,
           text_width += pFont->pMetrics[v12].uWidth;
           if ( i < pNumLen )
               text_width += pFont->pMetrics[v12].uRightSpacing;
-          }       
+          }
       }
     }
   pTmpBuf2[i - 1] = 0;
@@ -1458,10 +1365,8 @@ int GUIWindow::DrawTextInRect( GUIFont *pFont, unsigned int uX, unsigned int uY,
           v13 += v20;
           if ( i < (signed int)pNumLen )
               v13 += pFont->pMetrics[v15].uRightSpacing;
-          }       
+          }
       }
-      
-   
   }
   return v28;
 }
@@ -1471,15 +1376,15 @@ GUIButton *GUIWindow::CreateButton(unsigned int uX, unsigned int uY, unsigned in
 	int a6, int a7, UIMessageType msg, unsigned int msg_param, unsigned __int8 uHotkey, const char *pName, Texture *pTextures, ...)
 {
   GUIButton *pButton; // esi@1
-  unsigned int v13; // eax@1
-  unsigned int v14; // ebx@4
-  unsigned int v15; // eax@4
+//  unsigned int v13; // eax@1
+//  unsigned int v14; // ebx@4
+//  unsigned int v15; // eax@4
   unsigned int TextureNum=0; // ebx@4
-  unsigned int v17; // eax@4
-  Texture *v18; // eax@4
-  Texture **v19; // ecx@5
-  Texture **v20; // edx@5
-  GUIButton *v21; // eax@7
+//  unsigned int v17; // eax@4
+//  Texture *v18; // eax@4
+//  Texture **v19; // ecx@5
+//  Texture **v20; // edx@5
+//  GUIButton *v21; // eax@7
   va_list texturs_ptr;
 
   pButton = (GUIButton *)malloc(0xBC);
@@ -1523,14 +1428,14 @@ GUIButton *GUIWindow::CreateButton(unsigned int uX, unsigned int uY, unsigned in
 
 //----- (00459C2B) --------------------------------------------------------
 void GUIWindow::DrawFlashingInputCursor( signed int uX, int uY, struct GUIFont *a2 )
-    {
+{
   if ( GetTickCount() % 1000 > 500 )
     DrawText(a2, uX, uY, 0, "_", 0, 0, 0);
 }
 
 //----- (0041C432) --------------------------------------------------------
 GUIWindow * GUIWindow::Create( unsigned int uX, unsigned int uY, unsigned int uWidth, unsigned int uHeight, enum WindowType eWindowType, int pButton, const char* hint )
-    {
+{
   unsigned int uNextFreeWindowID; // ebp@1
   //int *v8; // eax@1
   //GUIWindow *pWindow; // esi@4
@@ -1543,12 +1448,12 @@ GUIWindow * GUIWindow::Create( unsigned int uX, unsigned int uY, unsigned int uW
   int v20; // eax@35
   int v22; // eax@40
   int v24; // eax@45
-  int v25; // eax@65
+//  int v25; // eax@65
   unsigned int v26; // ebx@65
   char *v27; // eax@71
   const char *v29; // [sp-8h] [bp-18h]@68
   char *v30; // [sp-4h] [bp-14h]@68
-  int uWidtha; // [sp+14h] [bp+4h]@66
+//  int uWidtha; // [sp+14h] [bp+4h]@66
   int num_menu_buttons; // [sp+20h] [bp+10h]@15
 
   for (uNextFreeWindowID = 0; uNextFreeWindowID < 20; ++uNextFreeWindowID)
@@ -1667,9 +1572,7 @@ GUIWindow * GUIWindow::Create( unsigned int uX, unsigned int uY, unsigned int uW
                   pWindow->CreateButton(0x1E0u, v11 + 130, 0x8Cu, v11, 1, 0, UIMSG_SelectNPCDialogueOption, 0x4Cu, 0, pTmpBuf.data(), 0);
                 }
                 else
-                {
                   pWindow->CreateButton(0x1E0u, v11 + 130, 0x8Cu, v11, 1, 0, UIMSG_SelectNPCDialogueOption, 0x4Cu, 0, pGlobalTXT_LocalizationStrings[406], 0);//Нанять
-                }
                 num_menu_buttons = 2;
               }
             }
@@ -1677,7 +1580,8 @@ GUIWindow * GUIWindow::Create( unsigned int uX, unsigned int uY, unsigned int uW
           }
           break;
             }
-        case WINDOW_ChangeLocation: {
+        case WINDOW_ChangeLocation:
+        {
           pMainScreenNum = pCurrentScreen;
           pCurrentScreen = SCREEN_CHANGE_LOCATION;
           pBtn_ExitCancel = pWindow->CreateButton(                  566,                   445,  75,  33, 1, 0, UIMSG_CHANGE_LOCATION_ClickCencelBtn, 0, 'N', pGlobalTXT_LocalizationStrings[156], pIcons_LOD->GetTexture(uTextureID_BUTTDESC2), 0);//Остаться в этой области
@@ -1685,7 +1589,7 @@ GUIWindow * GUIWindow::Create( unsigned int uX, unsigned int uY, unsigned int uW
                             pWindow->CreateButton(pNPCPortraits_x[0][0], pNPCPortraits_y[0][0],  63,  73, 1, 0, UIMSG_OnTravelByFoot, 1, ' ', pWindow->Hint, 0, 0, 0);
                             pWindow->CreateButton(                    8,                     8, 460, 344, 1, 0, UIMSG_OnTravelByFoot, 1,   0, pWindow->Hint, 0);
           break;
-            }
+        }
         case WINDOW_SpellBook: {// окно книги заклов
           InitializeBookTextures();
           pWindow->OpenSpellBook();
@@ -1702,11 +1606,11 @@ GUIWindow * GUIWindow::Create( unsigned int uX, unsigned int uY, unsigned int uW
       return pWindow;
     }
 //LABEL_62:
-    pWindow->CreateButton(0x3Du, 0x1A8u, 0x1Fu, 0, 2, 94, UIMSG_SelectCharacter, 1u, '1', "", 0);
-    pWindow->CreateButton(0xB1u, 0x1A8u, 0x1Fu, 0, 2, 94, UIMSG_SelectCharacter, 2u, '2', "", 0);
-    pWindow->CreateButton(0x124u, 0x1A8u, 0x1Fu, 0, 2, 94, UIMSG_SelectCharacter, 3u, '3', "", 0);
-    pWindow->CreateButton(0x197u, 0x1A8u, 0x1Fu, 0, 2, 94, UIMSG_SelectCharacter, 4u, '4', "", 0);
-    pWindow->CreateButton(0, 0, 0, 0, 1, 0, UIMSG_CycleCharacters, 0, 9u, "", 0);
+    pWindow->CreateButton(61, 424, 31, 0, 2, 94, UIMSG_SelectCharacter, 1, '1', "", 0);
+    pWindow->CreateButton(177, 424, 31, 0, 2, 94, UIMSG_SelectCharacter, 2, '2', "", 0);
+    pWindow->CreateButton(292, 424, 31, 0, 2, 94, UIMSG_SelectCharacter, 3, '3', "", 0);
+    pWindow->CreateButton(407, 424, 31, 0, 2, 94, UIMSG_SelectCharacter, 4, '4', "", 0);
+    pWindow->CreateButton(0, 0, 0, 0, 1, 0, UIMSG_CycleCharacters, 0, 9, "", 0);
     return pWindow;
   }
   if (eWindowType == WINDOW_HouseInterior)
@@ -1763,17 +1667,17 @@ GUIWindow * GUIWindow::Create( unsigned int uX, unsigned int uY, unsigned int uW
     }
     if (eWindowType == WINDOW_Scroll)
     {
-      pWindow->CreateButton(0x3Du, 0x1A8u, 0x1Fu, 0, 2, 94, UIMSG_SelectCharacter, 1u, '1', "", 0);
-      pWindow->CreateButton(0xB1u, 0x1A8u, 0x1Fu, 0, 2, 94, UIMSG_SelectCharacter, 2u, '2', "", 0);
-      pWindow->CreateButton(0x124u, 0x1A8u, 0x1Fu, 0, 2, 94, UIMSG_SelectCharacter, 3u, '3', "", 0);
-      pWindow->CreateButton(0x197u, 0x1A8u, 0x1Fu, 0, 2, 94, UIMSG_SelectCharacter, 4u, '4', "", 0);
+      pWindow->CreateButton(61, 424, 31, 0, 2, 94, UIMSG_SelectCharacter, 1, '1', "", 0);
+      pWindow->CreateButton(177, 424, 31, 0, 2, 94, UIMSG_SelectCharacter, 2, '2', "", 0);
+      pWindow->CreateButton(292, 424, 31, 0, 2, 94, UIMSG_SelectCharacter, 3, '3', "", 0);
+      pWindow->CreateButton(407, 424, 31, 0, 2, 94, UIMSG_SelectCharacter, 4, '4', "", 0);
       pWindow->CreateButton(0, 0, 0, 0, 1, 0, UIMSG_CycleCharacters, 0, '\t', "", 0);
       return pWindow;
     }
     if (eWindowType == WINDOW_CastSpell_InInventory)
     {
       pMouse->SetCursorBitmap("MICON2");
-      pBtn_ExitCancel = pWindow->CreateButton(0x188u, 0x13Eu, 0x4Bu, 0x21u, 1, 0, UIMSG_Escape, 0, 0, pGlobalTXT_LocalizationStrings[34],//Отмена
+      pBtn_ExitCancel = pWindow->CreateButton(392, 318, 75, 33, 1, 0, UIMSG_Escape, 0, 0, pGlobalTXT_LocalizationStrings[34],//Отмена
                      pIcons_LOD->GetTexture(uTextureID_BUTTDESC2), 0);
       ShowStatusBarString(pGlobalTXT_LocalizationStrings[39], 2);//Выбрать цель
       ++pIcons_LOD->uTexturePacksCount;
@@ -1792,7 +1696,7 @@ void DrawJoinGuildWindow( int pEventCode )
   current_npc_text = (char *)pNPCTopics[pEventCode + 99].pText;
   ContractSelectText(pEventCode);
   pDialogueWindow->Release();
-  pDialogueWindow = GUIWindow::Create(0, 0, 640, 0x15E, WINDOW_MainMenu, pEventCode, 0);
+  pDialogueWindow = GUIWindow::Create(0, 0, window->GetWidth(), 350, WINDOW_MainMenu, pEventCode, 0);
   pBtn_ExitCancel = pDialogueWindow->CreateButton(471, 445, 169, 35, 1, 0, UIMSG_Escape,                    0, 0, pGlobalTXT_LocalizationStrings[34], pIcons_LOD->GetTexture(uExitCancelTextureId), 0); // Cancel
                     pDialogueWindow->CreateButton(  0,   0,   0,  0, 1, 0, UIMSG_BuyInShop_Identify_Repair, 0, 0, "", 0);
                     pDialogueWindow->CreateButton(480, 160, 140, 30, 1, 0, UIMSG_ClickNPCTopic,             0x52u, 0, pGlobalTXT_LocalizationStrings[122], 0);
@@ -1814,12 +1718,12 @@ void GUI_UpdateWindows()
   GUIWindow *pWindow; // esi@4
   //unsigned int pWindowType; // eax@4
   const char *pHint; // edx@66
-  GUIButton *pButtonPtr_1C; // ebp@79
-  char *pHint1; // edx@80
+//  GUIButton *pButtonPtr_1C; // ebp@79
+//  char *pHint1; // edx@80
   int v26; // eax@98
   unsigned int v27; // ebp@106
   GUIWindow *pGUIWindow2; // ecx@109
-  GUIFont *pGUIFont; // ST1C_4@115
+//  GUIFont *pGUIFont; // ST1C_4@115
   int v31; // eax@115
   GUIButton *pButton; // ebp@118
   int v39; // eax@129
@@ -1830,12 +1734,12 @@ void GUI_UpdateWindows()
   //Texture *pTexture; // [sp-14h] [bp-11Ch]@17
   //Texture *pTexture2; // [sp-14h] [bp-11Ch]@86
   int i; // [sp+0h] [bp-108h]@3
-  ItemGen pItemGen; // [sp+4h] [bp-104h]@98
+//  ItemGen pItemGen; // [sp+4h] [bp-104h]@98
   GUIButton GUIButton2; // [sp+28h] [bp-E0h]@133
   ItemGen ItemGen2; // [sp+E4h] [bp-24h]@129
 
   if (GetCurrentMenuID() != MENU_CREATEPARTY)
-    UI_OnKeyDown(VK_NEXT);
+    Mouse::UI_OnKeyDown(VK_NEXT);
 
   for ( i = 1; i <= uNumVisibleWindows; ++i )
   {
@@ -1929,9 +1833,7 @@ void GUI_UpdateWindows()
         if ( pParty->PartyTimes._shop_ban_times[window_SpeakInHouse->par1C] <=pParty->uTimePlayed )
         {
           if ( window_SpeakInHouse->par1C < 53 )
-          {
             pParty->PartyTimes._shop_ban_times[window_SpeakInHouse->par1C] = 0;
-          }
           continue;
         }
         pNumMessages = pMessageQueue_50CBD0->uNumMessages;
@@ -1964,7 +1866,7 @@ void GUI_UpdateWindows()
       }
       case WINDOW_50:
       {
-        v27 = TargetColor(255, 255, 255);
+        v27 = Color16(255, 255, 255);
         if ( ptr_507BD0->receives_keyboard_input_2 == WINDOW_INPUT_IN_PROGRESS)
         {
           ptr_507BD0->DrawMessageBox(0);
@@ -2032,9 +1934,9 @@ void GUI_UpdateWindows()
         if ( pWindow->Hint != (char *)1 )
           pAudioPlayer->PlaySound((SoundID)75, 0, 0, -1, 0, 0, 0, 0);
         pButton = (GUIButton *)pWindow->ptr_1C;
-        if ( pButton->uX >= 0 && pButton->uX <= 640 )
+        if ( pButton->uX >= 0 && pButton->uX <= window->GetWidth() )
         {
-          if ( pButton->uY >= 0 && pButton->uY <= 480 )
+          if ( pButton->uY >= 0 && pButton->uY <= window->GetHeight() )
           {
             pRenderer->DrawTextureIndexed(pWindow->uFrameX, pWindow->uFrameY, pButton->pTextures[0]);
             viewparams->bRedrawGameUI = 1;
@@ -2214,9 +2116,7 @@ void GUI_UpdateWindows()
         continue;
       }
       default:
-      {
         continue;
-      }
     }
   }
   if ( GetCurrentMenuID() == -1 )
@@ -2224,13 +2124,13 @@ void GUI_UpdateWindows()
   if ( sub_4637E0_is_there_popup_onscreen() )
     UI_OnMouseRightClick(0);
 }
-void LoadFonts_and_DrawCopyrightWindow()
-{
-  MainMenuUI_LoadFontsAndSomeStuff();
-  DrawCopyrightWindow();
-}
+//void LoadFonts_and_DrawCopyrightWindow()
+//{
+  //MainMenuUI_LoadFontsAndSomeStuff();
+ // DrawCopyrightWindow();
+//}
 //----- (00415485) --------------------------------------------------------
-void DrawCopyrightWindow()
+void DrawMM7CopyrightWindow()
 {
   GUIWindow Dst; // [sp+8h] [bp-54h]@1
 
@@ -2257,9 +2157,6 @@ void DrawCopyrightWindow()
   Dst.DrawTitleText(pFontSmallnum, 0, 0xCu, ui_mainmenu_copyright_color, pGlobalTXT_LocalizationStrings[157], 3);
 }
 
-
-
-
 int modal_window_prev_screen;
 
 //----- (004141CA) --------------------------------------------------------
@@ -2267,7 +2164,7 @@ void ModalWindow(const char *pStrHint, UIMessageType OnRelease_message)
 {
   pEventTimer->Pause();
   modal_window_prev_screen = pCurrentScreen;
-  pModalWindow = GUIWindow::Create(0, 0, 640, 480, WINDOW_ModalWindow, OnRelease_message, pStrHint);
+  pModalWindow = GUIWindow::Create(0, 0, window->GetWidth(), window->GetHeight(), WINDOW_ModalWindow, OnRelease_message, pStrHint);
   pCurrentScreen = SCREEN_MODAL_WINDOW;
 }
 
@@ -2301,10 +2198,9 @@ void ModalWindow_Release()
 
 //----- (00467FB6) --------------------------------------------------------
 void CreateScrollWindow()
-    {
+{
   unsigned int v0; // eax@1
   char *v1; // ST18_4@3
-  unsigned int v2; // eax@3
   GUIWindow a1; // [sp+Ch] [bp-54h]@1
 
   memcpy(&a1, pGUIWindow_ScrollWindow, sizeof(a1));
@@ -2313,8 +2209,7 @@ void CreateScrollWindow()
   a1.uFrameY = 1;
   a1.uFrameWidth = 468;
   v0 = pFontSmallnum->CalcTextHeight(pScrolls[pGUIWindow_ScrollWindow->par1C], &a1, 0, 0)
-     + 2 * LOBYTE(pFontCreate->uFontHeight)
-     + 24;
+     + 2 * LOBYTE(pFontCreate->uFontHeight) + 24;
   a1.uFrameHeight = v0;
   if ( (signed int)(v0 + a1.uFrameY) > 479 )
   {
@@ -2331,31 +2226,20 @@ void CreateScrollWindow()
   a1.uFrameZ = a1.uFrameWidth + a1.uFrameX - 1;
   a1.uFrameW = a1.uFrameHeight + a1.uFrameY - 1;
   v1 = pItemsTable->pItems[(unsigned int)pGUIWindow_ScrollWindow->ptr_1C + 700].pName;
-  v2 = TargetColor(0xFFu, 0xFFu, 0x9Bu);
-  sprintf(pTmpBuf.data(), format_4E2D80, v2, v1);
-  a1.DrawTitleText(pFontCreate, 0, 0, 0, pTmpBuf.data(), 3u);
-  a1.DrawText(
-           pFontSmallnum,
-           1,
-           LOBYTE(pFontCreate->uFontHeight) - 3,
-           0,
-           pScrolls[(unsigned int)pGUIWindow_ScrollWindow->ptr_1C],
-           0,
-           0,
-           0);
+  sprintf(pTmpBuf.data(), format_4E2D80, Color16(0xFFu, 0xFFu, 0x9Bu), v1);
+  a1.DrawTitleText(pFontCreate, 0, 0, 0, pTmpBuf.data(), 3);
+  a1.DrawText(pFontSmallnum, 1, LOBYTE(pFontCreate->uFontHeight) - 3, 0,
+              pScrolls[(unsigned int)pGUIWindow_ScrollWindow->ptr_1C], 0, 0, 0);
 }
 //----- (00467F48) --------------------------------------------------------
 void CreateMsgScrollWindow( signed int mscroll_id )
-    {
-  signed int v1; // esi@1
-
-  v1 = mscroll_id;
+{
   if ( !pGUIWindow_ScrollWindow && mscroll_id >= 700 )
   {
     if ( mscroll_id <= 782 )
     {
       uTextureID_720980 = pIcons_LOD->LoadTexture("leather", TEXTURE_16BIT_PALETTE);
-      pGUIWindow_ScrollWindow = GUIWindow::Create(0, 0, 640, 480, WINDOW_Scroll, v1 - 700, 0);
+      pGUIWindow_ScrollWindow = GUIWindow::Create(0, 0, window->GetWidth(), window->GetHeight(), WINDOW_Scroll, mscroll_id - 700, 0);
     }
   }
 }
@@ -2457,8 +2341,8 @@ void SetUserInterface(PartyAlignment align, bool bReplace)
       pUIAnum_Torchlight->uIconID = pIconsFrameTable->FindIcon("torchC");
       pIconsFrameTable->InitializeAnimation((signed __int16)pUIAnum_Torchlight->uIconID);
     }
-    uGameUIFontMain = TargetColor(0xC8u, 0, 0);
-    uGameUIFontShadow = TargetColor(10, 0, 0);
+    uGameUIFontMain = Color16(0xC8u, 0, 0);
+    uGameUIFontShadow = Color16(10, 0, 0);
   }
   else if (align == PartyAlignment_Neutral)
   {
@@ -2550,8 +2434,8 @@ void SetUserInterface(PartyAlignment align, bool bReplace)
       uTextureID_507698 = pIcons_LOD->LoadTexture("edge_top", TEXTURE_16BIT_PALETTE);
       pTexture_591428 = pIcons_LOD->LoadTexturePtr("endcap", TEXTURE_16BIT_PALETTE);
     }
-    uGameUIFontMain = TargetColor(0xAu, 0, 0);
-    uGameUIFontShadow = TargetColor(230, 214, 193);
+    uGameUIFontMain = Color16(0xAu, 0, 0);
+    uGameUIFontShadow = Color16(230, 214, 193);
   }
   else if (align == PartyAlignment_Good)
   {
@@ -2599,8 +2483,8 @@ void SetUserInterface(PartyAlignment align, bool bReplace)
       pIcons_LOD->ReloadTexture(&pIcons_LOD->pTextures[uTextureID_507698], "edge_top-b", 2);
       pIcons_LOD->ReloadTexture(pTexture_591428, "endcap-b", 2);
     }
-    uGameUIFontMain = TargetColor(0, 0, 0xC8u);
-    uGameUIFontShadow = TargetColor(255, 255, 255);
+    uGameUIFontMain = Color16(0, 0, 0xC8u);
+    uGameUIFontShadow = Color16(255, 255, 255);
   }
   else Error("Invalid alignment type: %u", align);
 }
@@ -2657,3 +2541,26 @@ void DrawBuff_remaining_time_string( int uY, struct GUIWindow *window, __int64 r
   }
   window->DrawText(Font, 32, uY, 0, pTmpBuf.data(), 0, 0, 0);
 }
+
+
+//----- (0042EB8D) --------------------------------------------------------
+void GUIMessageQueue::AddMessageImpl(UIMessageType msg, int param, unsigned int a4, const char *file, int line)
+{
+  //Log::Warning(L"%s @ (%S %u)", UIMessage2String(msg), file, line);
+  if (uNumMessages < 40)
+  {
+    files[uNumMessages] = file;
+    lines[uNumMessages] = line;
+
+    pMessages[uNumMessages].eType = msg;
+    pMessages[uNumMessages].param = param;
+    pMessages[uNumMessages++].field_8 = a4;
+  }
+}
+
+//----- (004637E0) --------------------------------------------------------
+char  sub_4637E0_is_there_popup_onscreen()
+{
+  return dword_507BF0_is_there_popup_onscreen == 1;
+}
+// 507BF0: using guessed type int dword_507BF0_is_there_popup_onscreen;

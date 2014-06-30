@@ -1,7 +1,8 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include <utility>
 
 #include "mm7_data.h"
-#include "Math.h"
+#include "OurMath.h"
 
 //----- (004621DA) --------------------------------------------------------
 uint32_t int_get_vector_length(int32_t x, int32_t y, int32_t z)
@@ -54,6 +55,7 @@ void __fastcall Vec3<T>::Rotate(T sDepth, T sRotY, T sRotX, Vec3<T> v, T *outx, 
 template <class T>
 void Vec3<T>::Normalize(T *x, T *y, T *z)
 {
+  extern int integer_sqrt(int val);
   *x *= 65536 / (integer_sqrt(*y * *y + *z * *z + *x * *x) | 1);
   *y *= 65536 / (integer_sqrt(*y * *y + *z * *z + *x * *x) | 1);
   *z *= 65536 / (integer_sqrt(*y * *y + *z * *z + *x * *x) | 1);

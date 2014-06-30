@@ -140,7 +140,7 @@ struct IndoorCameraD3D
   void Project(struct RenderVertexSoft *pVertices, unsigned int uNumVertices, char a4);
   void _436CDC_mess_with_lightmap__clipflag_2(struct RenderVertexSoft *pInVertices, int uNumInVertices, struct RenderVertexSoft *pOutVertices, unsigned int *pOutNumVertices);
   void _436F09_mess_with_lightmap__clipflag_4(struct RenderVertexSoft *pInVertices, int uNumInVertices, struct RenderVertexSoft *pOutVertices, unsigned int *pOutNumVertices);
-  int _437143(unsigned int uNumInVertices, struct RenderVertexSoft *pOutVertices, struct RenderVertexSoft *pInVertices, unsigned int *pOutNumVertices);
+  void _437143(unsigned int uNumInVertices, struct RenderVertexSoft *pOutVertices, struct RenderVertexSoft *pInVertices, unsigned int *pOutNumVertices);
   bool _4371C3(struct RenderVertexSoft *pVertices, unsigned int *pOutNumVertices, int _unused);
   bool CalcPortalShape(struct RenderVertexSoft *a1, unsigned int *pOutNumVertices, struct RenderVertexSoft *pVertices, IndoorCameraD3D_Vec4 *a4, signed int uNumVertices, char a6, int _unused);
   char _437376(struct stru154 *thisa, struct RenderVertexSoft *a2, unsigned int *pOutNumVertices);
@@ -152,8 +152,7 @@ struct IndoorCameraD3D
   void PrepareAndDrawDebugOutline(struct BLVFace *pFace, unsigned int uDiffuse);
   void debug_outline_sw(struct RenderVertexSoft *a2, unsigned int uNumVertices, unsigned int uDiffuse, float a5);
   void debug_outline_d3d(const struct RenderVertexD3D3 *pLineVertices, unsigned int uNumLines, int uDiffuse, float z_stuff);
-  void do_draw_debug_line_sw(struct RenderVertexSoft *pLineBegin, unsigned int uStartDiffuse, struct RenderVertexSoft *pLineEnd, unsigned int uEndDiffuse, unsigned int uOutNumVertices, float z_stuff);
-  void do_draw_debug_line_d3d(const struct RenderVertexD3D3 *pLineBegin, unsigned int uDiffuseBegin, const RenderVertexD3D3 *pLineEnd, unsigned int uDiffuseEnd, float z_stuff);
+  void do_draw_debug_line_sw(struct RenderVertexSoft *pLineBegin, signed int sStartDiffuse, struct RenderVertexSoft *pLineEnd, signed int sEndDiffuse, unsigned int uOutNumVertices, float z_stuff);
   //void sr_437D4A_draw_some_vertices(float x, float y, float z, unsigned int a5, char a6, float a7);
   //void sr_438141_draw_list_0037C();
   //void sr_438240_draw_lits();

@@ -14,14 +14,18 @@ struct SaveFile_
 struct SavegameList
 {
   static void Initialize(unsigned int a1);
+  SavegameList() {Reset();}
 
-  /*inline void Reset()
+  inline void Reset()
   {
-    for (int i = 0; i < 20; ++i)
-      field_0[i] = 0;
-    for (int i = 0; i < 44; ++i)
-      pSavesNames[i][0] = 0;
-  }*/
+    for ( int j = 0; j < 45; j++ )
+    {
+      for (int i = 0; i < 20; ++i)
+        this->pFileList[j].field_0[i] = 0;
+      for (int i = 0; i < 260; ++i)
+        this->pFileList[j].pSaveFileName[i] = 0;
+    }
+  }
   SaveFile_ pFileList[45];
   
 };
@@ -40,6 +44,11 @@ struct SavegameHeader
 #pragma pack(pop)
 
 
+void __fastcall LoadGame(unsigned int uSlot); // idb
+void SaveGame(bool IsAutoSAve, bool NotSaveWorld);
+void __fastcall DoSavegame(unsigned int uSlot); // idb
+bool Initialize_GamesLOD_NewLOD();
+void SaveNewGame();
 
 extern unsigned int uNumSavegameFiles;
 extern std::array<unsigned int, 45> pSavegameUsedSlots;

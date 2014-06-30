@@ -2,23 +2,29 @@
 
 
 enum TURN_ENGINE_FLAGS
-    {
-    TE_FLAG_1 =1,
-    TE_HAVE_PENDING_ACTIONS =2,
-    TE_PLAYER_TURN =4,
-    TE_FLAG_8 =8
-    };
+{
+  TE_FLAG_1               = 1,
+  TE_HAVE_PENDING_ACTIONS = 2,
+  TE_PLAYER_TURN          = 4,
+  TE_FLAG_8               = 8
+};
 
 enum TURN_ENGINE_AI_ACTION
-    {
-    TE_AI_STAND         =0,
-    TE_AI_RANGED_ATTACK =1,
-    TE_AI_PURSUE        =2,
-    TE_AI_MELEE_ATTACK  =3,
-    TE_AI_FLEE          =4
-    };
+{
+  TE_AI_STAND         = 0,
+  TE_AI_RANGED_ATTACK = 1,
+  TE_AI_PURSUE        = 2,
+  TE_AI_MELEE_ATTACK  = 3,
+  TE_AI_FLEE          = 4
+};
 
-
+enum TURN_ENGINE_TURN_STAGE
+{
+  TE_NONE             = 0,
+  TE_WAIT             = 1,
+  TE_ATTACK           = 2,
+  TE_MOVEMENT         = 3,
+};
 
 /*  299 */
 #pragma pack(push, 1)
@@ -75,7 +81,7 @@ struct stru262_TurnBased
 
 
   int turns_count;
-  int turn_stage;
+  int turn_stage; //if = 2 - action
   int ai_turn_timer;
   int uActorQueueSize; //c
   int turn_initiative;

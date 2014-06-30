@@ -1,8 +1,7 @@
-#ifdef _MSC_VER
 #define _CRT_SECURE_NO_WARNINGS
-#endif
-
 #include <algorithm> 
+#include "UICharacter.h"
+#include "..\mm7_unsorted_subs.h"
 #include "..\MM7.h"
 #include "..\MapInfo.h"
 #include "..\Game.h"
@@ -14,7 +13,7 @@
 #include "..\Render.h"
 #include "..\LOD.h"
 #include "..\Viewport.h"
-#include "..\Time.h"
+#include "..\Timer.h"
 #include "..\Awards.h"
 #include "..\CastSpellInfo.h"
 #include "..\texts.h"
@@ -89,101 +88,101 @@ unsigned int ui_house_player_cant_interact_color;
 
 void set_default_ui_skin()
 {
-  ui_mainmenu_copyright_color = TargetColor(255, 255, 255);
+  ui_mainmenu_copyright_color = Color16(255, 255, 255);
 
-  ui_character_tooltip_header_default_color = TargetColor(255, 255, 155);
-  ui_character_default_text_color = TargetColor(255, 255, 255);
-  ui_character_header_text_color = TargetColor(255, 255, 155);
-  ui_character_bonus_text_color = TargetColor(0, 255, 0);
-  ui_character_bonus_text_color_neg = TargetColor(255, 0, 0);
+  ui_character_tooltip_header_default_color = Color16(255, 255, 155);
+  ui_character_default_text_color = Color16(255, 255, 255);
+  ui_character_header_text_color = Color16(255, 255, 155);
+  ui_character_bonus_text_color = Color16(0, 255, 0);
+  ui_character_bonus_text_color_neg = Color16(255, 0, 0);
 
-  ui_character_skill_upgradeable_color = TargetColor(0, 175, 255);
-  ui_character_skill_default_color = TargetColor(255, 0, 0);
-  ui_character_skill_highlight_color = TargetColor(255, 0, 0);  
+  ui_character_skill_upgradeable_color = Color16(0, 175, 255);
+  ui_character_skill_default_color = Color16(255, 0, 0);
+  ui_character_skill_highlight_color = Color16(255, 0, 0);  
   
-  ui_character_stat_default_color = TargetColor(255, 255, 255);
-  ui_character_stat_buffed_color = TargetColor(0,   255,   0);
-  ui_character_stat_debuffed_color = TargetColor(255,  35,   0);
+  ui_character_stat_default_color = Color16(255, 255, 255);
+  ui_character_stat_buffed_color = Color16(0,   255,   0);
+  ui_character_stat_debuffed_color = Color16(255,  35,   0);
   
-  ui_character_skillinfo_can_learn = TargetColor(255, 255, 255);
-  ui_character_skillinfo_can_learn_gm = TargetColor(255, 255, 0);
-  ui_character_skillinfo_cant_learn = TargetColor(255, 0, 0);
+  ui_character_skillinfo_can_learn = Color16(255, 255, 255);
+  ui_character_skillinfo_can_learn_gm = Color16(255, 255, 0);
+  ui_character_skillinfo_cant_learn = Color16(255, 0, 0);
   
-  ui_character_condition_normal_color = TargetColor(255, 255, 255);
-  ui_character_condition_light_color = TargetColor(0, 255, 0);
-  ui_character_condition_moderate_color = TargetColor(225, 205, 35);
-  ui_character_condition_severe_color = TargetColor(255, 35, 0);
+  ui_character_condition_normal_color = Color16(255, 255, 255);
+  ui_character_condition_light_color = Color16(0, 255, 0);
+  ui_character_condition_moderate_color = Color16(225, 205, 35);
+  ui_character_condition_severe_color = Color16(255, 35, 0);
 
-  ui_character_award_color[0] = TargetColor(248, 108, 160);
-  ui_character_award_color[1] = TargetColor(112, 220, 248);
-  ui_character_award_color[2] = TargetColor(192, 192, 240);
-  ui_character_award_color[3] = TargetColor( 64, 244,  96);
-  ui_character_award_color[4] = TargetColor(232, 244,  96);
-  ui_character_award_color[5] = TargetColor(240, 252, 192);
+  ui_character_award_color[0] = Color16(248, 108, 160);
+  ui_character_award_color[1] = Color16(112, 220, 248);
+  ui_character_award_color[2] = Color16(192, 192, 240);
+  ui_character_award_color[3] = Color16( 64, 244,  96);
+  ui_character_award_color[4] = Color16(232, 244,  96);
+  ui_character_award_color[5] = Color16(240, 252, 192);
   
-  ui_game_minimap_outline_color = TargetColor(0, 0, 255);
-  ui_game_minimap_actor_friendly_color = TargetColor(0, 255, 0);
-  ui_game_minimap_actor_hostile_color = TargetColor(255, 0, 0);
-  ui_game_minimap_actor_corpse_color = TargetColor(255, 255, 0);
-  ui_game_minimap_decoration_color_1 = TargetColor(255, 255, 255);
-  ui_game_minimap_projectile_color = TargetColor(255, 0, 0);
-  ui_game_minimap_treasure_color = TargetColor(0, 0, 255);
+  ui_game_minimap_outline_color = Color16(0, 0, 255);
+  ui_game_minimap_actor_friendly_color = Color16(0, 255, 0);
+  ui_game_minimap_actor_hostile_color = Color16(255, 0, 0);
+  ui_game_minimap_actor_corpse_color = Color16(255, 255, 0);
+  ui_game_minimap_decoration_color_1 = Color16(255, 255, 255);
+  ui_game_minimap_projectile_color = Color16(255, 0, 0);
+  ui_game_minimap_treasure_color = Color16(0, 0, 255);
 
-  ui_game_character_record_playerbuff_colors[0] = TargetColor(150, 212, 255);
-  ui_game_character_record_playerbuff_colors[1] = TargetColor(225, 225, 225);
-  ui_game_character_record_playerbuff_colors[2] = TargetColor(255, 128, 0);
-  ui_game_character_record_playerbuff_colors[3] = TargetColor(128, 128, 128);
-  ui_game_character_record_playerbuff_colors[4] = TargetColor(225, 225, 225);
-  ui_game_character_record_playerbuff_colors[5] = TargetColor(255, 85, 0);
-  ui_game_character_record_playerbuff_colors[6] = TargetColor(255, 128, 0);
-  ui_game_character_record_playerbuff_colors[7] = TargetColor(255, 85, 0);
-  ui_game_character_record_playerbuff_colors[8] = TargetColor(225, 225, 225);
-  ui_game_character_record_playerbuff_colors[9] = TargetColor(235, 15, 255);
-  ui_game_character_record_playerbuff_colors[10] = TargetColor(192, 192, 240);
-  ui_game_character_record_playerbuff_colors[11] = TargetColor(225, 225, 225);
-  ui_game_character_record_playerbuff_colors[12] = TargetColor(255, 128, 0);
-  ui_game_character_record_playerbuff_colors[13] = TargetColor(150, 212, 255);
-  ui_game_character_record_playerbuff_colors[14] = TargetColor(128, 128, 128);
-  ui_game_character_record_playerbuff_colors[15] = TargetColor(255, 255, 155);
-  ui_game_character_record_playerbuff_colors[16] = TargetColor(255, 255, 155);
-  ui_game_character_record_playerbuff_colors[17] = TargetColor(255, 255, 155);
-  ui_game_character_record_playerbuff_colors[18] = TargetColor(255, 255, 155);
-  ui_game_character_record_playerbuff_colors[19] = TargetColor(255, 255, 155);
-  ui_game_character_record_playerbuff_colors[20] = TargetColor(255, 255, 155);
-  ui_game_character_record_playerbuff_colors[21] = TargetColor(255, 255, 155);
-  ui_game_character_record_playerbuff_colors[22] = TargetColor(0, 128, 255);
-  ui_game_character_record_playerbuff_colors[23] = TargetColor(0, 128, 255);
+  ui_game_character_record_playerbuff_colors[0] = Color16(150, 212, 255);
+  ui_game_character_record_playerbuff_colors[1] = Color16(225, 225, 225);
+  ui_game_character_record_playerbuff_colors[2] = Color16(255, 128, 0);
+  ui_game_character_record_playerbuff_colors[3] = Color16(128, 128, 128);
+  ui_game_character_record_playerbuff_colors[4] = Color16(225, 225, 225);
+  ui_game_character_record_playerbuff_colors[5] = Color16(255, 85, 0);
+  ui_game_character_record_playerbuff_colors[6] = Color16(255, 128, 0);
+  ui_game_character_record_playerbuff_colors[7] = Color16(255, 85, 0);
+  ui_game_character_record_playerbuff_colors[8] = Color16(225, 225, 225);
+  ui_game_character_record_playerbuff_colors[9] = Color16(235, 15, 255);
+  ui_game_character_record_playerbuff_colors[10] = Color16(192, 192, 240);
+  ui_game_character_record_playerbuff_colors[11] = Color16(225, 225, 225);
+  ui_game_character_record_playerbuff_colors[12] = Color16(255, 128, 0);
+  ui_game_character_record_playerbuff_colors[13] = Color16(150, 212, 255);
+  ui_game_character_record_playerbuff_colors[14] = Color16(128, 128, 128);
+  ui_game_character_record_playerbuff_colors[15] = Color16(255, 255, 155);
+  ui_game_character_record_playerbuff_colors[16] = Color16(255, 255, 155);
+  ui_game_character_record_playerbuff_colors[17] = Color16(255, 255, 155);
+  ui_game_character_record_playerbuff_colors[18] = Color16(255, 255, 155);
+  ui_game_character_record_playerbuff_colors[19] = Color16(255, 255, 155);
+  ui_game_character_record_playerbuff_colors[20] = Color16(255, 255, 155);
+  ui_game_character_record_playerbuff_colors[21] = Color16(255, 255, 155);
+  ui_game_character_record_playerbuff_colors[22] = Color16(0, 128, 255);
+  ui_game_character_record_playerbuff_colors[23] = Color16(0, 128, 255);
 
-  ui_gamemenu_video_gamma_title_color = TargetColor(255, 255, 155);
-  ui_gamemenu_keys_action_name_color = TargetColor(255, 255, 255);
-  ui_gamemenu_keys_key_selection_blink_color_1 = TargetColor(50, 0, 0);
-  ui_gamemenu_keys_key_selection_blink_color_2 = TargetColor(225, 205, 35);
-  ui_gamemenu_keys_key_default_color = TargetColor(255, 255, 255);
+  ui_gamemenu_video_gamma_title_color = Color16(255, 255, 155);
+  ui_gamemenu_keys_action_name_color = Color16(255, 255, 255);
+  ui_gamemenu_keys_key_selection_blink_color_1 = Color16(50, 0, 0);
+  ui_gamemenu_keys_key_selection_blink_color_2 = Color16(225, 205, 35);
+  ui_gamemenu_keys_key_default_color = Color16(255, 255, 255);
 
-  ui_book_quests_title_color = TargetColor(255, 255, 255);
-  ui_book_quests_text_color = TargetColor(255, 255, 255);
-  ui_book_autonotes_title_color = TargetColor(255, 255, 255);
-  ui_book_autonotes_text_color = TargetColor(255, 255, 255);
-  ui_book_map_title_color = TargetColor(255, 255, 255);
-  ui_book_map_coordinates_color = TargetColor(255, 255, 255);
+  ui_book_quests_title_color = Color16(255, 255, 255);
+  ui_book_quests_text_color = Color16(255, 255, 255);
+  ui_book_autonotes_title_color = Color16(255, 255, 255);
+  ui_book_autonotes_text_color = Color16(255, 255, 255);
+  ui_book_map_title_color = Color16(255, 255, 255);
+  ui_book_map_coordinates_color = Color16(255, 255, 255);
 
-  ui_book_calendar_title_color = TargetColor(255, 255, 255);
-  ui_book_calendar_time_color = TargetColor(75, 75, 75);
-  ui_book_calendar_day_color = TargetColor(75, 75, 75);
-  ui_book_calendar_month_color = TargetColor(75, 75, 75);
-  ui_book_calendar_year_color = TargetColor(75, 75, 75);
-  ui_book_calendar_moon_color = TargetColor(75, 75, 75);
-  ui_book_calendar_location_color = TargetColor(75, 75, 75);
+  ui_book_calendar_title_color = Color16(255, 255, 255);
+  ui_book_calendar_time_color = Color16(75, 75, 75);
+  ui_book_calendar_day_color = Color16(75, 75, 75);
+  ui_book_calendar_month_color = Color16(75, 75, 75);
+  ui_book_calendar_year_color = Color16(75, 75, 75);
+  ui_book_calendar_moon_color = Color16(75, 75, 75);
+  ui_book_calendar_location_color = Color16(75, 75, 75);
 
-  ui_book_journal_title_color = TargetColor(255, 255, 255);
-  ui_book_journal_text_color = TargetColor(255, 255, 255);
-  ui_book_journal_text_shadow = TargetColor(0, 0, 0);
+  ui_book_journal_title_color = Color16(255, 255, 255);
+  ui_book_journal_text_color = Color16(255, 255, 255);
+  ui_book_journal_text_shadow = Color16(0, 0, 0);
 
-  ui_game_dialogue_npc_name_color = TargetColor(21, 153, 233);
-  ui_game_dialogue_option_highlight_color = TargetColor(225, 205, 35);
-  ui_game_dialogue_option_normal_color = TargetColor(255, 255, 255);
+  ui_game_dialogue_npc_name_color = Color16(21, 153, 233);
+  ui_game_dialogue_option_highlight_color = Color16(225, 205, 35);
+  ui_game_dialogue_option_normal_color = Color16(255, 255, 255);
 
-  ui_house_player_cant_interact_color = TargetColor(255, 255, 155);
+  ui_house_player_cant_interact_color = Color16(255, 255, 155);
 }
 
 std::array<unsigned int, 16> papredoll_dbrds;
@@ -195,8 +194,8 @@ int paperdoll_armor_texture[4][17][3];//0x511294
 //int paperdoll_array_51132C[165];
 unsigned int papredoll_dlaus[5];
 unsigned int papredoll_dlads[4];
-int papredoll_flying_feet[777]; // idb
-int paperdoll_boots_texture[4][6];//0x511638
+int papredoll_flying_feet[22]; // 005115E0
+int paperdoll_boots_texture[4][6];//511638
 int paperdoll_cloak_collar_texture[4][10]; // weak
 int paperdoll_cloak_texture[4][10];
 int paperdoll_helm_texture[2][16]; //511698
@@ -398,7 +397,7 @@ GUIWindow *CharacterUI_Initialize(unsigned int _this)
   CharacterUI_LoadPaperdollTextures();
   pCurrentScreen = _this;
 
-  pWindow = GUIWindow::Create(0, 0, 640, 480, WINDOW_CharacterRecord, uActiveCharacter, 0);
+  pWindow = GUIWindow::Create(0, 0, window->GetWidth(), window->GetHeight(), WINDOW_CharacterRecord, uActiveCharacter, 0);
   pCharacterScreen_StatsBtn = pWindow->CreateButton(pViewport->uViewportTL_X + 12, pViewport->uViewportTL_Y + 308,
                                 pIcons_LOD->GetTexture(papredoll_dbrds[9])->uTextureWidth,
                                 pIcons_LOD->GetTexture(papredoll_dbrds[9])->uTextureHeight,
@@ -429,9 +428,9 @@ GUIWindow *CharacterUI_Initialize(unsigned int _this)
                  1, 0, UIMSG_ClickExitCharacterWindowBtn, 0, 0, pGlobalTXT_LocalizationStrings[79],//Exit
                  pIcons_LOD->GetTexture(papredoll_dbrds[2]),
                  pIcons_LOD->GetTexture(papredoll_dbrds[1]), 0);
-  pWindow->CreateButton(0, 0, 0x1DCu, 0x159u, 1, 122, UIMSG_InventoryLeftClick, 0, 0, "", 0);
-  pCharacterScreen_DetalizBtn = pWindow->CreateButton(0x258u, 0x12Cu, 30, 30, 1, 0, UIMSG_ChangeDetaliz, 0, 0, pGlobalTXT_LocalizationStrings[64], 0);
-  pCharacterScreen_DollBtn = pWindow->CreateButton(0x1DCu, 0, 0xA4u, 0x159u, 1, 0, UIMSG_ClickPaperdoll, 0, 0, "", 0);
+  pWindow->CreateButton(0, 0, 476, 345, 1, 122, UIMSG_InventoryLeftClick, 0, 0, "", 0);
+  pCharacterScreen_DetalizBtn = pWindow->CreateButton(600, 300, 30, 30, 1, 0, UIMSG_ChangeDetaliz, 0, 0, pGlobalTXT_LocalizationStrings[64], 0);
+  pCharacterScreen_DollBtn = pWindow->CreateButton(476, 0, 164, 345, 1, 0, UIMSG_ClickPaperdoll, 0, 0, "", 0);
 
   pWindow->CreateButton( 61, 424, 31, 0, 2, 94, UIMSG_SelectCharacter, 1, '1', "", 0);
   pWindow->CreateButton(177, 424, 31, 0, 2, 94, UIMSG_SelectCharacter, 2, '2', "", 0);
@@ -453,7 +452,7 @@ GUIWindow *CastSpellInfo::GetCastSpellInInventoryWindow()
   bRingsShownInCharScreen = 0;
   CharacterUI_LoadPaperdollTextures();
   pCurrentScreen = SCREEN_CASTING;
-  CS_inventory_window = GUIWindow::Create(0, 0, 640, 480, WINDOW_CastSpell_InInventory, (int)this, 0);
+  CS_inventory_window = GUIWindow::Create(0, 0, window->GetWidth(), window->GetHeight(), WINDOW_CastSpell_InInventory, (int)this, 0);
   pCharacterScreen_ExitBtn = CS_inventory_window->CreateButton(394, 318, 75, 33, 1, 0, UIMSG_ClickExitCharacterWindowBtn, 0, 0,
                  pGlobalTXT_LocalizationStrings[79], // Close
                  pIcons_LOD->GetTexture(papredoll_dbrds[2]),
@@ -736,7 +735,7 @@ void CharacterUI_DrawPaperdoll(Player *player)
   int index; // eax@65
   int v59; // ebx@129
   unsigned int v75; // ebx@170
-  int pArmorShoulderNum; // eax@197
+//  int pArmorShoulderNum; // eax@197
   int v94; // ebx@214
   unsigned int v127; // ebx@314
   unsigned int v153; // eax@370
@@ -792,34 +791,34 @@ void CharacterUI_DrawPaperdoll(Player *player)
         v166 = "item64v1";
       else
         v166 = item->GetIconName();
-      if ( !( item->uAttributes & 0xF0 ) )
+      if ( !( item->uAttributes & ITEM_ENCHANT_ANIMATION ) )
       {
-        if ( item->uAttributes & 2 )
+        if ( item->uAttributes & ITEM_BROKEN )
           pRenderer->DrawTransparentRedShade(item_X, item_Y, pIcons_LOD->GetTexture(pIcons_LOD->LoadTexture(v166, TEXTURE_16BIT_PALETTE)));
         else
         {
-          if ( item->uAttributes & 1 )
+          if ( item->uAttributes & ITEM_IDENTIFIED )
             pRenderer->DrawTextureTransparent(item_X, item_Y, pIcons_LOD->GetTexture(pIcons_LOD->LoadTexture(v166, TEXTURE_16BIT_PALETTE)));
           else
             pRenderer->DrawTransparentGreenShade(item_X, item_Y, pIcons_LOD->GetTexture(pIcons_LOD->LoadTexture(v166, TEXTURE_16BIT_PALETTE)));
         }
       }
-      if ( item->uAttributes & 0xF0 )
+      if ( item->uAttributes & ITEM_ENCHANT_ANIMATION )
       {
-        if ( ( item->uAttributes & 0xF0) == ITEM_AURA_EFFECT_RED )
+        if ( ( item->uAttributes & ITEM_ENCHANT_ANIMATION) == ITEM_AURA_EFFECT_RED )
           container = "sptext01";
-        if ( ( item->uAttributes & 0xF0) == ITEM_AURA_EFFECT_BLUE )
+        if ( ( item->uAttributes & ITEM_ENCHANT_ANIMATION) == ITEM_AURA_EFFECT_BLUE )
           container = "sp28a";
-        if ( (item->uAttributes & 0xF0) == ITEM_AURA_EFFECT_GREEN )
+        if ( (item->uAttributes & ITEM_ENCHANT_ANIMATION) == ITEM_AURA_EFFECT_GREEN )
           container = "sp30a";
-        if ( (item->uAttributes & 0xF0) == ITEM_AURA_EFFECT_PURPLE )
+        if ( (item->uAttributes & ITEM_ENCHANT_ANIMATION) == ITEM_AURA_EFFECT_PURPLE )
           container = "sp91a";
         _50C9A8_item_enchantment_timer -= pEventTimer->uTimeElapsed;
         if ( _50C9A8_item_enchantment_timer <= 0 )
         {
           _50C9A8_item_enchantment_timer = 0;
           item->uAttributes &= 0xFFFFFF0Fu;
-          ptr_50C9A4_ItemToEnchant = 0;
+          ptr_50C9A4_ItemToEnchant = nullptr;
         }
         pRenderer->DrawAura(item_X, item_Y, pIcons_LOD->GetTexture(pIcons_LOD->LoadTexture(v166, TEXTURE_16BIT_PALETTE)),
                            pIcons_LOD->LoadTexturePtr(container, TEXTURE_16BIT_PALETTE), GetTickCount() * 0.1, 0, 255);
@@ -836,13 +835,13 @@ void CharacterUI_DrawPaperdoll(Player *player)
       item = player->GetBowItem();
       item_X = pPaperdoll_BodyX + paperdoll_Weapon[pBodyComplection][2][0] - pItemsTable->pItems[item->uItemID].uEquipX;
       item_Y = pPaperdoll_BodyY + paperdoll_Weapon[pBodyComplection][2][1] - pItemsTable->pItems[item->uItemID].uEquipY;
-      if ( !(item->uAttributes & 0xF0) )// если не применён закл
+      if ( !(item->uAttributes & ITEM_ENCHANT_ANIMATION) )// если не применён закл
       {
-        if ( item->uAttributes & 2 )
+        if ( item->uAttributes & ITEM_BROKEN )
           pRenderer->DrawTransparentRedShade(item_X, item_Y, pIcons_LOD->GetTexture(pIcons_LOD->LoadTexture(item->GetIconName(), TEXTURE_16BIT_PALETTE)));
         else
         {
-          if ( !(item->uAttributes & 1) )//не опознанный лук зелёный
+          if ( !(item->uAttributes & ITEM_IDENTIFIED) )//не опознанный лук зелёный
             pRenderer->DrawTransparentGreenShade(item_X, item_Y, pIcons_LOD->GetTexture(pIcons_LOD->LoadTexture(item->GetIconName(), TEXTURE_16BIT_PALETTE)));
           else // опознанный лук
             pRenderer->DrawTextureTransparent(item_X, item_Y, pIcons_LOD->GetTexture(pIcons_LOD->LoadTexture(item->GetIconName(), TEXTURE_16BIT_PALETTE)));
@@ -850,20 +849,20 @@ void CharacterUI_DrawPaperdoll(Player *player)
       }
       else
       {
-        if ( (item->uAttributes & 0xF0) == ITEM_AURA_EFFECT_RED )
+        if ( (item->uAttributes & ITEM_ENCHANT_ANIMATION) == ITEM_AURA_EFFECT_RED )
           container = "sptext01";
-        if ( (item->uAttributes & 0xF0) == ITEM_AURA_EFFECT_BLUE )
+        if ( (item->uAttributes & ITEM_ENCHANT_ANIMATION) == ITEM_AURA_EFFECT_BLUE )
           container = "sp28a";
-        if ( (item->uAttributes & 0xF0) == ITEM_AURA_EFFECT_GREEN )
+        if ( (item->uAttributes & ITEM_ENCHANT_ANIMATION) == ITEM_AURA_EFFECT_GREEN )
           container = "sp30a";
-        if ( (item->uAttributes & 0xF0) == ITEM_AURA_EFFECT_PURPLE )
+        if ( (item->uAttributes & ITEM_ENCHANT_ANIMATION) == ITEM_AURA_EFFECT_PURPLE )
           container = "sp91a";
         _50C9A8_item_enchantment_timer -= pEventTimer->uTimeElapsed;
         if ( _50C9A8_item_enchantment_timer <= 0 )
         {
           _50C9A8_item_enchantment_timer = 0;
           item->uAttributes &= 0xFFFFFF0Fu;
-          ptr_50C9A4_ItemToEnchant = 0;
+          ptr_50C9A4_ItemToEnchant = nullptr;
         }
         pRenderer->DrawAura(item_X, item_Y, pIcons_LOD->GetTexture(pIcons_LOD->LoadTexture(item->GetIconName(), TEXTURE_16BIT_PALETTE)),
                   pIcons_LOD->LoadTexturePtr(container, TEXTURE_16BIT_PALETTE),
@@ -902,29 +901,29 @@ void CharacterUI_DrawPaperdoll(Player *player)
       {
         item_X = pPaperdoll_BodyX + paperdoll_Cloak[pBodyComplection][index][0];
         item_Y = pPaperdoll_BodyY + paperdoll_Cloak[pBodyComplection][index][1];
-        if ( !(item->uAttributes & 0xF0) )
+        if ( !(item->uAttributes & ITEM_ENCHANT_ANIMATION) )
         {
-          if ( item->uAttributes & 2 )
+          if ( item->uAttributes & ITEM_BROKEN )
             pRenderer->DrawTransparentRedShade(item_X, item_Y, pIcons_LOD->GetTexture(paperdoll_cloak_texture[pBodyComplection][index]));
           else
             pRenderer->DrawTextureTransparent(item_X, item_Y, pIcons_LOD->GetTexture(paperdoll_cloak_texture[pBodyComplection][index]));
         }
         else
         {
-          if ( (item->uAttributes & 0xF0) == ITEM_AURA_EFFECT_RED )
+          if ( (item->uAttributes & ITEM_ENCHANT_ANIMATION) == ITEM_AURA_EFFECT_RED )
             container = "sptext01";
-          if ( (item->uAttributes & 0xF0) == ITEM_AURA_EFFECT_BLUE )
+          if ( (item->uAttributes & ITEM_ENCHANT_ANIMATION) == ITEM_AURA_EFFECT_BLUE )
             container = "sp28a";
-          if ( (item->uAttributes & 0xF0) == ITEM_AURA_EFFECT_GREEN )
+          if ( (item->uAttributes & ITEM_ENCHANT_ANIMATION) == ITEM_AURA_EFFECT_GREEN )
             container = "sp30a";
-          if ( (item->uAttributes & 0xF0) == ITEM_AURA_EFFECT_PURPLE )
+          if ( (item->uAttributes & ITEM_ENCHANT_ANIMATION) == ITEM_AURA_EFFECT_PURPLE )
             container = "sp91a";
           _50C9A8_item_enchantment_timer -= pEventTimer->uTimeElapsed;
           if ( _50C9A8_item_enchantment_timer <= 0 )
           {
             _50C9A8_item_enchantment_timer = 0;
             item->uAttributes &= 0xFFFFFF0Fu;
-            ptr_50C9A4_ItemToEnchant = 0;
+            ptr_50C9A4_ItemToEnchant = nullptr;
           }
           pRenderer->DrawAura(item_X, item_Y, pIcons_LOD->GetTexture(paperdoll_cloak_texture[pBodyComplection][index]),
                            pIcons_LOD->LoadTexturePtr(container, TEXTURE_16BIT_PALETTE), GetTickCount() * 0.1, 0, 255);
@@ -962,13 +961,13 @@ void CharacterUI_DrawPaperdoll(Player *player)
       {
         item_X = pPaperdoll_BodyX + paperdoll_Armor_Coord[pBodyComplection][index][0];
         item_Y = pPaperdoll_BodyY + paperdoll_Armor_Coord[pBodyComplection][index][1];
-        if ( !(item->uAttributes & 0xF0) )
+        if ( !(item->uAttributes & ITEM_ENCHANT_ANIMATION) )
         {
-          if ( item->uAttributes & 2 )
+          if ( item->uAttributes & ITEM_BROKEN )
             pRenderer->DrawTransparentRedShade(item_X, item_Y, pIcons_LOD->GetTexture(paperdoll_armor_texture[pBodyComplection][index][0]));
           else
           {
-            if ( !(item->uAttributes & 1) )
+            if ( !(item->uAttributes & ITEM_IDENTIFIED) )
               pRenderer->DrawTransparentGreenShade(item_X, item_Y, &pIcons_LOD->pTextures[paperdoll_armor_texture[pBodyComplection][index][0]]);
             else
               pRenderer->DrawTextureTransparent(item_X, item_Y, &pIcons_LOD->pTextures[paperdoll_armor_texture[pBodyComplection][index][0]]);
@@ -976,20 +975,20 @@ void CharacterUI_DrawPaperdoll(Player *player)
         }
         else
         {
-          if ( (item->uAttributes & 0xF0) == ITEM_AURA_EFFECT_RED )
+          if ( (item->uAttributes & ITEM_ENCHANT_ANIMATION) == ITEM_AURA_EFFECT_RED )
             container = "sptext01";
-          if ( (item->uAttributes & 0xF0) == ITEM_AURA_EFFECT_BLUE )
+          if ( (item->uAttributes & ITEM_ENCHANT_ANIMATION) == ITEM_AURA_EFFECT_BLUE )
             container = "sp28a";
-          if ( (item->uAttributes & 0xF0) == ITEM_AURA_EFFECT_GREEN )
+          if ( (item->uAttributes & ITEM_ENCHANT_ANIMATION) == ITEM_AURA_EFFECT_GREEN )
             container = "sp30a";
-          if ( (item->uAttributes & 0xF0) == ITEM_AURA_EFFECT_PURPLE )
+          if ( (item->uAttributes & ITEM_ENCHANT_ANIMATION) == ITEM_AURA_EFFECT_PURPLE )
             container = "sp91a";
           _50C9A8_item_enchantment_timer -= pEventTimer->uTimeElapsed;
           if ( _50C9A8_item_enchantment_timer <= 0 )
           {
             _50C9A8_item_enchantment_timer = 0;
             item->uAttributes &= 0xFFFFFF0Fu;
-            ptr_50C9A4_ItemToEnchant = 0;
+            ptr_50C9A4_ItemToEnchant = nullptr;
           }
           pRenderer->DrawAura(item_X, item_Y, pIcons_LOD->GetTexture(paperdoll_armor_texture[pBodyComplection][index][0]),
                           pIcons_LOD->LoadTexturePtr(container, TEXTURE_16BIT_PALETTE), GetTickCount() * 0.1, 0, 255);
@@ -1024,13 +1023,13 @@ void CharacterUI_DrawPaperdoll(Player *player)
       {
         item_X = pPaperdoll_BodyX + paperdoll_Boot[pBodyComplection][index][0];
         item_Y = pPaperdoll_BodyY + paperdoll_Boot[pBodyComplection][index][1];
-        if ( !(item->uAttributes & 0xF0) )
+        if ( !(item->uAttributes & ITEM_ENCHANT_ANIMATION) )
         {
-          if ( item->uAttributes & 2 )
+          if ( item->uAttributes & ITEM_BROKEN )
             pRenderer->DrawTransparentRedShade(item_X, item_Y, pIcons_LOD->GetTexture(v59));
           else
           {
-            if ( item->uAttributes & 1 )
+            if ( item->uAttributes & ITEM_IDENTIFIED )
               pRenderer->DrawTextureTransparent(item_X, item_Y, pIcons_LOD->GetTexture(v59));
             else
               pRenderer->DrawTransparentGreenShade(item_X, item_Y, pIcons_LOD->GetTexture(v59));
@@ -1038,20 +1037,20 @@ void CharacterUI_DrawPaperdoll(Player *player)
         }
         else
         {
-          if ( (item->uAttributes & 0xF0) == ITEM_AURA_EFFECT_RED )
+          if ( (item->uAttributes & ITEM_ENCHANT_ANIMATION) == ITEM_AURA_EFFECT_RED )
             container = "sptext01";
-          if ( (item->uAttributes & 0xF0) == ITEM_AURA_EFFECT_BLUE )
+          if ( (item->uAttributes & ITEM_ENCHANT_ANIMATION) == ITEM_AURA_EFFECT_BLUE )
             container = "sp28a";
-          if ( (item->uAttributes & 0xF0) == ITEM_AURA_EFFECT_GREEN )
+          if ( (item->uAttributes & ITEM_ENCHANT_ANIMATION) == ITEM_AURA_EFFECT_GREEN )
             container = "sp30a";
-          if ( (item->uAttributes & 0xF0) == ITEM_AURA_EFFECT_PURPLE )
+          if ( (item->uAttributes & ITEM_ENCHANT_ANIMATION) == ITEM_AURA_EFFECT_PURPLE )
             container = "sp91a";
           _50C9A8_item_enchantment_timer -= pEventTimer->uTimeElapsed;
           if ( _50C9A8_item_enchantment_timer <= 0 )
           {
             _50C9A8_item_enchantment_timer = 0;
             item->uAttributes &= 0xFFFFFF0Fu;
-            ptr_50C9A4_ItemToEnchant = 0;
+            ptr_50C9A4_ItemToEnchant = nullptr;
           }
           pRenderer->DrawAura(item_X, item_Y, pIcons_LOD->GetTexture(v59), pIcons_LOD->LoadTexturePtr(container, TEXTURE_16BIT_PALETTE),
                   GetTickCount() * 0.1, 0, 255);
@@ -1091,13 +1090,13 @@ void CharacterUI_DrawPaperdoll(Player *player)
             v75 = paperdoll_belt_texture[pBodyComplection][index];
           else
             v75 = paperdoll_belt_texture[pBodyComplection - 2][index];
-          if ( !(item->uAttributes & 0xF0) )
+          if ( !(item->uAttributes & ITEM_ENCHANT_ANIMATION) )
           {
-            if ( item->uAttributes & 2 )
+            if ( item->uAttributes & ITEM_BROKEN )
               pRenderer->DrawTransparentRedShade(item_X, item_Y, pIcons_LOD->GetTexture(v75));
             else
             {
-              if ( item->uAttributes & 1 )
+              if ( item->uAttributes & ITEM_IDENTIFIED )
                 pRenderer->DrawTextureTransparent(item_X, item_Y, pIcons_LOD->GetTexture(v75));
               else
                 pRenderer->DrawTransparentGreenShade(item_X, item_Y, pIcons_LOD->GetTexture(v75));
@@ -1107,20 +1106,20 @@ void CharacterUI_DrawPaperdoll(Player *player)
           }
           else
           {
-            if ( (item->uAttributes & 0xF0) == ITEM_AURA_EFFECT_RED )
+            if ( (item->uAttributes & ITEM_ENCHANT_ANIMATION) == ITEM_AURA_EFFECT_RED )
               container = "sptext01";
-            if ( (item->uAttributes & 0xF0) == ITEM_AURA_EFFECT_BLUE )
+            if ( (item->uAttributes & ITEM_ENCHANT_ANIMATION) == ITEM_AURA_EFFECT_BLUE )
               container = "sp28a";
-            if ( (item->uAttributes & 0xF0) == ITEM_AURA_EFFECT_GREEN )
+            if ( (item->uAttributes & ITEM_ENCHANT_ANIMATION) == ITEM_AURA_EFFECT_GREEN )
               container = "sp30a";
-            if ( (item->uAttributes & 0xF0) == ITEM_AURA_EFFECT_PURPLE )
+            if ( (item->uAttributes & ITEM_ENCHANT_ANIMATION) == ITEM_AURA_EFFECT_PURPLE )
               container = "sp91a";
             _50C9A8_item_enchantment_timer -= pEventTimer->uTimeElapsed;
             if ( _50C9A8_item_enchantment_timer <= 0 )
             {
               _50C9A8_item_enchantment_timer = 0;
               item->uAttributes &= 0xFFFFFF0Fu;
-              ptr_50C9A4_ItemToEnchant = 0;
+              ptr_50C9A4_ItemToEnchant = nullptr;
             }
             pRenderer->DrawAura(item_X, item_Y, pIcons_LOD->GetTexture(v75), pIcons_LOD->LoadTexturePtr(container, TEXTURE_16BIT_PALETTE),
                         GetTickCount() * 0.1, 0, 255);
@@ -1179,13 +1178,13 @@ void CharacterUI_DrawPaperdoll(Player *player)
             }
             if ( v94 != pIcons_LOD->FindTextureByName("pending") )
             {
-              if ( !(item->uAttributes & 0xF0) )
+              if ( !(item->uAttributes & ITEM_ENCHANT_ANIMATION) )
               {
-                if ( item->uAttributes & 2 )
+                if ( item->uAttributes & ITEM_BROKEN )
                   pRenderer->DrawTransparentRedShade(item_X, item_Y, pIcons_LOD->GetTexture(v94));
                 else
                 {
-                  if ( item->uAttributes & 1 )
+                  if ( item->uAttributes & ITEM_IDENTIFIED )
                     pRenderer->DrawTextureTransparent(item_X, item_Y, pIcons_LOD->GetTexture(v94));
                   else
                     pRenderer->DrawTransparentGreenShade(item_X, item_Y, pIcons_LOD->GetTexture(v94));
@@ -1195,22 +1194,22 @@ void CharacterUI_DrawPaperdoll(Player *player)
               {
                 if ( paperdoll_armor_texture[pBodyComplection][index][2] != pIcons_LOD->FindTextureByName("pending") )
                 {
-                  if ( item->uAttributes & 0xF0 )
+                  if ( item->uAttributes & ITEM_ENCHANT_ANIMATION )
                   {
-                    if ( (item->uAttributes & 0xF0) == ITEM_AURA_EFFECT_RED )
+                    if ( (item->uAttributes & ITEM_ENCHANT_ANIMATION) == ITEM_AURA_EFFECT_RED )
                       container = "sptext01";
-                    if ( (item->uAttributes & 0xF0) == ITEM_AURA_EFFECT_BLUE )
+                    if ( (item->uAttributes & ITEM_ENCHANT_ANIMATION) == ITEM_AURA_EFFECT_BLUE )
                       container = "sp28a";
-                    if ( ( item->uAttributes & 0xF0) == ITEM_AURA_EFFECT_GREEN )
+                    if ( ( item->uAttributes & ITEM_ENCHANT_ANIMATION) == ITEM_AURA_EFFECT_GREEN )
                       container = "sp30a";
-                    if ( (item->uAttributes & 0xF0) == ITEM_AURA_EFFECT_PURPLE )
+                    if ( (item->uAttributes & ITEM_ENCHANT_ANIMATION) == ITEM_AURA_EFFECT_PURPLE )
                       container = "sp91a";
                     _50C9A8_item_enchantment_timer -= pEventTimer->uTimeElapsed;
                     if ( _50C9A8_item_enchantment_timer <= 0 )
                     {
                       _50C9A8_item_enchantment_timer = 0;
                       item->uAttributes &= 0xFFFFFF0Fu;
-                      ptr_50C9A4_ItemToEnchant = 0;
+                      ptr_50C9A4_ItemToEnchant = nullptr;
                     }
                     pRenderer->DrawAura(item_X, item_Y, pIcons_LOD->GetTexture(v94), pIcons_LOD->LoadTexturePtr(container, TEXTURE_16BIT_PALETTE),
                       GetTickCount() * 0.1, 0, 255);
@@ -1226,13 +1225,13 @@ void CharacterUI_DrawPaperdoll(Player *player)
             {
               item_X = pPaperdoll_BodyX + paperdoll_shoulder_coord[pBodyComplection][index][0];
               item_Y = pPaperdoll_BodyY + paperdoll_shoulder_coord[pBodyComplection][index][1];
-              if ( !(item->uAttributes & 0xF0) )
+              if ( !(item->uAttributes & ITEM_ENCHANT_ANIMATION) )
               {
-                if ( item->uAttributes & 2 )
+                if ( item->uAttributes & ITEM_BROKEN )
                   pRenderer->DrawTransparentRedShade(item_X, item_Y, pIcons_LOD->GetTexture(paperdoll_armor_texture[pBodyComplection][index][1]));
                 else
                 {
-                  if ( item->uAttributes & 1 )
+                  if ( item->uAttributes & ITEM_IDENTIFIED )
                     pRenderer->DrawTextureTransparent(item_X, item_Y, pIcons_LOD->GetTexture(paperdoll_armor_texture[pBodyComplection][index][1]));
                   else
                     pRenderer->DrawTransparentGreenShade(item_X, item_Y, pIcons_LOD->GetTexture(paperdoll_armor_texture[pBodyComplection][index][1]));
@@ -1240,20 +1239,20 @@ void CharacterUI_DrawPaperdoll(Player *player)
               }
               else
               {
-                if ( (item->uAttributes & 0xF0) == ITEM_AURA_EFFECT_RED )
+                if ( (item->uAttributes & ITEM_ENCHANT_ANIMATION) == ITEM_AURA_EFFECT_RED )
                   container = "sptext01";
-                if ( (item->uAttributes & 0xF0) == ITEM_AURA_EFFECT_BLUE )
+                if ( (item->uAttributes & ITEM_ENCHANT_ANIMATION) == ITEM_AURA_EFFECT_BLUE )
                   container = "sp28a";
-                if ( (item->uAttributes & 0xF0) == ITEM_AURA_EFFECT_GREEN )
+                if ( (item->uAttributes & ITEM_ENCHANT_ANIMATION) == ITEM_AURA_EFFECT_GREEN )
                   container = "sp30a";
-                if ( (item->uAttributes & 0xF0) == ITEM_AURA_EFFECT_PURPLE )
+                if ( (item->uAttributes & ITEM_ENCHANT_ANIMATION) == ITEM_AURA_EFFECT_PURPLE )
                   container = "sp91a";
                 _50C9A8_item_enchantment_timer -= pEventTimer->uTimeElapsed;
                 if ( _50C9A8_item_enchantment_timer <= 0 )
                 {
                   _50C9A8_item_enchantment_timer = 0;
                   item->uAttributes &= 0xFFFFFF0Fu;
-                  ptr_50C9A4_ItemToEnchant = 0;
+                  ptr_50C9A4_ItemToEnchant = nullptr;
                 }
                 pRenderer->DrawAura(item_X, item_Y, pIcons_LOD->GetTexture(paperdoll_armor_texture[pBodyComplection][index][1]),
                   pIcons_LOD->LoadTexturePtr(container, TEXTURE_16BIT_PALETTE), GetTickCount() * 0.1, 0, 255);
@@ -1292,9 +1291,9 @@ void CharacterUI_DrawPaperdoll(Player *player)
           item_Y = pPaperdoll_BodyY + paperdoll_CloakCollar[pBodyComplection][index][1];
           if ( paperdoll_cloak_collar_texture[pBodyComplection][index] != pIcons_LOD->FindTextureByName("pending") )
           {
-            if ( !(item->uAttributes & 0xF0) )
+            if ( !(item->uAttributes & ITEM_ENCHANT_ANIMATION) )
             {
-              if ( item->uAttributes & 2 )
+              if ( item->uAttributes & ITEM_BROKEN )
                 pRenderer->DrawTransparentRedShade(item_X, item_Y, pIcons_LOD->GetTexture(paperdoll_cloak_collar_texture[pBodyComplection][index]));
               else
                 pRenderer->DrawTextureTransparent(item_X, item_Y, pIcons_LOD->GetTexture(paperdoll_cloak_collar_texture[pBodyComplection][index]));
@@ -1304,20 +1303,20 @@ void CharacterUI_DrawPaperdoll(Player *player)
             }
             else
             {
-              if ( (item->uAttributes & 0xF0) == ITEM_AURA_EFFECT_RED )
+              if ( (item->uAttributes & ITEM_ENCHANT_ANIMATION) == ITEM_AURA_EFFECT_RED )
                 container = "sptext01";
-              if ( (item->uAttributes & 0xF0) == ITEM_AURA_EFFECT_BLUE )
+              if ( (item->uAttributes & ITEM_ENCHANT_ANIMATION) == ITEM_AURA_EFFECT_BLUE )
                 container = "sp28a";
-              if ( (item->uAttributes & 0xF0) == ITEM_AURA_EFFECT_GREEN )
+              if ( (item->uAttributes & ITEM_ENCHANT_ANIMATION) == ITEM_AURA_EFFECT_GREEN )
                 container = "sp30a";
-              if ( (item->uAttributes & 0xF0) == ITEM_AURA_EFFECT_PURPLE )
+              if ( (item->uAttributes & ITEM_ENCHANT_ANIMATION) == ITEM_AURA_EFFECT_PURPLE )
                 container = "sp91a";
               _50C9A8_item_enchantment_timer -= pEventTimer->uTimeElapsed;
               if ( _50C9A8_item_enchantment_timer <= 0 )
               {
                 _50C9A8_item_enchantment_timer = 0;
                 item->uAttributes &= 0xFFFFFF0Fu;
-                ptr_50C9A4_ItemToEnchant = 0;
+                ptr_50C9A4_ItemToEnchant = nullptr;
               }
               pRenderer->DrawAura(item_X, item_Y, pIcons_LOD->GetTexture(paperdoll_cloak_collar_texture[pBodyComplection][index]),
                             pIcons_LOD->LoadTexturePtr(container, TEXTURE_16BIT_PALETTE), GetTickCount() * 0.1, 0, 255);
@@ -1365,33 +1364,33 @@ void CharacterUI_DrawPaperdoll(Player *player)
           v127 = paperdoll_helm_texture[player->GetSexByVoice()][index];
         else
           v127 = papredoll_dbrds[11];
-        if ( item->uAttributes & 0xF0 )
+        if ( item->uAttributes & ITEM_ENCHANT_ANIMATION )
         {
-          if ( (item->uAttributes & 0xF0) == ITEM_AURA_EFFECT_RED )
+          if ( (item->uAttributes & ITEM_ENCHANT_ANIMATION) == ITEM_AURA_EFFECT_RED )
             container = "sptext01";
-          if ( (item->uAttributes & 0xF0) == ITEM_AURA_EFFECT_BLUE )
+          if ( (item->uAttributes & ITEM_ENCHANT_ANIMATION) == ITEM_AURA_EFFECT_BLUE )
             container = "sp28a";
-          if ( (item->uAttributes & 0xF0) == ITEM_AURA_EFFECT_GREEN )
+          if ( (item->uAttributes & ITEM_ENCHANT_ANIMATION) == ITEM_AURA_EFFECT_GREEN )
             container = "sp30a";
-          if ( (item->uAttributes & 0xF0) == ITEM_AURA_EFFECT_PURPLE )
+          if ( (item->uAttributes & ITEM_ENCHANT_ANIMATION) == ITEM_AURA_EFFECT_PURPLE )
             container = "sp91a";
           _50C9A8_item_enchantment_timer -= pEventTimer->uTimeElapsed;
           if ( _50C9A8_item_enchantment_timer <= 0 )
           {
             _50C9A8_item_enchantment_timer = 0;
             item->uAttributes &= 0xFFFFFF0Fu;
-            ptr_50C9A4_ItemToEnchant = 0;
+            ptr_50C9A4_ItemToEnchant = nullptr;
           }
           pRenderer->DrawAura(item_X, item_Y, pIcons_LOD->GetTexture(v127), pIcons_LOD->LoadTexturePtr(container, TEXTURE_16BIT_PALETTE),
                         GetTickCount() * 0.1, 0, 255);
         }
         else
         {
-          if ( item->uAttributes & 2 )
+          if ( item->uAttributes & ITEM_BROKEN )
             pRenderer->DrawTransparentRedShade(item_X, item_Y, pIcons_LOD->GetTexture(v127));
           else
           {
-            if ( item->uAttributes & 1 )
+            if ( item->uAttributes & ITEM_IDENTIFIED )
               pRenderer->DrawTextureTransparent(item_X, item_Y, pIcons_LOD->GetTexture(v127));
             else
               pRenderer->DrawTransparentGreenShade(item_X, item_Y, pIcons_LOD->GetTexture(v127));
@@ -1411,13 +1410,13 @@ void CharacterUI_DrawPaperdoll(Player *player)
         v181 = "item64v1";
       else
         v181 = item->GetIconName();
-      if ( !(item->uAttributes & 0xF0) )
+      if ( !(item->uAttributes & ITEM_ENCHANT_ANIMATION) )
       {
-        if ( item->uAttributes & 2 )
+        if ( item->uAttributes & ITEM_BROKEN )
           pRenderer->DrawTransparentRedShade(item_X, item_Y, pIcons_LOD->GetTexture(pIcons_LOD->LoadTexture(v181, TEXTURE_16BIT_PALETTE)));
         else
         {
-          if ( item->uAttributes & 1 )
+          if ( item->uAttributes & ITEM_IDENTIFIED )
             pRenderer->DrawTextureTransparent(item_X, item_Y, pIcons_LOD->GetTexture(pIcons_LOD->LoadTexture(v181, TEXTURE_16BIT_PALETTE)));
           else
             pRenderer->DrawTransparentGreenShade(item_X, item_Y, pIcons_LOD->GetTexture(pIcons_LOD->LoadTexture(v181, TEXTURE_16BIT_PALETTE)));
@@ -1425,20 +1424,20 @@ void CharacterUI_DrawPaperdoll(Player *player)
       }
       else
       {
-        if ( (item->uAttributes & 0xF0) == ITEM_AURA_EFFECT_RED )
+        if ( (item->uAttributes & ITEM_ENCHANT_ANIMATION) == ITEM_AURA_EFFECT_RED )
           container = "sptext01";
-        if ( (item->uAttributes & 0xF0) == ITEM_AURA_EFFECT_BLUE )
+        if ( (item->uAttributes & ITEM_ENCHANT_ANIMATION) == ITEM_AURA_EFFECT_BLUE )
           container = "sp28a";
-        if ( (item->uAttributes & 0xF0) == ITEM_AURA_EFFECT_GREEN )
+        if ( (item->uAttributes & ITEM_ENCHANT_ANIMATION) == ITEM_AURA_EFFECT_GREEN )
            container = "sp30a";
-        if ( (item->uAttributes & 0xF0) == ITEM_AURA_EFFECT_PURPLE )
+        if ( (item->uAttributes & ITEM_ENCHANT_ANIMATION) == ITEM_AURA_EFFECT_PURPLE )
           container = "sp91a";
         _50C9A8_item_enchantment_timer -= pEventTimer->uTimeElapsed;
         if ( _50C9A8_item_enchantment_timer <= 0 )
         {
           _50C9A8_item_enchantment_timer = 0;
           item->uAttributes &= 0xFFFFFF0Fu;
-          ptr_50C9A4_ItemToEnchant = 0;
+          ptr_50C9A4_ItemToEnchant = nullptr;
         }
         pRenderer->DrawAura(item_X, item_Y, pIcons_LOD->GetTexture(pIcons_LOD->LoadTexture(v181, TEXTURE_16BIT_PALETTE)),
                    pIcons_LOD->LoadTexturePtr(container, TEXTURE_16BIT_PALETTE), GetTickCount() * 0.1, 0, 255);
@@ -1482,14 +1481,14 @@ void CharacterUI_DrawPaperdoll(Player *player)
         item_Y = pPaperdoll_BodyY + paperdoll_Weapon[pBodyComplection][0][1] - pItemsTable->pItems[item->uItemID].uEquipY;
       }
       v153 = pIcons_LOD->LoadTexture(item->GetIconName(), TEXTURE_16BIT_PALETTE);
-      if ( !(item->uAttributes & 0xF0) )
+      if ( !(item->uAttributes & ITEM_ENCHANT_ANIMATION) )
       {
-        if ( item->uAttributes & 2 )
+        if ( item->uAttributes & ITEM_BROKEN )
           pRenderer->DrawTransparentRedShade(item_X, item_Y, pIcons_LOD->GetTexture(v153));
         else
         {
           //v160 = (char *)pIcons_LOD->GetTexture(v153);
-          if ( !(item->uAttributes & 1) )
+          if ( !(item->uAttributes & ITEM_IDENTIFIED) )
           pRenderer->DrawTransparentGreenShade(item_X, item_Y, pIcons_LOD->GetTexture(v153));
           else
             pRenderer->DrawTextureTransparent(item_X, item_Y, pIcons_LOD->GetTexture(v153));
@@ -1497,20 +1496,20 @@ void CharacterUI_DrawPaperdoll(Player *player)
       }
       else
       {
-        if ( (item->uAttributes & 0xF0) == ITEM_AURA_EFFECT_RED )
+        if ( (item->uAttributes & ITEM_ENCHANT_ANIMATION) == ITEM_AURA_EFFECT_RED )
           container = "sptext01";
-        if ( (item->uAttributes & 0xF0) == ITEM_AURA_EFFECT_BLUE )
+        if ( (item->uAttributes & ITEM_ENCHANT_ANIMATION) == ITEM_AURA_EFFECT_BLUE )
           container = "sp28a";
-        if ( (item->uAttributes & 0xF0) == ITEM_AURA_EFFECT_GREEN )
+        if ( (item->uAttributes & ITEM_ENCHANT_ANIMATION) == ITEM_AURA_EFFECT_GREEN )
           container = "sp30a";
-        if ( (item->uAttributes & 0xF0) == ITEM_AURA_EFFECT_PURPLE )
+        if ( (item->uAttributes & ITEM_ENCHANT_ANIMATION) == ITEM_AURA_EFFECT_PURPLE )
           container = "sp91a";
         _50C9A8_item_enchantment_timer -= pEventTimer->uTimeElapsed;
         if ( _50C9A8_item_enchantment_timer <= 0 )
         {
           _50C9A8_item_enchantment_timer = 0;
           item->uAttributes &= 0xFFFFFF0Fu;
-          ptr_50C9A4_ItemToEnchant = 0;
+          ptr_50C9A4_ItemToEnchant = nullptr;
         }
         pRenderer->DrawAura(item_X, item_Y, pIcons_LOD->GetTexture(v153), pIcons_LOD->LoadTexturePtr(container, TEXTURE_16BIT_PALETTE),
                      GetTickCount() * 0.1, 0, 255);
@@ -1544,8 +1543,8 @@ void CharacterUI_DrawPaperdoll(Player *player)
 void CharacterUI_InventoryTab_Draw(Player *player, bool a2)
 {
   Texture *pTexture; // esi@6
-  int v13; // eax@13
-  int v15; // eax@13
+//  int v13; // eax@13
+  //int v15; // eax@13
   unsigned int v17; // edi@15
   unsigned int uCellX; // [sp+30h] [bp-8h]@5
   unsigned int uCellY; // [sp+34h] [bp-4h]@5
@@ -1567,16 +1566,17 @@ void CharacterUI_InventoryTab_Draw(Player *player, bool a2)
       pTexture->uTextureWidth = 14;
     if ( (pTexture->uTextureWidth - 14) / 32 == 0 && pTexture->uTextureWidth < 32)
       uCellX += (32 - pTexture->uTextureWidth) / 2;
-    v13 = pTexture->uTextureWidth - 14;
-    LOBYTE(v13) = v13 & 0xE0;
-    v15 = v13 + 32;
+    //v13 = pTexture->uTextureWidth - 14;
+    //LOBYTE(v13) = v13 & 0xE0;
+    //v15 = v13 + 32;
     if (pTexture->uTextureHeight < 14 )
       pTexture->uTextureHeight = 14;
-    v17 = uCellX + ((v15 - pTexture->uTextureWidth) >> 1) + pSRZBufferLineOffsets[uCellY + (( (int)((pTexture->uTextureHeight - 14) & 0xFFFFFFE0) - pTexture->uTextureHeight + 32) >> 1)];   //added typecast. without it the value in the brackets got cat to unsigned which messed stuff up
-    if (player->pInventoryItemList[player->pInventoryMatrix[i] - 1].uAttributes & 0xF0)
+    v17 = uCellX + (( (int)((pTexture->uTextureWidth - 14) & 0xE0) + 32 - pTexture->uTextureWidth) / 2)
+       + pSRZBufferLineOffsets[uCellY + (( (int)((pTexture->uTextureHeight - 14) & 0xFFFFFFE0) - pTexture->uTextureHeight + 32) / 2)];   //added typecast. without it the value in the brackets got cat to unsigned which messed stuff up
+    if (player->pInventoryItemList[player->pInventoryMatrix[i] - 1].uAttributes & ITEM_ENCHANT_ANIMATION)
     {
       Texture *loadedTextureptr = nullptr;
-      switch (player->pInventoryItemList[player->pInventoryMatrix[i] - 1].uAttributes & 0xF0)
+      switch (player->pInventoryItemList[player->pInventoryMatrix[i] - 1].uAttributes & ITEM_ENCHANT_ANIMATION)
       {
         case ITEM_AURA_EFFECT_RED:    loadedTextureptr = pIcons_LOD->LoadTexturePtr("sptext01", TEXTURE_16BIT_PALETTE); break;
         case ITEM_AURA_EFFECT_BLUE:   loadedTextureptr = pIcons_LOD->LoadTexturePtr("sp28a", TEXTURE_16BIT_PALETTE);    break;
@@ -1588,7 +1588,7 @@ void CharacterUI_InventoryTab_Draw(Player *player, bool a2)
       {
         _50C9A8_item_enchantment_timer = 0;
         LOBYTE(player->pInventoryItemList[player->pInventoryMatrix[i] - 1].uAttributes) &= 0xF;
-        ptr_50C9A4_ItemToEnchant = 0;
+        ptr_50C9A4_ItemToEnchant = nullptr;
       }
 
       pRenderer->DrawAura(uCellX, uCellY, pTexture, loadedTextureptr, GetTickCount() * 0.1, 0, 255);
@@ -1615,10 +1615,10 @@ static void CharacterUI_DrawItem(int x, int y, ItemGen *item, int id)
 {
   Texture* item_texture = pIcons_LOD->LoadTexturePtr(item->GetIconName(), TEXTURE_16BIT_PALETTE);
 
-  if (item->uAttributes & 0xF0) // enchant animation
+  if (item->uAttributes & ITEM_ENCHANT_ANIMATION) // enchant animation
   {
     Texture *enchantment_texture = nullptr;
-    switch (item->uAttributes & 0xF0)
+    switch (item->uAttributes & ITEM_ENCHANT_ANIMATION)
     {
       case ITEM_AURA_EFFECT_RED:    enchantment_texture = pIcons_LOD->LoadTexturePtr("sptext01", TEXTURE_16BIT_PALETTE); break;
       case ITEM_AURA_EFFECT_BLUE:   enchantment_texture = pIcons_LOD->LoadTexturePtr("sp28a", TEXTURE_16BIT_PALETTE);    break;
@@ -1631,7 +1631,7 @@ static void CharacterUI_DrawItem(int x, int y, ItemGen *item, int id)
     {
       _50C9A8_item_enchantment_timer = 0;
       item->uAttributes &= 0xFFFFFF0F;
-      ptr_50C9A4_ItemToEnchant = 0;
+      ptr_50C9A4_ItemToEnchant = nullptr;
     }
     pRenderer->DrawAura(x, y, item_texture, enchantment_texture, GetTickCount() * 0.1, 0, 255);
   }
@@ -1676,21 +1676,21 @@ void CharacterUI_LoadPaperdollTextures()
 {
   int v3; // ebx@10
   Player *pPlayer; // edi@12
-  int v6; // edi@16
-  unsigned int v7; // eax@16
-  Player *pPlayer2; // ebx@16
-  char *v9; // ebx@16
-  unsigned int v22; // eax@76
-  int v23; // ecx@76
-  unsigned int v24; // eax@78
-  int v25; // ecx@78
-  unsigned int v27; // eax@80
-  int v28; // ecx@80
+//  int v6; // edi@16
+//  unsigned int v7; // eax@16
+//  Player *pPlayer2; // ebx@16
+//  char *v9; // ebx@16
+//  unsigned int v22; // eax@76
+//  int v23; // ecx@76
+//  unsigned int v24; // eax@78
+//  int v25; // ecx@78
+//  unsigned int v27; // eax@80
+//  int v28; // ecx@80
   signed int v32; // [sp+10h] [bp-28h]@75
   signed int v33; // [sp+10h] [bp-28h]@77
-  int v34; // [sp+10h] [bp-28h]@79
+//  int v34; // [sp+10h] [bp-28h]@79
   int pItemTXTNum; // [sp+14h] [bp-24h]@75
-  int v37; // [sp+14h] [bp-24h]@77
+//  int v37; // [sp+14h] [bp-24h]@77
   signed int v38; // [sp+14h] [bp-24h]@79
   char pContainer[128]; // [sp+24h] [bp-14h]@12
 
@@ -1766,28 +1766,28 @@ void CharacterUI_LoadPaperdollTextures()
       }
     }
   }
-  memset(byte_5111F6.data(), 0, sizeof(byte_5111F6));
+  memset(byte_5111F6_OwnedArtifacts.data(), 0, sizeof(byte_5111F6_OwnedArtifacts));
   for (uint i = 0; i < 4; ++i)
   {
     Player* player = &pParty->pPlayers[i];
 
-    if (player->HasItem(ITEM_ARTIFACT_GOVERNORS_ARMOR, 1))    byte_5111F6[0] = 1;
-    if (player->HasItem(ITEM_ARTIFACT_YORUBA, 1))             byte_5111F6[1] = 1;
-    if (player->HasItem(ITEM_RELIC_HARECS_LEATHER, 1))        byte_5111F6[2] = 1;
-    if (player->HasItem(ITEM_ARTIFACT_LEAGUE_BOOTS, 1))       byte_5111F6[3] = 1;
-    if (player->HasItem(ITEM_RELIC_TALEDONS_HELM, 1))         byte_5111F6[4] = 1;
-    if (player->HasItem(ITEM_RELIC_SCHOLARS_CAP, 1))          byte_5111F6[5] = 1;
-    if (player->HasItem(ITEM_RELIC_PHYNAXIAN_CROWN, 1))       byte_5111F6[6] = 1;
-    if (player->HasItem(ITEM_ARTIFACT_MINDS_EYE, 1))          byte_5111F6[7] = 1;
-    if (player->HasItem(ITEM_RARE_SHADOWS_MASK, 1))           byte_5111F6[8] = 1;
-    if (player->HasItem(ITEM_RILIC_TITANS_BELT, 1))           byte_5111F6[9] = 1;
-    if (player->HasItem(ITEM_ARTIFACT_HEROS_BELT, 1))         byte_5111F6[10] = 1;
-    if (player->HasItem(ITEM_RELIC_TWILIGHT, 1))              byte_5111F6[11] = 1;
-    if (player->HasItem(ITEM_ARTIFACT_CLOAK_OF_THE_SHEEP, 1)) byte_5111F6[12] = 1;
-    if (player->HasItem(ITEM_RARE_SUN_CLOAK, 1))              byte_5111F6[13] = 1;
-    if (player->HasItem(ITEM_RARE_MOON_CLOAK, 1))             byte_5111F6[14] = 1;
-    if (player->HasItem(ITEM_RARE_VAMPIRES_CAPE, 1))          byte_5111F6[15] = 1;
-    if (player->HasItem(ITEM_ELVEN_CHAINMAIL, 1))             byte_5111F6[16] = 1;
+    if (player->HasItem(ITEM_ARTIFACT_GOVERNORS_ARMOR, 1))    byte_5111F6_OwnedArtifacts[0] = 1;
+    if (player->HasItem(ITEM_ARTIFACT_YORUBA, 1))             byte_5111F6_OwnedArtifacts[1] = 1;
+    if (player->HasItem(ITEM_RELIC_HARECS_LEATHER, 1))        byte_5111F6_OwnedArtifacts[2] = 1;
+    if (player->HasItem(ITEM_ARTIFACT_LEAGUE_BOOTS, 1))       byte_5111F6_OwnedArtifacts[3] = 1;
+    if (player->HasItem(ITEM_RELIC_TALEDONS_HELM, 1))         byte_5111F6_OwnedArtifacts[4] = 1;
+    if (player->HasItem(ITEM_RELIC_SCHOLARS_CAP, 1))          byte_5111F6_OwnedArtifacts[5] = 1;
+    if (player->HasItem(ITEM_RELIC_PHYNAXIAN_CROWN, 1))       byte_5111F6_OwnedArtifacts[6] = 1;
+    if (player->HasItem(ITEM_ARTIFACT_MINDS_EYE, 1))          byte_5111F6_OwnedArtifacts[7] = 1;
+    if (player->HasItem(ITEM_RARE_SHADOWS_MASK, 1))           byte_5111F6_OwnedArtifacts[8] = 1;
+    if (player->HasItem(ITEM_RILIC_TITANS_BELT, 1))           byte_5111F6_OwnedArtifacts[9] = 1;
+    if (player->HasItem(ITEM_ARTIFACT_HEROS_BELT, 1))         byte_5111F6_OwnedArtifacts[10] = 1;
+    if (player->HasItem(ITEM_RELIC_TWILIGHT, 1))              byte_5111F6_OwnedArtifacts[11] = 1;
+    if (player->HasItem(ITEM_ARTIFACT_CLOAK_OF_THE_SHEEP, 1)) byte_5111F6_OwnedArtifacts[12] = 1;
+    if (player->HasItem(ITEM_RARE_SUN_CLOAK, 1))              byte_5111F6_OwnedArtifacts[13] = 1;
+    if (player->HasItem(ITEM_RARE_MOON_CLOAK, 1))             byte_5111F6_OwnedArtifacts[14] = 1;
+    if (player->HasItem(ITEM_RARE_VAMPIRES_CAPE, 1))          byte_5111F6_OwnedArtifacts[15] = 1;
+    if (player->HasItem(ITEM_ELVEN_CHAINMAIL, 1))             byte_5111F6_OwnedArtifacts[16] = 1;
   }
 
   for (uint i = 0; i < 2; ++i)
@@ -1933,7 +1933,7 @@ void CharacterUI_SkillsTab_CreateButtons()
     }
   }
   first_rows = 0;
-  //  a5 = pGUIWindow_CurrentMenu->uNumControls;
+  int a5 = pGUIWindow_CurrentMenu->uNumControls;
   curr_player = &pParty->pPlayers[uActiveCharacter-1];
 
   uCurrFontHeght=pFontLucida->uFontHeight;
@@ -1990,7 +1990,7 @@ void CharacterUI_SkillsTab_CreateButtons()
   }
 
   if ( buttons_count )
-    pGUIWindow_CurrentMenu->_41D08F_set_keyboard_control_group(buttons_count, 1, 0, pGUIWindow_CurrentMenu->uNumControls);
+    pGUIWindow_CurrentMenu->_41D08F_set_keyboard_control_group(buttons_count, 1, 0, a5);
 }
 
 //----- (00418511) --------------------------------------------------------
@@ -2181,6 +2181,7 @@ void CharacterUI_StatsTab_Draw( Player *player )
   if ( player->GetActualResistance(CHARACTER_ATTRIBUTE_RESIST_BODY) > 99 || player->GetBaseResistance(CHARACTER_ATTRIBUTE_RESIST_BODY) > 99 )
     a2 = "%s\f%05u\t180%d\f00000 / %d\n";
   pY += LOBYTE(pFontArrus->uFontHeight) - 2;
+  int it = player->GetActualResistance(CHARACTER_ATTRIBUTE_RESIST_BODY);
   sprintf(pTmpBuf.data(), a2, pGlobalTXT_LocalizationStrings[29],
           UI_GetHealthManaAndOtherQualitiesStringColor(player->GetActualResistance(CHARACTER_ATTRIBUTE_RESIST_BODY), player->GetBaseResistance(CHARACTER_ATTRIBUTE_RESIST_BODY)),
           player->GetActualResistance(CHARACTER_ATTRIBUTE_RESIST_BODY), player->GetBaseResistance(CHARACTER_ATTRIBUTE_RESIST_BODY));
@@ -2234,7 +2235,7 @@ void FillAwardsData()
   if (full_num_items_in_book>0)
   {
     for (int i = 0; i< full_num_items_in_book; ++i)
-      achieved_awards[full_num_items_in_book+i] = (AwardType)(rand()%16);
+      achieved_awards[full_num_items_in_book+i] = (AwardType)(rand()%16);//случайные значения от 0 до 15
     for (int i = 1; i< full_num_items_in_book; ++i)
     {
       for (int j = i; j< full_num_items_in_book; ++j)
@@ -2330,18 +2331,17 @@ void  OnPaperdollLeftClick()
   int v17; // eax@44
   unsigned int v18; // ecx@55
   unsigned int v19; // eax@55
-  unsigned int v22; // eax@61
+//  unsigned int v22; // eax@61
   int v23; // eax@62
   int v26; // eax@69
   int v34; // esi@90
-  int v36; // esi@93
-  ItemGen *v38; // edi@93
   ItemGen _this; // [sp+Ch] [bp-40h]@1
-  unsigned int v48; // [sp+30h] [bp-1Ch]@88
+//  unsigned int v48; // [sp+30h] [bp-1Ch]@88
   unsigned int v50; // [sp+38h] [bp-14h]@50
   int v51; // [sp+3Ch] [bp-10h]@1
   int v52; // [sp+40h] [bp-Ch]@5
   ITEM_EQUIP_TYPE pEquipType;
+  CastSpellInfo *pSpellInfo;
 
   v51 = 0;
   _this.Reset();
@@ -2520,8 +2520,8 @@ void  OnPaperdollLeftClick()
           return;
         }
         v50 = 0;
-        if ( pSkillType == 2 && (unsigned __int16)(pPlayers[uActiveCharacter]->pActiveSkills[2] & 0xFFC0)
-          || pSkillType == 1 && (signed int)SkillToMastery(pPlayers[uActiveCharacter]->pActiveSkills[1]) >= 3 )
+        if ( pSkillType == 2 && (unsigned __int16)(pPlayers[uActiveCharacter]->pActiveSkills[PLAYER_SKILL_DAGGER] & 0xFFC0)
+          || pSkillType == 1 && (signed int)SkillToMastery(pPlayers[uActiveCharacter]->pActiveSkills[PLAYER_SKILL_SWORD]) >= 3 )
         {
           v18 = pMouse->uMouseClickX;
           v19 = pMouse->uMouseClickY;
@@ -2545,7 +2545,7 @@ void  OnPaperdollLeftClick()
                 if ( _this.uItemID )
                 {
                 __debugbreak();  // looks like offset in player's inventory and wand_lut much like case in 0042ECB5
-                stru_A750F8[uActiveCharacter - 1]._494836(*((int *)&pSpellDatas[66].uNormalLevelRecovery + v50), uActiveCharacter - 1 + 9);
+                stru_A750F8[uActiveCharacter - 1].AddPartySpellSound(wand_spell_ids[pPlayers[uActiveCharacter]->pInventoryItemList[v50].uItemID - ITEM_WAND_FIRE], uActiveCharacter - 1 + 9);
                 }
                 break;
               }
@@ -2553,18 +2553,16 @@ void  OnPaperdollLeftClick()
               if ( v23 < 0 )
                 return;
               pParty->pPickedItem.uBodyAnchor = 1;
-              v50 = (unsigned int)&pPlayers[uActiveCharacter]->pInventoryItemList[v23];
               memcpy(&pPlayers[uActiveCharacter]->pInventoryItemList[v23], &pParty->pPickedItem, sizeof(pPlayers[uActiveCharacter]->pInventoryItemList[v23]));
               pPlayers[uActiveCharacter]->pEquipment.uShield = v23 + 1;
               pMouse->RemoveHoldingItem();
               if ( pEquipType != EQUIP_WAND )
                 return;
-              v22 = *(int *)v50;
-              v50 = v22;
+              v50 = pPlayers[uActiveCharacter]->pInventoryItemList[v23].uItemID;
               if ( v50 )
               {
                 __debugbreak();  // looks like offset in player's inventory and wand_lut much like case in 0042ECB5
-                stru_A750F8[uActiveCharacter - 1]._494836(*((int *)&pSpellDatas[66].uNormalLevelRecovery + v50), uActiveCharacter - 1 + 9);
+                stru_A750F8[uActiveCharacter - 1].AddPartySpellSound(wand_spell_ids[pPlayers[uActiveCharacter]->pInventoryItemList[v50].uItemID - ITEM_WAND_FIRE], uActiveCharacter - 1 + 9);
               }
               break;
             }
@@ -2576,19 +2574,13 @@ void  OnPaperdollLeftClick()
           if ( v26 < 0 )
             return;
           pParty->pPickedItem.uBodyAnchor = 2;
-          v50 = (unsigned int)&pPlayers[uActiveCharacter]->pInventoryItemList[v26];
           memcpy(&pPlayers[uActiveCharacter]->pInventoryItemList[v26], &pParty->pPickedItem, sizeof(pPlayers[uActiveCharacter]->pInventoryItemList[v26]));
           pPlayers[uActiveCharacter]->pEquipment.uMainHand = v26 + 1;
           pMouse->RemoveHoldingItem();
           if ( pEquipType != EQUIP_WAND )
             return;
-          v22 = *(int *)v50;
-          v50 = v22;
-          if ( v50 )
-          {
-            __debugbreak();  // looks like offset in player's inventory and wand_lut much like case in 0042ECB5
-            stru_A750F8[uActiveCharacter - 1]._494836(*((int *)&pSpellDatas[66].uNormalLevelRecovery + v50), uActiveCharacter - 1 + 9);
-          }
+          if ( pPlayers[uActiveCharacter]->pInventoryItemList[v26].uItemID )
+            stru_A750F8[uActiveCharacter - 1].AddPartySpellSound(wand_spell_ids[pPlayers[uActiveCharacter]->pInventoryItemList[v26].uItemID - ITEM_WAND_FIRE], uActiveCharacter - 1 + 9);
           break;
         }
         --v1;
@@ -2606,7 +2598,7 @@ void  OnPaperdollLeftClick()
         if ( v50 )//взять жезл
         {
                 __debugbreak();  // looks like offset in player's inventory and wand_lut much like case in 0042ECB5
-          stru_A750F8[uActiveCharacter - 1]._494836( *((int *)&pSpellDatas[66].uNormalLevelRecovery + v50), uActiveCharacter - 1 + 9);
+          stru_A750F8[uActiveCharacter - 1].AddPartySpellSound(wand_spell_ids[v50 - ITEM_WAND_FIRE], uActiveCharacter - 1 + 9);
         }
         break;
 //---------------------------take two hands(взять двумя руками)---------------------------------
@@ -2621,7 +2613,7 @@ void  OnPaperdollLeftClick()
           pPlayers[uActiveCharacter]->PlaySound(SPEECH_39, 0);
           return;
         }
-        if ( v1 )//взять двуручный меч кода нет щита(замещение оружия)
+        if ( v1 )//взять двуручный меч когда нет щита(замещение оружия)
         {
           if ( v2 )
           {
@@ -2642,7 +2634,7 @@ void  OnPaperdollLeftClick()
           v52 = pPlayers[uActiveCharacter]->FindFreeInventoryListSlot();
           if ( v52 >= 0 )
           {
-            if ( v2 )//взять двуручный меч кода есть щит(замещение щитом)
+            if ( v2 )//взять двуручный меч когда есть щит(замещение щитом)
             {
               v2--;
               memcpy(&_this, &pParty->pPickedItem, sizeof(_this));
@@ -2675,10 +2667,10 @@ void  OnPaperdollLeftClick()
   v34 = pRenderer->pActiveZBuffer[pMouse->uMouseClickX + pSRZBufferLineOffsets[pMouse->uMouseClickY]] & 0xFFFF;
   if ( v34 )
   {
-    v36 = v34 - 1;
-    v38 = &pPlayers[uActiveCharacter]->pInventoryItemList[v36];
-    pEquipType = v38->GetItemEquipType();
-    if ( v38->uItemID == ITEM_WETSUIT )
+    //v36 = v34 - 1;
+    //v38 = &pPlayers[uActiveCharacter]->pInventoryItemList[v34 - 1];
+    pEquipType = pPlayers[uActiveCharacter]->pInventoryItemList[v34 - 1].GetItemEquipType();
+    if ( pPlayers[uActiveCharacter]->pInventoryItemList[v34 - 1].uItemID == ITEM_WETSUIT )
     {
       if ( bUnderwater )
       {
@@ -2689,11 +2681,17 @@ void  OnPaperdollLeftClick()
     }
     if ( _50C9A0_IsEnchantingInProgress )//наложить закл на экипировку
     {
-      *((char *)pGUIWindow_Settings->ptr_1C + 8) &= 0x7Fu;//CastSpellInfo
+      /* *((char *)pGUIWindow_Settings->ptr_1C + 8) &= 0x7Fu;//CastSpellInfo
       *((short *)pGUIWindow_Settings->ptr_1C + 2) = uActiveCharacter - 1;
       *((int *)pGUIWindow_Settings->ptr_1C + 3) = v36;
-      *((short *)pGUIWindow_Settings->ptr_1C + 3) = pEquipType;
-      ptr_50C9A4_ItemToEnchant = v38;
+      *((short *)pGUIWindow_Settings->ptr_1C + 3) = pEquipType;*/
+      pSpellInfo = (CastSpellInfo *)pGUIWindow_Settings->ptr_1C;
+      pSpellInfo->uFlags &= 0x7F;
+      pSpellInfo->uPlayerID_2 = uActiveCharacter - 1;
+      pSpellInfo->spell_target_pid = v34 - 1;
+      pSpellInfo->field_6 = pEquipType;
+
+      ptr_50C9A4_ItemToEnchant = &pPlayers[uActiveCharacter]->pInventoryItemList[v34 - 1];
       _50C9A0_IsEnchantingInProgress = 0;
       if ( pMessageQueue_50CBD0->uNumMessages )
         pMessageQueue_50CBD0->uNumMessages = pMessageQueue_50CBD0->pMessages[0].field_8 != 0;
@@ -2706,9 +2704,9 @@ void  OnPaperdollLeftClick()
     {
       if ( !ptr_50C9A4_ItemToEnchant )//снять вещь
       {
-        pParty->SetHoldingItem(v38);
-        pPlayers[uActiveCharacter]->pEquipment.pIndices[pPlayers[uActiveCharacter]->pInventoryItemList[v36].uBodyAnchor - 1] = 0;
-        v38->Reset();
+        pParty->SetHoldingItem(&pPlayers[uActiveCharacter]->pInventoryItemList[v34 - 1]);
+        pPlayers[uActiveCharacter]->pEquipment.pIndices[pPlayers[uActiveCharacter]->pInventoryItemList[v34 - 1].uBodyAnchor - 1] = 0;
+        pPlayers[uActiveCharacter]->pInventoryItemList[v34 - 1].Reset();
       }
     }
   }
@@ -2736,7 +2734,7 @@ void CharacterUI_ReleaseButtons()
     for ( i = pGUIWindow_CurrentMenu->pControlsHead; i; i = j )
     {
       j = i->pNext;
-      if ( BYTE1(i->field_1C) & 0x80 )
+      if ( i->field_1C & 0x8000 )
       {
         i->Release();
         free(i);

@@ -1,3 +1,4 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include "stru10.h"
 #include "Render.h"
 #include "Indoor.h"
@@ -118,7 +119,7 @@ void stru10::CalcPolygonLimits(BLVFace *pFace, RenderVertexSoft *pOutVertices)
     int c;
   } v46[40]; //[sp+0C];
 
-  if (pFace->uAttributes & 0x0100)
+  if (pFace->uAttributes & FACE_XY_PLANE)
   {
     for (uint i = 0; i < pFace->uNumVertices; ++i)
     {
@@ -127,7 +128,7 @@ void stru10::CalcPolygonLimits(BLVFace *pFace, RenderVertexSoft *pOutVertices)
       v46[i].c = i;
     }
   }
-  if (pFace->uAttributes & 0x0200)
+  if (pFace->uAttributes & FACE_XZ_PLANE)
   {
     for (uint i = 0; i < pFace->uNumVertices; ++i)
     {
@@ -136,7 +137,7 @@ void stru10::CalcPolygonLimits(BLVFace *pFace, RenderVertexSoft *pOutVertices)
       v46[i].c = i;
     }
   }
-  if (pFace->uAttributes & 0x0400)
+  if (pFace->uAttributes & FACE_YZ_PLANE)
   {
     for (uint i = 0; i < pFace->uNumVertices; ++i)
     {
@@ -282,7 +283,7 @@ bool stru10::CalcFaceBounding(BLVFace *pFace, RenderVertexSoft *pFaceLimits, uns
   float a3;
   float var_8;
 
-  if (pFace->uAttributes & 0x0100)
+  if (pFace->uAttributes & FACE_XY_PLANE)
   {
     face_center_x = (pFaceLimits[0].vWorldPosition.x + pFaceLimits[2].vWorldPosition.x) / 2;
     face_center_y = (pFaceLimits[3].vWorldPosition.y + pFaceLimits[1].vWorldPosition.y) / 2;
@@ -291,7 +292,7 @@ bool stru10::CalcFaceBounding(BLVFace *pFace, RenderVertexSoft *pFaceLimits, uns
     a3 = face_center_x - pFaceLimits[0].vWorldPosition.x;
     var_8 = face_center_y - pFaceLimits[1].vWorldPosition.y;
   }
-  if (pFace->uAttributes & 0x0200)
+  if (pFace->uAttributes & FACE_XZ_PLANE)
   {
     face_center_x = (pFaceLimits[0].vWorldPosition.x + pFaceLimits[2].vWorldPosition.x) / 2;// центр полигона
     face_center_y = (pFaceLimits[0].vWorldPosition.y + pFaceLimits[2].vWorldPosition.y) / 2;
@@ -303,7 +304,7 @@ bool stru10::CalcFaceBounding(BLVFace *pFace, RenderVertexSoft *pFaceLimits, uns
     if (pFace->uPolygonType == POLYGON_VerticalWall)
       a3 /= a1.x;
   }
-  if (pFace->uAttributes & 0x0400)
+  if (pFace->uAttributes & FACE_YZ_PLANE)
   {
     face_center_x = (pFaceLimits[0].vWorldPosition.x + pFaceLimits[2].vWorldPosition.x) / 2;
     face_center_y = (pFaceLimits[0].vWorldPosition.y + pFaceLimits[2].vWorldPosition.y) / 2;
@@ -681,8 +682,7 @@ bool stru10::CalcFaceBounding(BLVFace *pFace, RenderVertexSoft *pFaceLimits, uns
     //if ( byte_4D864C && pGame->uFlags & GAME_FLAGS_1_DRAW_BLV_DEBUGS)
     //{
       RenderVertexSoft v26; // [sp+40h] [bp-60h]@20
-      extern bool draw_debug_line;
-      if ( draw_debug_line )
+      if ( draw_portals_loops )
       {
         if (!bDoNotDrawPortalFrustum)
         {
@@ -728,9 +728,8 @@ bool stru10::CalcFaceBounding(BLVFace *pFace, RenderVertexSoft *pFaceLimits, uns
         v26.vWorldPosition.y = face_center_y + a1.y * 400.0f;
         v26.vWorldPosition.z = face_center_z + a1.z * 400.0f;
 
-        extern bool draw_debug_line;
-        if ( draw_debug_line )
-          pGame->pIndoorCameraD3D->do_draw_debug_line_sw(&v25, 0xFFFFFFFFu, &v26, 0xFFFF00u, 0, 0);
+        if ( draw_portals_loops )
+          pGame->pIndoorCameraD3D->do_draw_debug_line_sw(&v25, -1, &v26, 0xFFFF00u, 0, 0);
       }
   //}
 

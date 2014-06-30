@@ -56,9 +56,9 @@ struct ObjectDesc
   __int16 uLifetime;
   unsigned int uParticleTrailColor;
   __int16 uSpeed;
-  char uParticleTrailColorR;
-  char uParticleTrailColorG;
-  char uParticleTrailColorB;
+  unsigned char uParticleTrailColorR;
+  unsigned char uParticleTrailColorG;
+  unsigned char uParticleTrailColorB;
   char field_35_clr;
   char field_36_clr;
   char field_37_clr;

@@ -16,7 +16,6 @@ struct Polygon
   }
 
   int _479295();
-  void DrawBorderTiles();
   //void _48276F_sr();
   void _normalize_v_18();
   void Create_48607B(struct stru149 *a2);

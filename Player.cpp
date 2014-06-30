@@ -1,8 +1,8 @@
-#ifdef _MSC_VER
 #define _CRT_SECURE_NO_WARNINGS
-#endif
-
+#include "VectorTypes.h"
 #include "stru6.h"
+#include "mm7_unsorted_subs.h"
+#include "ErrorHandling.h"
 
 #include "Player.h"
 #include "PlayerFrameTable.h"
@@ -25,13 +25,20 @@
 #include "texts.h"
 
 #include "stru123.h"
+#include "stru298.h"
+#include "ObjectList.h"
 #include "mm7_data.h"
 #include "MM7.h"
 #include "SpriteObject.h"
 #include "DecalBuilder.h"
+#include "CastSpellInfo.h"
+#include "OurMath.h"
+#include "UI\UIPartyCreation.h"
 
 
 
+
+NZIArray<struct Player *, 5> pPlayers;
 
 
 /*  381 */
@@ -218,8 +225,6 @@ int PlayerCreation_GetUnspentAttributePointCount()
   return remainingStatPoints;
 }
 
-
-
 //----- (00427730) --------------------------------------------------------
 bool Player::CanCastSpell(unsigned int uRequiredMana)
 {
@@ -232,7 +237,6 @@ bool Player::CanCastSpell(unsigned int uRequiredMana)
   pAudioPlayer->PlaySound(SOUND_PlayerCantCastSpell, 0, 0, -1, 0, 0, 0, 0);
   return false;
 }
-
 
 //----- (004BE2DD) --------------------------------------------------------
 void Player::SalesProcess( unsigned int inventory_idnx, int item_index, int _2devent_idx )
@@ -252,8 +256,6 @@ void Player::SalesProcess( unsigned int inventory_idnx, int item_index, int _2de
   Party::SetGold(pParty->uNumGold + sell_price);
 }
 
-
-
 //----- (0043EEF3) --------------------------------------------------------
 bool Player::NothingOrJustBlastersEquipped()
 {
@@ -271,9 +273,6 @@ bool Player::NothingOrJustBlastersEquipped()
   }
   return true;
 }
-  
-
-
 
 //----- (004B8040) --------------------------------------------------------
 int Player::GetConditionDayOfWeek( unsigned int uCondition )
@@ -294,13 +293,9 @@ int Player::GetTempleHealCostModifier(float a2)
   if ( conditionIdx >= 14 && conditionIdx <= 16)
   {
     if ( conditionIdx <= 15 )
-    {
       baseConditionMultiplier = 5;
-    }
     else //if ( conditionIdx == 16 )
-    {
       baseConditionMultiplier = 10;
-    }
     conditionTimeMultiplier = GetConditionDayOfWeek(conditionIdx);
   }
   else 
@@ -426,40 +421,24 @@ int Player::GetBaseRepairPrice(int a2, float a3)
   return v3;
 }
 
-
-
-
-
 //----- (004B6FF9) --------------------------------------------------------
 bool Player::IsPlayerHealableByTemple()
 {
-  signed int v2; // eax@1
-  v2 = (signed int)window_SpeakInHouse->ptr_1C;
   if (this->sHealth >= GetMaxHealth() && this->sMana >= GetMaxMana() && GetMajorConditionIdx() == Condition_Good)
-  {
     return false;
-  }
   else
   {
     if (GetMajorConditionIdx() == Condition_Zombie)
     {
-      if ((v2 == 78 || v2 == 81 || v2 == 82))
-      {
+      if (((signed int)window_SpeakInHouse->ptr_1C == 78 || (signed int)window_SpeakInHouse->ptr_1C == 81 || (signed int)window_SpeakInHouse->ptr_1C == 82))
         return false;
-      }
       else
-      {
         return true;
-      }
     }
     else
-    {
       return true;
-    }
   }
 }
-
-
 
 //----- (00421E75) --------------------------------------------------------
 unsigned int Player::GetItemIDAtInventoryIndex(int *pitem_index)
@@ -467,24 +446,17 @@ unsigned int Player::GetItemIDAtInventoryIndex(int *pitem_index)
   int item_idx; // eax@1
   int inv_index; // eax@3
 
-
   item_idx = *pitem_index;
   if ( item_idx >125 || item_idx < 0 )
-  {
     return 0;
+  inv_index = this->pInventoryMatrix[item_idx];
+  if ( inv_index < 0 )
+  {
+    *pitem_index = -1 - inv_index;
+    inv_index = this->pInventoryMatrix[-1 - inv_index];
   }
-  
-    inv_index = this->pInventoryMatrix[item_idx];
-    if ( inv_index < 0 )
-    {
-      *pitem_index = -1 - inv_index;
-      inv_index = this->pInventoryMatrix[-1 - inv_index];
-    }
-
   return inv_index;
 }
-
-
 
 //----- (004160CA) --------------------------------------------------------
 void Player::ItemsEnchant( int enchant_count )
@@ -576,11 +548,11 @@ void Player::PlaySound(PlayerSpeech speech, int a3)
       {
         for (int i = 0; i < pSoundList->sNumSounds; i++)
         {
-          if (pSoundList->pSounds[i].uSoundID == pickedSoundID)
+          if (pSoundList->pSL_Sounds[i].uSoundID == pickedSoundID)
             pSoundID = i;
         }
       }
-      if ( pSoundList->pSounds[pSoundID].pSoundData[0] )
+      if ( pSoundList->pSL_Sounds[pSoundID].pSoundData[0] )
         expressionDuration = (sLastTrackLengthMS << 7) / 1000;
     }
     PlayEmotion(expression, expressionDuration);
@@ -718,12 +690,12 @@ void Player::SetCondition( unsigned int uConditionIdx, int a3 )
     case Condition_Fear: PlaySound(SPEECH_26, 0); break;
     case Condition_Drunk: PlaySound(SPEECH_31, 0); break;
     case Condition_Insane: PlaySound(SPEECH_29, 0); break;
-    case Condition_Poison1:
-    case Condition_Poison2:
-    case Condition_Poison3: PlaySound(SPEECH_27, 0); break;
-    case Condition_Disease1:
-    case Condition_Disease2:
-    case Condition_Disease3: PlaySound(SPEECH_28, 0);break;
+    case Condition_Poison_Weak:
+    case Condition_Poison_Medium:
+    case Condition_Poison_Severe: PlaySound(SPEECH_27, 0); break;
+    case Condition_Disease_Weak:
+    case Condition_Disease_Medium:
+    case Condition_Disease_Severe: PlaySound(SPEECH_28, 0);break;
     case Condition_Paralyzed: break;  //nosound
     case Condition_Unconcious:
       PlaySound(SPEECH_32, 0);
@@ -777,7 +749,7 @@ void Player::SetCondition( unsigned int uConditionIdx, int a3 )
       ++players_before;
   }
 
-  pConditions[uConditionIdx] = 1;
+  pConditions[uConditionIdx] = pParty->uTimePlayed;
 
   remainig_player = 0;
   players_after = 0;
@@ -790,9 +762,7 @@ void Player::SetCondition( unsigned int uConditionIdx, int a3 )
     }
   }
   if (( players_before == 2 ) && ( players_after == 1 ))
-  {
-    pPlayers[remainig_player]->PlaySound(SPEECH_107, 0);
-  }
+    pPlayers[remainig_player]->PlaySound(SPEECH_107, 0);//скорее всего обнадёжывающий возглас последнего
   return;
 }
 
@@ -1625,7 +1595,7 @@ int Player::CalculateMeleeDmgToEnemyWithWeapon( ItemGen * weapon, unsigned int u
       totalDmg *= 2;
     }
   }
-  if ( (signed int)SkillToMastery(this->pActiveSkills[2]) >= 3
+  if ( (signed int)SkillToMastery(this->pActiveSkills[PLAYER_SKILL_DAGGER]) >= 3
     && pItemsTable->pItems[itemId].uSkillType == 2
     && rand() % 100 < 10 )
     totalDmg *= 3;
@@ -1637,17 +1607,17 @@ int Player::CalculateMeleeDmgToEnemyWithWeapon( ItemGen * weapon, unsigned int u
 int Player::GetRangedAttack()
 {
   int v3; // edi@3
-  int v4; // eax@4
-  int v5; // edi@4
+  //int v4; // eax@4
+  //int v5; // edi@4
   int v6; // edi@4
   int v7; // edi@4
 
   ItemGen* mainHandItem = GetMainHandItem();
   if ( mainHandItem != nullptr && ( mainHandItem->uItemID < ITEM_BLASTER || mainHandItem->uItemID > ITEM_LASER_RIFLE ))
   {
-    v4 = GetActualAccuracy();
-    v5 = GetParameterBonus(v4);
-    v6 = GetItemsBonus(CHARACTER_ATTRIBUTE_RANGED_ATTACK) + v5;
+    //v4 = GetActualAccuracy();
+    //v5 = GetParameterBonus(GetActualAccuracy());
+    v6 = GetItemsBonus(CHARACTER_ATTRIBUTE_RANGED_ATTACK) + GetParameterBonus(GetActualAccuracy());
     v7 = GetSkillBonus(CHARACTER_ATTRIBUTE_RANGED_ATTACK) + v6;
     v3 = this->_ranged_atk_bonus + GetMagicalBonus(CHARACTER_ATTRIBUTE_RANGED_ATTACK) + v7;
   }
@@ -1974,7 +1944,7 @@ int Player::StealFromShop( ItemGen *itemToSteal, int extraStealDifficulty, int r
   }
   else
   {
-    v6 = this->pActiveSkills[34];
+    v6 = this->pActiveSkills[PLAYER_SKILL_STEALING];
     v7 = v6 & 0x3F;
     v8 = SkillToMastery(v6);
     itemvalue = itemToSteal->GetValue();
@@ -2034,22 +2004,20 @@ int Player::StealFromActor(unsigned int uActorID, int _steal_perm, int reputatio
   {
     return 0;
   }
-    pGlobalTXT_LocalizationStrings[1];
   if ( !(BYTE2(actroPtr->uAttributes) & 0x80) )
     actroPtr->SetRandomGoldIfTheresNoItem();
-  unsigned __int16 v6 = this->pActiveSkills[34];
+  unsigned __int16 v6 = this->pActiveSkills[PLAYER_SKILL_STEALING];
   v7 = v6 & 0x3F;
   stealingMastery = SkillToMastery(v6);
   int v30 = StealingMasteryBonuses[stealingMastery];
   int v29 = StealingRandomBonuses[rand() % 5];
   fineIfFailed = actroPtr->pMonsterInfo.uLevel + 100 * (_steal_perm + reputation);
   currMaxItemValue = v29 + v7 * v30;
-  pGlobalTXT_LocalizationStrings[200];
   if ( rand() % 100 < 5 || fineIfFailed > currMaxItemValue || BYTE2(actroPtr->uAttributes) & 8 )
   {
     Actor::AggroSurroundingPeasants(uActorID, 1);
-    sprintfex(pTmpBuf2.data(), pGlobalTXT_LocalizationStrings[376], this->pName);
-    ShowStatusBarString(pTmpBuf2.data(), 2u);
+    sprintfex(pTmpBuf2.data(), pGlobalTXT_LocalizationStrings[376], this->pName);//"%s was caught stealing!"
+    ShowStatusBarString(pTmpBuf2.data(), 2);
     return 0;
   }
   else
@@ -2059,31 +2027,25 @@ int Player::StealFromActor(unsigned int uActorID, int _steal_perm, int reputatio
     {
       enchBonusSum = 0;
       for (int i = 0; i < v7; i++)
-      {
         enchBonusSum += rand() % StealingEnchantmentBonusForSkill[stealingMastery] + 1;
-      }
-      if ( actroPtr->array_000234[3].GetItemEquipType() != EQUIP_GOLD )
+      if ( actroPtr->ActorHasItems[3].GetItemEquipType() != EQUIP_GOLD )
         return 2;
-      enchTypePtr = &actroPtr->array_000234[3].uSpecEnchantmentType;
+      enchTypePtr = &actroPtr->ActorHasItems[3].uSpecEnchantmentType;
       if ( (int)enchBonusSum >= *enchTypePtr )
       {
-        actroPtr->array_000234[3].uItemID = 0;
+        actroPtr->ActorHasItems[3].uItemID = 0;
         *enchTypePtr = 0;
       }
       else
-      {
         *enchTypePtr -= enchBonusSum;
-      }
       if ( enchBonusSum )
       {
         pParty->PartyFindsGold(enchBonusSum, 2);
         sprintf(pTmpBuf2.data(), pGlobalTXT_LocalizationStrings[302], this->pName, enchBonusSum);     //%stole %d gold
       }
       else
-      {
         sprintfex(pTmpBuf2.data(), pGlobalTXT_LocalizationStrings[377], this->pName);   //%s failed to steal anything
-      }
-      ShowStatusBarString(pTmpBuf2.data(), 2u);
+      ShowStatusBarString(pTmpBuf2.data(), 2);
       return 2;
     }
     else if ( v11 % 100 >= 40 )   //stealing an item      
@@ -2093,7 +2055,7 @@ int Player::StealFromActor(unsigned int uActorID, int _steal_perm, int reputatio
       int i;
       for (i = 0; i < 4; i++)
       {
-        if ( actroPtr->array_000234[i].uItemID != 0 && actroPtr->array_000234[i].GetItemEquipType() != EQUIP_GOLD )
+        if ( actroPtr->ActorHasItems[i].uItemID != 0 && actroPtr->ActorHasItems[i].GetItemEquipType() != EQUIP_GOLD )
           break;
       }
       if (i == 4)
@@ -2113,7 +2075,7 @@ int Player::StealFromActor(unsigned int uActorID, int _steal_perm, int reputatio
         }
         else
         {
-          ItemGen* itemToSteal = &actroPtr->array_000234[rand() % 4];
+          ItemGen* itemToSteal = &actroPtr->ActorHasItems[rand() % 4];
           memcpy(&tempItem, itemToSteal, sizeof(tempItem));
           itemToSteal->Reset();
           carriedItemId = tempItem.uItemID;
@@ -2135,7 +2097,7 @@ int Player::StealFromActor(unsigned int uActorID, int _steal_perm, int reputatio
       }
     }
     sprintfex(pTmpBuf2.data(), pGlobalTXT_LocalizationStrings[377], this->pName);   //%s failed to steal anything
-    ShowStatusBarString(pTmpBuf2.data(), 2u);
+    ShowStatusBarString(pTmpBuf2.data(), 2);
     return 2;
   }
 }
@@ -2236,9 +2198,9 @@ int Player::ReceiveSpecialAttackEffect( int attType, struct Actor *pActor )
     case SPECIAL_ATTACK_WEAK:
     case SPECIAL_ATTACK_SLEEP:
     case SPECIAL_ATTACK_DRUNK:
-    case SPECIAL_ATTACK_DISEASE1:
-    case SPECIAL_ATTACK_DISEASE2:
-    case SPECIAL_ATTACK_DISEASE3:
+    case SPECIAL_ATTACK_DISEASE_WEAK:
+    case SPECIAL_ATTACK_DISEASE_MEDIUM:
+    case SPECIAL_ATTACK_DISEASE_SEVERE:
     case SPECIAL_ATTACK_UNCONSCIOUS:
     case SPECIAL_ATTACK_AGING:
       v6 = GetActualEndurance();
@@ -2252,9 +2214,9 @@ int Player::ReceiveSpecialAttackEffect( int attType, struct Actor *pActor )
     case SPECIAL_ATTACK_PETRIFIED:
       v11 = GetActualResistance(CHARACTER_ATTRIBUTE_RESIST_EARTH);
       break;
-    case SPECIAL_ATTACK_POISON1:
-    case SPECIAL_ATTACK_POISON2:
-    case SPECIAL_ATTACK_POISON3:
+    case SPECIAL_ATTACK_POISON_WEAK:
+    case SPECIAL_ATTACK_POISON_MEDIUM:
+    case SPECIAL_ATTACK_POISON_SEVERE:
     case SPECIAL_ATTACK_DEAD:
     case SPECIAL_ATTACK_ERADICATED:
       v11 = GetActualResistance(CHARACTER_ATTRIBUTE_RESIST_BODY);
@@ -2378,38 +2340,38 @@ int Player::ReceiveSpecialAttackEffect( int attType, struct Actor *pActor )
         pGame->pStru6Instance->SetPlayerBuffAnim(0x99u, v3);
         return 1;
         break;
-      case SPECIAL_ATTACK_POISON1:
-        SetCondition(Condition_Poison1, 1);
+      case SPECIAL_ATTACK_POISON_WEAK:
+        SetCondition(Condition_Poison_Weak, 1);
         pAudioPlayer->PlaySound((SoundID)222, 0, 0, -1, 0, 0, 0, 0);
         pGame->pStru6Instance->SetPlayerBuffAnim(0x99u, v3);
         return 1;
         break;
-      case SPECIAL_ATTACK_POISON2:
-        SetCondition(Condition_Poison2, 1);
+      case SPECIAL_ATTACK_POISON_MEDIUM:
+        SetCondition(Condition_Poison_Medium, 1);
         pAudioPlayer->PlaySound((SoundID)222, 0, 0, -1, 0, 0, 0, 0);
         pGame->pStru6Instance->SetPlayerBuffAnim(0x99u, v3);
         return 1;
         break;
-      case SPECIAL_ATTACK_POISON3:
-        SetCondition(Condition_Poison3, 1);
+      case SPECIAL_ATTACK_POISON_SEVERE:
+        SetCondition(Condition_Poison_Severe, 1);
         pAudioPlayer->PlaySound((SoundID)222, 0, 0, -1, 0, 0, 0, 0);
         pGame->pStru6Instance->SetPlayerBuffAnim(0x99u, v3);
         return 1;
         break;
-      case SPECIAL_ATTACK_DISEASE1:
-        SetCondition(Condition_Disease1, 1);
+      case SPECIAL_ATTACK_DISEASE_WEAK:
+        SetCondition(Condition_Disease_Weak, 1);
         pAudioPlayer->PlaySound((SoundID)222, 0, 0, -1, 0, 0, 0, 0);
         pGame->pStru6Instance->SetPlayerBuffAnim(0x99u, v3);
         return 1;
         break;
-      case SPECIAL_ATTACK_DISEASE2:
-        SetCondition(Condition_Disease2, 1);
+      case SPECIAL_ATTACK_DISEASE_MEDIUM:
+        SetCondition(Condition_Disease_Medium, 1);
         pAudioPlayer->PlaySound((SoundID)222, 0, 0, -1, 0, 0, 0, 0);
         pGame->pStru6Instance->SetPlayerBuffAnim(0x99u, v3);
         return 1;
         break;
-      case SPECIAL_ATTACK_DISEASE3:
-        SetCondition(Condition_Disease3, 1);
+      case SPECIAL_ATTACK_DISEASE_SEVERE:
+        SetCondition(Condition_Disease_Severe, 1);
         pAudioPlayer->PlaySound((SoundID)222, 0, 0, -1, 0, 0, 0, 0);
         pGame->pStru6Instance->SetPlayerBuffAnim(0x99u, v3);
         return 1;
@@ -2458,11 +2420,11 @@ int Player::ReceiveSpecialAttackEffect( int attType, struct Actor *pActor )
         break;
       case SPECIAL_ATTACK_STEAL:
         PlaySound(SPEECH_40, 0);
-        v27 = pActor->array_000234;
-        if ( pActor->array_000234[0].uItemID )
+        v27 = pActor->ActorHasItems;
+        if ( pActor->ActorHasItems[0].uItemID )
         {
-          v27 = &pActor->array_000234[1];
-          if ( pActor->array_000234[1].uItemID )
+          v27 = &pActor->ActorHasItems[1];
+          if ( pActor->ActorHasItems[1].uItemID )
           {
             pGame->pStru6Instance->SetPlayerBuffAnim(0x99u, v3);
             return 1;
@@ -3209,11 +3171,11 @@ int Player::GetItemsBonus( enum CHARACTER_ATTRIBUTE_TYPE attr, bool getOnlyMainH
           }
           else if ( currEquippedItem->uEnchantmentType != 0 )
           {
-            if (currEquippedItem->IsRegularEnchanmentForAttribute(attr))
+            if (this->pInventoryItemList[this->pEquipment.pIndices[i] - 1].uEnchantmentType - 1 == attr)//if (currEquippedItem->IsRegularEnchanmentForAttribute(attr))
             {
-              if ( attr > CHARACTER_ATTRIBUTE_RESIST_BODY && v5 < currEquippedItem->m_enchantmentStrength )
+              if ( attr > CHARACTER_ATTRIBUTE_RESIST_BODY && v5 < currEquippedItem->m_enchantmentStrength )//for skills bonuses
                 v5 = currEquippedItem->m_enchantmentStrength;
-              else
+              else // for resists and attributes bonuses
                 v5 += currEquippedItem->m_enchantmentStrength;
             }
           }
@@ -3672,17 +3634,21 @@ int Player::GetSkillBonus(enum CHARACTER_ATTRIBUTE_TYPE inSkill)    //TODO: move
     {
       if ( this->HasItemEquipped((ITEM_EQUIP_TYPE)i) )
       {
-        PLAYER_SKILL_TYPE currentItemSkillType = (PLAYER_SKILL_TYPE)GetNthEquippedIndexItem(i)->GetPlayerSkillType();
-        int currentItemSkillLevel = this->GetActualSkillLevel(currentItemSkillType);
-        if ( currentItemSkillType == PLAYER_SKILL_BOW )
+        ItemGen* currItemPtr = GetNthEquippedIndexItem(i);
+        if ( currItemPtr->GetItemEquipType() == EQUIP_TWO_HANDED || currItemPtr->GetItemEquipType() == EQUIP_SINGLE_HANDED )
         {
-          int multiplier = GetMultiplierForSkillLevel(currentItemSkillLevel, 1, 1, 1, 1);
-          return multiplier * (currentItemSkillLevel & 0x3F);
-        }
-        else if ( currentItemSkillType == PLAYER_SKILL_BLASTER )
-        {      
-          int multiplier = GetMultiplierForSkillLevel(currentItemSkillLevel, 1, 2, 3, 5);
-          return multiplier * (currentItemSkillLevel & 0x3F);
+          PLAYER_SKILL_TYPE currentItemSkillType = (PLAYER_SKILL_TYPE)GetNthEquippedIndexItem(i)->GetPlayerSkillType();
+          int currentItemSkillLevel = this->GetActualSkillLevel(currentItemSkillType);
+          if ( currentItemSkillType == PLAYER_SKILL_BOW )
+          {
+            int multiplier = GetMultiplierForSkillLevel(currentItemSkillLevel, 1, 1, 1, 1);
+            return multiplier * (currentItemSkillLevel & 0x3F);
+          }
+          else if ( currentItemSkillType == PLAYER_SKILL_BLASTER )
+          {
+            int multiplier = GetMultiplierForSkillLevel(currentItemSkillLevel, 1, 2, 3, 5);
+            return multiplier * (currentItemSkillLevel & 0x3F);
+          }
         }
       }
     }
@@ -4048,6 +4014,13 @@ void Player::Reset(PLAYER_CLASS_TYPE cls)
     }
   }
 
+  memset(&pEquipment, 0, sizeof(PlayerEquipment));
+  pInventoryMatrix.fill(0);
+  for (uint i = 0; i < 126; ++i)
+    pInventoryItemList[i].Reset();
+  for (uint i = 0; i < 12; ++i)
+    pEquippedItems[i].Reset();
+
   sHealth = GetMaxHealth();
   sMana = GetMaxMana();
 }
@@ -4266,9 +4239,9 @@ unsigned int Player::GetStatColor(int uStat)
 }
 
 //----- (004908A8) --------------------------------------------------------
-bool Player::DiscardConditionIfLastsLongerThan(unsigned int uCondition, unsigned __int64 uTime)
+bool Player::DiscardConditionIfLastsLongerThan(unsigned int uCondition, signed __int64 uTime)
 {
-  if ( pConditions[uCondition] && (uTime < (unsigned long long)pConditions[uCondition]) )
+  if ( pConditions[uCondition] && (uTime < (signed long long)pConditions[uCondition]) )
   {
     pConditions[uCondition] = 0i64;
     return true;
@@ -4304,19 +4277,19 @@ void Player::UseItem_DrinkPotion_etc(signed int player_num, int a3)
   char v72; // [sp+20h] [bp-Ch]@68
   signed int v73; // [sp+24h] [bp-8h]@1
   const char*  v74; // [sp+24h] [bp-8h]@23
-  Player *thisb; // [sp+28h] [bp-4h]@1
+  //Player *thisb; // [sp+28h] [bp-4h]@1
   unsigned int thisa; // [sp+28h] [bp-4h]@22
 
-  thisb = this;
+  //thisb = this;
   playerAffected = &pParty->pPlayers[player_num-1];
   v73 = 1;
-  if ( pParty->bTurnBasedModeOn == 1 && (pTurnEngine->turn_stage == 1 || pTurnEngine->turn_stage == 3) )
+  if ( pParty->bTurnBasedModeOn == true && (pTurnEngine->turn_stage == TE_WAIT || pTurnEngine->turn_stage == TE_MOVEMENT) )
       return;
   if ( pParty->pPickedItem.GetItemEquipType() == EQUIP_REAGENT )
   {
     if ( pParty->pPickedItem.uItemID == 160 )
     { 
-      playerAffected->SetCondition(Condition_Poison1, 1);
+      playerAffected->SetCondition(Condition_Poison_Weak, 1);
     }
     else if ( pParty->pPickedItem.uItemID == 161 )
     {
@@ -4350,12 +4323,12 @@ void Player::UseItem_DrinkPotion_etc(signed int player_num, int a3)
       if ( pParty->bTurnBasedModeOn )
       {
         pParty->pTurnBasedPlayerRecoveryTimes[player_num-1] = 100;
-        thisb->SetRecoveryTime(100);
+        this->SetRecoveryTime(100);
         pTurnEngine->ApplyPlayerAction();
       }
       else
       {
-        thisb->SetRecoveryTime((int)(flt_6BE3A4_debug_recmod1 * 213.3333333333333));
+        this->SetRecoveryTime((int)(flt_6BE3A4_debug_recmod1 * 213.3333333333333));
       }
     }
     pMouse->RemoveHoldingItem();
@@ -4367,7 +4340,7 @@ void Player::UseItem_DrinkPotion_etc(signed int player_num, int a3)
       switch ( pParty->pPickedItem.uItemID )
       {
           case 221: //Catalyst
-              playerAffected->SetCondition(Condition_Poison1, 1);
+              playerAffected->SetCondition(Condition_Poison_Weak, 1);
               break;
           case 222: //Cure Wounds
               v25 = pParty->pPickedItem.uEnchantmentType + 10;
@@ -4381,21 +4354,22 @@ void Player::UseItem_DrinkPotion_etc(signed int player_num, int a3)
               if ( new_mana_val > playerAffected->GetMaxMana() )
                   new_mana_val = playerAffected->GetMaxMana();
               playerAffected->PlaySound(SPEECH_36, 0);
+              playerAffected->sMana = new_mana_val;
               break;
           case 224: //Cure Weakness
               playerAffected->pConditions[Condition_Weak] = 0i64;
               playerAffected->PlaySound(SPEECH_36, 0);
               break;
           case 225: //Cure Disease
-              playerAffected->pConditions[Condition_Disease3] = 0i64;      
-              playerAffected->pConditions[Condition_Disease2] = 0i64;
-              playerAffected->pConditions[Condition_Disease1] = 0i64;
+              playerAffected->pConditions[Condition_Disease_Severe] = 0i64;      
+              playerAffected->pConditions[Condition_Disease_Medium] = 0i64;
+              playerAffected->pConditions[Condition_Disease_Weak] = 0i64;
               playerAffected->PlaySound(SPEECH_36, 0);
               break;
           case 226: //Cure Poison
-              playerAffected->pConditions[Condition_Poison3] = 0i64;
-              playerAffected->pConditions[Condition_Poison2] = 0i64;
-              playerAffected->pConditions[Condition_Poison1] = 0i64;
+              playerAffected->pConditions[Condition_Poison_Severe] = 0i64;
+              playerAffected->pConditions[Condition_Poison_Medium] = 0i64;
+              playerAffected->pConditions[Condition_Poison_Weak] = 0i64;
               playerAffected->PlaySound(SPEECH_36, 0);
               break;
           case 227: //Awaken
@@ -4645,12 +4619,12 @@ void Player::UseItem_DrinkPotion_etc(signed int player_num, int a3)
         if ( pParty->bTurnBasedModeOn )
         {
           pParty->pTurnBasedPlayerRecoveryTimes[player_num-1] = 100;
-          thisb->SetRecoveryTime(100);
+          this->SetRecoveryTime(100);
           pTurnEngine->ApplyPlayerAction();
         }
         else
         {
-          thisb->SetRecoveryTime((int)(flt_6BE3A4_debug_recmod1 * 213.3333333333333));
+          this->SetRecoveryTime((int)(flt_6BE3A4_debug_recmod1 * 213.3333333333333));
         }
       }
       pMouse->RemoveHoldingItem();
@@ -4677,7 +4651,7 @@ void Player::UseItem_DrinkPotion_etc(signed int player_num, int a3)
       pAudioPlayer->PlaySound((SoundID)27, 0, 0, -1, 0, 0, 0, 0);
       return;
     }
-    dword_50C9AC = 1;
+
     scroll_id = pParty->pPickedItem.uItemID - 299;
     if ( scroll_id == 30 || scroll_id == 4 || scroll_id == 91 || scroll_id == 28 ) //Enchant Item scroll, Vampiric Weapon scroll ,Recharge Item ,Fire Aura
     {
@@ -4690,7 +4664,6 @@ void Player::UseItem_DrinkPotion_etc(signed int player_num, int a3)
     }
     else
     {
-      _720984_unused = pParty->pPickedItem.uItemID;
       pMouse->RemoveHoldingItem();
       pMessageQueue_50C9E8->AddMessage(UIMSG_SpellScrollUse, scroll_id, player_num - 1);
       if ( pCurrentScreen && pGUIWindow_CurrentMenu
@@ -4718,7 +4691,7 @@ void Player::UseItem_DrinkPotion_etc(signed int player_num, int a3)
       {
         v66 = aCharacterConditionNames[playerAffected->GetMajorConditionIdx()];
         sprintfex(pTmpBuf.data(), pGlobalTXT_LocalizationStrings[382], v66);//"That player is %s"
-        ShowStatusBarString(pTmpBuf.data(), 2u);
+        ShowStatusBarString(pTmpBuf.data(), 2);
         pAudioPlayer->PlaySound((SoundID)27, 0, 0, -1, 0, 0, 0, 0);
         return;
       }
@@ -4739,11 +4712,11 @@ void Player::UseItem_DrinkPotion_etc(signed int player_num, int a3)
       {
         v22 = pParty->pPickedItem.GetDisplayName();
         sprintfex(pTmpBuf.data(), pGlobalTXT_LocalizationStrings[381], v22); //"You don't have the skill to learn %s"
-        ShowStatusBarString(pTmpBuf.data(), 2u);
+        ShowStatusBarString(pTmpBuf.data(), 2);
         playerAffected->PlaySound((PlayerSpeech)20, 0);
         return; 
       }
-    //   v72 = 1;
+      playerAffected->spellbook.bHaveSpell[pParty->pPickedItem.uItemID-400] = 1;
       playerAffected->PlaySound(SPEECH_21, 0);
       v73 = 0;
 
@@ -4783,8 +4756,8 @@ void Player::UseItem_DrinkPotion_etc(signed int player_num, int a3)
           return;
       }
       v68 = aCharacterConditionNames[playerAffected->GetMajorConditionIdx()];
-      sprintfex(pTmpBuf.data(), pGlobalTXT_LocalizationStrings[382], v68);
-      ShowStatusBarString(pTmpBuf.data(), 2u);
+      sprintfex(pTmpBuf.data(), pGlobalTXT_LocalizationStrings[382], v68);//That player is %s
+      ShowStatusBarString(pTmpBuf.data(), 2);
       pAudioPlayer->PlaySound((SoundID)27, 0, 0, -1, 0, 0, 0, 0);
       return;
   }
@@ -4794,7 +4767,7 @@ void Player::UseItem_DrinkPotion_etc(signed int player_num, int a3)
     {
       thisa = pParty->uCurrentMonthWeek + 1;
       if ( pParty->uCurrentMonth >= 7 )
-          v74 = NULL;
+          v74 = nullptr;
       else
           v74 = aAttributeNames[pParty->uCurrentMonth];
       switch ( pParty->uCurrentMonth )
@@ -4849,32 +4822,32 @@ void Player::UseItem_DrinkPotion_etc(signed int player_num, int a3)
             {
             case 0:
                 playerAffected->sResFireBase += thisa;
-                v13 = pGlobalTXT_LocalizationStrings[87];
+                v13 = pGlobalTXT_LocalizationStrings[87];//Fire
                 break;
             case 1:
                 playerAffected->sResAirBase += thisa;
-                v13 = pGlobalTXT_LocalizationStrings[6];
+                v13 = pGlobalTXT_LocalizationStrings[6];//Air
                 break;
             case 2:
                 playerAffected->sResWaterBase += thisa;
-                v13 = pGlobalTXT_LocalizationStrings[240];
+                v13 = pGlobalTXT_LocalizationStrings[240];//Water
                 break;
             case 3:
                 playerAffected->sResEarthBase += thisa;
-                v13 = pGlobalTXT_LocalizationStrings[70];
+                v13 = pGlobalTXT_LocalizationStrings[70];//Earth
                 break;
             case 4:
                 playerAffected->sResMindBase += thisa;
-                v13 = pGlobalTXT_LocalizationStrings[142];
+                v13 = pGlobalTXT_LocalizationStrings[142];//Mind
                 break;
             case 5:
                 playerAffected->sResBodyBase += thisa;
-                v13 = pGlobalTXT_LocalizationStrings[29];
+                v13 = pGlobalTXT_LocalizationStrings[29];//Body
                 break;
             default: ("Unexpected attribute");
               return;
             }
-            sprintf(pTmpBuf.data(), "+%u %s %s", thisa, v13, pGlobalTXT_LocalizationStrings[121]);
+            sprintf(pTmpBuf.data(), "+%u %s %s", thisa, v13, pGlobalTXT_LocalizationStrings[121]);//Permanent
             break;
 
       }
@@ -4945,7 +4918,6 @@ void Player::UseItem_DrinkPotion_etc(signed int player_num, int a3)
       return;
   }
 }
-
 
 bool CmpSkillValue(int valToCompare, int skillValue)
 {
@@ -5207,17 +5179,17 @@ bool Player::CompareVariable( enum VariableType VarNum, signed int pValue )   //
     case VAR_Insane:
       return pConditions[Condition_Insane] > 0;
     case VAR_PoisonedGreen:
-      return pConditions[Condition_Poison1] > 0;
+      return pConditions[Condition_Poison_Weak] > 0;
     case VAR_DiseasedGreen:
-      return pConditions[Condition_Disease1] > 0;
+      return pConditions[Condition_Disease_Weak] > 0;
     case VAR_PoisonedYellow:
-      return pConditions[Condition_Poison2] > 0;
+      return pConditions[Condition_Poison_Medium] > 0;
     case VAR_DiseasedYellow:
-      return pConditions[Condition_Disease2] > 0;
+      return pConditions[Condition_Disease_Medium] > 0;
     case VAR_PoisonedRed:
-      return pConditions[Condition_Poison3] > 0;
+      return pConditions[Condition_Poison_Severe] > 0;
     case VAR_DiseasedRed:
-      return pConditions[Condition_Disease3] > 0;
+      return pConditions[Condition_Disease_Severe] > 0;
     case VAR_Paralyzed:
       return pConditions[Condition_Paralyzed] > 0;
     case VAR_Unconsious:
@@ -5700,27 +5672,27 @@ void Player::SetVariable(enum VariableType var_type, signed int var_value)
       PlayAwardSound_Anim();
       return;
     case VAR_PoisonedGreen:
-      this->SetCondition(Condition_Poison1, 1);
+      this->SetCondition(Condition_Poison_Weak, 1);
       PlayAwardSound_Anim();
       return;
     case VAR_DiseasedGreen:
-      this->SetCondition(Condition_Disease1, 1);
+      this->SetCondition(Condition_Disease_Weak, 1);
       PlayAwardSound_Anim();
       return;
     case VAR_PoisonedYellow:
-      this->SetCondition(Condition_Poison2, 1);
+      this->SetCondition(Condition_Poison_Medium, 1);
       PlayAwardSound_Anim();
       return;
     case VAR_DiseasedYellow:
-      this->SetCondition(Condition_Disease2, 1);
+      this->SetCondition(Condition_Disease_Medium, 1);
       PlayAwardSound_Anim();
       return;
     case VAR_PoisonedRed:
-      this->SetCondition(Condition_Poison3, 1);
+      this->SetCondition(Condition_Poison_Severe, 1);
       PlayAwardSound_Anim();
       return;
     case VAR_DiseasedRed:
-      this->SetCondition(Condition_Disease3, 1);
+      this->SetCondition(Condition_Disease_Severe, 1);
       PlayAwardSound_Anim();
       return;
     case VAR_Paralyzed:
@@ -6296,27 +6268,27 @@ void Player::AddVariable(enum VariableType var_type, signed int val)
       PlayAwardSound_Anim97();
       return;
     case VAR_PoisonedGreen:
-      this->SetCondition(Condition_Poison1, 1);
+      this->SetCondition(Condition_Poison_Weak, 1);
       PlayAwardSound_Anim97();
       return;
     case VAR_DiseasedGreen:
-      this->SetCondition(Condition_Disease1, 1);
+      this->SetCondition(Condition_Disease_Weak, 1);
       PlayAwardSound_Anim97();
       return;
     case VAR_PoisonedYellow:
-      this->SetCondition(Condition_Poison2, 1);
+      this->SetCondition(Condition_Poison_Medium, 1);
       PlayAwardSound_Anim97();
       return;
     case VAR_DiseasedYellow:
-      this->SetCondition(Condition_Disease2, 1);
+      this->SetCondition(Condition_Disease_Medium, 1);
       PlayAwardSound_Anim97();
       return;
     case VAR_PoisonedRed:
-      this->SetCondition(Condition_Poison3, 1);
+      this->SetCondition(Condition_Poison_Severe, 1);
       PlayAwardSound_Anim97();
       return;
     case VAR_DiseasedRed:
-      this->SetCondition(Condition_Disease3, 1);
+      this->SetCondition(Condition_Disease_Severe, 1);
       PlayAwardSound_Anim97();
       return;
     case VAR_Paralyzed:
@@ -6602,12 +6574,27 @@ void Player::SubtractVariable( enum VariableType VarNum, signed int pValue )
       this->PlaySound(SPEECH_96, 0);
       return;
     case VAR_PlayerItemInHands:
+      for ( uint i = 0; i < 16; ++i )
+      {
+        int id_ = this->pEquipment.pIndices[i];
+        if ( id_ > 0 )
+        {
+          if ( this->pInventoryItemList[this->pEquipment.pIndices[i] - 1].uItemID == pValue )
+          {
+            this->pEquipment.pIndices[i] = 0;
+          }
+        }
+      }
       for (int i = 0; i < 126; i++)
       {
-        if ( this->pInventoryItemList[pInventoryMatrix[i]].uItemID == pValue )
+        int id_ = this->pInventoryMatrix[i];
+        if ( id_ > 0 )
         {
-          RemoveItemAtInventoryIndex(i);
-          return;
+          if ( this->pInventoryItemList[id_ - 1].uItemID == pValue )
+          {
+            RemoveItemAtInventoryIndex(i);
+            return;
+          }
         }
       }
       if ( pParty->pPickedItem.uItemID == pValue )
@@ -6962,27 +6949,27 @@ void Player::SubtractVariable( enum VariableType VarNum, signed int pValue )
       PlayAwardSound_Anim98();
       return;
     case VAR_PoisonedGreen:
-      this->pConditions[Condition_Poison1] = 0;
+      this->pConditions[Condition_Poison_Weak] = 0;
       PlayAwardSound_Anim98();
       return;
     case VAR_DiseasedGreen:
-      this->pConditions[Condition_Disease1] = 0;
+      this->pConditions[Condition_Disease_Weak] = 0;
       PlayAwardSound_Anim98();
       return;
     case VAR_PoisonedYellow:
-      this->pConditions[Condition_Poison2] = 0;
+      this->pConditions[Condition_Poison_Medium] = 0;
       PlayAwardSound_Anim98();
       return;
     case VAR_DiseasedYellow:
-      this->pConditions[Condition_Disease2] = 0;
+      this->pConditions[Condition_Disease_Medium] = 0;
       PlayAwardSound_Anim98();
       return;
     case VAR_PoisonedRed:
-      this->pConditions[Condition_Poison3] = 0;
+      this->pConditions[Condition_Poison_Severe] = 0;
       PlayAwardSound_Anim98();
       return;
     case VAR_DiseasedRed:
-      this->pConditions[Condition_Disease3] = 0;
+      this->pConditions[Condition_Disease_Severe] = 0;
       PlayAwardSound_Anim98();
       return;
     case VAR_Paralyzed:
@@ -7112,40 +7099,35 @@ void Player::PlayAwardSound_Anim98_Face( PlayerSpeech speech )
 void Player::EquipBody(ITEM_EQUIP_TYPE uEquipType)
 {
   int itemAnchor; // ebx@1
-  Player *currChar; // eax@1
   int itemInvLocation; // edx@1
   int freeSlot; // eax@3
   ItemGen tempPickedItem; // [sp+Ch] [bp-30h]@1
-  unsigned int *equipAnchor; // [sp+38h] [bp-4h]@1
 
   tempPickedItem.Reset();
   itemAnchor = pEquipTypeToBodyAnchor[uEquipType];
-  currChar = pPlayers[uActiveCharacter];
-  equipAnchor = &currChar->pEquipment.pIndices[itemAnchor];
-  itemInvLocation = currChar->pEquipment.pIndices[itemAnchor];
-  if ( itemInvLocation )
+  itemInvLocation = pPlayers[uActiveCharacter]->pEquipment.pIndices[itemAnchor];
+  if ( itemInvLocation )//переодеться в другую вещь
   {
     memcpy(&tempPickedItem, &pParty->pPickedItem, sizeof(tempPickedItem));
-    currChar->pInventoryItemList[itemInvLocation - 1].uBodyAnchor = 0;
+    pPlayers[uActiveCharacter]->pInventoryItemList[itemInvLocation - 1].uBodyAnchor = 0;
     pParty->pPickedItem.Reset();
-    pParty->SetHoldingItem(&currChar->pInventoryItemList[itemInvLocation - 1]);
+    pParty->SetHoldingItem(&pPlayers[uActiveCharacter]->pInventoryItemList[itemInvLocation - 1]);
     tempPickedItem.uBodyAnchor = itemAnchor + 1;
-    memcpy(&currChar->pInventoryItemList[itemInvLocation - 1], &tempPickedItem, sizeof(ItemGen));
-    *equipAnchor = itemInvLocation;
+    memcpy(&pPlayers[uActiveCharacter]->pInventoryItemList[itemInvLocation - 1], &tempPickedItem, sizeof(ItemGen));
+    pPlayers[uActiveCharacter]->pEquipment.pIndices[itemAnchor] = itemInvLocation;
   }
-  else
+  else//одеть вещь
   {
-    freeSlot = currChar->FindFreeInventoryListSlot();
+    freeSlot = pPlayers[uActiveCharacter]->FindFreeInventoryListSlot();
     if (freeSlot >= 0)
     {
       pParty->pPickedItem.uBodyAnchor = itemAnchor + 1;
-      memcpy(&currChar->pInventoryItemList[freeSlot], &pParty->pPickedItem, sizeof(ItemGen));
-      *equipAnchor = freeSlot + 1;
+      memcpy(&pPlayers[uActiveCharacter]->pInventoryItemList[freeSlot], &pParty->pPickedItem, sizeof(ItemGen));
+      pPlayers[uActiveCharacter]->pEquipment.pIndices[itemAnchor] = freeSlot + 1;
       pMouse->RemoveHoldingItem();
     }
   }
 }
-
 
 //----- (0049387A) --------------------------------------------------------
 int CycleCharacter(bool backwards)
@@ -7250,10 +7232,8 @@ bool IsDwarfPresentInParty(bool a1)
   return false;
 }
 
-
-
 //----- (00439FCB) --------------------------------------------------------
-void __fastcall DamagePlayerFromMonster(unsigned int uObjID, int dmgSource, Vec3_int_ *pPos, unsigned int a4)
+void __fastcall DamagePlayerFromMonster(unsigned int uObjID, int dmgSource, Vec3_int_ *pPos, signed int a4)
 {
   Player *playerPtr; // ebx@3
   Actor *actorPtr; // esi@3
@@ -7269,7 +7249,7 @@ void __fastcall DamagePlayerFromMonster(unsigned int uObjID, int dmgSource, Vec3
     playerPtr = &pParty->pPlayers[a4];
     actorPtr = &pActors[uActorID];
     healthBeforeRecvdDamage = playerPtr->sHealth;
-    if ( PID_TYPE(uObjID) != 3 || !stru_50C198.ActorHitOrMiss(actorPtr, playerPtr) )
+    if ( PID_TYPE(uObjID) != 3 || !actorPtr->ActorHitOrMiss(playerPtr) )
       return;
     ItemGen* equippedArmor = playerPtr->GetArmorItem();
     SoundID soundToPlay;
@@ -7330,7 +7310,7 @@ void __fastcall DamagePlayerFromMonster(unsigned int uObjID, int dmgSource, Vec3
       case 5: damageType = 4; //yes, the original just assigned the value 4
         break;   
     }
-    if ( !(dword_6BE368_debug_settings_2 & 0x10) )
+    if ( !(dword_6BE368_debug_settings_2 & DEBUG_SETTINGS_NO_DAMAGE) )
     {
       dmgToReceive = playerPtr->ReceiveDamage(dmgToReceive, (DAMAGE_TYPE)damageType);
       if ( playerPtr->pPlayerBuffs[PLAYER_BUFF_PAIN_REFLECTION].uExpireTime > 0 )
@@ -7338,7 +7318,7 @@ void __fastcall DamagePlayerFromMonster(unsigned int uObjID, int dmgSource, Vec3
         int actorState = actorPtr->uAIState;
         if ( actorState != Dying && actorState != Dead)
         {
-          int reflectedDamage = stru_50C198.CalcMagicalDamageToActor(actorPtr, damageType, dmgToReceive);
+          int reflectedDamage = actorPtr->CalcMagicalDamageToActor((DAMAGE_TYPE)damageType, dmgToReceive);
           actorPtr->sCurrentHP -= reflectedDamage;
           if ( reflectedDamage >= 0 )
           {
@@ -7349,7 +7329,7 @@ void __fastcall DamagePlayerFromMonster(unsigned int uObjID, int dmgSource, Vec3
             }
             else
             {
-              if ( pMonsterStats->pInfos[actorPtr->pMonsterInfo.uID].bQuestMonster & 1 && pRenderer->pRenderD3D && pGame->uFlags2 & GAME_FLAGS_2_DRAW_BLOODSPLATS)
+              if ( pMonsterStats->pInfos[actorPtr->pMonsterInfo.uID].bQuestMonster & 1 && pGame->uFlags2 & GAME_FLAGS_2_DRAW_BLOODSPLATS)
               {
                 int splatRadius = byte_4D864C && BYTE2(pGame->uFlags) & 8 ? 10 * actorPtr->uActorRadius : actorPtr->uActorRadius;
                 pDecalBuilder->AddBloodsplat(actorPtr->vPosition.x, actorPtr->vPosition.y, actorPtr->vPosition.z, 1.0, 0.0, 0.0, (float)splatRadius, 0, 0);
@@ -7367,7 +7347,7 @@ void __fastcall DamagePlayerFromMonster(unsigned int uObjID, int dmgSource, Vec3
           }
         }
       }
-      if ( !(dword_6BE368_debug_settings_2 & 0x10)
+      if ( !(dword_6BE368_debug_settings_2 & DEBUG_SETTINGS_NO_DAMAGE)
         && actorPtr->pMonsterInfo.uSpecialAttackType
         && rand() % 100 < actorPtr->pMonsterInfo.uLevel * actorPtr->pMonsterInfo.uSpecialAttackLevel )
       {
@@ -7413,7 +7393,7 @@ void __fastcall DamagePlayerFromMonster(unsigned int uObjID, int dmgSource, Vec3
         }
         if ( activePlayerCounter )
         {
-          playerPtr = &pParty->pPlayers[v72[rand() % activePlayerCounter]];//&stru_AA1058[3].pSounds[6972 * *(&v72 + rand() % v74) + 40552];
+          playerPtr = &pParty->pPlayers[v72[rand() % activePlayerCounter] - 1];//&stru_AA1058[3].pSounds[6972 * *(&v72 + rand() % v74) + 40552];
         }
       }
       int v68;
@@ -7430,9 +7410,9 @@ void __fastcall DamagePlayerFromMonster(unsigned int uObjID, int dmgSource, Vec3
         v69 = 0;
       }
       playerPtr->ReceiveDamage(v68, (DAMAGE_TYPE)v69);
-      if ( uActorType == OBJECT_Player && !qword_A750D8 )
+      if ( uActorType == OBJECT_Player && !_A750D8_player_speech_timer )
       {
-        qword_A750D8 = 256i64;
+        _A750D8_player_speech_timer = 256i64;
         PlayerSpeechID = SPEECH_44;
         uSpeakingCharacter = uActorID + 1;
       }
@@ -7468,7 +7448,7 @@ void __fastcall DamagePlayerFromMonster(unsigned int uObjID, int dmgSource, Vec3
           || spriteType == 535
           || spriteType == 540 )
       {
-        if ( !stru_50C198.ActorHitOrMiss(actorPtr, playerPtr) )
+        if ( !actorPtr->ActorHitOrMiss(playerPtr) )
           return;
         if ( playerPtr->pPlayerBuffs[PLAYER_BUFF_SHIELD].uExpireTime > 0 )
           dmgToReceive >>= 1;
@@ -7522,7 +7502,7 @@ void __fastcall DamagePlayerFromMonster(unsigned int uObjID, int dmgSource, Vec3
           damageType = 4;
           break;
       }
-      if ( !(dword_6BE368_debug_settings_2 & 0x10) )
+      if ( !(dword_6BE368_debug_settings_2 & DEBUG_SETTINGS_NO_DAMAGE) )
       {
         int reflectedDmg = playerPtr->ReceiveDamage(dmgToReceive, (DAMAGE_TYPE)damageType);
         if ( playerPtr->pPlayerBuffs[PLAYER_BUFF_PAIN_REFLECTION].uExpireTime > 0 )
@@ -7530,7 +7510,7 @@ void __fastcall DamagePlayerFromMonster(unsigned int uObjID, int dmgSource, Vec3
           unsigned __int16 actorState = actorPtr->uAIState;
           if ( actorState != Dying && actorState != Dead)
           {
-            recvdMagicDmg = stru_50C198.CalcMagicalDamageToActor(actorPtr, damageType, reflectedDmg);
+            recvdMagicDmg = actorPtr->CalcMagicalDamageToActor((DAMAGE_TYPE)damageType, reflectedDmg);
             actorPtr->sCurrentHP -= recvdMagicDmg;
             if ( recvdMagicDmg >= 0 )
             {
@@ -7541,7 +7521,7 @@ void __fastcall DamagePlayerFromMonster(unsigned int uObjID, int dmgSource, Vec3
               }
               else
               {
-                if ( pMonsterStats->pInfos[actorPtr->pMonsterInfo.uID].bQuestMonster & 1 && pRenderer->pRenderD3D && pGame->uFlags2 & GAME_FLAGS_2_DRAW_BLOODSPLATS )
+                if ( pMonsterStats->pInfos[actorPtr->pMonsterInfo.uID].bQuestMonster & 1 && pGame->uFlags2 & GAME_FLAGS_2_DRAW_BLOODSPLATS )
                 {
                   int splatRadius = byte_4D864C && BYTE2(pGame->uFlags) & 8 ? 10 * actorPtr->uActorRadius : actorPtr->uActorRadius;
                   pDecalBuilder->AddBloodsplat(actorPtr->vPosition.x, actorPtr->vPosition.y, actorPtr->vPosition.z, 1.0, 0.0, 0.0, (float)splatRadius, 0, 0);
@@ -7561,7 +7541,7 @@ void __fastcall DamagePlayerFromMonster(unsigned int uObjID, int dmgSource, Vec3
         }
       }
       if ( !dmgSource
-        && !(dword_6BE368_debug_settings_2 & 0x10)
+        && !(dword_6BE368_debug_settings_2 & DEBUG_SETTINGS_NO_DAMAGE)
         && actorPtr->pMonsterInfo.uSpecialAttackType
         && rand() % 100 < actorPtr->pMonsterInfo.uLevel * actorPtr->pMonsterInfo.uSpecialAttackLevel )
       {
@@ -7596,6 +7576,7 @@ void Player::OnInventoryLeftClick()
   ItemGen tmpItem; // [sp+Ch] [bp-3Ch]@1
   unsigned int pY; // [sp+3Ch] [bp-Ch]@2
   unsigned int pX; // [sp+40h] [bp-8h]@2
+  CastSpellInfo *pSpellInfo;
 
   if ( pWindowList_at_506F50_minus1_indexing_buttons____and_an_int_[0] == 103 )
   {
@@ -7610,10 +7591,15 @@ void Player::OnInventoryLeftClick()
         enchantedItemPos = this->GetItemIDAtInventoryIndex(&invMatrixIndex);
         if ( enchantedItemPos )
         {
-          *((char *)pGUIWindow_Settings->ptr_1C + 8) &= 0x7Fu;
+         /* *((char *)pGUIWindow_Settings->ptr_1C + 8) &= 0x7Fu;
           *((short *)pGUIWindow_Settings->ptr_1C + 2) = uActiveCharacter - 1;
           *((int *)pGUIWindow_Settings->ptr_1C + 3) = enchantedItemPos - 1;
-          *((short *)pGUIWindow_Settings->ptr_1C + 3) = invMatrixIndex;
+          *((short *)pGUIWindow_Settings->ptr_1C + 3) = invMatrixIndex;*/
+          pSpellInfo = (CastSpellInfo *)pGUIWindow_Settings->ptr_1C;
+          pSpellInfo->uFlags &= 0x7F;
+          pSpellInfo->uPlayerID_2 = uActiveCharacter - 1;
+          pSpellInfo->spell_target_pid = enchantedItemPos - 1;
+          pSpellInfo->field_6 = invMatrixIndex;
           ptr_50C9A4_ItemToEnchant = &this->pInventoryItemList[enchantedItemPos-1];
           _50C9A0_IsEnchantingInProgress = 0;
           if ( pMessageQueue_50CBD0->uNumMessages )
@@ -7737,92 +7723,92 @@ bool Player::IsDrunk()
   return pConditions[Condition_Drunk] != 0;
 }
 
-void Player::SetCursed( bool state )
+void Player::SetCursed( unsigned long long state )
 {
   pConditions[Condition_Cursed] = state;
 }
 
-void Player::SetWeak( bool state )
+void Player::SetWeak( unsigned long long state )
 {
   pConditions[Condition_Weak] = state;
 }
 
-void Player::SetAsleep( bool state )
+void Player::SetAsleep( unsigned long long state )
 {
   pConditions[Condition_Sleep] = state;
 }
 
-void Player::SetAfraid( bool state )
+void Player::SetAfraid( unsigned long long state )
 {
   pConditions[Condition_Fear] = state;
 }
 
-void Player::SetDrunk( bool state )
+void Player::SetDrunk( unsigned long long state )
 {
   pConditions[Condition_Drunk] = state;
 }
 
-void Player::SetInsane( bool state )
+void Player::SetInsane( unsigned long long state )
 {
   pConditions[Condition_Insane] = state;
 }
 
-void Player::SetPoison1( bool state )
+void Player::SetPoisonWeak( unsigned long long state )
 {
-  pConditions[Condition_Poison1] = state;
+  pConditions[Condition_Poison_Weak] = state;
 }
 
-void Player::SetDisease1( bool state )
+void Player::SetDiseaseWeak( unsigned long long state )
 {
-  pConditions[Condition_Disease1] = state;
+  pConditions[Condition_Disease_Weak] = state;
 }
 
-void Player::SetPoison2( bool state )
+void Player::SetPoisonMedium( unsigned long long state )
 {
-  pConditions[Condition_Poison2] = state;
+  pConditions[Condition_Poison_Medium] = state;
 }
 
-void Player::SetDisease2( bool state )
+void Player::SetDiseaseMedium( unsigned long long state )
 {
-  pConditions[Condition_Disease2] = state;
+  pConditions[Condition_Disease_Medium] = state;
 }
 
-void Player::SetPoison3( bool state )
+void Player::SetPoisonSevere( unsigned long long state )
 {
-  pConditions[Condition_Poison3] = state;
+  pConditions[Condition_Poison_Severe] = state;
 }
 
-void Player::SetDisease3( bool state )
+void Player::SetDiseaseSevere( unsigned long long state )
 {
-  pConditions[Condition_Disease3] = state;
+  pConditions[Condition_Disease_Severe] = state;
 }
 
-void Player::SetParalyzed( bool state )
+void Player::SetParalyzed( unsigned long long state )
 {
   pConditions[Condition_Paralyzed] = state;
 }
 
-void Player::SetUnconcious( bool state )
+void Player::SetUnconcious( unsigned long long state )
 {
   pConditions[Condition_Unconcious] = state;
 }
 
-void Player::SetDead( bool state )
+void Player::SetDead( unsigned long long state )
 {
   pConditions[Condition_Dead] = state;
 }
 
-void Player::SetPertified( bool state )
+void Player::SetPertified( unsigned long long state )
 {
   pConditions[Condition_Pertified] = state;
 }
 
-void Player::SetEradicated( bool state )
+void Player::SetEradicated( unsigned long long state )
 {
   pConditions[Condition_Eradicated] = state;
 }
 
-void Player::SetZombie( bool state )
+void Player::SetZombie( unsigned long long state )
 {
   pConditions[Condition_Zombie] = state;
 }
@@ -7934,4 +7920,266 @@ int Player::GetPlayerIndex()
   else
     Error("Unexpected player pointer");
   return uPlayerIdx;
+}
+
+//----- (004272F5) --------------------------------------------------------
+bool Player::PlayerHitOrMiss(Actor *pActor, int a3, int a4)
+{
+  signed int naturalArmor; // esi@1
+  signed int armorBuff; // edi@1
+  int effectiveActorArmor; // esi@8
+  int attBonus; // eax@9
+  int v9; // edx@11
+//  unsigned __int8 v12; // sf@13
+//  unsigned __int8 v13; // of@13
+  int attPositiveMod; // edx@14
+  int attNegativeMod; // eax@14
+//  signed int result; // eax@17
+
+  naturalArmor = pActor->pMonsterInfo.uAC;
+  armorBuff = 0;
+  if ( pActor->pActorBuffs[ACTOR_BUFF_SOMETHING_THAT_HALVES_AC].uExpireTime > 0 )
+    naturalArmor /= 2;
+  if ( pActor->pActorBuffs[ACTOR_BUFF_HOUR_OF_POWER].uExpireTime > 0 )
+    armorBuff = pActor->pActorBuffs[ACTOR_BUFF_SHIELD].uPower;
+  if ( pActor->pActorBuffs[ACTOR_BUFF_STONESKIN].uExpireTime > 0 && pActor->pActorBuffs[ACTOR_BUFF_STONESKIN].uPower > armorBuff )
+    armorBuff = pActor->pActorBuffs[ACTOR_BUFF_STONESKIN].uPower;
+  effectiveActorArmor = armorBuff + naturalArmor;
+  if ( a3 )
+    attBonus = this->GetRangedAttack();
+  else
+    attBonus = this->GetActualAttack(false);
+  v9 = rand() % (effectiveActorArmor + 2 * attBonus + 30);
+  attPositiveMod = a4 + v9;
+  if ( a3 == 2 )
+  {
+    attNegativeMod = ((effectiveActorArmor + 15) / 2) + effectiveActorArmor + 15;
+  }
+  else if ( a3 == 3 )
+  {
+    attNegativeMod = 2 * effectiveActorArmor + 30;
+  }
+  else 
+  {
+    attNegativeMod = effectiveActorArmor + 15;
+  }
+  return (attPositiveMod > attNegativeMod);
+}
+
+
+//----- (0042ECB5) --------------------------------------------------------
+void Player::_42ECB5_PlayerAttacksActor()
+{
+//  char *v5; // eax@8
+//  unsigned int v9; // ecx@21
+//  char *v11; // eax@26
+//  unsigned int v12; // eax@47
+//  SoundID v24; // [sp-4h] [bp-40h]@58
+
+  //result = pParty->pPlayers[uActiveCharacter-1].CanAct();
+  Player* player = &pParty->pPlayers[uActiveCharacter - 1];
+  if (!player->CanAct())
+    return;
+
+  CastSpellInfoHelpers::_427D48();
+    //v3 = 0;
+  if (pParty->Invisible())
+    pParty->pPartyBuffs[PARTY_BUFF_INVISIBILITY].Reset();
+
+    //v31 = player->pEquipment.uBow;
+  int bow_idx = player->pEquipment.uBow;
+  if (bow_idx && player->pInventoryItemList[bow_idx - 1].IsBroken())
+    bow_idx = 0;
+
+    //v32 = 0;
+  int wand_item_id = 0;
+    //v33 = 0;
+    //v4 = v1->pEquipment.uMainHand;
+  int laser_weapon_item_id = 0;
+
+  int main_hand_idx = player->pEquipment.uMainHand;
+  if (main_hand_idx)
+  {
+    ItemGen* item = &player->pInventoryItemList[main_hand_idx - 1];
+      //v5 = (char *)v1 + 36 * v4;
+    if (!item->IsBroken())
+    {
+		//v28b = &v1->pInventoryItems[v4].uItemID;
+        //v6 = v1->pInventoryItems[v4].uItemID;//*((int *)v5 + 124);
+      if (item->GetItemEquipType() == EQUIP_WAND)
+      {
+        if (item->uNumCharges <= 0)
+          player->pEquipment.uMainHand = 0; // wand discharged - unequip
+        else
+          wand_item_id = item->uItemID;//*((int *)v5 + 124);
+      }
+      else if (item->uItemID == ITEM_BLASTER || item->uItemID == ITEM_LASER_RIFLE)
+        laser_weapon_item_id = item->uItemID;//*((int *)v5 + 124);
+    }
+  }
+
+    //v30 = 0;
+    //v29 = 0;
+    //v28 = 0;
+    //v7 = pMouse->uPointingObjectID;
+
+  int target_pid = pMouse->uPointingObjectID;
+  int target_type = PID_TYPE(target_pid),
+      target_id = PID_ID(target_pid);
+  if (target_type != OBJECT_Actor || !pActors[target_id].CanAct())
+  {
+    target_pid = stru_50C198.FindClosestActor(5120, 0, 0);
+    target_type = PID_TYPE(target_pid);
+    target_id = PID_ID(target_pid);
+  }
+
+  Actor* actor = &pActors[target_id];
+  int actor_distance = 0;
+  if (target_type == OBJECT_Actor)
+  {
+    int distance_x = actor->vPosition.x - pParty->vPosition.x,
+        distance_y = actor->vPosition.y - pParty->vPosition.y,
+        distance_z = actor->vPosition.z - pParty->vPosition.z;
+    actor_distance = integer_sqrt(distance_x * distance_x + distance_y * distance_y + distance_z * distance_z) - actor->uActorRadius;
+    if (actor_distance < 0)
+      actor_distance = 0;
+  }
+
+  bool shooting_bow = false,
+       shotting_laser = false,
+       shooting_wand = false,
+       melee_attack = false;
+  if (laser_weapon_item_id)
+  {
+    shotting_laser = true;
+    _42777D_CastSpell_UseWand_ShootArrow(SPELL_LASER_PROJECTILE, uActiveCharacter - 1, 0, 0, uActiveCharacter + 8);
+  }
+  else if (wand_item_id)
+  {
+    shooting_wand = true;
+
+    int main_hand_idx = player->pEquipment.uMainHand;
+    _42777D_CastSpell_UseWand_ShootArrow(wand_spell_ids[player->pInventoryItemList[main_hand_idx - 1].uItemID - ITEM_WAND_FIRE], uActiveCharacter - 1, 8, 0, uActiveCharacter + 8);
+
+    if (!--player->pInventoryItemList[main_hand_idx - 1].uNumCharges)
+      player->pEquipment.uMainHand = 0;
+  }
+  else if (target_type == OBJECT_Actor && actor_distance <= 407.2)
+  {
+    melee_attack = true;
+
+    Vec3_int_ a3;
+    a3.x = actor->vPosition.x - pParty->vPosition.x;
+    a3.y = actor->vPosition.y - pParty->vPosition.y;
+    a3.z = actor->vPosition.z - pParty->vPosition.z;
+    Vec3_int_::Normalize(&a3.x, &a3.y, &a3.z);
+
+    Actor::DamageMonsterFromParty(PID(OBJECT_Player, uActiveCharacter - 1), target_id, &a3);
+    if (player->WearsItem(ITEM_ARTIFACT_SPLITTER, EQUIP_TWO_HANDED) || player->WearsItem(ITEM_ARTIFACT_SPLITTER, EQUIP_SINGLE_HANDED))
+          _42FA66_do_explosive_impact(actor->vPosition.x, actor->vPosition.y, actor->vPosition.z + actor->uActorHeight / 2, 0, 512, uActiveCharacter);
+  }
+  else if (bow_idx)
+  {
+    shooting_bow = true;
+    _42777D_CastSpell_UseWand_ShootArrow(SPELL_BOW_ARROW, uActiveCharacter - 1, 0, 0, 0);
+  }
+  else
+  {
+    melee_attack = true;
+    ; // actor out of range or no actor; no ranged weapon so melee attacking air
+  }
+
+  if (!pParty->bTurnBasedModeOn && melee_attack) // wands, bows & lasers will add recovery while shooting spell effect
+  {
+    int recovery = player->GetAttackRecoveryTime(false);
+    if (recovery < 30 )
+      recovery = 30;
+    player->SetRecoveryTime(flt_6BE3A4_debug_recmod1 * (double)recovery * 2.133333333333333);
+  }
+
+  int v34 = 0;
+  if (shooting_wand)
+    return;
+  else if (shooting_bow)
+  {
+    v34 = 5;
+    player->PlaySound(SPEECH_50, 0);
+  }
+  if (shotting_laser)
+    v34 = 7;
+  else
+  {
+    int main_hand_idx = player->pEquipment.uMainHand;
+    if (player->HasItemEquipped(EQUIP_TWO_HANDED))
+      v34 = player->pInventoryItemList[main_hand_idx - 1].GetPlayerSkillType();
+    pTurnEngine->ApplyPlayerAction();
+  }
+
+  switch (v34)
+  {
+    case 0: pAudioPlayer->PlaySound(SOUND_81, 0, 0, -1, 0, 0, 0, 0); break;
+    case 1: pAudioPlayer->PlaySound(SOUND_84, 0, 0, -1, 0, 0, 0, 0); break;
+    case 2: pAudioPlayer->PlaySound(SOUND_85, 0, 0, -1, 0, 0, 0, 0); break;
+    case 3: pAudioPlayer->PlaySound(SOUND_78, 0, 0, -1, 0, 0, 0, 0); break;
+    case 4: pAudioPlayer->PlaySound(SOUND_80, 0, 0, -1, 0, 0, 0, 0); break;
+    case 5: pAudioPlayer->PlaySound(SOUND_71, 0, 0, -1, 0, 0, 0, 0); break;
+    case 6: pAudioPlayer->PlaySound(SOUND_83, 0, 0, -1, 0, 0, 0, 0); break;
+    case 7: pAudioPlayer->PlaySound(SOUND_67, 0, 0, -1, 0, 0, 0, 0); break;
+  }
+}
+
+
+//----- (0042FA66) --------------------------------------------------------
+void Player::_42FA66_do_explosive_impact(int a1, int a2, int a3, int a4, __int16 a5, signed int a6)
+{
+  unsigned __int16 v9; // ax@5
+
+  SpriteObject a1a; // [sp+Ch] [bp-74h]@1
+  //SpriteObject::SpriteObject(&a1a);
+  a1a.uType = 600;
+  a1a.stru_24.Reset();
+
+  a1a.spell_id = SPELL_FIRE_FIREBALL;
+  a1a.spell_level = 8;
+  a1a.spell_skill = 3;
+  v9 = 0;
+  for ( uint i = 0; i < pObjectList->uNumObjects; ++i )
+  {
+    if ( a1a.uType == pObjectList->pObjects[i].uObjectID )
+      v9 = i;
+  }
+  a1a.uObjectDescID = v9;
+  a1a.vPosition.x = a1;
+  a1a.vPosition.y = a2;
+  a1a.vPosition.z = a3;
+  a1a.uAttributes = 0;
+  a1a.uSectorID = pIndoor->GetSector(a1, a2, a3);
+  a1a.uSpriteFrameID = 0;
+  a1a.spell_target_pid = 0;
+  a1a.field_60_distance_related_prolly_lod = 0;
+  a1a.uFacing = 0;
+  a1a.uSoundID = 0;
+  if ( a6 >= 1 || a6 <= 4 )
+    a1a.spell_caster_pid = PID(OBJECT_Player, a6 - 1);
+  else
+    a1a.spell_caster_pid = 0;
+
+  int id = a1a.Create(0, 0, 0, 0);
+  if (id != -1)
+    AttackerInfo.Add(PID(OBJECT_Item, id), a5, SLOWORD(a1a.vPosition.x), SLOWORD(a1a.vPosition.y),
+    SLOWORD(a1a.vPosition.z), 0, 0);
+}
+
+//----- (00458244) --------------------------------------------------------
+unsigned int SkillToMastery( unsigned int skill_value )
+{
+  switch (skill_value & 0x1C0)
+  {
+  case 0x100: return 4;     // Grandmaster
+  case 0x80:  return 3;     // Master
+  case 0x40:  return 2;     // Expert
+  case 0x00:  return 1;     // Normal
+  }
+  assert(false);
+  return 0;
 }

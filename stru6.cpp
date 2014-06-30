@@ -1,3 +1,4 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include "stru6.h"
 
 #include "mm7_data.h"
@@ -14,12 +15,12 @@
 #include "Random.h"
 #include "Spells.h"
 #include "IconFrameTable.h"
-#include "Time.h"
+#include "Timer.h"
 #include "Viewport.h"
 #include "PaletteManager.h"
 #include "Overlays.h"
 #include "stru160.h"
-#include "Math.h"
+#include "OurMath.h"
 #include "Lights.h"
 
 #include "MM7.h"
@@ -28,14 +29,37 @@
 
 
 
+//----- (004A7063) --------------------------------------------------------
+unsigned int ModulateColor(unsigned int diffuse, float multiplier)
+{
+  float alpha = multiplier * ((diffuse >> 24) & 0xFF);
+  int   a = (int)floorf(alpha + 0.5f);
+  a = max(0, min(255, a));
+
+  float red = multiplier * ((diffuse >> 16) & 0xFF);
+  int   r = (int)floorf(red + 0.5f);
+  r = max(0, min(255, r));
+  
+  float green = multiplier * ((diffuse >> 8) & 0xFF);
+  int   g = (int)floorf(green + 0.5f);
+  g = max(0, min(255, g));
+  
+  float blue = multiplier * ((diffuse >> 0) & 0xFF);
+  int   b = (int)floorf(blue + 0.5f);
+  b = max(0, min(255, b));
+
+  return (a << 24) | (r << 16) | (g << 8) | b;
+}
+
+
 //----- (0042620A) --------------------------------------------------------
 bool sr_42620A(RenderVertexSoft *p)
 {
-  __int16 v1; // fps@1
+//  __int16 v1; // fps@1
   unsigned __int8 v2; // c0@2
   char v3; // c2@2
   unsigned __int8 v4; // c3@2
-  bool result; // eax@2
+//  bool result; // eax@2
   unsigned __int8 v6; // c0@4
   char v7; // c2@4
   unsigned __int8 v8; // c3@4
@@ -105,12 +129,10 @@ bool sr_42620A(RenderVertexSoft *p)
 //----- (004775C4) --------------------------------------------------------
 stru6_stru1_indoor_sw_billboard::~stru6_stru1_indoor_sw_billboard()
 {
-    if (pArray1)
-        delete [] pArray1;
+    delete [] pArray1;
     pArray1 = nullptr;
 
-    if (pArray2)
-        delete [] pArray2;
+    delete [] pArray2;
     pArray2 = nullptr;
 }
 
@@ -146,9 +168,9 @@ void stru6_stru1_indoor_sw_billboard::_47829F_sphere_particle(float x_offset, fl
       field_14[j].x = x_offset + scale * *(&pArray1->field_0 + 4 * *(int *)((char *)&pArray2->field_0 + v7));
       field_14[j].y = y_offset + scale * *(&pArray1->field_4 + 4 * *(int *)((char *)&pArray2->field_0 + v7));
       field_14[j].z = z_offset + scale * *(&pArray1->field_8 + 4 * *(int *)((char *)&pArray2->field_0 + v7));
-      int v10 = *(int *)((char *)&pArray2->field_0 + v7);
+      //int v10 = *(int *)((char *)&pArray2->field_0 + v7);
 
-      field_14[j].diffuse = *((int *)&pArray1[1].field_0 + 4 * v10);
+      field_14[j].diffuse = *((int *)&pArray1[1].field_0 + 4 * (*(int *)((char *)&pArray2->field_0 + v7)));
       v7 += 4;
     }
 
@@ -331,18 +353,11 @@ void stru6::_4A7688_fireball_collision_particle(SpriteObject *a2)
 {
   double v3; // st7@1
   double v4; // st7@2
-  int v6; // eax@6
-  float v7; // ST0C_4@6
-  float v8; // ST08_4@6
-  float v9; // ST04_4@6
-  float v10; // ST00_4@6
   Particle_sw local_0; // [sp+1Ch] [bp-7Ch]@1
-  float v13; // [sp+88h] [bp-10h]@1
 
   memset(&local_0, 0, 0x68u);
 
   v3 = (double)a2->uSpriteFrameID / (double)pObjectList->pObjects[a2->uObjectDescID].uLifetime;
-  v13 = 512.0 * v3;
   if ( v3 >= 0.75 )
     v4 = (1.0 - v3) * 4.0;
   else
@@ -366,16 +381,12 @@ void stru6::_4A7688_fireball_collision_particle(SpriteObject *a2)
     pGame->pParticleEngine->AddParticle(&local_0);
   }
 
-  v6 = ModulateColor(0xFF3C1E, v4);
-  v7 = (double)floorf(0.5f + v13);
-  v8 = (double)a2->vPosition.z;
-  v9 = (double)a2->vPosition.y;
-  v10 = (double)a2->vPosition.x;
-  pStru1->_47829F_sphere_particle(v10, v9, v8, v7, v6);
+  pStru1->_47829F_sphere_particle((double)a2->vPosition.x, (double)a2->vPosition.y, (double)a2->vPosition.z, 
+                                              (double)floorf(0.5f + (512.0 * v3)), ModulateColor(0xFF3C1E, v4));
 }
 
 //----- (004A77FD) --------------------------------------------------------
-void stru6::_4A77FD_implosion_particle(SpriteObject *a1)
+void stru6::_4A77FD_implosion_particle_d3d(SpriteObject *a1)
 {
   double v4; // st7@1
   double v5; // st7@2
@@ -465,18 +476,13 @@ void stru6::_4A7948_mind_blast_after_effect(SpriteObject *a1)
 //----- (004A7A27) --------------------------------------------------------
 bool stru6::AddMobileLight(SpriteObject *a1, unsigned int uDiffuse, int uRadius)
 {
-  return pMobileLightsStack->AddLight(
-           a1->vPosition.x,
-           a1->vPosition.y,
-           a1->vPosition.z,
-           a1->uSectorID,
-           uRadius,
+  return pMobileLightsStack->AddLight(a1->vPosition.x, a1->vPosition.y, a1->vPosition.z, a1->uSectorID, uRadius,
            (uDiffuse & 0x00FF0000) >> 16,
            (uDiffuse & 0x0000FF00) >> 8,
            uDiffuse & 0x000000FF,
-           byte_4E94D3);
+           _4E94D3_light_type);
 }
-// 4E94D3: using guessed type char byte_4E94D3;
+// 4E94D3: using guessed type char _4E94D3_light_type;
 
 //----- (004A7A66) --------------------------------------------------------
 void stru6::_4A7A66_miltiple_spell_collision_partifles___like_after_sparks_or_lightning(SpriteObject *a1, unsigned int uDiffuse, unsigned int uTextureID, float a4)
@@ -758,39 +764,12 @@ int stru6::_4A806F(Actor *pActor)
   return fixpoint_from_float(v5);
 }
 
-//----- (004A80DC) --------------------------------------------------------
-void stru6::_4A80DC_some_stuff_sw(SpriteObject *a2)
-{
-  signed int v3; // ebx@1
-  Particle_sw local_0; // [sp+Ch] [bp-68h]@1
-
-  memset(&local_0, 0, 0x68u);
-  local_0.type = ParticleType_Bitmap | ParticleType_Rotating | ParticleType_1;
-  local_0.uDiffuse = 0x7E7E7E;
-  local_0.timeToLive = (rand() & 0x7F) + 128;
-  local_0.uTextureID = uTextureID_effpar1;
-  v3 = 8;
-  local_0.flt_28 = 1.0;
-  do
-  {
-    local_0.x = pRnd->GetRandom() * 40.0 + (double)a2->vPosition.x - 20.0;
-    local_0.y = pRnd->GetRandom() * 40.0 + (double)a2->vPosition.y - 20.0;
-    local_0.z = (double)a2->vPosition.z;
-    local_0.r = pRnd->GetRandom() * 800.0 - 400.0;
-    local_0.g = pRnd->GetRandom() * 800.0 - 400.0;
-    local_0.b = pRnd->GetRandom() * 350.0 + 50.0;
-    pGame->pParticleEngine->AddParticle(&local_0);
-    --v3;
-  }
-  while ( v3 );
-}
-
 //----- (004A81CA) --------------------------------------------------------
 bool stru6::_4A81CA(SpriteObject *a2)
 {
   //stru6 *v2; // ebx@1
   int result; // eax@1
-  int v4; // eax@27
+//  int v4; // eax@27
   //unsigned int diffuse; // esi@41
   //int v6; // ecx@49
   int v7; // eax@54
@@ -811,7 +790,7 @@ bool stru6::_4A81CA(SpriteObject *a2)
   //SpriteObject *v22; // [sp-8h] [bp-20h]@81
   //unsigned int v23; // [sp-4h] [bp-1Ch]@4
   //unsigned int v24; // [sp-4h] [bp-1Ch]@5
-  unsigned int v25; // [sp-4h] [bp-1Ch]@30
+//  unsigned int v25; // [sp-4h] [bp-1Ch]@30
   //unsigned int v26; // [sp-4h] [bp-1Ch]@57
   //unsigned int v27; // [sp-4h] [bp-1Ch]@66
   //int v28; // [sp-4h] [bp-1Ch]@81
@@ -875,7 +854,7 @@ bool stru6::_4A81CA(SpriteObject *a2)
     case 1051: // Fireball hit
     {
       AddMobileLight(a2, 0xFF3C1E, 256);
-      if (pRenderer->pRenderD3D)
+      //if (pRenderer->pRenderD3D)
       {
         result = PID_TYPE(a2->spell_caster_pid);
         if (PID_TYPE(a2->spell_caster_pid) != OBJECT_Actor &&
@@ -1051,8 +1030,8 @@ bool stru6::_4A81CA(SpriteObject *a2)
             if ( result )
               return false;
 //LABEL_63:
-            if ( !pRenderer->pRenderD3D )
-              return true;
+            //if ( !pRenderer->pRenderD3D )
+            //  return true;
             _4A78AE_sparks_spell(a2);
             AddMobileLight(a2, 0x64640F, 128);
             return false;
@@ -1075,10 +1054,10 @@ bool stru6::_4A81CA(SpriteObject *a2)
                 return false;
               if ( result <= 2081 )
               {
-                if ( pRenderer->pRenderD3D )
-                  _4A77FD_implosion_particle(a2);
-                else
-                  _4A80DC_some_stuff_sw(a2);
+                //if ( pRenderer->pRenderD3D )
+                  _4A77FD_implosion_particle_d3d(a2);
+                /*else
+                  _4A80DC_implosion_particle_sw(a2);*/
                 return false;
               }
               v9 = result == 2100;
@@ -1090,8 +1069,8 @@ bool stru6::_4A81CA(SpriteObject *a2)
             AddMobileLight(a2, 0xC8C814, 256);
             return false;
           }
-          if ( !pRenderer->pRenderD3D )
-            return true;
+          //if ( !pRenderer->pRenderD3D )
+          //  return true;
           memcpy(pContainer, "sp18h1", 7);
           pRnd->SetRange(1, 6);
           pContainer[5] = pRnd->GetInRange() + '0';
@@ -1136,8 +1115,8 @@ bool stru6::_4A81CA(SpriteObject *a2)
       }
       if ( result == 4000 )
       {
-        if ( !pRenderer->pRenderD3D )
-          return true;
+        //if ( !pRenderer->pRenderD3D )
+        //  return true;
         _4A7C07(a2);
         return false;
       }
@@ -1179,8 +1158,8 @@ bool stru6::_4A81CA(SpriteObject *a2)
             _4A75CC_single_spell_collision_particle(a2, 0xF00000, uTextureID_effpar1);
           return false;
         }
-            if ( !pRenderer->pRenderD3D )
-              return true;
+            //if ( !pRenderer->pRenderD3D )
+            //  return true;
             _4A78AE_sparks_spell(a2);
             AddMobileLight(a2, 0x64640F, 128);
             return false;
@@ -1300,8 +1279,8 @@ bool stru6::_4A81CA(SpriteObject *a2)
       return false;
     }
     AddMobileLight(a2, 0xFFFFFFu, 128);
-    if ( !pRenderer->pRenderD3D )
-      return true;
+    //if ( !pRenderer->pRenderD3D )
+    //  return true;
     AddProjectile(a2, 100, -1);
     return false;
   }
@@ -1420,12 +1399,12 @@ void stru6::SetPlayerBuffAnim(unsigned __int16 uSpellID, unsigned __int16 uPlaye
 void stru6::FadeScreen__like_Turn_Undead_and_mb_Armageddon(unsigned int uDiffuseColor, unsigned int uFadeTime)
 {
   this->uFadeTime = uFadeTime;
-  this->uFadeTime2 = uFadeTime;
+  this->uFadeLength = uFadeTime;
   this->uFadeColor = uDiffuseColor;
 }
 
 //----- (004A8BFC) --------------------------------------------------------
-int stru6::_4A8BFC()
+int stru6::_4A8BFC() //for SPELL_LIGHT_PRISMATIC_LIGHT
 {
   uAnimLength = 8 * pSpriteFrameTable->pSpriteSFrames[pSpriteFrameTable->FastFindSprite("spell84")].uAnimLength;
   return uAnimLength;
@@ -1436,7 +1415,7 @@ void stru6::RenderSpecialEffects()
 {
   double v4; // st7@4
   double v5; // st6@4
-  double v6; // st7@4
+  //double v6; // st7@4
   float v7; // ST14_4@6
   unsigned int v8; // ST14_4@8
   unsigned int v9; // eax@8
@@ -1446,15 +1425,14 @@ void stru6::RenderSpecialEffects()
   double v13; // st7@9
   double v14; // st7@9
   double v15; // st6@9
-  HRESULT v16; // eax@9
-  HRESULT v17; // eax@9
-  signed __int64 v18; // qtt@10
-  const char *v19; // [sp+4h] [bp-E8h]@0
-  int v20; // [sp+8h] [bp-E4h]@0
-  unsigned int v21; // [sp+Ch] [bp-E0h]@0
-  RenderBillboardTransform_local0 vsr; // [sp+10h] [bp-DCh]@10
+//  HRESULT v16; // eax@9
+//  HRESULT v17; // eax@9
+//  signed __int64 v18; // qtt@10
+//  const char *v19; // [sp+4h] [bp-E8h]@0
+//  int v20; // [sp+8h] [bp-E4h]@0
+//  unsigned int v21; // [sp+Ch] [bp-E0h]@0
   RenderVertexD3D3 vd3d[4]; // [sp+60h] [bp-8Ch]@9
-  int v24; // [sp+E0h] [bp-Ch]@10
+//  int v24; // [sp+E0h] [bp-Ch]@10
   SpriteFrame *v70; // [sp+E4h] [bp-8h]@8
   unsigned int v26; // [sp+E8h] [bp-4h]@3
 
@@ -1465,16 +1443,15 @@ void stru6::RenderSpecialEffects()
   }
 
   field_204 = 0;
-  v26 = uFadeTime;
-  if ( v26 > 0 )
+  if ( uFadeTime > 0 )
   {
-    v4 = (double)(signed int)v26 / (double)uFadeTime2;
+    v4 = (double)uFadeTime / (double)uFadeLength;
     v5 = 1.0 - v4 * v4;
-    v6 = v5;
+    //v6 = v5;
     if ( v5 > 0.9 )
-      v6 = 1.0 - (v5 - 0.9) * 10.0;
-    v7 = v6;
-    pRenderer->_4A52F1(uFadeColor, v7);
+      v5 = 1.0 - (v5 - 0.9) * 10.0;
+    v7 = v5;
+    pRenderer->ScreenFade(uFadeColor, v7);
     uFadeTime -= pEventTimer->uTimeElapsed;
   }
 
@@ -1488,7 +1465,7 @@ void stru6::RenderSpecialEffects()
     v11 = v10->pHwSpriteIDs[0];
     v70 = v10;
     uAnimLength -= pEventTimer->uTimeElapsed;
-    if ( pRenderer->pRenderD3D )
+    //if ( pRenderer->pRenderD3D )
     {
       v12 = (double)(signed int)pViewport->uViewportTL_X;
       vd3d[0].pos.x = v12;
@@ -1527,29 +1504,13 @@ void stru6::RenderSpecialEffects()
       vd3d[1].texcoord.y = 1.0;
       vd3d[2].texcoord.y = 1.0;
       vd3d[3].texcoord.y = 0.0;
-      pRenderer->pRenderD3D->pDevice->SetTexture(
-        0,
-        pSprites_LOD->pHardwareSprites[v11].pTexture);
-      pRenderer->pRenderD3D->pDevice->SetRenderState(D3DRENDERSTATE_FOGENABLE, FALSE);
-      pRenderer->pRenderD3D->pDevice->SetRenderState(D3DRENDERSTATE_ALPHABLENDENABLE, TRUE);
-      pRenderer->pRenderD3D->pDevice->SetRenderState(D3DRENDERSTATE_ZWRITEENABLE, FALSE);
-      pRenderer->pRenderD3D->pDevice->SetRenderState(D3DRENDERSTATE_SRCBLEND, D3DBLEND_ONE);
-      pRenderer->pRenderD3D->pDevice->SetRenderState(D3DRENDERSTATE_DESTBLEND, D3DBLEND_ONE);
-      pRenderer->pRenderD3D->pDevice->SetRenderState(D3DRENDERSTATE_DITHERENABLE, FALSE);
-      pRenderer->pRenderD3D->pDevice->SetRenderState(D3DRENDERSTATE_ZFUNC, D3DCMP_ALWAYS);
-      pRenderer->pRenderD3D->pDevice->DrawPrimitive(D3DPT_TRIANGLEFAN,
-        D3DFVF_XYZRHW | D3DFVF_DIFFUSE | D3DFVF_SPECULAR | D3DFVF_TEX1, vd3d, 4, 28);
-      ErrD3D(pRenderer->pRenderD3D->pDevice->SetRenderState(D3DRENDERSTATE_SRCBLEND, D3DBLEND_ONE));
-      ErrD3D(pRenderer->pRenderD3D->pDevice->SetRenderState(D3DRENDERSTATE_DESTBLEND, D3DBLEND_ZERO));
-      pRenderer->pRenderD3D->pDevice->SetRenderState(D3DRENDERSTATE_ALPHABLENDENABLE, FALSE);
-      pRenderer->pRenderD3D->pDevice->SetRenderState(D3DRENDERSTATE_ZWRITEENABLE, TRUE);
-      pRenderer->pRenderD3D->pDevice->SetRenderState(D3DRENDERSTATE_DITHERENABLE, TRUE);
-      pRenderer->pRenderD3D->pDevice->SetRenderState(D3DRENDERSTATE_ZFUNC, D3DCMP_LESS);
+
+      pRenderer->DrawSpecialEffectsQuad(vd3d, pSprites_LOD->pHardwareSprites[v11].pTexture);
     }
-    else
+    /*else
     {
       vsr.pTarget = pRenderer->pTargetSurface;
-      vsr.uParentBillboardID = -1;
+      vsr.sParentBillboardID = -1;
       vsr.pTargetZ = pRenderer->pActiveZBuffer;
       vsr.uScreenSpaceX = (signed int)(pViewport->uViewportBR_X - pViewport->uViewportTL_X) / 2;
       vsr.uScreenSpaceY = pViewport->uViewportBR_Y;
@@ -1563,7 +1524,7 @@ void stru6::RenderSpecialEffects()
       vsr._screenspace_y_scaler_packedfloat = v18 / 0x1000000;
       vsr.pPalette = PaletteManager::Get_Dark_or_Red_LUT(v70->uPaletteIndex, 0, 1);
       vsr.uTargetPitch = pRenderer->uTargetSurfacePitch;
-      vsr.uParentBillboardID = -1;
+      vsr.sParentBillboardID = -1;
       vsr.uViewportX = pViewport->uViewportTL_X;
       vsr.uViewportZ = pViewport->uViewportBR_X;
       vsr.uViewportY = pViewport->uViewportTL_Y;
@@ -1572,7 +1533,7 @@ void stru6::RenderSpecialEffects()
       vsr.uFlags = 0;
       if ( v11 >= 0 )
         pSprites_LOD->pSpriteHeaders[v11].DrawSprite_sw(&vsr, 1);
-    }
+    }*/
   }
 }
 

@@ -5,13 +5,14 @@
  * and includes code for managing global variables and pointer
  * type checking.
  * ----------------------------------------------------------------------------- */
-
+ 
+#include "lib/lua/lua.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include "lua.h"
-#include "lauxlib.h"
+//#include "lua.h"
+//#include "lauxlib.h"
 #include <stdlib.h>  /* for malloc */
 #include <assert.h>  /* for a few sanity tests */
 
@@ -500,7 +501,7 @@ SWIGINTERN void SWIG_Lua_InstallConstants(lua_State* L, swig_lua_const_info cons
 SWIGINTERN void  SWIG_Lua_add_class_variable(lua_State* L,const char* name,lua_CFunction getFn,lua_CFunction setFn); // forward declaration
 
 /* helper function - register namespace methods and attributes into namespace */
-SWIGINTERN int SWIG_Lua_add_namespace_details(lua_State* L, swig_lua_namespace* ns)
+SWIGINTERN void SWIG_Lua_add_namespace_details(lua_State* L, swig_lua_namespace* ns)
 {
   int i = 0;
   assert(lua_istable(L,-1));
@@ -528,7 +529,7 @@ SWIGINTERN int SWIG_Lua_add_namespace_details(lua_State* L, swig_lua_namespace* 
 }
 
 /* helper function. creates namespace table and add it to module table */
-SWIGINTERN int SWIG_Lua_namespace_register(lua_State* L, swig_lua_namespace* ns)
+SWIGINTERN void SWIG_Lua_namespace_register(lua_State* L, swig_lua_namespace* ns)
 {
   assert(lua_istable(L,-1)); /* just in case. This is supposed to be module table */
   lua_checkstack(L,5);

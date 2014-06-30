@@ -1,5 +1,5 @@
 #pragma once
-
+#include <array>
 
 
 
@@ -334,6 +334,7 @@ unsigned int LoadEventsToBuffer(const char *pContainerName, char *pBuffer, unsig
 void Initialize_GlobalEVT();
 void LoadLevel_InitializeLevelEvt();
 void EventProcessor(int uEventID, int a2, int a3, int entry_line = 0);
+char *GetEventHintString(unsigned int uEventID); // idb
 
 
 

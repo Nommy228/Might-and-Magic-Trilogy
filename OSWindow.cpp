@@ -1,10 +1,12 @@
+#define _CRT_SECURE_NO_WARNINGS
+#include "mm7_unsorted_subs.h"
 #include "OSWindow.h"
 #include "mm7_data.h"
 #include "Arcomage.h"
 #include "AudioPlayer.h"
 #include "VideoPlayer.h"
 #include "Mouse.h"
-#include "Time.h"
+#include "Timer.h"
 #include "GUIWindow.h"
 #include "Party.h"
 #include "Game.h"
@@ -17,7 +19,21 @@
 #include "AIL.h"
 #include "Bink_Smacker.h"
 #include "ErrorHandling.h"
+#include "Log.h"
+#include "LOD.h"
+#include "Outdoor_stuff.h"
+#include "Registry.h"
 
+
+bool wizard_eye = false;         //включить на постоянно око чародея
+bool change_seasons = false;     //смена времён года
+bool all_magic = false;           //включить всю магию
+bool debug_information = false;  //информация fps, положение группы, уровень пола и т.п.
+bool show_picked_face = false;   //выделить активный фейс
+bool draw_portals_loops = false;    //видны рамки порталов
+bool new_speed = false;
+bool bSnow = false;
+bool draw_terrain_dist_mist = false;//новая дальность отрисовки тайлов
 
 bool OSWindow::OnMouseLeftClick(int x, int y)
 {
@@ -30,12 +46,12 @@ bool OSWindow::OnMouseLeftClick(int x, int y)
   pMouse->SetMouseClick(x, y);
 
   if (GetCurrentMenuID() == MENU_CREATEPARTY)
-    UI_OnKeyDown(VK_SELECT);
+    Mouse::UI_OnKeyDown(VK_SELECT);
 
   if (pGame)
     pGame->PickMouse(512.0, x, y, false, &vis_sprite_filter_3, &vis_door_filter);
 
-  UI_OnMouseLeftClick(0);
+  Mouse::UI_OnMouseLeftClick(0);
   return true;
 }
 
@@ -66,6 +82,8 @@ bool OSWindow::WinApiMessageProc(UINT msg, WPARAM wparam, LPARAM lparam, LRESULT
     {
       if (wparam == VK_CONTROL)
         _507B98_ctrl_pressed = false;
+      if (wparam == VK_SNAPSHOT)
+        pRenderer->SavePCXScreenshot();
 
       OnKey(wparam);
       return *result = 0, true;
@@ -73,12 +91,12 @@ bool OSWindow::WinApiMessageProc(UINT msg, WPARAM wparam, LPARAM lparam, LRESULT
 
     case WM_SIZING: return *result = 1, true;
     case WM_WINDOWPOSCHANGED:
-      if (pVideoPlayer && pVideoPlayer->AnyMovieLoaded() && pVideoPlayer->pBinkBuffer)
-        BinkBufferSetOffset(pVideoPlayer->pBinkBuffer, 0, 0);
+      //if (pVideoPlayer && pVideoPlayer->AnyMovieLoaded() && pVideoPlayer->pBinkBuffer)
+        //BinkBufferSetOffset(pVideoPlayer->pBinkBuffer, 0, 0);
       return false;
 
     case WM_CHAR:
-      if (!pKeyActionMap->_459F10(wparam) && !viewparams->field_4C)
+      if (!pKeyActionMap->ProcessTextInput(wparam) && !viewparams->field_4C)
         GUI_HandleHotkey(wparam);
       return false;
 
@@ -198,7 +216,7 @@ bool OSWindow::WinApiMessageProc(UINT msg, WPARAM wparam, LPARAM lparam, LRESULT
     case WM_KEYDOWN:
       if ( uGameMenuUI_CurentlySelectedKeyIdx != -1 )
       {
-        pKeyActionMap->_459F10(wparam);
+        pKeyActionMap->ProcessTextInput(wparam);
         return false;
       }
       if ( !pArcomageGame->bGameInProgress )
@@ -208,7 +226,7 @@ bool OSWindow::WinApiMessageProc(UINT msg, WPARAM wparam, LPARAM lparam, LRESULT
         if ( wparam == VK_RETURN )
         {
           if ( !viewparams->field_4C )
-            UI_OnKeyDown(wparam);
+            Mouse::UI_OnKeyDown(wparam);
           return 0;
         }
         if (wparam == VK_CONTROL)
@@ -237,7 +255,7 @@ bool OSWindow::WinApiMessageProc(UINT msg, WPARAM wparam, LPARAM lparam, LRESULT
           if ( pCurrentScreen != SCREEN_GAME && pCurrentScreen != SCREEN_MODAL_WINDOW )
           {
             if ( !viewparams->field_4C )
-              UI_OnKeyDown(wparam);
+              Mouse::UI_OnKeyDown(wparam);
             return 0;
           }
         }
@@ -252,8 +270,8 @@ bool OSWindow::WinApiMessageProc(UINT msg, WPARAM wparam, LPARAM lparam, LRESULT
       {
         pArcomageGame->GameOver = 1;
         pArcomageGame->field_F4 = 1;
-        pArcomageGame->uGameResult = 2;
-        pArcomageGame->field_B0 = -2;
+        pArcomageGame->uGameWinner = 2;
+        pArcomageGame->Victory_type = -2;
         return false;
       }
       if ( wparam != 114 )
@@ -268,19 +286,19 @@ bool OSWindow::WinApiMessageProc(UINT msg, WPARAM wparam, LPARAM lparam, LRESULT
     case WM_ACTIVATEAPP:
       if ( wparam && (GetForegroundWindow() == api_handle || GetForegroundWindow() == hInsertCDWindow) )
       {
-        if ( BYTE1(dword_6BE364_game_settings_1) & 1 )
+        if (dword_6BE364_game_settings_1 & GAME_SETTINGS_APP_INACTIVE)
         {
           dword_4E98BC_bApplicationActive = 1;
-          if ( pRenderer->bWindowMode )
+          /*if ( pRenderer->bWindowMode )
           {
             HDC hDC = GetDC(api_handle);
             int bitsPerPixel = GetDeviceCaps(hDC, BITSPIXEL);
             int planes = GetDeviceCaps(hDC, PLANES);
             ReleaseDC(api_handle, hDC);
             if (bitsPerPixel != 16 || planes != 1)
-              Error(pGlobalTXT_LocalizationStrings[62]);
-          }
-          BYTE1(dword_6BE364_game_settings_1) &= 0xFEu;
+              Error(L"%S", pGlobalTXT_LocalizationStrings[62]);
+          }*/
+          dword_6BE364_game_settings_1 &= ~GAME_SETTINGS_APP_INACTIVE;
 
           if ( pArcomageGame->bGameInProgress )
           {
@@ -288,49 +306,48 @@ bool OSWindow::WinApiMessageProc(UINT msg, WPARAM wparam, LPARAM lparam, LRESULT
           }
           else
           {
-            if ( BYTE1(dword_6BE364_game_settings_1) & 2 )
-              BYTE1(dword_6BE364_game_settings_1) &= 0xFDu;
+            if (dword_6BE364_game_settings_1 & GAME_SETTINGS_0200_EVENT_TIMER)
+              dword_6BE364_game_settings_1 &= ~GAME_SETTINGS_0200_EVENT_TIMER;
             else
               pEventTimer->Resume();
-            if ( BYTE1(dword_6BE364_game_settings_1) & 4 )
-              BYTE1(dword_6BE364_game_settings_1) &= 0xFBu;
+            if (dword_6BE364_game_settings_1 & GAME_SETTINGS_0400_MISC_TIMER)
+              dword_6BE364_game_settings_1 &= ~GAME_SETTINGS_0400_MISC_TIMER;
             else
               pMiscTimer->Resume();
 
             viewparams->bRedrawGameUI = true;
-            if ( pVideoPlayer->pSmackerMovie )
+            if ( pMovie)//pVideoPlayer->pSmackerMovie )
             {
               pRenderer->RestoreFrontBuffer();
-              pRenderer->_4A184C();
-              pVideoPlayer->_4BF5B2();
+              pRenderer->RestoreBackBuffer();
+              //pVideoPlayer->_4BF5B2();
             }
           }
-          if ( pAudioPlayer->hAILRedbook && !bGameoverLoop && !pVideoPlayer->pSmackerMovie )
+          if ( pAudioPlayer->hAILRedbook && !bGameoverLoop && !pMovie)//!pVideoPlayer->pSmackerMovie )
             AIL_redbook_resume(pAudioPlayer->hAILRedbook);
         }
       }
       else
       {
-        if (!(dword_6BE364_game_settings_1 & 0x100))
+        if (!(dword_6BE364_game_settings_1 & GAME_SETTINGS_APP_INACTIVE))
         {
           dword_4E98BC_bApplicationActive = 0;
-          if ( (pVideoPlayer->pSmackerMovie || pVideoPlayer->pBinkMovie) && pVideoPlayer->bPlayingMovie )
+          if ( pMovie//(pVideoPlayer->pSmackerMovie || pVideoPlayer->pBinkMovie) 
+			  && pVideoPlayer->bPlayingMovie )
             pVideoPlayer->bStopBeforeSchedule = 1;
 
-          if (/*pRenderer->bUserDirect3D && */pRenderer->uAcquiredDirect3DDevice == 1)
-            SetWindowPos(api_handle, (HWND)0xFFFFFFFE, 0, 0, 0, 0, 0x18u);
           ClipCursor(0);
-          dword_6BE364_game_settings_1 |= 0x100u;
+          dword_6BE364_game_settings_1 |= GAME_SETTINGS_APP_INACTIVE;
           if ( pEventTimer->bPaused )
-            BYTE1(dword_6BE364_game_settings_1) |= 2u;
+            dword_6BE364_game_settings_1 |= GAME_SETTINGS_0200_EVENT_TIMER;
           else
             pEventTimer->Pause();
           if ( pMiscTimer->bPaused )
-            BYTE1(dword_6BE364_game_settings_1) |= 4u;
+            dword_6BE364_game_settings_1 |= GAME_SETTINGS_0400_MISC_TIMER;
           else
             pMiscTimer->Pause();
 
-          pAudioPlayer->StopChannels(-1, -1);
+          pAudioPlayer->StopChannels(-1, -1);//приостановка воспроизведения звуков при неактивном окне игры
           if ( pAudioPlayer->hAILRedbook )
             AIL_redbook_pause(pAudioPlayer->hAILRedbook);
         }
@@ -339,11 +356,6 @@ bool OSWindow::WinApiMessageProc(UINT msg, WPARAM wparam, LPARAM lparam, LRESULT
 
     case WM_SETFOCUS:
       dword_4E98BC_bApplicationActive = 0;
-      if (pRenderer)
-      {
-        if (/*pRenderer->bUserDirect3D && */pRenderer->uAcquiredDirect3DDevice == 1)
-          SetWindowPos(api_handle, (HWND)0xFFFFFFFE, 0, 0, 0, 0, 0x18u);
-      }
       ClipCursor(0);
       return false;
 
@@ -352,28 +364,25 @@ bool OSWindow::WinApiMessageProc(UINT msg, WPARAM wparam, LPARAM lparam, LRESULT
       return false;
 
     case WM_PAINT:
-      if (pRenderer)
-      {
-        if ( !GetUpdateRect(api_handle, 0, 0) || !dword_4E98BC_bApplicationActive && !pRenderer->bWindowMode )
-          return *result = 0, true;
-      }
       if (!api_handle || !pRenderer)
         return false;
+
+      if ( !GetUpdateRect(api_handle, 0, 0))// || !dword_4E98BC_bApplicationActive && !pRenderer->bWindowMode )
+        return *result = 0, true;
+
       PAINTSTRUCT Paint;
       BeginPaint(api_handle, &Paint);
       if ( pArcomageGame->bGameInProgress )
       {
         pArcomageGame->field_F9 = 1;
       }
-      else
+      if (pRenderer->AreRenderSurfacesOk())
       {
-        if (/*!pRenderer->pRenderD3D && !pRenderer->UsingDirect3D() ||*/ !AreRenderSurfacesOk())
-        {
-          EndPaint(api_handle, &Paint);
-          return *result = 0, true;
-        }
+        pRenderer->Present();
+        //EndPaint(api_handle, &Paint);
+        //return *result = 0, true;
       }
-      pRenderer->Present();
+
       EndPaint(api_handle, &Paint);
       return *result = 0, true;
 
@@ -400,23 +409,15 @@ bool OSWindow::Initialize(const wchar_t *title, int window_width, int window_hei
   if (!RegisterClassExW(&wcxw))
     return false;
 
-  api_handle = CreateWindowExW(0, wcxw.lpszClassName, title,
-                               0,
-                               0, 0, window_width, window_height, nullptr,
+  api_handle = CreateWindowExW(0, wcxw.lpszClassName, title, 0,
+                               ReadWindowsRegistryInt("window X", (GetSystemMetrics(SM_CXSCREEN) - window_width) / 2),
+                               ReadWindowsRegistryInt("window Y", (GetSystemMetrics(SM_CYSCREEN) - window_height) / 2),
+                               window_width, window_height, nullptr,
                                nullptr, wcxw.hInstance, this);
   if (!api_handle)
   {
     UnregisterClassW(wcxw.lpszClassName, wcxw.hInstance);
     return false;
-  }
-
-  HDC hDC = GetDC(NULL);
-  int bitsPerPixel = GetDeviceCaps(hDC, BITSPIXEL);
-  int planes = GetDeviceCaps(hDC, PLANES);
-  ReleaseDC(NULL, hDC);
-  if (bitsPerPixel != 16 || planes != 1)
-  {
-	SetColorDepth(16);
   }
 
   SetWindowedMode(window_width, window_height);
@@ -439,7 +440,7 @@ bool OSWindow::Initialize(const wchar_t *title, int window_width, int window_hei
 
 OSWindow *OSWindow::Create(const wchar_t *title, int window_width, int window_height)
 {
-  OSWindow* window = new OSWindow;
+  auto window = new OSWindow;
   if (window)
     if (!window->Initialize(title, window_width, window_height))
     {
@@ -487,13 +488,23 @@ void OSWindow::SetCursor(const char *cursor_name)
   GetCursorPos(&cursor_pos);
 
   if (!strcmp(cursor_name, "MICON1") )
-    SetClassLongPtrW(api_handle, GCLP_HCURSOR, (LONG)LoadCursorW(GetModuleHandleW(nullptr), IDC_ARROW));
+    //SetClassLongPtrW(api_handle, GCLP_HCURSOR, (LONG)LoadCursorW(GetModuleHandleW(nullptr), IDC_ARROW));
+    SetClassLongPtrW(api_handle, GCLP_HCURSOR, (LONG)LoadCursorW(NULL, IDC_ARROW));
   else if (!strcmp(cursor_name, "MICON2") )
-    SetClassLongPtrW(api_handle, GCLP_HCURSOR, (LONG)LoadCursorW(GetModuleHandleW(nullptr), L"Target"));
-  else if (!strcmp(cursor_name, "MICON3") )
-    SetClassLongPtrW(api_handle, GCLP_HCURSOR, (LONG)LoadCursorW(GetModuleHandleW(nullptr), IDC_WAIT));
+  {
+    //HCURSOR hCurs1; // дескриптор курсора 
+ 
+    // Создаем курсор в виде мишени. 
+ 
+    //pMouse->uCursorTextureID = pIcons_LOD->LoadTexture(cursor_name, TEXTURE_16BIT_PALETTE);//есть альфа маска
+    //hCurs1 = LoadCursor(NULL, L"Target");//неверно, наверно нужно загрузить/создать курсор
+    SetClassLongPtrW(api_handle, GCLP_HCURSOR, (LONG)LoadCursorW(NULL, IDC_CROSS));
 
-  //ClientToScreen(api_handle, &cursor_pos);
+  }
+  else if (!strcmp(cursor_name, "MICON3") )
+    SetClassLongPtrW(api_handle, GCLP_HCURSOR, (LONG)LoadCursorW(NULL, IDC_WAIT));
+
+  //ClientToScreen(api_handle, &cursor_pos); //кидает курсор в другую часть экрана
   SetCursorPos(cursor_pos.x, cursor_pos.y);
 }
 
@@ -508,6 +519,9 @@ void OSWindow::SetFullscreenMode()
 
 void OSWindow::SetWindowedMode(int new_window_width, int new_window_height)
 {
+  RECT rcWindowPos;
+  GetWindowRect(api_handle, &rcWindowPos);
+
   SetWindowLongW(api_handle, GWL_EXSTYLE, 0);
   SetWindowLongW(api_handle, GWL_STYLE,   WS_VISIBLE | WS_OVERLAPPEDWINDOW);
   SetWindowPos(api_handle, HWND_TOP, 0, 0, -1, -1, 0);
@@ -527,13 +541,16 @@ void OSWindow::SetWindowedMode(int new_window_width, int new_window_height)
     if (!GetMenu(api_handle))
       window_total_height += GetSystemMetrics(SM_CYMENU);
   #endif
-  MoveWindow(api_handle, ReadWindowsRegistryInt("window X", (GetSystemMetrics(SM_CXSCREEN) - window_total_width) / 2),
-                         ReadWindowsRegistryInt("window Y", (GetSystemMetrics(SM_CYSCREEN) - window_total_height) / 2),
+  MoveWindow(api_handle, rcWindowPos.left,
+                         rcWindowPos.top,
                          window_total_width,
                          window_total_height, 0);
   #ifdef _DEBUG
     static HMENU debug_menu = CreateDebugMenuPanel();
     SetMenu(api_handle, debug_menu);
+    
+    GetWindowRect(api_handle, &rcWindow);
+    GetClientRect(api_handle, &rcClient);
   #endif
 }
 
@@ -567,17 +584,17 @@ HMENU OSWindow::CreateDebugMenuPanel()
           AppendMenuW(debug_party_setconditions, MF_ENABLED | MF_STRING, 40044, L"Afraid");
           AppendMenuW(debug_party_setconditions, MF_ENABLED | MF_STRING, 40043, L"Asleep");
           AppendMenuW(debug_party_setconditions, MF_ENABLED | MF_STRING, 40037, L"Curse");
-          AppendMenuW(debug_party_setconditions, MF_ENABLED | MF_STRING, 40036, L"Disease1");
-          AppendMenuW(debug_party_setconditions, MF_ENABLED | MF_STRING, 40035, L"Disease2");
-          AppendMenuW(debug_party_setconditions, MF_ENABLED | MF_STRING, 40034, L"Disease3");
+          AppendMenuW(debug_party_setconditions, MF_ENABLED | MF_STRING, 40036, L"Disease Weak");
+          AppendMenuW(debug_party_setconditions, MF_ENABLED | MF_STRING, 40035, L"Disease Medium");
+          AppendMenuW(debug_party_setconditions, MF_ENABLED | MF_STRING, 40034, L"Disease Severe");
           AppendMenuW(debug_party_setconditions, MF_ENABLED | MF_STRING, 40041, L"Dead");
           AppendMenuW(debug_party_setconditions, MF_ENABLED | MF_STRING, 40039, L"Drunk");
           AppendMenuW(debug_party_setconditions, MF_ENABLED | MF_STRING, 40042, L"Eradicated");
           AppendMenuW(debug_party_setconditions, MF_ENABLED | MF_STRING, 40038, L"Insane");
           AppendMenuW(debug_party_setconditions, MF_ENABLED | MF_STRING, 40045, L"Paralyzed");
-          AppendMenuW(debug_party_setconditions, MF_ENABLED | MF_STRING, 40033, L"Poison1");
-          AppendMenuW(debug_party_setconditions, MF_ENABLED | MF_STRING, 40032, L"Poison2");
-          AppendMenuW(debug_party_setconditions, MF_ENABLED | MF_STRING, 40031, L"Poison3");
+          AppendMenuW(debug_party_setconditions, MF_ENABLED | MF_STRING, 40033, L"Poison Weak");
+          AppendMenuW(debug_party_setconditions, MF_ENABLED | MF_STRING, 40032, L"Poison Medium");
+          AppendMenuW(debug_party_setconditions, MF_ENABLED | MF_STRING, 40031, L"Poison Severe");
           AppendMenuW(debug_party_setconditions, MF_ENABLED | MF_STRING, 40029, L"&Stone");
           AppendMenuW(debug_party_setconditions, MF_ENABLED | MF_STRING, 40040, L"Unconscious");
           AppendMenuW(debug_party_setconditions, MF_ENABLED | MF_STRING, 40030, L"Weak");
@@ -680,6 +697,71 @@ HMENU OSWindow::CreateDebugMenuPanel()
         AppendMenuW(debug_eax, MF_ENABLED | MF_STRING, 40100, L"PSICHOTIC");
       }
     }
+    HMENU other = CreatePopupMenu();
+    AppendMenuW(menu, MF_ENABLED | MF_STRING | MF_POPUP, (UINT_PTR)other, L"&Other");
+    {
+      HMENU other_wizard_eye = CreatePopupMenu();
+      AppendMenuW(other, MF_ENABLED | MF_STRING | MF_POPUP, (UINT_PTR)other_wizard_eye, L"Wizard eye");
+      {
+        AppendMenuW(other_wizard_eye, MF_ENABLED | MF_STRING, 40101, L"Wizard eye on");
+        AppendMenuW(other_wizard_eye, MF_ENABLED | MF_STRING, 40102, L"Wizard eye off");
+      }
+      HMENU other_new_draw_object_dist = CreatePopupMenu();
+      AppendMenuW(other, MF_ENABLED | MF_STRING | MF_POPUP, (UINT_PTR)other_new_draw_object_dist, L"New draw object distance");
+      {
+        AppendMenuW(other_new_draw_object_dist, MF_ENABLED | MF_STRING, 40103, L"New draw object dist on");
+        AppendMenuW(other_new_draw_object_dist, MF_ENABLED | MF_STRING, 40104, L"New draw object dist off");
+      }
+      HMENU other_change_seasons = CreatePopupMenu();
+      AppendMenuW(other, MF_ENABLED | MF_STRING | MF_POPUP, (UINT_PTR)other_change_seasons, L"Change seasons");
+      {
+        AppendMenuW(other_change_seasons, MF_ENABLED | MF_STRING, 40105, L"Change seasons on");
+        AppendMenuW(other_change_seasons, MF_ENABLED | MF_STRING, 40106, L"Change seasons off");
+      }
+      HMENU other_all_magic = CreatePopupMenu();
+      AppendMenuW(other, MF_ENABLED | MF_STRING | MF_POPUP, (UINT_PTR)other_all_magic, L"All magic");
+      {
+        AppendMenuW(other_all_magic, MF_ENABLED | MF_STRING, 40107, L"All magic on");
+        AppendMenuW(other_all_magic, MF_ENABLED | MF_STRING, 40108, L"All magic off");
+      }
+      HMENU other_debug_information = CreatePopupMenu();
+      AppendMenuW(other, MF_ENABLED | MF_STRING | MF_POPUP, (UINT_PTR)other_debug_information, L"Debug information");
+      {
+        AppendMenuW(other_debug_information, MF_ENABLED | MF_STRING, 40109, L"Debug information on");
+        AppendMenuW(other_debug_information, MF_ENABLED | MF_STRING, 40110, L"Debug information off");
+      }
+      HMENU other_show_picked_face = CreatePopupMenu();
+      AppendMenuW(other, MF_ENABLED | MF_STRING | MF_POPUP, (UINT_PTR)other_show_picked_face, L"Show picked face");
+      {
+        AppendMenuW(other_show_picked_face, MF_ENABLED | MF_STRING, 40111, L"Show picked face on");
+        AppendMenuW(other_show_picked_face, MF_ENABLED | MF_STRING, 40112, L"Show picked face off");
+      }
+      HMENU other_draw_portals_loops = CreatePopupMenu();
+      AppendMenuW(other, MF_ENABLED | MF_STRING | MF_POPUP, (UINT_PTR)other_draw_portals_loops, L"Draw portals loops");
+      {
+        AppendMenuW(other_draw_portals_loops, MF_ENABLED | MF_STRING, 40113, L"Draw portals loops on");
+        AppendMenuW(other_draw_portals_loops, MF_ENABLED | MF_STRING, 40114, L"Draw portals loops off");
+      }
+      HMENU other_new_speed = CreatePopupMenu();
+      AppendMenuW(other, MF_ENABLED | MF_STRING | MF_POPUP, (UINT_PTR)other_new_speed, L"New_speed");
+      {
+        AppendMenuW(other_new_speed, MF_ENABLED | MF_STRING, 40115, L"New_speed on");
+        AppendMenuW(other_new_speed, MF_ENABLED | MF_STRING, 40116, L"New_speed off");
+      }
+      HMENU other_snow = CreatePopupMenu();
+      AppendMenuW(other, MF_ENABLED | MF_STRING | MF_POPUP, (UINT_PTR)other_snow, L"Snow");
+      {
+        AppendMenuW(other_snow, MF_ENABLED | MF_STRING, 40117, L"Snowfall on");
+        AppendMenuW(other_snow, MF_ENABLED | MF_STRING, 40118, L"Snowfall off");
+      }
+      HMENU other_draw_terrain_dist_mist = CreatePopupMenu();
+      AppendMenuW(other, MF_ENABLED | MF_STRING | MF_POPUP, (UINT_PTR)other_draw_terrain_dist_mist, L"New draw terrain distance");
+      {
+        AppendMenuW(other_draw_terrain_dist_mist, MF_ENABLED | MF_STRING, 40119, L"New draw terrain distance on");
+        AppendMenuW(other_draw_terrain_dist_mist, MF_ENABLED | MF_STRING, 40120, L"New draw terrain distance off");
+      }
+
+    }
   }
   return menu;
 }
@@ -694,14 +776,14 @@ bool OSWindow::OnOSMenu(int item_id)
     default: return false;
 
 
-    case 103:  pRenderer->SavePCXScreenshot(); break;
+    //case 103:  pRenderer->SavePCXScreenshot(); break;
     case 101:  // Quit game
-    case 40001:
-		pGame->Deinitialize();
+    case 40001: // Menu "File"-> "Exit"
+      pGame->Deinitialize();
       SendMessageW(api_handle, WM_DESTROY, 0, 0);
     break;
 
-    case 104:
+    case 104: //F4 button
       pRenderer->ChangeBetweenWinFullscreenModes();
       if (pArcomageGame->bGameInProgress)
         pArcomageGame->field_F6 = 1;
@@ -718,24 +800,24 @@ bool OSWindow::OnOSMenu(int item_id)
         pParty->pPlayers[i].uSkillPoints = 50;
     break;
         
-    case 40029:  pPlayers[uActiveCharacter]->SetPertified(true);  break;
-    case 40030:  pPlayers[uActiveCharacter]->SetWeak(true);       break;
-    case 40031:  pPlayers[uActiveCharacter]->SetPoison3(true);    break;
-    case 40032:  pPlayers[uActiveCharacter]->SetPoison2(true);    break;
-    case 40033:  pPlayers[uActiveCharacter]->SetPoison1(true);    break;
-    case 40034:  pPlayers[uActiveCharacter]->SetDisease3(true);   break;
-    case 40035:  pPlayers[uActiveCharacter]->SetDisease2(true);   break;
-    case 40036:  pPlayers[uActiveCharacter]->SetDisease1(true);   break;
-    case 40037:  pPlayers[uActiveCharacter]->SetCursed(true);     break;
-    case 40038:  pPlayers[uActiveCharacter]->SetInsane(true);     break;
-    case 40039:  pPlayers[uActiveCharacter]->SetDrunk(true);      break;
-    case 40040:  pPlayers[uActiveCharacter]->SetUnconcious(true); break;
-    case 40041:  pPlayers[uActiveCharacter]->SetDead(true);       break;
-    case 40042:  pPlayers[uActiveCharacter]->SetEradicated(true); break;
-    case 40043:  pPlayers[uActiveCharacter]->SetAsleep(true);     break;
-    case 40044:  pPlayers[uActiveCharacter]->SetAfraid(true);     break;
-    case 40045:  pPlayers[uActiveCharacter]->SetParalyzed(true);  break;
-    case 40073:  pPlayers[uActiveCharacter]->SetZombie(true);     break;
+    case 40029:  pPlayers[uActiveCharacter]->SetPertified(pParty->uTimePlayed);  break;
+    case 40030:  pPlayers[uActiveCharacter]->SetWeak(pParty->uTimePlayed);       break;
+    case 40031:  pPlayers[uActiveCharacter]->SetPoisonSevere(pParty->uTimePlayed);    break;
+    case 40032:  pPlayers[uActiveCharacter]->SetPoisonMedium(pParty->uTimePlayed);    break;
+    case 40033:  pPlayers[uActiveCharacter]->SetPoisonWeak(pParty->uTimePlayed);    break;
+    case 40034:  pPlayers[uActiveCharacter]->SetDiseaseSevere(pParty->uTimePlayed);   break;
+    case 40035:  pPlayers[uActiveCharacter]->SetDiseaseMedium(pParty->uTimePlayed);   break;
+    case 40036:  pPlayers[uActiveCharacter]->SetDiseaseWeak(pParty->uTimePlayed);   break;
+    case 40037:  pPlayers[uActiveCharacter]->SetCursed(pParty->uTimePlayed);     break;
+    case 40038:  pPlayers[uActiveCharacter]->SetInsane(pParty->uTimePlayed);     break;
+    case 40039:  pPlayers[uActiveCharacter]->SetDrunk(pParty->uTimePlayed);      break;
+    case 40040:  pPlayers[uActiveCharacter]->SetUnconcious(pParty->uTimePlayed); break;
+    case 40041:  pPlayers[uActiveCharacter]->SetDead(pParty->uTimePlayed);       break;
+    case 40042:  pPlayers[uActiveCharacter]->SetEradicated(pParty->uTimePlayed); break;
+    case 40043:  pPlayers[uActiveCharacter]->SetAsleep(pParty->uTimePlayed);     break;
+    case 40044:  pPlayers[uActiveCharacter]->SetAfraid(pParty->uTimePlayed);     break;
+    case 40045:  pPlayers[uActiveCharacter]->SetParalyzed(pParty->uTimePlayed);  break;
+    case 40073:  pPlayers[uActiveCharacter]->SetZombie(pParty->uTimePlayed);     break;
 
     case 40062:
       pParty->alignment = PartyAlignment_Good;
@@ -795,41 +877,30 @@ bool OSWindow::OnOSMenu(int item_id)
       }
     }
     break;
+        //SubMenu "Other"
+    case 40101:  wizard_eye = true;  break;                           //включить око чародея
+    case 40102:  wizard_eye = false;  break;                          //выключить око чародея
+    case 40103:  pODMRenderParams->shading_dist_mist = 0x6000;  break;//новая дальность отрисовки объектов
+    case 40104:  pODMRenderParams->shading_dist_mist = 0x2000;  break;////обычная дальность отрисовки объектов
+    case 40105:  change_seasons = true;  break;                           //включить смену времён года
+    case 40106:  change_seasons = false;  break;                          //выключить смену времён года
+    case 40107:  all_magic = true;  break;                           //включить все заклы(нажимать в окне создания группы)
+    case 40108:  all_magic = false;  break;                          //выключить все заклы
+    case 40109:  debug_information = true;  break;                           //включить информацию fps, положение группы, уровень пола и т.п.
+    case 40110:  debug_information = false;  break;                          //выключить информацию fps, положение группы, уровень пола и т.п.
+    case 40111:  show_picked_face = true;  break;                           //включить выделение активного фейса
+    case 40112:  show_picked_face = false;  break;                          //выключить выделение активного фейса
+    case 40113:  draw_portals_loops = true;  break;                           //включить отрисовку рамок порталов
+    case 40114:  draw_portals_loops = false;  break;                          //включить отрисовку рамок порталов
+    case 40115:  new_speed = true;  break;                           //включить двойную скорость
+    case 40116:  new_speed = false;  break;                          //включить двойную скорость
+    case 40117:  bSnow = true;  break;                           //включить снег
+    case 40118:  bSnow = false;  break;                          //включить снег
+    case 40119:  draw_terrain_dist_mist = true;  break;                           //новая дальность отрисовки тайлов
+    case 40120:  draw_terrain_dist_mist = false;  break;                          //обычная дальность отрисовки тайлов
+
   }
 
   return true;
 }
 
-bool OSWindow::SetColorDepth(int bit)
-{
-		dm.dmSize = sizeof(DEVMODE);
-		if (!EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &dm))
-		{
-			printf("EnumDisplaySettings failed:%d\n", GetLastError());
-			return false;
-		}
- 		dm.dmBitsPerPel = bit;
-		dm.dmFields = DM_BITSPERPEL;
-		if (ChangeDisplaySettings(&dm, CDS_TEST) !=DISP_CHANGE_SUCCESSFUL)
-		{
-			printf("\nIllegal graphics mode: %d\n", GetLastError());
-			return false;
-		}
-		if (ChangeDisplaySettings(&dm, 0) == DISP_CHANGE_SUCCESSFUL)
-		{
-			ChangedColorDepth = true;
-		}
-}
-
-void OSWindow::Delete()
-{
-	Deinitialize();
-}
-
-void OSWindow::Deinitialize()
-{
-	if( ChangedColorDepth )
-	{
-		SetColorDepth(32);
-	}
-}

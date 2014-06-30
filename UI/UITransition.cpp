@@ -1,9 +1,8 @@
-#ifdef _MSC_VER
 #define _CRT_SECURE_NO_WARNINGS
-#endif
-
 #include <io.h>
 
+#include "..\ErrorHandling.h"
+#include "..\mm7_unsorted_subs.h"
 #include "..\mm7_data.h"
 #include "..\VideoPlayer.h"
 #include "..\MapInfo.h"
@@ -14,7 +13,7 @@
 #include "..\AudioPlayer.h"
 #include "..\Outdoor.h"
 #include "..\LOD.h"
-#include "..\Time.h"
+#include "..\Timer.h"
 #include "..\stru159.h"
 #include "..\Events2D.h"
 #include "..\texts.h"
@@ -60,7 +59,7 @@ void TransitionUI_Load(uint anim_id, uint exit_pic_id, int x, int y, int z, int 
     if ( pMapStats->GetMapInfo(pCurrentMapName) )
     {
       sprintfex(sHouseName.data(), pGlobalTXT_LocalizationStrings[410], pMapStats->pInfos[pMapStats->GetMapInfo(pCurrentMapName)].pName); // "Leave %s"
-      pDialogueWindow = GUIWindow::Create(0, 0, 640, 480, WINDOW_Transition, 0, sHouseName.data());
+      pDialogueWindow = GUIWindow::Create(0, 0, window->GetWidth(), window->GetHeight(), WINDOW_Transition, 0, sHouseName.data());
       //if ( pAnimatedRooms[p2DEvents[anim_id].uAnimationID].uRoomSoundId )
         //PlayHouseSound(anim_id, HouseSound_Greeting);
       if ( uCurrentlyLoadedLevelType == LEVEL_Indoor && uActiveCharacter && pParty->uFlags & 0x30 )
@@ -70,7 +69,7 @@ void TransitionUI_Load(uint anim_id, uint exit_pic_id, int x, int y, int z, int 
       return;
     }
     strcpy(sHouseName.data(), pGlobalTXT_LocalizationStrings[79]);
-    pDialogueWindow = GUIWindow::Create(0, 0, 640, 480, WINDOW_Transition, 0, sHouseName.data());
+    pDialogueWindow = GUIWindow::Create(0, 0, window->GetWidth(), window->GetHeight(), WINDOW_Transition, 0, sHouseName.data());
     //if ( pAnimatedRooms[p2DEvents[anim_id].uAnimationID].uRoomSoundId )
       //PlayHouseSound(anim_id, HouseSound_Greeting);
     if ( uCurrentlyLoadedLevelType == LEVEL_Indoor && uActiveCharacter && pParty->uFlags & 0x30 )
@@ -85,7 +84,7 @@ void TransitionUI_Load(uint anim_id, uint exit_pic_id, int x, int y, int z, int 
   if ( pMapStats->GetMapInfo(v15) )
   {
     sprintfex(sHouseName.data(), pGlobalTXT_LocalizationStrings[411], pMapStats->pInfos[pMapStats->GetMapInfo(v15)].pName);//Войти в ^Pv[%s]
-    pDialogueWindow = GUIWindow::Create(0, 0, 640, 480, WINDOW_Transition, 0, sHouseName.data());
+    pDialogueWindow = GUIWindow::Create(0, 0, window->GetWidth(), window->GetHeight(), WINDOW_Transition, 0, sHouseName.data());
     if ( uCurrentlyLoadedLevelType == LEVEL_Indoor && uActiveCharacter && pParty->uFlags & 0x30 )
       pPlayers[uActiveCharacter]->PlaySound(SPEECH_47, 0);
     if ( IndoorLocation::GetLocationIndex(pLocationName) )
@@ -93,7 +92,7 @@ void TransitionUI_Load(uint anim_id, uint exit_pic_id, int x, int y, int z, int 
     return;
   }
   strcpy(sHouseName.data(), pGlobalTXT_LocalizationStrings[73]);//Войти
-  pDialogueWindow = GUIWindow::Create(0, 0, 640, 480, WINDOW_Transition, 0, sHouseName.data());
+  pDialogueWindow = GUIWindow::Create(0, 0, window->GetWidth(), window->GetHeight(), WINDOW_Transition, 0, sHouseName.data());
   //if ( pAnimatedRooms[p2DEvents[anim_id].uAnimationID].uRoomSoundId )
     //PlayHouseSound(anim_id, HouseSound_Greeting);
   if ( uCurrentlyLoadedLevelType == LEVEL_Indoor && uActiveCharacter && pParty->uFlags & 0x30 )
@@ -123,7 +122,7 @@ void TravelUI_Load()
     sprintfex(sHouseName.data(), pGlobalTXT_LocalizationStrings[410], pMapStats->pInfos[pMapStats->GetMapInfo(pCurrentMapName)].pName);// "Leave %s"
   else
     strcpy(sHouseName.data(), pGlobalTXT_LocalizationStrings[79]);// "Exit"
-  pDialogueWindow = GUIWindow::Create(0, 0, 640, 480, WINDOW_ChangeLocation, 0, sHouseName.data());
+  pDialogueWindow = GUIWindow::Create(0, 0, window->GetWidth(), window->GetHeight(), WINDOW_ChangeLocation, 0, sHouseName.data());
 }
 
 //----- (00444DCA) --------------------------------------------------------
@@ -179,7 +178,7 @@ void TransitionUI_Draw()
   pRenderer->DrawTextureIndexed(556, 451, pIcons_LOD->GetTexture(uTextureID_x_x_u));
   pRenderer->DrawTextureIndexed(476, 451, pIcons_LOD->GetTexture(uTextureID_x_ok_u));
   map_id = pMapStats->GetMapInfo(pCurrentMapName);
-  if ( (pVideoPlayer->AnyMovieLoaded() || v9) && *dword_591164_teleport_map_name != ' ' )
+  if ( (pMovie || v9) && *dword_591164_teleport_map_name != ' ' )
     map_id = pMapStats->GetMapInfo(dword_591164_teleport_map_name);
   transition_window.uFrameX = 493;
   transition_window.uFrameWidth = 126;

@@ -1,9 +1,7 @@
-#ifdef _MSC_VER
 #define _CRT_SECURE_NO_WARNINGS
-#endif
-
 #include <string.h>
 #include <algorithm>
+#include "ErrorHandling.h"
 
 #include "Sprites.h"
 #include "PaletteManager.h"
@@ -16,7 +14,7 @@
 #include "MM7.h"
 #include "Actor.h"
 #include "Level/Decoration.h"
-
+#include "OurMath.h"
 
 
 
@@ -28,15 +26,9 @@ struct SpriteFrameTable *pSpriteFrameTable;
 //----- (0044D4D8) --------------------------------------------------------
 void SpriteFrameTable::ReleaseSFrames()
 {
-  SpriteFrameTable *v1; // esi@1
-
-  v1 = this;
-  if ( this->pSpriteSFrames )
-  {
-    free(this->pSpriteSFrames);
-    v1->pSpriteSFrames = 0;
-  }
-  v1->uNumSpriteFrames = 0;
+  free(this->pSpriteSFrames);
+  this->pSpriteSFrames = nullptr;
+  this->uNumSpriteFrames = 0;
 }
 
 //----- (0044D4F6) --------------------------------------------------------
@@ -62,22 +54,22 @@ void SpriteFrameTable::InitializeSprite( signed int uSpriteID )
     unsigned int v3; // ebx@3
     //char *v4; // edx@3
     //int v5; // eax@3
-    SpriteFrame *v6; // ecx@5
-    int v7; // eax@5
+//    SpriteFrame *v6; // ecx@5
+//    int v7; // eax@5
     __int16 v8; // ax@6
     //signed int v9; // edx@6
     //int v10; // ecx@6
-    signed int v11; // edi@10
+//    signed int v11; // edi@10
     __int16 v12; // ax@16
-    int v13; // ecx@16
+//    int v13; // ecx@16
     size_t v14; // eax@19
-    signed int v15; // edi@19
-    __int16 v16; // ax@27
-    int v17; // ecx@27
-    signed int v18; // edi@29
-    SpriteFrame *v19; // eax@30
-    __int16 v20; // ax@45
-    int v21; // ecx@45
+//    signed int v15; // edi@19
+//    __int16 v16; // ax@27
+//    int v17; // ecx@27
+//    signed int v18; // edi@29
+//    SpriteFrame *v19; // eax@30
+//    __int16 v20; // ax@45
+//    int v21; // ecx@45
 
     char Str[32]; // [sp+Ch] [bp-3Ch]@19
     char sprite_name[20]; // [sp+2Ch] [bp-1Ch]@15
@@ -787,8 +779,7 @@ void __fastcall _46E26D_collide_against_sprites(signed int a1, signed int a2)
                                   if ( v14 > 0 )
                                   {
                                     v15 = v5->vPosition.z;
-                                    v16 = stru_721530.normal.z
-                                        + ((unsigned __int64)(stru_721530.direction.z * (signed __int64)v14) >> 16);
+                                    v16 = stru_721530.normal.z + fixpoint_mul(stru_721530.direction.z, v14);
                                     if ( v16 >= v15 )
                                     {
                                       if ( v16 <= v22 + v15 )

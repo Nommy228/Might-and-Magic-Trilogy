@@ -1,16 +1,8 @@
-#ifdef _MSC_VER
 #define _CRT_SECURE_NO_WARNINGS
-#endif
 
-#include "Texture.h"
-#include "mm7_data.h"
-#include "VideoPlayer.h"
-#include "Sprites.h"
-#include "BSPModel.h"
-#include "Mouse.h"
-#include "stru6.h"
-
-#include "LightmapBuilder.h"
+#include "ErrorHandling.h"
+#include "VectorTypes.h"
+#include "mm7_unsorted_subs.h"
 #include "MM7.h"
 #include "MapInfo.h"
 #include "Game.h"
@@ -25,271 +17,49 @@
 #include "Events.h"
 #include "Viewport.h"
 #include "FrameTableInc.h"
-#include "Math.h"
+#include "OurMath.h"
 #include "SpriteObject.h"
 #include "ObjectList.h"
 #include "DecorationList.h"
-#include "Time.h"
-#include "IconFrameTable.h"
+#include "Timer.h"
 #include "PlayerFrameTable.h"
 #include "Awards.h"
-#include "TurnEngine.h"
-#include "Events2D.h"
-#include "stru159.h"
 #include "texts.h"
-#include "Log.h"
 #include "UI\UIHouses.h"
 #include "Lights.h"
 #include "Level/Decoration.h"
+#include "mm7_data.h"
+#include "UI\UIArena.h"
 
 //----- (0046CC4B) --------------------------------------------------------
 void check_event_triggers()
 {
-  LevelDecoration *v1; // esi@2
-
   for (size_t i = 0; i < num_event_triggers; i++)
   {
-    v1 = &pLevelDecorations[event_triggers[i]];
-
-    if (v1->uFlags & LEVEL_DECORATION_TRIGGERED_BY_TOUCH
-        && v1->vPosition.GetDistanceTo(pParty->vPosition) < v1->uTriggerRange)
+    if (pLevelDecorations[event_triggers[i]].uFlags & LEVEL_DECORATION_TRIGGERED_BY_TOUCH
+        && pLevelDecorations[event_triggers[i]].vPosition.GetDistanceTo(pParty->vPosition) < pLevelDecorations[event_triggers[i]].uTriggerRange)
     {
-      EventProcessor(v1->uEventID, PID(OBJECT_Decoration,i), 1);
+      EventProcessor(pLevelDecorations[event_triggers[i]].uEventID, PID(OBJECT_Decoration,i), 1);
     }
-    else if (v1->uFlags & LEVEL_DECORATION_TRIGGERED_BY_MONSTER)
+    else if (pLevelDecorations[event_triggers[i]].uFlags & LEVEL_DECORATION_TRIGGERED_BY_MONSTER)
     {
       for (size_t j = 0; j < uNumActors; j++)
       {
-        if (v1->vPosition.GetDistanceTo(pActors[j].vPosition) < v1->uTriggerRange)
-          EventProcessor(v1->uEventID, 0, 1);
+        if (pLevelDecorations[event_triggers[i]].vPosition.GetDistanceTo(pActors[j].vPosition) < pLevelDecorations[event_triggers[i]].uTriggerRange)
+          EventProcessor(pLevelDecorations[event_triggers[i]].uEventID, 0, 1);
       }
     }
-    else if (v1->uFlags & LEVEL_DECORATION_TRIGGERED_BY_OBJECT)
+    else if (pLevelDecorations[event_triggers[i]].uFlags & LEVEL_DECORATION_TRIGGERED_BY_OBJECT)
     {
       for (size_t j = 0; j < uNumSpriteObjects; j++)
       {
-        if (v1->vPosition.GetDistanceTo(pSpriteObjects[j].vPosition) < v1->uTriggerRange)
-          EventProcessor(v1->uEventID, 0, 1);
+        if (pLevelDecorations[event_triggers[i]].vPosition.GetDistanceTo(pSpriteObjects[j].vPosition) < pLevelDecorations[event_triggers[i]].uTriggerRange)
+          EventProcessor(pLevelDecorations[event_triggers[i]].uEventID, 0, 1);
       }
     }
   }
 }
 // 6836C8: using guessed type int 6836C8_num_decorations_6807E8;
-
-//----- (0046D8E3) --------------------------------------------------------
-int __fastcall sub_46D8E3(int a1, signed int a2, int a3, int a4)
-{
-  int v4; // ebx@1
-  unsigned int v5; // ecx@1
-  BSPModel *v6; // edi@3
-  ODMFace *v7; // esi@10
-  unsigned __int8 v8; // al@10
-  signed __int16 *v9; // eax@18
-  int v10; // edx@19
-  int v11; // ecx@21
-  int v12; // ecx@23
-  signed int v13; // eax@25
-  int v14; // edx@27
-  int v15; // edx@29
-  int v16; // ST18_4@29
-  signed int v17; // edx@29
-  signed __int64 v18; // qtt@29
-  int v19; // eax@35
-  signed int v20; // ecx@37
-  signed int v22; // ebx@42
-  unsigned int v23; // esi@43
-  int v24; // edx@44
-  int v25; // eax@44
-  int v26; // [sp+Ch] [bp-38h]@7
-  int v27; // [sp+10h] [bp-34h]@21
-  int v28; // [sp+18h] [bp-2Ch]@21
-  int v29; // [sp+1Ch] [bp-28h]@2
-  unsigned int v30; // [sp+20h] [bp-24h]@8
-  signed int v31; // [sp+24h] [bp-20h]@1
-  signed int v32; // [sp+28h] [bp-1Ch]@1
-  int v33; // [sp+2Ch] [bp-18h]@7
-  bool v34; // [sp+30h] [bp-14h]@21
-  bool v35; // [sp+34h] [bp-10h]@23
-  signed int v36; // [sp+38h] [bp-Ch]@17
-  signed int v37; // [sp+38h] [bp-Ch]@21
-  signed int v38; // [sp+38h] [bp-Ch]@42
-  signed int v39; // [sp+3Ch] [bp-8h]@1
-  signed int v40; // [sp+40h] [bp-4h]@1
-
-  dword_720ED0[0] = -1;
-  dword_720E80[0] = -1;
-  v4 = a1;
-  v5 = 0;
-  v40 = a2;
-  v31 = v4;
-  v39 = 1;
-  dword_720F20[0] = 10000;
-  if ( (signed int)pOutdoor->uNumBModels > 0 )
-  {
-    v29 = 0;
-    for ( v32 = 0; v32 < (signed int)pOutdoor->uNumBModels; ++v32 )
-    {
-      v6 = &pOutdoor->pBModels[v29];
-      if ( v4 <= pOutdoor->pBModels[v29].sMaxX )
-      {
-        if ( v4 >= v6->sMinX )
-        {
-          if ( v40 <= v6->sMaxY )
-          {
-            if ( v40 >= v6->sMinY )
-            {
-              v33 = v5;
-              v26 = v6->uNumFaces;
-              if ( (signed int)v6->uNumFaces > (signed int)v5 )
-              {
-                v30 = v5;
-                while ( 1 )
-                {
-                  v7 = (ODMFace *)((char *)v6->pFaces + v30);
-                  v8 = v7->uPolygonType;
-                  if ( (v8 == 5 || v8 == 6)
-                    && !(BYTE3(v7->uAttributes) & 0x20)
-                    && v4 <= v7->pBoundingBox.x2
-                    && v4 >= v7->pBoundingBox.x1
-                    && v40 <= v7->pBoundingBox.y2
-                    && v40 >= v7->pBoundingBox.y1 )
-                  {
-                    v36 = v5;
-                    if ( v7->uNumVertices )
-                    {
-                      v9 = v7->pXInterceptDisplacements;
-                      do
-                      {
-                        v10 = 2 * v36;
-                        word_720DB0_xs[2 * v36] = *v9 + LOWORD(v6->pVertices.pVertices[*(v9 - 60)].x);
-                        word_720CE0_ys[2 * v36] = v9[20] + LOWORD(v6->pVertices.pVertices[*(v9 - 60)].y);
-                        word_720DB0_xs[2 * v36++ + 1] = *v9 + LOWORD(v6->pVertices.pVertices[*(v9 - 59)].x);
-                        word_720CE0_ys[v10 + 1] = v9[20] + LOWORD(v6->pVertices.pVertices[*(v9 - 59)].y);
-                        ++v9;
-                      }
-                      while ( v36 < v7->uNumVertices );
-                      v4 = v31;
-                    }
-                    v27 = 2 * v7->uNumVertices;
-                    word_720DB0_xs[2 * v7->uNumVertices] = word_720DB0_xs[0];
-                    word_720CE0_ys[v27] = word_720CE0_ys[0];
-                    v11 = 0;
-                    v34 = word_720CE0_ys[0] >= v40;
-                    v37 = 0;
-                    v28 = 0;
-                    if ( v27 > 0 )
-                    {
-                      do
-                      {
-                        if ( v37 >= 2 )
-                          break;
-                        v12 = v11;
-                        v4 = v31;
-                        v35 = word_720CE0_ys[v12 + 1] >= v40;
-                        if ( v34 != v35 )
-                        {
-                          v13 = word_720DB0_xs[v12 + 1] >= v31 ? 0 : 2;
-                          v14 = v13 | (word_720DB0_xs[v12] < v31);
-                          if ( v14 != 3 )
-                          {
-                            if ( !v14
-                              || (v15 = word_720CE0_ys[v12],
-                                  v16 = word_720CE0_ys[v12 + 1] - v15,
-                                  v17 = v40 - v15,
-                                  LODWORD(v18) = v17 << 16,
-                                  HIDWORD(v18) = v17 >> 16,
-                                  (signed int)(((unsigned __int64)(((signed int)word_720DB0_xs[v12 + 1]
-                                                                  - (signed int)word_720DB0_xs[v12])
-                                                                 * v18
-                                                                 / v16) >> 16)
-                                             + word_720DB0_xs[v12]) >= v31) )
-                              ++v37;
-                          }
-                        }
-                        v11 = v28 + 1;
-                        v34 = v35;
-                        ++v28;
-                      }
-                      while ( v28 < v27 );
-                      if ( v37 == 1 )
-                      {
-                        if ( v39 >= 20 )
-                          break;
-                        if ( v7->uPolygonType == 5 )
-                          v19 = v6->pVertices.pVertices[v7->pVertexIDs[0]].z;
-                        else
-                          v19 = ((unsigned __int64)(v7->zCalc1 * (signed __int64)v4) >> 16)
-                              + ((unsigned __int64)(v7->zCalc2 * (signed __int64)v40) >> 16)
-                              + HIWORD(v7->zCalc3);
-                        v20 = v39++;
-                        dword_720F20[v20] = v19;
-                        dword_720ED0[v20] = v32;
-                        dword_720E80[v20] = v33;
-                      }
-                    }
-                  }
-                  ++v33;
-                  v30 += 308;
-                  if ( v33 >= v26 )
-                    break;
-                  v5 = 0;
-                }
-              }
-            }
-          }
-        }
-      }
-      //++v32;
-      ++v29;
-      v5 = 0;
-    }
-    //while ( v32 < (signed int)pOutdoor->uNumBModels );
-    if ( !v39 )
-    {
-      *(int *)a4 = 0;
-      return dword_720F20[0];
-    }
-  }
-  v22 = 0;
-  v38 = v5;
-  if ( v39 > (signed int)v5 )
-  {
-	  v23 = 0;
-	  do
-	  {
-		v24 = dword_720F20[v5 / 4];
-		v25 = *(int *)((char *)dword_720F20.data() + v23);
-		if ( v24 == v25 )
-		{
-		  v22 = v38;
-		  v23 = v5;
-		}
-		else if ( v25 > a3 + 15 )
-		{
-		  if ( v24 < v25 )
-		  {
-			  v22 = v38;
-			  v23 = v5;
-		  }
-		}
-		else if ( v24 > v25 && v24 <= a3 + 15 )
-		{
-		  v22 = v38;
-		  v23 = v5;
-		}
-		++v38;
-		v5 += 4;
-	  }
-	  while ( v38 < v39 );
-	  if ( v22 )
-	  {
-		*(int *)a4 = dword_720E80[v22] | (dword_720ED0[v22] << 6);
-		return dword_720F20[v22];
-	  }
-  }
-  *(int *)a4 = 0;
-  return dword_720F20[v22];
-}
 
 //----- (0046DEF2) --------------------------------------------------------
 unsigned int __fastcall sub_46DEF2(signed int a2, unsigned int uLayingItemID)
@@ -305,17 +75,11 @@ unsigned int __fastcall sub_46DEF2(signed int a2, unsigned int uLayingItemID)
 //----- (0046E0B2) --------------------------------------------------------
 void  _46E0B2_collide_against_decorations()
 {
-  BLVSector *v0; // ebp@1
-  LevelDecoration *v1; // edi@2
-  DecorationDesc *v2; // esi@3
-  int v3; // edx@4
-  int v4; // eax@4
-  int v5; // ecx@6
-  int v6; // ebx@8
-  int v7; // esi@8
+  BLVSector *sector; // ebp@1
+  LevelDecoration *decor; // edi@2
+  DecorationDesc *decor_desc; // esi@3
   int v8; // ebx@10
   int v9; // esi@11
-  int v10; // edi@12
   int v11; // eax@12
   int v12; // esi@14
   unsigned int v13; // eax@17
@@ -323,65 +87,44 @@ void  _46E0B2_collide_against_decorations()
   int v15; // [sp+8h] [bp-10h]@10
   int v16; // [sp+Ch] [bp-Ch]@10
   int v17; // [sp+10h] [bp-8h]@10
-  int v18; // [sp+14h] [bp-4h]@8
 
-  v0 = &pIndoor->pSectors[stru_721530.uSectorID];
-  for ( i = 0; i < v0->uNumDecorations; ++i )
+  sector = &pIndoor->pSectors[stru_721530.uSectorID];
+  for ( i = 0; i < sector->uNumDecorations; ++i )
   {
-    v1 = &pLevelDecorations[v0->pDecorationIDs[i]];
-    if (!(v1->uFlags & LEVEL_DECORATION_INVISIBLE))
+    decor = &pLevelDecorations[sector->pDecorationIDs[i]];
+    if (!(decor->uFlags & LEVEL_DECORATION_INVISIBLE))
     {
-      v2 = &pDecorationList->pDecorations[v1->uDecorationDescID];
-      if (!v2->CanMoveThrough())
+      decor_desc = &pDecorationList->pDecorations[decor->uDecorationDescID];
+      if (!decor_desc->CanMoveThrough())
       {
-        v3 = v2->uRadius;
-        v4 = v1->vPosition.x;
-        if ( stru_721530.sMaxX <= v4 + v3 )
+        if ( stru_721530.sMaxX <= decor->vPosition.x + decor_desc->uRadius && stru_721530.sMinX >= decor->vPosition.x - decor_desc->uRadius 
+          && stru_721530.sMaxY <= decor->vPosition.y + decor_desc->uRadius && stru_721530.sMinY >= decor->vPosition.y - decor_desc->uRadius 
+          && stru_721530.sMaxZ <= decor->vPosition.z + decor_desc->uDecorationHeight && stru_721530.sMinZ >= decor->vPosition.z )
         {
-          if ( stru_721530.sMinX >= v4 - v3 )
+          v16 = decor->vPosition.x - stru_721530.normal.x;
+          v15 = decor->vPosition.y - stru_721530.normal.y;
+          v8 = stru_721530.prolly_normal_d + decor_desc->uRadius;
+          v17 = ((decor->vPosition.x - stru_721530.normal.x) * stru_721530.direction.y
+              - (decor->vPosition.y - stru_721530.normal.y) * stru_721530.direction.x) >> 16;
+          if ( abs(v17) <= stru_721530.prolly_normal_d + decor_desc->uRadius )
           {
-            v5 = v1->vPosition.y;
-            if ( stru_721530.sMaxY <= v5 + v3 )
+            v9 = (v16 * stru_721530.direction.x + v15 * stru_721530.direction.y) >> 16;
+            if ( v9 > 0 )
             {
-              if ( stru_721530.sMinY >= v5 - v3 )
+              v11 = stru_721530.normal.z + fixpoint_mul(stru_721530.direction.z, v9);
+              if ( v11 >= decor->vPosition.z )
               {
-                v6 = v2->uDecorationHeight;
-                v7 = v1->vPosition.z;
-                v18 = v6;
-                if ( stru_721530.sMaxZ <= v7 + v6 )
+                if ( v11 <= decor_desc->uDecorationHeight + decor->vPosition.z )
                 {
-                  if ( stru_721530.sMinZ >= v7 )
+                  v12 = v9 - integer_sqrt(v8 * v8 - v17 * v17);
+                  if ( v12 < 0 )
+                    v12 = 0;
+                  if ( v12 < stru_721530.field_7C )
                   {
-                    v16 = v4 - stru_721530.normal.x;
-                    v15 = v5 - stru_721530.normal.y;
-                    v8 = stru_721530.prolly_normal_d + v3;
-                    v17 = ((v4 - stru_721530.normal.x) * stru_721530.direction.y
-                         - (v5 - stru_721530.normal.y) * stru_721530.direction.x) >> 16;
-                    if ( abs(v17) <= stru_721530.prolly_normal_d + v3 )
-                    {
-                      v9 = (v16 * stru_721530.direction.x + v15 * stru_721530.direction.y) >> 16;
-                      if ( v9 > 0 )
-                      {
-                        v10 = v1->vPosition.z;
-                        v11 = stru_721530.normal.z + fixpoint_mul(stru_721530.direction.z, v9);
-                        if ( v11 >= v10 )
-                        {
-                          if ( v11 <= v18 + v10 )
-                          {
-                            v12 = v9 - integer_sqrt(v8 * v8 - v17 * v17);
-                            if ( v12 < 0 )
-                              v12 = 0;
-                            if ( v12 < stru_721530.field_7C )
-                            {
-                              stru_721530.field_7C = v12;
-                              v13 = 8 * v0->pDecorationIDs[i];
-                              LOBYTE(v13) = v13 | 5;
-                              stru_721530.uFaceID = v13;
-                            }
-                          }
-                        }
-                      }
-                    }
+                    stru_721530.field_7C = v12;
+                    v13 = 8 * sector->pDecorationIDs[i];
+                    LOBYTE(v13) = v13 | 5;
+                    stru_721530.uFaceID = v13;
                   }
                 }
               }
@@ -400,135 +143,58 @@ void sub_487DA9()
     array_77EC08[i].field_108 = 0;
 }
 
-//----- (0048A959) --------------------------------------------------------
-unsigned int ReplaceHSV(unsigned int uColor, float h_replace, float s_replace, float v_replace)
-{
-  float r = ((uColor & 0x00FF0000) >> 16) / 255.0f,
-        g = ((uColor & 0x0000FF00) >> 8) / 255.0f,
-        b = (uColor & 0x000000FF) / 255.0f;
-
-  float h, s, v;
-  RGB2HSV(&h, &s, r, g, b, &v);
-
-  if ( h_replace != -1.0 )
-    h = h_replace;
-  if ( s_replace != -1.0 )
-    s = s_replace;
-  if ( v_replace != -1.0 )
-    v = v_replace;
-  HSV2RGB(&r, &g, &b, h, s, v);
-
-  return (((uint)round(r * 255.0f) & 0xFF) << 16) |
-         (((uint)round(g * 255.0f) & 0xFF) << 8) |
-         (((uint)round(b * 255.0f) & 0xFF));
-}
-
-//----- (0048B561) --------------------------------------------------------
-int fixpoint_from_float(float val)
-{
-  //  float X.Yf -> int XXXX YYYY
-  int left = floorf((val - 0.5f) + 0.5f);
-  int right = floorf((val - left) * 65536.0f);
-  return (left << 16) | right;
-}
-
-int fixpoint_from_int(int lhv, int rhv)
-{
-  return (lhv << 16) | rhv;
-}
-
 //----- (00491E3A) --------------------------------------------------------
 void sub_491E3A()
 {
-  Player *v0; // ebx@1
   signed int v1; // esi@3
-  char *v2; // eax@4
   unsigned int v3; // eax@7
   unsigned int v4; // edx@8
-  char *v5; // ecx@9
   int v6; // edi@17
-  Texture *v7; // ebx@18
-  struct IDirect3DTexture2 **v8; // eax@19
-  struct IDirect3DTexture2 *v9; // eax@20
-  struct IDirectDrawSurface **v10; // eax@22
-  struct IDirectDrawSurface *v11; // eax@23
   int v12; // eax@26
 
-  v0 = pParty->pPlayers.data();
-  do
+  //__debugbreak();//Ritor1
+  for ( uint pl = 0; pl < 4; pl++ )
   {
     if (SoundSetAction[24][0])
     {
-      v1 = 0;
-      if ( (signed int)pSoundList->sNumSounds <= 0 )
+      v3 = 0;
+      for ( v1 = 0; v1 < (signed int)pSoundList->sNumSounds; ++v1 )
       {
-LABEL_7:
-        v3 = 0;
-      }
-      else
-      {
-        v2 = (char *)&pSoundList->pSounds->uSoundID;
-        while ( *(int *)v2 != 2 * (SoundSetAction[24][0] + 50 * v0->uVoiceID) + 4998 )
-        {
-          ++v1;
-          v2 += 120;
-          if ( v1 >= (signed int)pSoundList->sNumSounds )
-            goto LABEL_7;
-        }
-        v3 = v1;
+        int ps = 2 * (SoundSetAction[24][0] + 50 * pParty->pPlayers[pl].uVoiceID) + 4998;//6728
+        if ( pSoundList->pSL_Sounds[v1].uSoundID == 2 * (SoundSetAction[24][0] + 50 * pParty->pPlayers[pl].uVoiceID) + 4998 )
+          v3 = v1;
       }
       pSoundList->UnloadSound(v3, 1);
-      v4 = 0;
-      if ( (signed int)pSoundList->sNumSounds <= 0 )
+      for ( v4 = 0; (signed int)v4 < (signed int)pSoundList->sNumSounds; ++v4 )
       {
-LABEL_12:
-        v4 = 0;
+        if ( pSoundList->pSL_Sounds[v4].uSoundID == 2 * (SoundSetAction[24][0] + 50 * pParty->pPlayers[pl].uVoiceID) + 4999 )
+          pSoundList->UnloadSound(v4, 1);
       }
-      else
-      {
-        v5 = (char *)&pSoundList->pSounds->uSoundID;
-        while ( *(int *)v5 != 2 * (SoundSetAction[24][0] + 50 * v0->uVoiceID) + 4999 )
-        {
-          ++v4;
-          v5 += 120;
-          if ( (signed int)v4 >= (signed int)pSoundList->sNumSounds )
-            goto LABEL_12;
-        }
-      }
-      pSoundList->UnloadSound(v4, 1);
     }
-    ++v0;
   }
-  while ( (signed int)v0 < (signed int)pParty->pHirelings.data() );
   v6 = pIcons_LOD->uNumLoadedFiles - 1;
   if ( v6 >= pIcons_LOD->pFacesLock )
   {
-    v7 = &pIcons_LOD->pTextures[v6];
     do
     {
-      v7->Release();
-      v8 = pIcons_LOD->pHardwareTextures;
-      if ( v8 )
+      pIcons_LOD->pTextures[v6].Release();
+      if ( pIcons_LOD->pHardwareTextures )
       {
-        v9 = v8[v6];
-        if ( v9 )
+        if ( pIcons_LOD->pHardwareTextures[v6] )
         {
-          v9->Release();
+          pIcons_LOD->pHardwareTextures[v6]->Release();
           pIcons_LOD->pHardwareTextures[v6] = 0;
         }
       }
-      v10 = pIcons_LOD->pHardwareSurfaces;
-      if ( v10 )
+      if ( pIcons_LOD->pHardwareSurfaces )
       {
-        v11 = v10[v6];
-        if ( v11 )
+        if ( pIcons_LOD->pHardwareSurfaces[v6] )
         {
-          v11->Release();
+          pIcons_LOD->pHardwareSurfaces[v6]->Release();
           pIcons_LOD->pHardwareSurfaces[v6] = 0;
         }
       }
       --v6;
-      --v7;
     }
     while ( v6 >= pIcons_LOD->pFacesLock );
   }
@@ -539,86 +205,65 @@ LABEL_12:
 // 4ED498: using guessed type char byte_4ED498;
 
 //----- (00493938) --------------------------------------------------------
-int  _493938_regenerate()
+void _493938_regenerate()
 {
-  int v0; // edi@1
-  signed __int64 v1; // qax@1
-  int v2; // ecx@1
-  int result; // eax@1
+  int current_time; // edi@1
+  int last_reg_time; // qax@1
   int v4; // eax@2
   int v5; // edi@5
-  int *v6; // ecx@5
+  bool cursed_flag; // ecx@5
   char v7; // sf@5
   int *v8; // ecx@10
   int v9; // edi@15
   signed int v10; // eax@15
-  __int16 *v11; // edx@16
-  int v12; // eax@20
-  int v13; // ebx@20
-  unsigned int *v14; // esi@21
-  unsigned int v15; // ecx@21
-  unsigned int v16; // eax@21
-  int v17; // edx@21
-  int v18; // eax@21
+//  __int16 *v11; // edx@16
+//  int v12; // eax@20
+  int numberOfActorsAffected; // ebx@20
+  unsigned int v14; // esi@21
+  //unsigned int v15; // ecx@21
+  //unsigned int v16; // eax@21
+//  int v18; // eax@21
   signed int v19; // eax@21
-  signed int v20; // ebx@25
-  Player *v21; // esi@25
-  ITEM_EQUIP_TYPE v22; // edi@30
-  //int v23; // edx@31
-  signed int v24; // ecx@32
+  bool recovery_HP; // ebx@25
+//  ITEM_EQUIP_TYPE v22; // edi@30
   signed int v25; // eax@33
-  int v26; // eax@35
-  int v27; // eax@36
-  int v28; // eax@37
-  int v29; // eax@40
-  int v30; // eax@41
+//  int v26; // eax@35
+//  int v27; // eax@36
+//  int v28; // eax@37
   signed int v31; // ecx@53
-  char *v32; // eax@53
-  char *v33; // edi@82
-  int v34; // ecx@88
-  int v35; // eax@88
-  char *v36; // edi@99
-  int v37; // edi@104
-  int v38; // edi@106
-  int v39; // edi@111
-  int v40; // ecx@113
-  char v41[400]; // [sp+4h] [bp-22Ch]@20
+  int actorsAffectedByImmolation[100]; // [sp+4h] [bp-22Ch]@20
   SpriteObject a1; // [sp+194h] [bp-9Ch]@15
   Vec3_int_ a3; // [sp+204h] [bp-2Ch]@15
-  int v44; // [sp+210h] [bp-20h]@22
-  int v45; // [sp+214h] [bp-1Ch]@25
-  int v46; // [sp+218h] [bp-18h]@25
-  int v47; // [sp+21Ch] [bp-14h]@25
-  int v48; // [sp+220h] [bp-10h]@25
+  bool has_dragon_flag; // [sp+210h] [bp-20h]@22
+  bool lich_jar_flag; // [sp+214h] [bp-1Ch]@25
+  bool zombie_flag; // [sp+218h] [bp-18h]@25
+  bool decrease_HP; // [sp+21Ch] [bp-14h]@25
+  bool lich_flag; // [sp+220h] [bp-10h]@25
   int v49; // [sp+224h] [bp-Ch]@24
-  int v50; // [sp+228h] [bp-8h]@25
-  int v51; // [sp+22Ch] [bp-4h]@2
+  bool recovery_SP; // [sp+228h] [bp-8h]@25
+  bool redraw_flag; // [sp+22Ch] [bp-4h]@2
 
-  v0 = (signed int)(signed __int64)((double)(signed __int64)pParty->uTimePlayed * 0.234375) / 60;
-  v1 = (signed __int64)((double)pParty->uLastRegenerationTime * 0.234375);
-  v2 = (signed int)v1 / 60;
-  result = (signed int)v1 / 60 + 5;
-  if ( v0 >= result )
+  current_time = (signed int)(signed __int64)((double)(signed __int64)pParty->uTimePlayed * 0.234375) / 60;
+  last_reg_time = (signed int)(signed __int64)((double)pParty->uLastRegenerationTime * 0.234375) / 60;
+  if ( current_time >= (signed int)last_reg_time + 5 )
   {
-    v51 = 0;
-    v4 = (v0 - v2) / 5;
+    redraw_flag = false;
+    v4 = (current_time - last_reg_time) / 5;
     if (pParty->FlyActive())
     {
       if ( pParty->bFlying )
       {
         if ( !(pParty->pPartyBuffs[PARTY_BUFF_FLY].uFlags & 1) )
-        { // colliding with something in the air - fall down
+        {
           v5 = v4 * pParty->pPartyBuffs[PARTY_BUFF_FLY].uPower;
-          //__debugbreak();
-		  v6 = (int *)&pParty->pPlayers[pParty->pPartyBuffs[PARTY_BUFF_FLY].uCaster].pConditions[0];//&stru_AA1058[4].pSounds[6972 * pParty->pPartyBuffs[PARTY_BUFF_FLY].uCaster + 2000];
-          v7 = *v6 < v5;
-          *v6 -= v5;
-          if ( v7 )
+          cursed_flag = pParty->pPlayers[pParty->pPartyBuffs[PARTY_BUFF_FLY].uCaster - 1].pConditions[Condition_Cursed];//cursed
+          v7 = cursed_flag < v5;
+          //cursed_flag -= v5;
+          if ( !v7 )
           {
-            *v6 = 0;
             pParty->uFlags &= 0xFFFFFFBFu;
-            pParty->bFlying = 0;
-            v51 = 1;
+            pParty->bFlying = false;
+            redraw_flag = true;
           }
         }
       }
@@ -630,24 +275,21 @@ int  _493938_regenerate()
       {
         if ( !(pParty->pPartyBuffs[PARTY_BUFF_WATER_WALK].uFlags & 1) )
         { // taking on water
-          //__debugbreak();
-          v8 = (int *)&pParty->pPlayers[pParty->pPartyBuffs[PARTY_BUFF_WATER_WALK].uCaster].pConditions[0];//&stru_AA1058[4].pSounds[6972 * pParty->pPartyBuffs[PARTY_BUFF_WATER_WALK].uCaster + 2000];
+          v8 = (int *)&pParty->pPlayers[pParty->pPartyBuffs[PARTY_BUFF_WATER_WALK].uCaster - 1].pConditions[Condition_Cursed];//&AA1058_PartyQuickSpellSound[4].pSounds[6972 * pParty->pPartyBuffs[PARTY_BUFF_WATER_WALK].uCaster + 2000];
           v7 = *v8 < v4;
           *v8 -= v4;
           if ( v7 )
           {
             *v8 = 0;
             pParty->uFlags &= ~PARTY_FLAGS_1_STANDING_ON_WATER;
-            v51 = 1;
+            redraw_flag = true;
           }
         }
       }
     }
 
-    if (pParty->ImmolationActive())
+    if (pParty->ImmolationActive())//Жертва
     {
-      //SpriteObject::SpriteObject(&a1);
-      v9 = 0;
       a3.z = 0;
       a3.y = 0;
       a3.x = 0;
@@ -657,257 +299,188 @@ int  _493938_regenerate()
       v10 = 0;
       a1.uType = 1070;
       a1.spell_id = SPELL_FIRE_IMMOLATION;
-      if ( (signed int)pObjectList->uNumObjects <= 0 )
+      v10 = 0;
+      for (uint i = 0; i > pObjectList->uNumObjects; i++)
       {
-LABEL_19:
-        LOWORD(v10) = 0;
-      }
-      else
-      {
-        v11 = &pObjectList->pObjects->uObjectID;
-        while ( stru_4E3ACC[8].uType != *v11 )
-        {
-          ++v10;
-          v11 += 28;
-          if ( v10 >= (signed int)pObjectList->uNumObjects )
-            goto LABEL_19;
-        }
+        if (pObjectList->pObjects[i].uObjectID == stru_4E3ACC[8].uType) 
+          v10 = i;
       }
       a1.uObjectDescID = v10;
       a1.field_60_distance_related_prolly_lod = 0;
-      v12 = 8 * pParty->pPartyBuffs[PARTY_BUFF_IMMOLATION].uCaster;
-      LOBYTE(v12) = v12 | OBJECT_Player;
       a1.uAttributes = 0;
       a1.uSectorID = 0;
       a1.uSpriteFrameID = 0;
-      a1.spell_caster_pid = v12;
+      a1.spell_caster_pid = PID(OBJECT_Player, pParty->pPartyBuffs[PARTY_BUFF_IMMOLATION].uCaster);
       a1.uFacing = 0;
       a1.uSoundID = 0;
-      v13 = _46A89E_immolation_effect((int)v41, 100, 307);
-      if ( v13 > 0 )
+      numberOfActorsAffected = pParty->_46A89E_immolation_effect(actorsAffectedByImmolation, 100, 307);
+      for ( v9 = 0; v9 < numberOfActorsAffected; ++v9 )
       {
-        do
-        {
-          v14 = (unsigned int *)&v41[4 * v9];
-          v15 = *v14;
-          v16 = *v14;
-          a1.vPosition.x = pActors[v16].vPosition.x;
-          v17 = pActors[v16].vPosition.y;
-          a1.vPosition.z = pActors[v16].vPosition.z;
-          v18 = 8 * v15;
-          LOBYTE(v18) = PID(OBJECT_Actor,v15);
-          a1.vPosition.y = v17;
-          a1.spell_target_pid = v18;
-          v19 = a1.Create(0, 0, 0, 0);
-          DamageMonsterFromParty(PID(OBJECT_Item,v19), *v14, &a3);
-          ++v9;
-        }
-        while ( v9 < v13 );
+        v14 = actorsAffectedByImmolation[v9];
+        a1.vPosition.x = pActors[v14].vPosition.x;
+        a1.vPosition.y = pActors[v14].vPosition.y;
+        a1.vPosition.z = pActors[v14].vPosition.z;
+        a1.spell_target_pid = PID(OBJECT_Actor,v14);
+        v19 = a1.Create(0, 0, 0, 0);
+        Actor::DamageMonsterFromParty(PID(OBJECT_Item,v19), v14, &a3);
       }
     }
-    v44 = 0;
+
+    has_dragon_flag = false;
     if (PartyHasDragon())
-      v44 = 1;
-    v49 = 0;
-LABEL_25:
-    v20 = 0;
-    v21 = &pParty->pPlayers[v49];
-    v50 = 0;
-    v47 = 0;
-    v45 = 0;
-    v48 = 0;
-    v46 = 0;
-    if ( v44 && v21->classType == PLAYER_CLASS_WARLOCK )
-      v50 = 1;
-    if ( v21->classType == PLAYER_CLASS_LICH )
-      v48 = 1;
-    v22 = (ITEM_EQUIP_TYPE)0;
-    while ( 1 )
+      has_dragon_flag = true;
+
+    for ( v49 = 0; v49 < 4; v49++ )
     {
-      if ( v21->HasItemEquipped(v22) )
+      recovery_HP = false;
+      recovery_SP = false;
+      decrease_HP = false;
+      lich_flag = false;
+      lich_jar_flag = false;
+      zombie_flag = false;
+
+      for ( int v22 = 0; (signed int)v22 < 16; v22++ )
       {
-        //v23 = v21->pEquipment.pIndices;
-        uint _idx = v21->pEquipment.pIndices[v22];
-        v24 = v21->pInventoryItemList[_idx].uItemID;
-        if ( v24 > 134 )
+        if ( pParty->pPlayers[v49].HasItemEquipped((ITEM_EQUIP_TYPE)v22) )
         {
-          if ( v24 == 529 )
-            goto LABEL_43;
-          if ( v24 == 535 )
-            goto LABEL_44;
-          if ( v24 == 515 )
+          uint _idx = pParty->pPlayers[v49].pEquipment.pIndices[v22];
+          if ( pParty->pPlayers[v49].pInventoryItemList[_idx - 1].uItemID > 134 )
           {
-            v47 = 1;
+            if ( pParty->pPlayers[v49].pInventoryItemList[_idx - 1].uItemID == ITEM_RELIC_ETHRICS_STAFF )
+              decrease_HP = true;
+            if ( pParty->pPlayers[v49].pInventoryItemList[_idx - 1].uItemID == ITEM_ARTIFACT_HERMES_SANDALS )
+            {
+              recovery_HP = true;
+              recovery_SP = true;
+            }
+            if ( pParty->pPlayers[v49].pInventoryItemList[_idx - 1].uItemID == ITEM_ARTIFACT_MINDS_EYE )
+              recovery_SP = true;
+            if ( pParty->pPlayers[v49].pInventoryItemList[_idx - 1].uItemID == ITEM_ARTIFACT_HEROS_BELT )
+              recovery_HP = true;
           }
           else
           {
-            if ( v24 == 532 )
-              goto LABEL_50;
-          }
-        }
-        else
-        {
-          v25 = v21->pInventoryItemList[_idx].uSpecEnchantmentType;
-          if ( v25 <= 50 )
-          {
-            if ( v25 != 50 )
+            v25 = pParty->pPlayers[v49].pInventoryItemList[_idx - 1].uSpecEnchantmentType;
+            if ( v25 == 37 //of Regeneration("Regenerate 1hp/x while walking, etc")
+              || v25 == 44 //of Life("HP (+10), Regen hpts")
+              || v25 == 50 //of The Phoenix("Fire Res (+30), Regen hpts") && 
+              || v25 == 54 )// of The Troll("End (+15), Regen hpts")
+               recovery_HP = true;
+            if ( v25 == 38 //of Mana("Regenerate 1sp/x while walking, etc")
+              || v25 == 47 //of The Eclipse("SP (+10), Regen spts")
+              || v25 == 55 )//of The Unicorn("Luck (+15), Regen spts")
+               recovery_SP = true;
+            if ( v25 == 66 )// of Plenty("Regenerate 1 hp/x and 1 sp/x while walking, etc.")
             {
-              v26 = v25 - 37;
-              if ( v26 )
+              recovery_HP = true;
+              recovery_SP = true;
+            }
+          }
+
+          if (recovery_HP &&
+              !pParty->pPlayers[v49].pConditions[Condition_Dead] &&
+              !pParty->pPlayers[v49].pConditions[Condition_Eradicated])
+          {
+            if ( pParty->pPlayers[v49].sHealth < pParty->pPlayers[v49].GetMaxHealth() )
+              ++pParty->pPlayers[v49].sHealth;
+            if ( pParty->pPlayers[v49].pConditions[Condition_Unconcious] && pParty->pPlayers[v49].sHealth > 0 )
+              pParty->pPlayers[v49].pConditions[Condition_Unconcious] = 0;
+            redraw_flag = true;
+          }
+
+          if (recovery_SP &&
+              !pParty->pPlayers[v49].pConditions[Condition_Dead] &&
+              !pParty->pPlayers[v49].pConditions[Condition_Eradicated])
+          {
+            if ( pParty->pPlayers[v49].sMana < pParty->pPlayers[v49].GetMaxMana() )
+              ++pParty->pPlayers[v49].sMana;
+            redraw_flag = true;
+          }
+
+          if (decrease_HP &&
+              !pParty->pPlayers[v49].pConditions[Condition_Dead] &&
+              !pParty->pPlayers[v49].pConditions[Condition_Eradicated] )
+          {
+            --pParty->pPlayers[v49].sHealth;
+            if ( !(pParty->pPlayers[v49].pConditions[Condition_Unconcious]) && pParty->pPlayers[v49].sHealth < 0 )
+              pParty->pPlayers[v49].pConditions[Condition_Unconcious] = pParty->uTimePlayed;
+            if ( pParty->pPlayers[v49].sHealth < 1 )
+            {
+              if ( pParty->pPlayers[v49].sHealth + pParty->pPlayers[v49].uEndurance + pParty->pPlayers[v49].GetItemsBonus(CHARACTER_ATTRIBUTE_ENDURANCE) >= 1
+                || (signed __int64)pParty->pPlayers[v49].pPlayerBuffs[PLAYER_BUFF_PRESERVATION].uExpireTime > 0 )
+                 pParty->pPlayers[v49].pConditions[Condition_Unconcious] = pParty->uTimePlayed;
+              else
               {
-                v27 = v26 - 1;
-                if ( !v27 )
-                  goto LABEL_50;
-                v28 = v27 - 6;
-                if ( v28 )
-                {
-                  if ( v28 != 3 )
-                    goto LABEL_51;
-LABEL_50:
-                  v50 = 1;
-                  goto LABEL_51;
-                }
+                if ( !pParty->pPlayers[v49].pConditions[Condition_Dead] )
+                  pParty->pPlayers[v49].pConditions[Condition_Dead] = pParty->uTimePlayed;
               }
             }
-LABEL_44:
-            v20 = 1;
-            goto LABEL_51;
-          }
-          v29 = v25 - 54;
-          if ( !v29 )
-            goto LABEL_44;
-          v30 = v29 - 1;
-          if ( !v30 )
-            goto LABEL_50;
-          if ( v30 == 11 )
-          {
-LABEL_43:
-            v20 = 1;
-            v50 = 1;
-            goto LABEL_51;
+            redraw_flag = true;
           }
         }
       }
-LABEL_51:
-      v22 = (ITEM_EQUIP_TYPE)((int)v22 + 1);
-      if ( (signed int)v22 >= 16 )
+
+      //regeneration
+      if ( pParty->pPlayers[v49].pPlayerBuffs[PLAYER_BUFF_REGENERATION].uExpireTime > 0
+        && !pParty->pPlayers[v49].pConditions[Condition_Dead]
+        && !pParty->pPlayers[v49].pConditions[Condition_Eradicated] )
       {
-        if ( v48 )
+        pParty->pPlayers[v49].sHealth += 5 * pParty->pPlayers[v49].pPlayerBuffs[PLAYER_BUFF_REGENERATION].uPower;
+        if ( pParty->pPlayers[v49].sHealth > pParty->pPlayers[v49].GetMaxHealth() )
+          pParty->pPlayers[v49].sHealth = pParty->pPlayers[v49].GetMaxHealth();
+        if ( pParty->pPlayers[v49].pConditions[Condition_Unconcious] && pParty->pPlayers[v49].sHealth > 0 )
+          pParty->pPlayers[v49].pConditions[Condition_Unconcious] = 0;
+        redraw_flag = true;
+      }
+
+      //for warlock
+      if ( has_dragon_flag && pParty->pPlayers[v49].classType == PLAYER_CLASS_WARLOCK )
+      {
+        if ( pParty->pPlayers[v49].sMana < pParty->pPlayers[v49].GetMaxMana() )
+          ++pParty->pPlayers[v49].sMana;
+        redraw_flag = true;
+      }
+
+      //for lich
+      if ( pParty->pPlayers[v49].classType == PLAYER_CLASS_LICH )
+      {
+        for ( v31 = 0; v31 < 126; ++v31 )
         {
-          v31 = 0;
-          v32 = (char *)v21->pInventoryItemList.data();
-          while ( *(int *)v32 != 601 || (unsigned __int8)v32[26] != v49 + 1 )
-          {
-            ++v31;
-            v32 += 36;
-            if ( v31 >= 138 )
-              goto LABEL_59;
-          }
-          v48 = 0;
-          v45 = 1;
+          if ( pParty->pPlayers[v49].pInventoryItemList[v31].uItemID == ITEM_LICH_JAR_FULL )
+            lich_jar_flag = true;
         }
-LABEL_59:
-        if ( v21->pConditions[17] )
-          v46 = 1;
-        if ( v20 && !v21->pConditions[14] && !v21->pConditions[16] )
-        {
-          ++v21->sHealth;
-          if ( v21->sHealth > v21->GetMaxHealth() )
-            v21->sHealth = v21->GetMaxHealth();
-          if ( v21->pConditions[13] && v21->sHealth > 0 )
-          {
-            LODWORD(v21->pConditions[13]) = 0;
-            HIDWORD(v21->pConditions[13]) = 0;
-          }
-          v51 = 1;
-        }
-        if ( SHIDWORD(v21->pPlayerBuffs[12].uExpireTime) >= 0
-          && (SHIDWORD(v21->pPlayerBuffs[12].uExpireTime) > 0 || LODWORD(v21->pPlayerBuffs[12].uExpireTime))
-          && !v21->pConditions[14]
-          && !v21->pConditions[16] )
-        {
-          v21->sHealth += 5 * v21->pPlayerBuffs[12].uPower;
-          if ( v21->sHealth > v21->GetMaxHealth() )
-            v21->sHealth = v21->GetMaxHealth();
-          if ( v21->pConditions[13] && v21->sHealth > 0 )
-          {
-            LODWORD(v21->pConditions[13]) = 0;
-            HIDWORD(v21->pConditions[13]) = 0;
-          }
-          v51 = 1;
-        }
-        if ( v50 )
-        {
-          v33 = (char *)&v21->sMana;
-          ++*(int *)v33;
-          if ( v21->sMana > v21->GetMaxMana() )
-            *(int *)v33 = v21->GetMaxMana();
-          v51 = 1;
-        }
-        if ( v47 && !v21->pConditions[14] && !v21->pConditions[16] )
-        {
-          v34 = LODWORD(v21->pConditions[13]);
-          --v21->sHealth;
-          v35 = v21->sHealth;
-          if ( !(HIDWORD(v21->pConditions[13]) | v34) && v35 < 0 )
-            v21->pConditions[13] = pParty->uTimePlayed;
-          if ( v35 < 1 )
-          {
-            if ( v21->sHealth + v21->uEndurance + v21->GetItemsBonus(CHARACTER_ATTRIBUTE_ENDURANCE) >= 1
-              || (signed __int64)v21->pPlayerBuffs[11].uExpireTime > 0 )
-            {
-              v21->pConditions[13] = pParty->uTimePlayed;
-            }
-            else
-            {
-              if ( !v21->pConditions[14] )
-                v21->pConditions[14] = pParty->uTimePlayed;
-            }
-          }
-          v51 = 1;
-        }
-        if ( v45 )
-        {
-          v36 = (char *)&v21->sMana;
-          ++*(int *)v36;
-          if ( v21->sMana > v21->GetMaxMana() )
-            *(int *)v36 = v21->GetMaxMana();
-        }
-        if ( v48 && !v21->pConditions[14] && !v21->pConditions[16] )
-        {
-          v37 = v21->sHealth;
-          if ( v37 > v21->GetMaxHealth() / 2 )
-            v21->sHealth = v37 - 2;
-          v38 = v21->sMana;
-          if ( v38 > v21->GetMaxMana() / 2 )
-            v21->sMana = v38 - 2;
-        }
-        if ( v46 && !v21->pConditions[14] && !v21->pConditions[16] )
-        {
-          v39 = v21->sHealth;
-          if ( v39 > v21->GetMaxHealth() / 2 )
-            v21->sHealth = v39 - 1;
-          v40 = v21->sMana;
-          if ( v40 > 0 )
-            v21->sMana = v40 - 1;
-        }
-        ++v49;
-        if ( v49 >= 4 )
-        {
-          result = HIDWORD(pParty->uTimePlayed);
-          pParty->uLastRegenerationTime = pParty->uTimePlayed;
-          if ( !viewparams->bRedrawGameUI )
-          {
-            result = v51;
-            viewparams->bRedrawGameUI = v51;
-          }
-          return result;
-        }
-        goto LABEL_25;
+        lich_flag = true;
+      }
+      if ( lich_flag && !pParty->pPlayers[v49].pConditions[Condition_Dead]
+                     && !pParty->pPlayers[v49].pConditions[Condition_Eradicated] )
+      {
+        if ( pParty->pPlayers[v49].sHealth > pParty->pPlayers[v49].GetMaxHealth() / 2 )
+          pParty->pPlayers[v49].sHealth = pParty->pPlayers[v49].sHealth - 2;
+        if ( pParty->pPlayers[v49].sMana > pParty->pPlayers[v49].GetMaxMana() / 2 )
+          pParty->pPlayers[v49].sMana = pParty->pPlayers[v49].sMana - 2;
+      }
+      if ( lich_jar_flag )
+      {
+       if ( pParty->pPlayers[v49].sMana < pParty->pPlayers[v49].GetMaxMana() )
+          ++pParty->pPlayers[v49].sMana;
+      }
+
+      //for zombie
+      if ( pParty->pPlayers[v49].pConditions[Condition_Zombie] )
+        zombie_flag = true;
+      if ( zombie_flag && !pParty->pPlayers[v49].pConditions[Condition_Dead]
+                       && !pParty->pPlayers[v49].pConditions[Condition_Eradicated] )
+      {
+        if ( pParty->pPlayers[v49].sHealth > pParty->pPlayers[v49].GetMaxHealth() / 2 )
+          pParty->pPlayers[v49].sHealth = pParty->pPlayers[v49].sHealth - 1;
+        if ( pParty->pPlayers[v49].sMana > 0 )
+          pParty->pPlayers[v49].sMana = pParty->pPlayers[v49].sMana - 1;
       }
     }
+    pParty->uLastRegenerationTime = pParty->uTimePlayed;
+    if ( !viewparams->bRedrawGameUI )
+      viewparams->bRedrawGameUI = redraw_flag;
   }
-  return result;
 }
 
 //----- (00493F79) --------------------------------------------------------
@@ -937,90 +510,41 @@ void init_summoned_item(stru351_summoned_item *_this, __int64 duration)
 void _494035_timed_effects__water_walking_damage__etc()
 {
   signed __int64 v0; // qax@1
-  signed __int64 v1; // ST30_8@1
-  signed __int64 v2; // ST38_8@1
-  unsigned __int64 v3; // qax@1
   unsigned int v4; // edi@1
-  //signed int v5; // eax@4
-  //char *v6; // ecx@5
-  //Player *v7; // esi@8
-  //char *v8; // ecx@12
-  //Player *pPlayer; // esi@15
-  //void *v10; // esi@25
-  unsigned int v11; // ecx@27
-  signed int v12; // edi@29
-  //Player *v13; // ecx@30
-  //Player *v14; // esi@35
-  //double v15; // st7@35
-  Player **v16; // esi@43
-  Player *v17; // edi@44
-  double v18; // st7@44
-  //float v19; // ST28_4@48
-  //double v20; // ST38_8@48
-  Player *v21; // esi@51
-  signed int v22; // edi@53
-  int v23; // eax@59
+//  signed int v12; // edi@29
   int v24; // ecx@60
-  int v25; // eax@63
   int v26; // ecx@64
-  int v27; // eax@67
   int v28; // ecx@68
-  int v29; // eax@71
   int v30; // ecx@72
-  int v31; // eax@75
   int v32; // ecx@76
-  int v33; // eax@79
   int v34; // ecx@80
-  int v35; // eax@83
   int v36; // ecx@84
-  int v37; // eax@87
   int v38; // ecx@88
-  int v39; // eax@91
   int v40; // ecx@92
-  int v41; // eax@95
   int v42; // ecx@96
   bool v43; // ebx@102
-  //SpellBuff *v44; // edi@104
-  //signed int v45; // ebp@104
   bool v46; // edi@111
-  //SpellBuff *v47; // esi@113
-  //Player **v48; // esi@119
-  //signed int v49; // edi@121
-  //char *v50; // esi@122
-  signed int v51; // edx@128
-  signed int v52; // ecx@130
-  int v53; // eax@131
-  Player *v54; // eax@141
-  //unsigned int v55; // [sp-8h] [bp-38h]@18
-  unsigned int v56; // [sp-8h] [bp-38h]@55
-  //int v57; // [sp-4h] [bp-34h]@18
-  //int v58; // [sp-4h] [bp-34h]@33
-  int v59; // [sp-4h] [bp-34h]@55
-  //unsigned int v60; // [sp+10h] [bp-20h]@1
-  unsigned int v61; // [sp+14h] [bp-1Ch]@1
-  Player **v62; // [sp+14h] [bp-1Ch]@50
-  //unsigned int a2; // [sp+18h] [bp-18h]@1
+//  unsigned int v56; // [sp-8h] [bp-38h]@55
+//  int v59; // [sp-4h] [bp-34h]@55
+//  unsigned int v61; // [sp+14h] [bp-1Ch]@1
   signed int a2a; // [sp+18h] [bp-18h]@47
-  signed int v65; // [sp+1Ch] [bp-14h]@47
+  signed int old_day; // [sp+1Ch] [bp-14h]@47
+  signed int old_hour;
 
-  //a2 = pParty->uCurrentHour;
-  v61 = pParty->uDaysPlayed;
+  old_day = pParty->uDaysPlayed;
+  old_hour = pParty->uCurrentHour;
   //auto prev_time = pEventTimer->uTimeElapsed;
   pParty->uTimePlayed += pEventTimer->uTimeElapsed;
-  v0 = (signed __int64)(pParty->uTimePlayed * 0.234375) / 60;
-  v1 = v0;
-  v0 /= 60i64;
-  v2 = v0;
-  v3 = (unsigned int)v0 / 24;
-  v4 = (unsigned int)(v3 / 7) >> 2;
+  v0 = ((signed __int64)(pParty->uTimePlayed * 0.234375) / 60)/60i64;
+  v4 = (unsigned int)(((unsigned int)v0 / 24) / 7) >> 2;
   pParty->uCurrentTimeSecond = (signed __int64)((double)(signed __int64)pParty->uTimePlayed * 0.234375) % 60;
-  pParty->uCurrentMinute = v1 % 60;
-  pParty->uCurrentMonthWeek = v3 / 7 & 3;
-  pParty->uCurrentHour = v2 % 24;
-  pParty->uDaysPlayed = (unsigned int)v3 % 28;
+  pParty->uCurrentMinute = ((signed __int64)(pParty->uTimePlayed * 0.234375) / 60) % 60;
+  pParty->uCurrentHour = v0 % 24;
+  pParty->uCurrentMonthWeek = ((unsigned int)v0 / 24) / 7 & 3;
+  pParty->uDaysPlayed = (unsigned int)((unsigned int)v0 / 24) % 28;
   pParty->uCurrentMonth = v4 % 12;
   pParty->uCurrentYear = v4 / 0xC + game_starting_year;
-  if ( pParty->uCurrentHour >= 3 && (pParty->uCurrentHour < 3 || pParty->uDaysPlayed > v61) ) // new day dawns
+  if ( pParty->uCurrentHour >= 3 && (old_hour < 3 || pParty->uDaysPlayed > old_day) ) // new day dawns
   {
     pParty->pHirelings[0].bHasUsedTheAbility = false;
     pParty->pHirelings[1].bHasUsedTheAbility = false;
@@ -1041,20 +565,18 @@ void _494035_timed_effects__water_walking_damage__etc()
           pParty->pPlayers[i].sHealth = pParty->pPlayers[i].sHealth / (pParty->days_played_without_rest + 1) + 1;
 
       if (pParty->days_played_without_rest > 3)
-        for (uint i = 0; i < 4; ++i)
+      for ( uint i = 0; i < 4; ++i )
+      {
+        pParty->pPlayers[i].Zero();
+        if (!pParty->pPlayers[i].IsPertified() && !pParty->pPlayers[i].IsEradicated()
+         && !pParty->pPlayers[i].IsDead())
         {
-          Player* player = &pParty->pPlayers[i];
-
-          player->Zero();
-
-          if (!player->IsPertified() && !player->IsEradicated() && !player->IsDead())
-          {
-            if (rand() % 100 < 5 * pParty->days_played_without_rest)
-              player->SetCondDeadWithBlockCheck(0);
-            if (rand() % 100 < 10 * pParty->days_played_without_rest)
-              player->SetCondInsaneWithBlockCheck(0);
-          }
+          if (rand() % 100 < 5 * pParty->days_played_without_rest)
+            pParty->pPlayers[i].SetCondDeadWithBlockCheck(0);
+          if (rand() % 100 < 10 * pParty->days_played_without_rest)
+            pParty->pPlayers[i].SetCondInsaneWithBlockCheck(0);
         }
+      }
     }
     if (uCurrentlyLoadedLevelType == LEVEL_Outdoor)
       pOutdoor->SetFog();
@@ -1063,259 +585,198 @@ void _494035_timed_effects__water_walking_damage__etc()
       pParty->pPlayers[i].uNumDivineInterventionCastsThisDay = 0;
   }
 
-  v11 = LODWORD(pParty->uTimePlayed);
-  if ( pParty->uFlags & 4 && pParty->field_6FC < (signed __int64)pParty->uTimePlayed )//water damage error
+  if ( pParty->uFlags & 4 && pParty->field_6FC < (signed __int64)pParty->uTimePlayed )//water damage
   {
-    //v12 = 1;
-    pParty->field_6FC = LODWORD(pParty->uTimePlayed) + 128;
-    viewparams->bRedrawGameUI = 1;
-    //while ( 1 )
-    for ( v12 = 1; v12 <= 4; ++v12 )
+    pParty->field_6FC = (signed __int64)pParty->uTimePlayed + 128;
+    viewparams->bRedrawGameUI = true;
+    for ( uint pl = 1; pl <= 4; ++pl )
     {
-      if ( pPlayers[v12]->WearsItem(ITEM_RELIC_HARECS_LEATHER, EQUIP_ARMOUR)
-        || pPlayers[v12]->HasEnchantedItemEquipped(71)
-        || pPlayers[v12]->pPlayerBuffs[23].uExpireTime > 0 )
-      {
-        //v58 = 0;
-        pPlayers[v12]->PlayEmotion(CHARACTER_EXPRESSION_37, 0);
-      }
+      if ( pPlayers[pl]->WearsItem(ITEM_RELIC_HARECS_LEATHER, EQUIP_ARMOUR)
+        || pPlayers[pl]->HasEnchantedItemEquipped(71)
+        || pPlayers[pl]->pPlayerBuffs[PLAYER_BUFF_WATER_WALK].uExpireTime > 0 )
+         pPlayers[pl]->PlayEmotion(CHARACTER_EXPRESSION_37, 0);
       else
       {
-        //v58 = 0;
-        if ( !pPlayers[v12]->HasUnderwaterSuitEquipped() )
+        if ( !pPlayers[pl]->HasUnderwaterSuitEquipped() )
         {
-          //v14 = pPlayers[v12];
-          //v15 = (double)pPlayers[v12]->GetMaxHealth() * 0.1;
-          pPlayers[v12]->ReceiveDamage((signed __int64)pPlayers[v12]->GetMaxHealth() * 0.1, DMGT_FIRE);
+          pPlayers[pl]->ReceiveDamage((signed __int64)pPlayers[pl]->GetMaxHealth() * 0.1, DMGT_FIRE);
           if ( pParty->uFlags & 4 )
           {
-            strcpy(GameUI_Footer_TimedString.data(), pGlobalTXT_LocalizationStrings[660]);
+            strcpy(GameUI_Footer_TimedString.data(), pGlobalTXT_LocalizationStrings[660]);// Вы тонете!
             GameUI_Footer_TimeLeft = 128;
           }
         }
-		else
-			pPlayers[v12]->PlayEmotion(CHARACTER_EXPRESSION_37, 0);
+        else
+          pPlayers[pl]->PlayEmotion(CHARACTER_EXPRESSION_37, 0);
       }
-      //++v12;
-      //if ( v12 > 4 )
-      //{
-        //v11 = LODWORD(pParty->uTimePlayed);
-        //break;
-      }
-      v11 = LODWORD(pParty->uTimePlayed);
-    //}
+    }
   }
-  if ( pParty->uFlags & 0x200 && pParty->field_6FC < (signed __int64)__PAIR__(HIDWORD(pParty->uTimePlayed), v11) )
+  if ( pParty->uFlags & 0x200 && pParty->field_6FC < (signed __int64)pParty->uTimePlayed ) //lava damage
   {
-    viewparams->bRedrawGameUI = 1;
-    pParty->field_6FC = v11 + 128;
-    v16 = &pPlayers[1];
-    do
+    viewparams->bRedrawGameUI = true;
+    pParty->field_6FC = (signed __int64)pParty->uTimePlayed + 128;
+    
+    for ( uint pl = 1; pl <= 4; pl++ )
     {
-      v17 = *v16;
-      v18 = (double)(*v16)->GetMaxHealth() * 0.1;
-      v17->ReceiveDamage((signed __int64)v18, DMGT_FIRE);
+      pPlayers[pl]->ReceiveDamage((signed __int64)pPlayers[pl]->GetMaxHealth() * 0.1, DMGT_FIRE);
       if ( pParty->uFlags & 0x200 )
       {
-        strcpy(GameUI_Footer_TimedString.data(), pGlobalTXT_LocalizationStrings[661]);
+        strcpy(GameUI_Footer_TimedString.data(), pGlobalTXT_LocalizationStrings[661]); //Вы горите!
         GameUI_Footer_TimeLeft = 128;
       }
-      ++v16;
     }
-    while ( (signed int)v16 <= (signed int)&pPlayers[4] );
   }
   _493938_regenerate();
-  v65 = 4;
+  uint party_condition_flag = 4;
   a2a = pEventTimer->uTimeElapsed;
-  if ( pParty->uFlags2 & PARTY_FLAGS_2_RUNNING )
+  if ( pParty->uFlags2 & PARTY_FLAGS_2_RUNNING )//замедление восстановления при беге
   {
-    //v19 = (double)(signed int)prev_time * 0.5;
-    //v20 = v19 + 6.7553994e15;
     a2a *= 0.5f;
     if (a2a < 1)
       a2a = 1;
   }
-  v62 = &pPlayers[1];
-  do
+  
+  for ( uint pl = 1; pl <= 4; pl++ )
   {
-    v21 = *v62;
-    if ( (*v62)->uTimeToRecovery )
-      v21->Recover(a2a);
-    v22 = v21->sHealth;
-    if ( v21->GetItemsBonus(CHARACTER_ATTRIBUTE_ENDURANCE) + v22 + v21->uEndurance >= 1
-      || (signed __int64)v21->pPlayerBuffs[11].uExpireTime > 0 )
+    if ( pPlayers[pl]->uTimeToRecovery )
+      pPlayers[pl]->Recover(a2a);//восстановление активности
+    if ( pPlayers[pl]->GetItemsBonus(CHARACTER_ATTRIBUTE_ENDURANCE) + pPlayers[pl]->sHealth + pPlayers[pl]->uEndurance >= 1
+      || (signed __int64)pPlayers[pl]->pPlayerBuffs[PLAYER_BUFF_PRESERVATION].uExpireTime > 0 )
     {
-      if ( v22 < 1 )
-	  {
-		  v59 = 0;
-		  v56 = 13;
-		  v21->SetCondition(v56, v59);
-	  }
+      if ( pPlayers[pl]->sHealth < 1 )
+        pPlayers[pl]->SetCondition(Condition_Unconcious, 0);
     }
     else
+      pPlayers[pl]->SetCondition(Condition_Dead, 0);
+    if ( pPlayers[pl]->field_E0 )
     {
-      v59 = 0;
-      v56 = 14;
-	  v21->SetCondition(v56, v59);
-    }
-    v23 = (int)&v21->field_E0;
-    if ( v21->field_E0 )
-    {
-      v24 = *(int *)v23 - pEventTimer->uTimeElapsed;
+      v24 = pPlayers[pl]->field_E0 - pEventTimer->uTimeElapsed;
       if ( v24 > 0 )
-      {
-        *(int *)v23 = v24;
-      }
+        pPlayers[pl]->field_E0 = v24;
       else
       {
-        *(int *)v23 = 0;
-        viewparams->bRedrawGameUI = 1;
+        pPlayers[pl]->field_E0 = 0;
+        viewparams->bRedrawGameUI = true;
       }
     }
-    v25 = (int)&v21->field_E4;
-    if ( v21->field_E4 )
+    if ( pPlayers[pl]->field_E4 )
     {
-      v26 = *(int *)v25 - pEventTimer->uTimeElapsed;
+      v26 = pPlayers[pl]->field_E4 - pEventTimer->uTimeElapsed;
       if ( v26 > 0 )
-      {
-        *(int *)v25 = v26;
-      }
+        pPlayers[pl]->field_E4 = v26;
       else
       {
-        *(int *)v25 = 0;
-        viewparams->bRedrawGameUI = 1;
+        pPlayers[pl]->field_E4 = 0;
+        viewparams->bRedrawGameUI = true;
       }
     }
-    v27 = (int)&v21->field_E8;
-    if ( v21->field_E8 )
+    if ( pPlayers[pl]->field_E8 )
     {
-      v28 = *(int *)v27 - pEventTimer->uTimeElapsed;
+      v28 = pPlayers[pl]->field_E8 - pEventTimer->uTimeElapsed;
       if ( v28 > 0 )
-      {
-        *(int *)v27 = v28;
-      }
+        pPlayers[pl]->field_E8 = v28;
       else
       {
-        *(int *)v27 = 0;
-        viewparams->bRedrawGameUI = 1;
+        pPlayers[pl]->field_E8 = 0;
+        viewparams->bRedrawGameUI = true;
       }
     }
-    v29 = (int)&v21->field_EC;
-    if ( v21->field_EC )
+    if ( pPlayers[pl]->field_EC )
     {
-      v30 = *(int *)v29 - pEventTimer->uTimeElapsed;
+      v30 = pPlayers[pl]->field_EC - pEventTimer->uTimeElapsed;
       if ( v30 > 0 )
-      {
-        *(int *)v29 = v30;
-      }
+        pPlayers[pl]->field_EC = v30;
       else
       {
-        *(int *)v29 = 0;
-        viewparams->bRedrawGameUI = 1;
+        pPlayers[pl]->field_EC = 0;
+        viewparams->bRedrawGameUI = true;
       }
     }
-    v31 = (int)&v21->field_F0;
-    if ( v21->field_F0 )
+    if ( pPlayers[pl]->field_F0 )
     {
-      v32 = *(int *)v31 - pEventTimer->uTimeElapsed;
+      v32 = pPlayers[pl]->field_F0 - pEventTimer->uTimeElapsed;
       if ( v32 > 0 )
-      {
-        *(int *)v31 = v32;
-      }
+        pPlayers[pl]->field_F0 = v32;
       else
       {
-        *(int *)v31 = 0;
-        viewparams->bRedrawGameUI = 1;
+        pPlayers[pl]->field_F0 = 0;
+        viewparams->bRedrawGameUI = true;
       }
     }
-    v33 = (int)&v21->field_F4;
-    if ( v21->field_F4 )
+    if ( pPlayers[pl]->field_F4 )
     {
-      v34 = *(int *)v33 - pEventTimer->uTimeElapsed;
+      v34 = pPlayers[pl]->field_F4 - pEventTimer->uTimeElapsed;
       if ( v34 > 0 )
-      {
-        *(int *)v33 = v34;
-      }
+        pPlayers[pl]->field_F4 = v34;
       else
       {
-        *(int *)v33 = 0;
-        viewparams->bRedrawGameUI = 1;
+        pPlayers[pl]->field_F4 = 0;
+        viewparams->bRedrawGameUI = true;
       }
     }
-    v35 = (int)&v21->field_F8;
-    if ( v21->field_F8 )
+    if ( pPlayers[pl]->field_F8 )
     {
-      v36 = *(int *)v35 - pEventTimer->uTimeElapsed;
+      v36 = pPlayers[pl]->field_F8 - pEventTimer->uTimeElapsed;
       if ( v36 > 0 )
-      {
-        *(int *)v35 = v36;
-      }
+        pPlayers[pl]->field_F8 = v36;
       else
       {
-        *(int *)v35 = 0;
-        viewparams->bRedrawGameUI = 1;
+        pPlayers[pl]->field_F8 = 0;
+        viewparams->bRedrawGameUI = true;
       }
     }
-    v37 = (int)&v21->field_FC;
-    if ( v21->field_FC )
+    if ( pPlayers[pl]->field_FC )
     {
-      v38 = *(int *)v37 - pEventTimer->uTimeElapsed;
+      v38 = pPlayers[pl]->field_FC - pEventTimer->uTimeElapsed;
       if ( v38 > 0 )
-      {
-        *(int *)v37 = v38;
-      }
+        pPlayers[pl]->field_FC = v38;
       else
       {
-        *(int *)v37 = 0;
-        viewparams->bRedrawGameUI = 1;
+        pPlayers[pl]->field_FC = 0;
+        viewparams->bRedrawGameUI = true;
       }
     }
-    v39 = (int)&v21->field_100;
-    if ( v21->field_100 )
+    if ( pPlayers[pl]->field_100 )
     {
-      v40 = *(int *)v39 - pEventTimer->uTimeElapsed;
+      v40 = pPlayers[pl]->field_100 - pEventTimer->uTimeElapsed;
       if ( v40 > 0 )
-      {
-        *(int *)v39 = v40;
-      }
+        pPlayers[pl]->field_100 = v40;
       else
       {
-        *(int *)v39 = 0;
-        viewparams->bRedrawGameUI = 1;
+        pPlayers[pl]->field_100 = 0;
+        viewparams->bRedrawGameUI = true;
       }
     }
-    v41 = (int)&v21->field_104;
-    if ( v21->field_104 )
+    if ( pPlayers[pl]->field_104 )
     {
-      v42 = *(int *)v41 - pEventTimer->uTimeElapsed;
+      v42 = pPlayers[pl]->field_104 - pEventTimer->uTimeElapsed;
       if ( v42 > 0 )
-      {
-        *(int *)v41 = v42;
-      }
+        pPlayers[pl]->field_104 = v42;
       else
       {
-        *(int *)v41 = 0;
-        viewparams->bRedrawGameUI = 1;
+        pPlayers[pl]->field_104 = 0;
+        viewparams->bRedrawGameUI = true;
       }
     }
-    if ( v21->pConditions[2] | v21->pConditions[12] | v21->pConditions[13] | v21->pConditions[14] | v21->pConditions[15] | v21->pConditions[16] )
-      --v65;
-    v43 = (signed __int64)v21->pPlayerBuffs[7].uExpireTime > 0;
+    if ( pPlayers[pl]->pConditions[Condition_Sleep] | pPlayers[pl]->pConditions[Condition_Paralyzed]
+       | pPlayers[pl]->pConditions[Condition_Unconcious] | pPlayers[pl]->pConditions[Condition_Dead]
+       | pPlayers[pl]->pConditions[Condition_Pertified] | pPlayers[pl]->pConditions[Condition_Eradicated] )
+      --party_condition_flag;
+    v43 = (signed __int64)pPlayers[pl]->pPlayerBuffs[PLAYER_BUFF_HASTE].uExpireTime > 0; //спешка
 
-    for (uint k = 0; k < 24; ++k)
-      v21->pPlayerBuffs[k].IsBuffExpiredToTime(pParty->uTimePlayed);
+    for ( uint k = 0; k < 24; ++k )
+      pPlayers[pl]->pPlayerBuffs[k].IsBuffExpiredToTime(pParty->uTimePlayed);
 
-    if ( v43 && (signed __int64)v21->pPlayerBuffs[7].uExpireTime <= 0 )
-      v21->SetCondition(1u, 0);
-    ++v62;
+    if ( v43 && (signed __int64)pPlayers[pl]->pPlayerBuffs[7].uExpireTime <= 0 )
+      pPlayers[pl]->SetCondition(Condition_Weak, 0);
   }
-  while ( (signed int)v62 <= (signed int)&pPlayers[4] );
+
   v46 = (signed __int64)pParty->pPartyBuffs[PARTY_BUFF_HASTE].uExpireTime > 0;
 
   for (uint i = 0; i < 20; ++i)
   {
     if (pParty->pPartyBuffs[i].IsBuffExpiredToTime(pParty->uTimePlayed) == 1)
-      viewparams->bRedrawGameUI = 1;
+      viewparams->bRedrawGameUI = true;
   }
 
   if ( v46 && (signed __int64)pParty->pPartyBuffs[PARTY_BUFF_HASTE].uExpireTime <= 0 )
@@ -1324,9 +785,9 @@ void _494035_timed_effects__water_walking_damage__etc()
       pParty->pPlayers[i].SetCondition(1, 0);
   }
 
-  for (uint i = 0; i < 2; ++i)
+  for (uint i = 0; i < 2; ++i)//Проверка в сознании ли перс сделавший закл на полёт и хождение по воде
   {
-    SpellBuff* pBuf = &pParty->pPartyBuffs[dword_4EE07C[i]];
+    SpellBuff* pBuf = &pParty->pPartyBuffs[Party_Spec_Motion_status_ids[i]];
     if (pBuf->uExpireTime == 0)
       continue;
 
@@ -1335,48 +796,42 @@ void _494035_timed_effects__water_walking_damage__etc()
       if (!pPlayers[pBuf->uCaster]->CanAct())
       {
         pBuf->Reset();
-        if (dword_4EE07C[i] == 7 )
+        if (Party_Spec_Motion_status_ids[i] == PARTY_BUFF_FLY )
           pParty->bFlying = false;
       }
     }
   }
 
-  v51 = v65;
-  if ( v65 )
-    goto LABEL_135;
-  if ( pCurrentScreen != SCREEN_REST )
-  {
-    v52 = (signed int)&pPlayers[1];
-    while ( 1 )
-    {
-      v53 = *(int *)v52;
-      if ( *(_QWORD *)(*(int *)v52 + 16) )
-        break;
-      v52 += 4;
-      if ( v52 > (signed int)&pPlayers[4] )
-        goto LABEL_135;
-    }
-    *(int *)(v53 + 16) = 0;
-    *(int *)(v53 + 20) = 0;
-    v51 = 1;
-LABEL_135:
-    if ( pCurrentScreen != SCREEN_REST
-      && (!v51 || dword_5C35C0) )
-      uGameState = GAME_STATE_PARTY_DIED;
-  }
-  if ( uActiveCharacter )
+  if ( !party_condition_flag )
   {
     if ( pCurrentScreen != SCREEN_REST )
     {
-      v54 = pPlayers[uActiveCharacter];
-      if ( v54->pConditions[2]
-        || v54->pConditions[12]
-        || v54->pConditions[13]
-        || v54->pConditions[14]
-        || v54->pConditions[15]
-        || v54->pConditions[16] )
+      for ( uint pl = 1; pl <= 4; pl++ )
       {
-        viewparams->bRedrawGameUI = 1;
+        if ( pPlayers[pl]->pConditions[Condition_Sleep] )
+        {
+          pPlayers[pl]->pConditions[Condition_Sleep] = 0;
+          party_condition_flag = 1;
+          break;
+        }
+      }
+      if ( !party_condition_flag || _5C35C0_force_party_death )
+        uGameState = GAME_STATE_PARTY_DIED;
+    }
+  }
+
+  if ( uActiveCharacter )//выбор следующего после пропускающего ход
+  {
+    if ( pCurrentScreen != SCREEN_REST )
+    {
+      if ( pPlayers[uActiveCharacter]->pConditions[Condition_Sleep]
+        || pPlayers[uActiveCharacter]->pConditions[Condition_Paralyzed]
+        || pPlayers[uActiveCharacter]->pConditions[Condition_Unconcious]
+        || pPlayers[uActiveCharacter]->pConditions[Condition_Dead]
+        || pPlayers[uActiveCharacter]->pConditions[Condition_Pertified]
+        || pPlayers[uActiveCharacter]->pConditions[Condition_Eradicated] )
+      {
+        viewparams->bRedrawGameUI = true;
         uActiveCharacter = pParty->GetNextActiveCharacter();
       }
     }
@@ -1395,40 +850,37 @@ unsigned int __fastcall _494820_training_time(unsigned int a1)
 }
 
 //----- (00494836) --------------------------------------------------------
-int stru339_spell_sound::_494836(int uSoundID, int a6)
+int stru339_spell_sound::AddPartySpellSound(int uSoundID, int a6)
 {
   int v3; // esi@1
   int result; // eax@1
-  stru339_spell_sound *v5; // ebx@1
-  int *v6; // edi@2
+  //stru339_spell_sound *v5; // ebx@1
+  //int *v6; // edi@2
   unsigned int v7; // eax@3
   int v8; // [sp+Ch] [bp-8h]@3
   int v9; // [sp+10h] [bp-4h]@2
   int a2a; // [sp+1Ch] [bp+8h]@1
-  return 0;
+  //return 0;
   v3 = 0;
   result = word_4EE088_sound_ids[uSoundID];
-  v5 = this;
+  //v5 = this;
   a2a = word_4EE088_sound_ids[uSoundID];
-  if ( result )
+  if ( word_4EE088_sound_ids[uSoundID] )
   {
-    v9 = 0;
-    v6 = this->pSoundsOffsets;
-    do
+    //v6 = this->pSoundsOffsets;
+    for ( v9 = 0; v9 < 2; ++v9 )
     {
       v7 = a2a++;
-      result = pSoundList->LoadSound(v7, (char *)v5 + v3, 44744 - v3, &v8, a6);
+      result = pSoundList->LoadSound(v7, (char *)this + v3, 44744 - v3, &v8, a6);
       if ( !result )
         break;
       a6 += 4;
       result = v8 + 256;
-      *v6 = v3;
+      this->pSoundsOffsets[v9] = v3;
       v3 += result;
-      ++v9;
-      *(v6 - 2) = result;
-      ++v6;
+      this->pSoundsSizes[v9] = v8 + 256;
+      //++v6;
     }
-    while ( v9 < 2 );
   }
   return result;
 }
@@ -1437,36 +889,18 @@ int stru339_spell_sound::_494836(int uSoundID, int a6)
 //----- (00494AED) --------------------------------------------------------
 unsigned int PlayerFrameTable::GetFrameIdByExpression(CHARACTER_EXPRESSION_ID expression)
 {
-  unsigned int _uNumFrames; // edx@1
-  unsigned int result; // eax@1
-  PlayerFrame *v4; // ecx@2
-
-  _uNumFrames = this->uNumFrames;
-  result = 0;
-  if ( (signed int)this->uNumFrames <= 0 )
+  for ( uint i = 0; i < this->uNumFrames; i++ )
   {
-    result = 0;
+    if ( this->pFrames[i].expression == expression )
+      return i;
   }
-  else
-  {
-    v4 = this->pFrames;
-    while ( v4->expression != expression )
-    {
-      ++result;
-      ++v4;
-      if ( (signed int)result >= (signed int)_uNumFrames )
-        return 0;
-    }
-  }
-  return result;
+  return 0;
 }
 
 //----- (00494B10) --------------------------------------------------------
 PlayerFrame *PlayerFrameTable::GetFrameBy_x(unsigned int uFramesetID, unsigned int uFrameID)
 {
   unsigned int v3; // esi@1
-  PlayerFrame *v4; // edi@1
-  PlayerFrame *v5; // ecx@1
   __int16 v6; // dx@2
   int v7; // edx@3
   char *i; // eax@3
@@ -1474,12 +908,10 @@ PlayerFrame *PlayerFrameTable::GetFrameBy_x(unsigned int uFramesetID, unsigned i
   PlayerFrame *result; // eax@6
 
   v3 = uFramesetID;
-  v4 = this->pFrames;
-  v5 = &v4[uFramesetID];
-  if ( v5->uFlags & 1 && (v6 = v5->uAnimLength) != 0 )
+  if ( this->pFrames[uFramesetID].uFlags & 1 && (v6 = this->pFrames[uFramesetID].uAnimLength) != 0 )
   {
     v7 = ((signed int)uFrameID >> 3) % (unsigned __int16)v6;
-    for ( i = (char *)&v5->uAnimTime; ; i += 10 )
+    for ( i = (char *)&this->pFrames[uFramesetID].uAnimTime; ; i += 10 )
     {
       v9 = *(short *)i;
       if ( v7 <= v9 )
@@ -1487,35 +919,29 @@ PlayerFrame *PlayerFrameTable::GetFrameBy_x(unsigned int uFramesetID, unsigned i
       v7 -= v9;
       ++v3;
     }
-    result = &v4[v3];
+    result = &this->pFrames[v3];
   }
   else
-  {
-    result = &v4[uFramesetID];
-  }
+    result = &this->pFrames[uFramesetID];
   return result;
 }
 
 //----- (00494B5E) --------------------------------------------------------
 PlayerFrame *PlayerFrameTable::GetFrameBy_y(int *pFramesetID, int *pAnimTime, int a4)
 {
-  PlayerFrameTable *v4; // edi@1
   int v5; // esi@1
   int v6; // eax@2
 
-  v4 = this;
   v5 = a4 + *pAnimTime;
   if ( v5 < 8 * this->pFrames[*pFramesetID].uAnimTime )
-  {
     *pAnimTime = v5;
-  }
   else
   {
     v6 = rand() % 4 + 21;
     *pFramesetID = v6;
-    *pAnimTime = 8 * v5 % v4->pFrames[v6].uAnimTime;
+    *pAnimTime = 8 * v5 % this->pFrames[v6].uAnimTime;
   }
-  return &v4->pFrames[*pFramesetID];
+  return &this->pFrames[*pFramesetID];
 }
 
 //----- (00494BC3) --------------------------------------------------------
@@ -1532,7 +958,7 @@ void PlayerFrameTable::ToFile()
   v3 = v2;
   if ( !v2 )
     Error("Unable to save dpft.bin");
-  fwrite(v1, 4u, 1u, v2);
+  fwrite(v1, 4, 1, v2);
   fwrite(v1->pFrames, 0xAu, v1->uNumFrames, v3);
   fclose(v3);
 }
@@ -1556,23 +982,23 @@ void PlayerFrameTable::FromFile(void *data_mm6, void *data_mm7, void *data_mm8)
 //----- (00494C5A) --------------------------------------------------------
 int PlayerFrameTable::FromFileTxt(const char *Args)
 {
-  PlayerFrameTable *v2; // ebx@1
+  //PlayerFrameTable *v2; // ebx@1
   FILE *v3; // eax@1
   int v4; // esi@3
   void *v5; // eax@10
   FILE *v6; // ST0C_4@12
   char *i; // eax@12
-  __int16 v8; // ax@15
-  const char *v9; // ST10_4@15
-  unsigned __int16 v10; // ax@15
-  const char *v11; // ST0C_4@15
+//  __int16 v8; // ax@15
+//  const char *v9; // ST10_4@15
+//  unsigned __int16 v10; // ax@15
+//  const char *v11; // ST0C_4@15
   int j; // esi@15
-  int v13; // eax@17
+//  int v13; // eax@17
   int v14; // edx@22
   int v15; // ecx@23
   int v16; // eax@24
   signed int k; // eax@27
-  PlayerFrame *v18; // edx@28
+  //PlayerFrame *v18; // edx@28
   int v19; // esi@28
   int l; // ecx@29
   char Buf; // [sp+Ch] [bp-2F8h]@3
@@ -1583,7 +1009,7 @@ int PlayerFrameTable::FromFileTxt(const char *Args)
   FILE *File; // [sp+300h] [bp-4h]@1
   int Argsa; // [sp+30Ch] [bp+8h]@28
 
-  v2 = this;
+  __debugbreak();//Ritor1;
   //TileTable::dtor((TileTable *)this);
   v3 = fopen(Args, "r");
   File = v3;
@@ -1609,13 +1035,13 @@ int PlayerFrameTable::FromFileTxt(const char *Args)
     while ( fgets(&Buf, 490, File) );
     v4 = v25;
   }
-  v2->uNumFrames = v4;
+  this->uNumFrames = v4;
   v5 = malloc(10 * v4);
-  v2->pFrames = (PlayerFrame *)v5;
+  this->pFrames = (PlayerFrame *)v5;
   if ( !v5 )
     Error("PlayerFrameTable::load - Out of Memory!");
   v6 = File;
-  v2->uNumFrames = 0;
+  this->uNumFrames = 0;
   fseek(v6, 0, 0);
   for ( i = fgets(&Buf, 490, File); i; i = fgets(&Buf, 490, File) )
   {
@@ -1623,117 +1049,56 @@ int PlayerFrameTable::FromFileTxt(const char *Args)
     memcpy(&v24, txt_file_frametable_parser(&Buf, &v23), sizeof(v24));
     if ( v24.uPropCount && *v24.pProperties[0] != 47 )
     {
-      v8 = atoi(v24.pProperties[0]);
-      v9 = v24.pProperties[1];
-      v2->pFrames[v2->uNumFrames].expression = (CHARACTER_EXPRESSION_ID)v8;
-      v10 = atoi(v9);
-      v11 = v24.pProperties[2];
-      v2->pFrames[v2->uNumFrames].uTextureID = v10;
-      v2->pFrames[v2->uNumFrames].uAnimTime = atoi(v11);
-      v2->pFrames[v2->uNumFrames].uAnimLength = 0;
-      v2->pFrames[v2->uNumFrames].uFlags = 0;
+      //v8 = atoi(v24.pProperties[0]);
+      //v9 = v24.pProperties[1];
+      this->pFrames[this->uNumFrames].expression = (CHARACTER_EXPRESSION_ID)atoi(v24.pProperties[0]);
+      //v10 = atoi(v9);
+      //v11 = v24.pProperties[2];
+      this->pFrames[this->uNumFrames].uTextureID = atoi(v24.pProperties[1]);
+      this->pFrames[this->uNumFrames].uAnimTime = atoi(v24.pProperties[2]);
+      this->pFrames[this->uNumFrames].uAnimLength = 0;
+      this->pFrames[this->uNumFrames].uFlags = 0;
       for ( j = 3; j < v24.uPropCount; ++j )
       {
         if ( !_stricmp(v24.pProperties[j], "New") )
-        {
-          v13 = (int)&v2->pFrames[v2->uNumFrames].uFlags;
-          *(char *)v13 |= 4u;
-        }
+          this->pFrames[this->uNumFrames].uFlags |= 4;
       }
-      ++v2->uNumFrames;
+      ++this->uNumFrames;
     }
   }
   fclose(File);
-  v14 = 0;
-  if ( (signed int)(v2->uNumFrames - 1) > 0 )
+  
+  if ( (signed int)(this->uNumFrames - 1) > 0 )
   {
     v15 = 0;
-    do
+    for ( v14 = 0; v14 < this->uNumFrames - 1; ++v14 )
     {
-      v16 = (int)&v2->pFrames[v15];
+      v16 = (int)&this->pFrames[v15];
       if ( !(*(char *)(v16 + 18) & 4) )
-        *(char *)(v16 + 8) |= 1u;
-      ++v14;
+        this->pFrames[v14].uFlags |= 1;
       ++v15;
     }
-    while ( v14 < (signed int)(v2->uNumFrames - 1) );
   }
-  for ( k = 0; k < (signed int)v2->uNumFrames; *(short *)(Argsa + 6) = v19 )
+  for ( k = 0; k < (signed int)this->uNumFrames; *(short *)(Argsa + 6) = v19 )
   {
-    v18 = v2->pFrames;
-    Argsa = (int)&v18[k];
+    //v18 = this->pFrames;
+    Argsa = (int)&this->pFrames[k];
     v19 = *(short *)(Argsa + 4);
-    if ( *(char *)(Argsa + 8) & 1 )
+    if ( this->pFrames[k].uFlags & 1 )
     {
       ++k;
-      for ( l = (int)&v18[k]; *(char *)(l + 8) & 1; l += 10 )
+      for ( l = (int)&this->pFrames[k]; this->pFrames[k].uFlags & 1; l += 10 )
       {
         v19 += *(short *)(l + 4);
         ++k;
       }
-      LOWORD(v19) = v18[k].uAnimTime + v19;
+      LOWORD(v19) = this->pFrames[k].uAnimTime + v19;
     }
     ++k;
   }
   return 1;
 }
 
-//----- (00495366) --------------------------------------------------------
-char *__fastcall sub_495366(unsigned __int8 a1, unsigned __int8 a2)
-{
-  int v2; // edi@1
-  int v3; // edx@2
-  int v4; // esi@3
-  int v5; // ebx@5
-  signed int v7; // [sp+Ch] [bp-14h]@1
-  signed int v8; // [sp+10h] [bp-10h]@1
-  int **v9; // [sp+14h] [bp-Ch]@4
-  signed int v10; // [sp+18h] [bp-8h]@3
-  unsigned __int8 v11; // [sp+1Ch] [bp-4h]@1
-
-  v2 = a1;
-  v11 = a2;
-  v8 = 0;
-  v7 = 0;
-  if ( dword_AE336C == a1 )
-  {
-    v3 = dword_AE3370;
-  }
-  else
-  {
-    v4 = a2;
-    dword_AE336C = a1;
-    v10 = 0;
-    if ( (signed int)pNPCStats->uNumNPCNames[v4] <= 0 )
-	{
-		v3 = rand() % (signed int)pNPCStats->uNumNPCNames[v4];
-	}
-	else
-	{
-    v9 = (int **)((char *)pNPCStats->pNPCNames + v4 * 4);
-    do
-    {
-      v5 = tolower(*(char *)*v9);
-      if ( v5 == tolower(v2) )
-      {
-        if ( v8 )
-          v7 = v10;
-        else
-          v8 = v10;
-      }
-      ++v10;
-      v9 += 2;
-    }
-    while ( v10 < (signed int)pNPCStats->uNumNPCNames[v4] );
-    if ( v8 && v8 != v7 )
-      v3 = v8 + rand() % (v7 - v8);
-    else
-      v3 = rand() % (signed int)pNPCStats->uNumNPCNames[v4];
-	}
-  }
-  dword_AE3370 = v3;
-  return pNPCStats->pNPCNames[0][v11 + 2 * v3];
-}
 
 
 //----- (00495430) --------------------------------------------------------
@@ -1916,30 +1281,30 @@ char *BuildDialogueString(const char *lpsz, unsigned __int8 uPlayerID, ItemGen *
         case 12:
           pReputation = npc->rep;
           if ( pReputation >= 25 )
-            pText = pGlobalTXT_LocalizationStrings[379];
+            pText = pGlobalTXT_LocalizationStrings[379];//Ненавистный
           else
           {
             if ( pReputation < 6 )
             {
               if ( pReputation >= -5 )
-                pText = pGlobalTXT_LocalizationStrings[399];
+                pText = pGlobalTXT_LocalizationStrings[399];//Нейтральная
               else
               {
                 if ( pReputation < -24 )
-                  pText = pGlobalTXT_LocalizationStrings[434];
+                  pText = pGlobalTXT_LocalizationStrings[434];//Почтенная
                 else
-                  pText = pGlobalTXT_LocalizationStrings[402];
+                  pText = pGlobalTXT_LocalizationStrings[402];//Дружелюбный
               }
             }
             else
-              pText = pGlobalTXT_LocalizationStrings[392];
+              pText = pGlobalTXT_LocalizationStrings[392];//Недружелюбный
           }
           strcat(pTmpBuf2.data(), pText);
           dst = strlen(pTmpBuf2.data());
           i += 2;
           break;
         case 13:
-          strcat(pTmpBuf2.data(), sub_495366(pPlayer->pName[0], pPlayer->uSex));
+          strcat(pTmpBuf2.data(), pNPCStats->sub_495366_MispronounceName(pPlayer->pName[0], pPlayer->uSex));
           dst = strlen(pTmpBuf2.data());
           i += 2;
           break;
@@ -1968,7 +1333,7 @@ char *BuildDialogueString(const char *lpsz, unsigned __int8 uPlayerID, ItemGen *
           break;
         case 17://текст наёмного НПС
         {
-          uint pay_percentage = pNPCStats->pProfessions[npc->uProfession - 1].uHirePrice / 100;
+          uint pay_percentage = pNPCStats->pProfessions[npc->uProfession].uHirePrice / 100;
           if ( !pay_percentage )
             pay_percentage = 1;
           sprintf(a1, "%lu", pay_percentage);
@@ -1999,7 +1364,7 @@ char *BuildDialogueString(const char *lpsz, unsigned __int8 uPlayerID, ItemGen *
           i += 2;
           break;
         case 24://название товара в продаже
-          sprintfex(a1, format_4E2D80, TargetColor(255, 255, 155), a3->GetDisplayName());
+          sprintfex(a1, format_4E2D80, Color16(255, 255, 155), a3->GetDisplayName());
           strcat(pTmpBuf2.data(), a1);
           dst = strlen(pTmpBuf2.data());
           i += 2;
@@ -2135,10 +1500,6 @@ char *BuildDialogueString(const char *lpsz, unsigned __int8 uPlayerID, ItemGen *
 //----- (0049B04D) --------------------------------------------------------
 void stru154::GetFacePlaneAndClassify(ODMFace *a2, BSPVertexBuffer *a3)
 {
-  //stru154 *v3; // edi@1
-  //signed int v4; // eax@1
-  //signed int result; // eax@9
-  //signed int v6; // [sp-8h] [bp-18h]@8
   Vec3_float_ v; // [sp+4h] [bp-Ch]@1
   float v7;
 
@@ -2181,64 +1542,30 @@ void stru154::ClassifyPolygon(Vec3_float_ *pNormal, float dist)
 //----- (0049B13D) --------------------------------------------------------
 void stru154::GetFacePlane(ODMFace *pFace, BSPVertexBuffer *pVertices, Vec3_float_ *pOutNormal, float *pOutDist)
 {
-  ODMFace *v5; // ebx@1
-  //int v6; // eax@1
-  //unsigned __int16 *v7; // ebx@2
-  //Vec3_int_ *v8; // eax@3
-  Vec3_int_ *v9; // ecx@3
-  //double v10; // st7@3
-  //int v11; // ecx@3
-  Vec3_int_ *v12; // ecx@3
-  //double v13; // st7@3
-  //double v14; // st6@3
-  //double v15; // st5@3
-  //int v16; // ecx@3
-  Vec3_int_ *v17; // eax@3
-  //double v18; // st5@3
   Vec3_float_ *v19; // eax@3
-  //int result; // eax@8
-  //float v21; // ecx@10
-  //double v22; // st7@10
-  //double v23; // st6@10
   Vec3_float_ v2; // [sp+4h] [bp-64h]@3
-  //float v25; // [sp+18h] [bp-50h]@3
   float v26; // [sp+1Ch] [bp-4Ch]@3
   float v27; // [sp+20h] [bp-48h]@3
   float v28; // [sp+24h] [bp-44h]@3
-  //float v29; // [sp+2Ch] [bp-3Ch]@3
-  //float v30; // [sp+30h] [bp-38h]@3
-  //float v31; // [sp+34h] [bp-34h]@3
-  //float v32; // [sp+38h] [bp-30h]@3
-  //float v33; // [sp+3Ch] [bp-2Ch]@3
   Vec3_float_ v1; // [sp+40h] [bp-28h]@1
-  //float v35; // [sp+4Ch] [bp-1Ch]@3
-  //float v36; // [sp+50h] [bp-18h]@3
-  //float v37; // [sp+54h] [bp-14h]@3
   Vec3_float_ v38; // [sp+58h] [bp-10h]@3
-  //int v39; // [sp+64h] [bp-4h]@1
 
-  //v39 = 0;
   v1.x = 0.0;
-  v5 = pFace;
-  //v6 = pFace->uNumVertices;
   v1.y = 0.0;
   v1.z = 0.0;
 
   if (pFace->uNumVertices >= 2)
   {
-    int i = 0;
-    while ( i < pFace->uNumVertices - 2 )
+    for ( int i = 0; i < pFace->uNumVertices - 2; i++ )
     {
-      v9 = &pVertices->pVertices[pFace->pVertexIDs[i]];
-      v12 = &pVertices->pVertices[pFace->pVertexIDs[i + 1]];
-      v17 = &pVertices->pVertices[pFace->pVertexIDs[i + 2]];
-	  i++;
-      v1.x = v12->x - v9->x;
-      v26 = v17->x - v12->x;
-      v1.y = v12->y - v9->y;
-      v27 = v17->y - v12->y;
-      v1.z = v12->z - v9->z;
-      v28 = v17->z - v12->z;
+      v1.x = pVertices->pVertices[pFace->pVertexIDs[i + 1]].x - pVertices->pVertices[pFace->pVertexIDs[i]].x;
+      v1.y = pVertices->pVertices[pFace->pVertexIDs[i + 1]].y - pVertices->pVertices[pFace->pVertexIDs[i]].y;
+      v1.z = pVertices->pVertices[pFace->pVertexIDs[i + 1]].z - pVertices->pVertices[pFace->pVertexIDs[i]].z;
+
+      v26 = pVertices->pVertices[pFace->pVertexIDs[i + 2]].x - pVertices->pVertices[pFace->pVertexIDs[i + 1]].x;
+      v27 = pVertices->pVertices[pFace->pVertexIDs[i + 2]].y - pVertices->pVertices[pFace->pVertexIDs[i + 1]].y;
+      v28 = pVertices->pVertices[pFace->pVertexIDs[i + 2]].z - pVertices->pVertices[pFace->pVertexIDs[i + 1]].z;
+
       v19 = Vec3_float_::Cross(&v1, &v2, v26, v27, v28);
       v38.x = v19->x;
       v38.y = v19->y;
@@ -2251,28 +1578,28 @@ void stru154::GetFacePlane(ODMFace *pFace, BSPVertexBuffer *pVertices, Vec3_floa
         pOutNormal->y = v38.y;
         pOutNormal->z = v38.z;
 
-        *pOutDist = -(v9->x * v38.x + v9->y * v38.y + v9->z * v38.z);
+        *pOutDist = -(pVertices->pVertices[pFace->pVertexIDs[i]].x * v38.x
+                    + pVertices->pVertices[pFace->pVertexIDs[i]].y * v38.y
+                    + pVertices->pVertices[pFace->pVertexIDs[i]].z * v38.z);
         return;
       }
     }
   }
 
-  pOutNormal->x = (double)(v5->pFacePlane.vNormal.x & 0xFFFF) / 65535.0f + (double)(v5->pFacePlane.vNormal.x >> 16);
-  pOutNormal->y = (double)(v5->pFacePlane.vNormal.y & 0xFFFF) / 65535.0f + (double)(v5->pFacePlane.vNormal.y >> 16);
-  pOutNormal->z = (double)(v5->pFacePlane.vNormal.z & 0xFFFF) / 65535.0f + (double)(v5->pFacePlane.vNormal.z >> 16);
-  *pOutDist = (double)(v5->pFacePlane.dist & 0xFFFF) / 65535.0f + (double)(v5->pFacePlane.dist >> 16);
+  pOutNormal->x = (double)(pFace->pFacePlane.vNormal.x & 0xFFFF) / 65535.0f + (double)(pFace->pFacePlane.vNormal.x >> 16);
+  pOutNormal->y = (double)(pFace->pFacePlane.vNormal.y & 0xFFFF) / 65535.0f + (double)(pFace->pFacePlane.vNormal.y >> 16);
+  pOutNormal->z = (double)(pFace->pFacePlane.vNormal.z & 0xFFFF) / 65535.0f + (double)(pFace->pFacePlane.vNormal.z >> 16);
+  *pOutDist = (double)(pFace->pFacePlane.dist & 0xFFFF) / 65535.0f + (double)(pFace->pFacePlane.dist >> 16);
 }
 
 //----- (0049D700) --------------------------------------------------------
 unsigned int __fastcall GetMaxMipLevels(unsigned int uDim)
 {
-  unsigned int v1; // eax@1
   int v2; // ecx@1
   unsigned int v3; // eax@1
 
-  v1 = uDim;
   v2 = 0;
-  v3 = v1 - 1;
+  v3 = uDim - 1;
   while ( v3 & 1 )
   {
     v3 >>= 1;
@@ -2281,612 +1608,88 @@ unsigned int __fastcall GetMaxMipLevels(unsigned int uDim)
   return v3 == 0 ? v2 : 0;
 }
 
-//----- (004A19D8) --------------------------------------------------------
-unsigned int BlendColors(unsigned int a1, unsigned int a2)
-{
-  /*signed __int64 v2; // ST10_8@1
-  double v3; // st7@1
-  float v4; // ST24_4@1
-  double v5; // ST10_8@1
-  int v6; // ST1C_4@1
-  float v7; // ST24_4@1
-  double v8; // ST10_8@1
-  unsigned __int8 v9; // ST20_1@1
-  float v10; // ST24_4@1
-  double v11; // ST10_8@1
-  float v12; // ST24_4@1
-  double v13; // ST08_8@1*/
-
-  uint alpha = (uint)floorf(0.5f + (a1 >> 24) / 255.0f *
-                                   (a2 >> 24) / 255.0f * 255.0f),
-       red = (uint)floorf(0.5f + ((a1 >> 16) & 0xFF) / 255.0f *
-                                 ((a2 >> 16) & 0xFF) / 255.0f * 255.0f),
-       green = (uint)floorf(0.5f + ((a1 >> 8) & 0xFF) / 255.0f *
-                                   ((a2 >> 8) & 0xFF) / 255.0f * 255.0f),
-       blue = (uint)floorf(0.5f + ((a1 >> 0) & 0xFF) / 255.0f *
-                                   ((a2 >> 0) & 0xFF) / 255.0f * 255.0f);
-  return (alpha << 24) | (red << 16) | (green << 8) | blue;
-  /*v2 = a1 >> 24;
-  v3 = (double)v2 / 255.0f;
-  HIDWORD(v2) = 0;
-  LODWORD(v2) = a2 >> 24;
-  v4 = v3 * (double)v2 / 255.0f * 255.0;
-  v5 = v4 + 6.7553994e15;
-  v6 = LODWORD(v5);
-  v7 = (double)((a1 >> 16) & 0xFFi64) / 255.0f * (double)((a2 >> 16) & 0xFF) * 0.0039215689 * 255.0;
-  v8 = v7 + 6.7553994e15;
-  v9 = LOBYTE(v8);
-  v10 = (double)((unsigned __int16)a1 >> 8) / 255.0f * (double)((unsigned __int16)a2 >> 8) / 255.0f * 255.0;
-  v11 = v10 + 6.7553994e15;
-  v12 = (double)(a1 & 0xFFi64) / 255.0f * (double)(unsigned __int8)a2 / 255.0f * 255.0;
-  v13 = v12 + 6.7553994e15;
-  return LOBYTE(v13) | ((LOBYTE(v11) | (((v6 << 8) | v9) << 8)) << 8);*/
-}
-
-//----- (004A46E6) --------------------------------------------------------
-int __fastcall sr_4A46E6_draw_particle_segment(unsigned int x, signed int y, signed int _z, int a4, unsigned int lightColor)
-{
-  int v5; // eax@1
-  int z; // eax@1
-  unsigned int v7; // eax@9
-  unsigned int v8; // ecx@9
-  int v9; // eax@9
-  unsigned int v10; // eax@10
-  int *v11; // esi@10
-  int *v12; // edi@10
-  int v13; // ecx@10
-  int v14; // edx@10
-  unsigned int v15; // eax@22
-  int *v16; // esi@22
-  int *v17; // edi@22
-  int v18; // ecx@22
-  int v19; // edx@22
-  unsigned __int16 *pTarget; // [sp+Ch] [bp-8h]@9
-  int *pTargetZ; // [sp+10h] [bp-4h]@9
-  unsigned int v22; // [sp+1Ch] [bp+8h]@9
-  signed int v23; // [sp+20h] [bp+Ch]@1
-
-  v5 = a4;
-  v23 = _z >> 16;
-  z = x + v5;
-  if ( z >= (signed int)pViewport->uViewportTL_X
-    && (signed int)x <= (signed int)pViewport->uViewportBR_X
-    && y >= (signed int)pViewport->uViewportTL_Y
-    && y <= (signed int)pViewport->uViewportBR_Y )
-  {
-    if ( (signed int)x < (signed int)pViewport->uViewportTL_X )
-      x = pViewport->uViewportTL_X;
-    if ( z > (signed int)pViewport->uViewportBR_X )
-      z = pViewport->uViewportBR_X;
-    pTarget = &pRenderer->pTargetSurface[x + y * pRenderer->uTargetSurfacePitch];
-    v22 = z - x;
-    pTargetZ = &pRenderer->pActiveZBuffer[x + 640 * y];
-    v7 = lightColor >> 3;
-    v8 = lightColor & 0xF0;
-    v9 = v7 & 0x1E0000;
-    if ( pRenderer->uTargetGBits == 5 )
-    {
-      v10 = (v8 | (((unsigned __int16)(lightColor & 0xF000) | (unsigned int)v9) >> 3)) >> 4;
-      v11 = (int *)pTarget;
-      v12 = pTargetZ;
-      v13 = v22;
-      v14 = (v10 << 16) | v10;
-      z = (unsigned __int8)pTarget & 2;
-      if ( (unsigned __int8)pTarget & 2 )
-      {
-        z = (unsigned int)*pTargetZ >> 16;
-        if ( z > v23 )
-        {
-          z = v14 + ((*pTarget & 0x7BDEu) >> 1);
-          *pTarget = z;
-        }
-        v13 = v22 - 1;
-        v11 = (int *)(pTarget + 1);
-        v12 = pTargetZ + 1;
-      }
-      while ( v13 != 1 )
-      {
-        if ( v13 < 1 )
-          return z;
-        z = (unsigned int)*v12 >> 16;
-        if ( z <= v23 )
-        {
-          v13 -= 2;
-          ++v11;
-          v12 += 2;
-        }
-        else
-        {
-          v12 += 2;
-          z = v14 + ((*v11 & 0x7BDE7BDEu) >> 1);
-          v13 -= 2;
-          *v11 = z;
-          ++v11;
-        }
-      }
-      z = (unsigned int)*v12 >> 16;
-      if ( z > v23 )
-      {
-        z = v14 + ((*(short *)v11 & 0x7BDEu) >> 1);
-        *(short *)v11 = z;
-      }
-    }
-    else
-    {
-      v15 = (v8 | (((unsigned __int16)(lightColor & 0xF800) | (unsigned int)v9) >> 2)) >> 4;
-      v16 = (int *)pTarget;
-      v17 = pTargetZ;
-      v18 = v22;
-      v19 = (v15 << 16) | v15;
-      z = (unsigned __int8)pTarget & 2;
-      if ( (unsigned __int8)pTarget & 2 )
-      {
-        z = (unsigned int)*pTargetZ >> 16;
-        if ( z > v23 )
-        {
-          z = v19 + ((*pTarget & 0xF7DEu) >> 1);
-          *pTarget = z;
-        }
-        v18 = v22 - 1;
-        v16 = (int *)(pTarget + 1);
-        v17 = pTargetZ + 1;
-      }
-      while ( v18 != 1 )
-      {
-        if ( v18 < 1 )
-          return z;
-        z = (unsigned int)*v17 >> 16;
-        if ( z <= v23 )
-        {
-          v18 -= 2;
-          ++v16;
-          v17 += 2;
-        }
-        else
-        {
-          v17 += 2;
-          z = v19 + ((*v16 & 0xF7DEF7DEu) >> 1);
-          v18 -= 2;
-          *v16 = z;
-          ++v16;
-        }
-      }
-      z = (unsigned int)*v17 >> 16;
-      if ( z > v23 )
-      {
-        z = v19 + ((*(short *)v16 & 0xF7DEu) >> 1);
-        *(short *)v16 = z;
-      }
-    }
-  }
-  return z;
-}
-
-//----- (004A57E9) --------------------------------------------------------
-void  Present_ColorKey()
-{
-  HRESULT v0; // eax@3
-  HRESULT v1; // eax@3
-  HRESULT v2; // eax@3
-  HRESULT v3; // eax@3
-  HRESULT v4; // eax@3
-  RECT a2; // [sp+4h] [bp-14h]@3
-  //CheckHRESULT_stru0 this; // [sp+14h] [bp-4h]@3
-
-  if ( !pRenderer->uNumSceneBegins )
-  {
-    if ( pRenderer->field_40110 )
-    {
-      a2.bottom = pViewport->uViewportTL_Y;
-      a2.left = 0;
-      a2.top = 0;
-      a2.right = 640;
-      ErrD3D(pRenderer->pBackBuffer4->BltFast(0, 0, pRenderer->pColorKeySurface4, &a2, 16u));
-      a2.right = 640;
-      a2.left = 0;
-      a2.top = pViewport->uViewportBR_Y + 1;
-      a2.bottom = 480;
-      ErrD3D(pRenderer->pBackBuffer4->BltFast(
-             0,
-             pViewport->uViewportBR_Y + 1,
-             pRenderer->pColorKeySurface4,
-             &a2,
-             16u));
-      a2.right = pViewport->uViewportTL_X;
-      a2.bottom = pViewport->uViewportBR_Y + 1;
-      a2.left = 0;
-      a2.top = pViewport->uViewportTL_Y;
-      ErrD3D(pRenderer->pBackBuffer4->BltFast(
-             0,
-             pViewport->uViewportTL_Y,
-             pRenderer->pColorKeySurface4,
-             &a2,
-             16u));
-      a2.left = pViewport->uViewportBR_X;
-      a2.top = pViewport->uViewportTL_Y;
-      a2.right = 640;
-      a2.bottom = pViewport->uViewportBR_Y + 1;
-      ErrD3D(pRenderer->pBackBuffer4->BltFast(
-             pViewport->uViewportBR_X,
-             pViewport->uViewportTL_Y,
-             pRenderer->pColorKeySurface4,
-             &a2,
-             16u));
-      a2.right = pViewport->uViewportBR_X;
-      a2.bottom = pViewport->uViewportBR_Y + 1;
-      a2.left = pViewport->uViewportTL_X;
-      a2.top = pViewport->uViewportTL_Y;
-      ErrD3D(pRenderer->pBackBuffer4->BltFast(
-             pViewport->uViewportTL_X,
-             pViewport->uViewportTL_Y,
-             pRenderer->pColorKeySurface4,
-             &a2,
-             17u));
-    }
-  }
-}
-
-//----- (004A597D) --------------------------------------------------------
-void Present_NoColorKey()
-{
-  //unsigned __int16 *v0; // eax@4
-  unsigned __int16 *v1; // esi@4
-  void *v2; // edi@4
-  //signed int v4; // ebx@4
-  //signed int v5; // ebx@6
-  //void *v6; // edi@7
-  //const void *v7; // esi@7
-  signed int v8; // ebx@8
-  int v9; // eax@10
-  unsigned int v10; // esi@10
-  unsigned __int32 v11; // edi@10
-  //int v12; // ecx@10
-  unsigned int v13; // ebx@10
-  int v14; // eax@11
-  int v15; // eax@13
-  int v16; // eax@14
-  int v17; // eax@16
-  HRESULT v18; // eax@22
-  DDSURFACEDESC2 Dst; // [sp+Ch] [bp-98h]@3
-  int v20; // [sp+88h] [bp-1Ch]@10
-  int v21; // [sp+8Ch] [bp-18h]@10
-  __int32 v22; // [sp+90h] [bp-14h]@10
-  //unsigned __int32 v23; // [sp+94h] [bp-10h]@10
-  unsigned int v24; // [sp+98h] [bp-Ch]@4
-  //unsigned int _this; // [sp+9Ch] [bp-8h]@10
-  //LPVOID v26; // [sp+A0h] [bp-4h]@4
-
-  if ( !pRenderer->uNumSceneBegins )
-  {
-    if ( pRenderer->field_40110 )
-    {
-      memset(&Dst, 0, 0x7Cu);
-      Dst.dwSize = 124;
-      if ( pRenderer->LockSurface_DDraw4(pRenderer->pBackBuffer4, &Dst, DDLOCK_WAIT) )
-      {
-        //v26 = Dst.lpSurface;
-        pRenderer->pCurrentlyLockedSurfaceDataPtr = (unsigned __int16 *)Dst.lpSurface;
-        v24 = pRenderer->uTargetGMask | pRenderer->uTargetBMask |
-              ((pRenderer->uTargetGMask | pRenderer->uTargetBMask) << 16);
-        pRenderer->pCurrentlyLockedSoftSurface = pRenderer->pTargetSurface;
-        pRenderer->uCurrentlyLockedSurfacePitch = Dst.lPitch;
-        v1 = pRenderer->pTargetSurface;
-        v2 = Dst.lpSurface;
-
-
-        /*for (uint y = 0; y < 480; ++y)
-        {
-          auto pDst = (unsigned short *)((char *)Dst.lpSurface + y * Dst.lPitch);
-          for (uint x = 0; x < 640; ++x)
-            pDst[x] = pRenderer->uTargetRMask | pRenderer->uTargetBMask;
-        }*/
-        
-        ushort* pSrc = pRenderer->pTargetSurface;
-        short* pDst = (__int16 *)Dst.lpSurface;
-
-        for (uint y = 0; y < 8; ++y)
-          memcpy(pDst + y * Dst.lPitch / 2,
-
-		  pSrc + y * 640, 640 * sizeof(__int16));
-
-        for (uint y = 8; y < 352; ++y)
-        {
-          memcpy(pDst + y * Dst.lPitch / 2,
-                 pSrc + y * 640, 8 * sizeof(__int16));
-          memcpy(pDst + 8 + game_viewport_width/*462*/ + y * Dst.lPitch / 2,
-                 pSrc + 8 + game_viewport_width/*462*/ + y * 640, 174/*172*/ * sizeof(__int16));
-        }
-
-        for (uint y = 352; y < 480; ++y)
-          memcpy(pDst + y * Dst.lPitch / 2,
-                 pSrc + y * 640, 640 * sizeof(__int16));
-
-
-        ushort* pSrc_x1y1 = pSrc + 640 * pViewport->uViewportTL_Y + pViewport->uViewportTL_X;
-        //_this = (unsigned int)&pSrc[2 * (((signed int)pViewport->uViewportX >> 1) + 320 * pViewport->uViewportY)];
-        short* pDst_x1y1 = pDst + Dst.lPitch * pViewport->uViewportTL_Y + pViewport->uViewportTL_X;
-        //v23 = (unsigned __int32)((char *)v26 + 4 * (((signed int)pViewport->uViewportX >> 1) + (Dst.lPitch >> 2) * pViewport->uViewportY));
-        v9 = ((signed int)pViewport->uViewportTL_X >> 1) - ((signed int)pViewport->uViewportBR_X >> 1);
-        //v20 = ((signed int)pViewport->uViewportZ >> 1) - ((signed int)pViewport->uViewportX >> 1);
-        v22 = 4 * ((Dst.lPitch / 4) + v9);
-        v21 = 4 * v9 + 1280;
-
-        //auto uNumLines = pViewport->uViewportW - pViewport->uViewportY + 1;
-        //v26 = (LPVOID)(pViewport->uViewportW - pViewport->uViewportY + 1);
-        v10 = (int)pSrc_x1y1;
-        v11 = (int)pDst_x1y1;
-        int uHalfWidth = v20 = (pViewport->uViewportBR_X - pViewport->uViewportTL_X) / 2;
-        v13 = v24;
-
-        for (uint y = pViewport->uViewportTL_Y; y < pViewport->uViewportBR_Y + 1; ++y)
-        {
-          //memcpy(pDst + pViewport->uViewportX + y * Dst.lPitch / 2,
-          //       pSrc + pViewport->uViewportX + y * 640, (pViewport->uViewportZ - pViewport->uViewportX) * sizeof(__int16));
-          for (uint x = pViewport->uViewportTL_X; x < pViewport->uViewportBR_X; ++x)
-          {
-            if (pSrc[y * 640 + x] != (pRenderer->uTargetGMask | pRenderer->uTargetBMask))
-              pDst[y * Dst.lPitch / 2 + x] = pSrc[y * 640 + x];
-          }
-        }
-
-              ErrD3D(pRenderer->pBackBuffer4->Unlock(0));
-
-       /* while ( 1 )
-        {
-          while ( 1 )
-          {
-            v14 = *(int *)v10;
-            v10 += 4;
-            if ( v14 == v13 )
-              break;
-            if ( (short)v14 == (short)v13 )
-            {
-              *(int *)v11 = *(int *)v11 & 0xFFFF | v14 & 0xFFFF0000;
-              v11 += 4;
-              --uHalfWidth;
-              if ( !uHalfWidth )
-                goto LABEL_21;
-            }
-            else
-            {
-              v15 = __ROL__(v14, 16);
-              if ( (short)v15 == (short)v13 )
-              {
-                v17 = __ROR__(v15, 16);
-                *(int *)v11 = *(int *)v11 & 0xFFFF0000 | (unsigned __int16)v17;
-                v11 += 4;
-                --uHalfWidth;
-                if ( !uHalfWidth )
-                  goto LABEL_21;
-              }
-              else
-              {
-                v16 = __ROR__(v15, 16);
-                *(int *)v11 = v16;
-                v11 += 4;
-                --uHalfWidth;
-                if ( !uHalfWidth )
-                  goto LABEL_21;
-              }
-            }
-          }
-          v11 += 4;
-          --uHalfWidth;
-          if ( !uHalfWidth )
-          {
-LABEL_21:
-            v10 += v21;
-            v11 += v22;
-            uHalfWidth = v20;
-            if ( !--uNumLines )
-            {
-              ErrD3D(pRenderer->pBackBuffer4->Unlock(0));
-              return;
-            }
-          }
-        }*/
-      }
-    }
-  }
-}
-
-//----- (004A7063) --------------------------------------------------------
-unsigned int ModulateColor(unsigned int diffuse, float multiplier)
-{
-  float alpha = multiplier * ((diffuse >> 24) & 0xFF);
-  int   a = (int)floorf(alpha + 0.5f);
-  a = max(0, min(255, a));
-
-  float red = multiplier * ((diffuse >> 16) & 0xFF);
-  int   r = (int)floorf(red + 0.5f);
-  r = max(0, min(255, r));
-  
-  float green = multiplier * ((diffuse >> 8) & 0xFF);
-  int   g = (int)floorf(green + 0.5f);
-  g = max(0, min(255, g));
-  
-  float blue = multiplier * ((diffuse >> 0) & 0xFF);
-  int   b = (int)floorf(blue + 0.5f);
-  b = max(0, min(255, b));
-
-  return (a << 24) | (r << 16) | (g << 8) | b;
-}
-
-
-
 //----- (004B1447) --------------------------------------------------------
-void sub_4B1447_party_fine(int a1, int a2, int a3)
+void sub_4B1447_party_fine(int shopId, int stealingResult, int fineToAdd)
 {
   signed int v3; // esi@1
-  char v4; // sf@8
-  int v5; // eax@8
-  unsigned __int64 v6; // qax@12
   DDM_DLV_Header *v7; // eax@14
 
-  v3 = 0;
-  if ( a2 )
+  if ( stealingResult == 0 || stealingResult == 1) 
   {
-    if ( a2 == 1 )
-      v3 = 2;
-    if ( a2 == 2 )
-      v3 = 2;
-      goto LABEL_13;
-  }
-  else
-  {
-    v3 = 1;
-  }
-  if ( pParty->uFine < 4000000 )
-  {
-    v4 = a3 + pParty->uFine < 0;
-    v5 = a3 + pParty->uFine;
-    pParty->uFine += a3;
-    if ( v4 )
+    if ( pParty->uFine < 4000000 )
     {
-      v5 = 0;
-      pParty->uFine = 0;
+      if ( fineToAdd + pParty->uFine < 0 )
+        pParty->uFine = 0;
+      else if ( fineToAdd + pParty->uFine > 4000000 )
+        pParty->uFine = 4000000;
+      else 
+        pParty->uFine += fineToAdd;
     }
-    if ( v5 > 4000000 )
-      pParty->uFine = 4000000;
-  }
-
-  pParty->PartyTimes._shop_ban_times[a1] = pParty->uTimePlayed + 368640;
- 
-LABEL_13:
-  pParty->InTheShopFlags[a1] = 1;
-  if ( v3 )
-  {
-    v7 = &pOutdoor->ddm;
-    if ( uCurrentlyLoadedLevelType != LEVEL_Outdoor )
-      v7 = &pIndoor->dlv;
-    v7->uReputation += v3;
-    if ( v7->uReputation > 10000 )
-      v7->uReputation = 10000;
-  }
-  for ( uint i = 1; i <= 4; ++i )
-  {
     if ( pParty->uFine )
     {
-      if ( !_449B57_test_bit(pPlayers[i]->_achieved_awards_bits, 1) )
-        _449B7E_toggle_bit(pPlayers[i]->_achieved_awards_bits, 1, 1);
+      for ( uint i = 1; i <= 4; ++i )
+      {
+        if ( !_449B57_test_bit(pPlayers[i]->_achieved_awards_bits, 1) )
+          _449B7E_toggle_bit(pPlayers[i]->_achieved_awards_bits, 1, 1);
+      }
     }
+    if (stealingResult == 1)
+      v3 = 2;
+    else
+      v3 = 1;
   }
-}
-
-//----- (004B1523) --------------------------------------------------------
-void  sub_4B1523(int *_this)
-{
-  int v1; // esi@1
-  int v2; // edx@1
-  unsigned int v3; // eax@2
-  int v4; // eax@4
-  LONG v5; // ecx@4
-  int v6; // eax@10
-  char *v7; // ST44_4@12
-  unsigned __int16 v8; // ax@12
-  GUIWindow a1; // [sp+Ch] [bp-68h]@4
-  unsigned int v11; // [sp+60h] [bp-14h]@1
-  POINT a2; // [sp+64h] [bp-10h]@1
-  int v13; // [sp+6Ch] [bp-8h]@4
-  int v14; // [sp+70h] [bp-4h]@4
-
-  v1 = *_this - 399;
-  v2 = (*_this - 400) % 11 + 1;
-  v11 = 4 * (*_this - 400) / 11;
- // sprintf(pTmpBuf.data(), "%s%03d", spellbook_texture_filename_suffices[v11 / 4], v2); not used
-  if ( pMouse->GetCursorPos(&a2)->y <= 320 )
-    v3 = pMouse->GetCursorPos(&a2)->y + 30;
   else
-    v3 = 30;
-  a1.Hint = 0;
-  a1.uFrameY = v3;
-  a1.uFrameWidth = 328;
-  a1.uFrameHeight = 68;
-  a1.uFrameX = 90;
-  a1.uFrameZ = 417;
-  a1.uFrameW = v3 + 67;
-  a2.y = pFontSmallnum->GetLineWidth(pGlobalTXT_LocalizationStrings[431]);
-  v14 = pFontSmallnum->GetLineWidth(pGlobalTXT_LocalizationStrings[433]);
-  v13 = pFontSmallnum->GetLineWidth(pGlobalTXT_LocalizationStrings[432]);
-  v4 = pFontSmallnum->GetLineWidth(pGlobalTXT_LocalizationStrings[96]);
-  v5 = a2.y;
-  if ( v14 > a2.y )
-    v5 = v14;
-  if ( v13 > v5 )
-    v5 = v13;
-  if ( v4 > v5 )
-    v5 = v4;
-  sprintf(pTmpBuf2.data(), "%s\n\n%s\t%03d:\t%03d%s\t000\n%s\t%03d:\t%03d%s\t000\n%s\t%03d:\t%03d%s\t000\n%s\t%03d:\t%03d%s",
-    pSpellStats->pInfos[v1].pDescription, pGlobalTXT_LocalizationStrings[431],        // "Normal"
-    v5 + 3, v5 + 10, pSpellStats->pInfos[v1].pBasicSkillDesc, pGlobalTXT_LocalizationStrings[433],        // "Expert"
-    v5 + 3, v5 + 10, pSpellStats->pInfos[v1].pExpertSkillDesc, pGlobalTXT_LocalizationStrings[432],        // "Master"
-    v5 + 3, v5 + 10, pSpellStats->pInfos[v1].pMasterSkillDesc, pGlobalTXT_LocalizationStrings[96],         // "Grand"
-    v5 + 3, v5 + 10, pSpellStats->pInfos[v1].pGrandmasterSkillDesc);
-  v6 = pFontSmallnum->CalcTextHeight(pTmpBuf2.data(), &a1, 0, 0);
-  a1.uFrameHeight += v6;
-  if ( (signed int)a1.uFrameHeight < 150 )
-    a1.uFrameHeight = 150;
-  a1.uFrameWidth = game_viewport_width;
-  a1.DrawMessageBox(0);
-  a1.uFrameWidth -= 12;
-  a1.uFrameHeight -= 12;
-  v7 = pSpellStats->pInfos[v1].pName;
-  a1.uFrameZ = a1.uFrameX + a1.uFrameWidth - 1;
-  a1.uFrameW = a1.uFrameHeight + a1.uFrameY - 1;
-  v8 = TargetColor(0xFFu, 0xFFu, 0x9Bu);
-  a1.DrawTitleText(pFontArrus, 0x78u, 0xCu, v8, v7, 3u);
-  a1.DrawText(pFontSmallnum, 120, 44, 0, pTmpBuf2.data(), 0, 0, 0);
-  a1.uFrameZ = a1.uFrameX + 107;
-  a1.uFrameWidth = 108;
-  a1.DrawTitleText(pFontComic, 0xCu, 0x4Bu, 0, pSkillNames[v11 / 4 + 12], 3u);
-  sprintfex(pTmpBuf.data(), "%s\n%d", pGlobalTXT_LocalizationStrings[522], *(&pSpellDatas[0].uNormalLevelMana + 10 * v1));
-  a1.DrawTitleText(pFontComic, 0xCu, a1.uFrameHeight - LOBYTE(pFontComic->uFontHeight) - 16, 0, pTmpBuf.data(), 3);
+    v3 = 2;
+  pParty->PartyTimes._shop_ban_times[shopId] = pParty->uTimePlayed + 368640;
+  pParty->InTheShopFlags[shopId] = 1;
+  v7 = &pOutdoor->ddm;
+  if ( uCurrentlyLoadedLevelType != LEVEL_Outdoor )
+    v7 = &pIndoor->dlv;
+  v7->uReputation += v3;
+  if ( v7->uReputation > 10000 )
+    v7->uReputation = 10000;
 }
+
 
 //----- (004B1ECE) --------------------------------------------------------
 void OracleDialogue()
 {
   __int16 *v0; // edi@1
-  int v1; // ebx@3
-  Player *v2; // esi@3
-  int v3; // eax@4
   signed int v4; // eax@9
   int v5; // ebx@11
-  Player *v6; // esi@13
-  ItemGen *v7; // eax@14
   signed int v8; // edi@14
   ItemGen *v9; // [sp+Ch] [bp-Ch]@11
   signed int v10; // [sp+10h] [bp-8h]@13
   int v11; // [sp+14h] [bp-4h]@1
-  Player *v12; // [sp+14h] [bp-4h]@11
 
   contract_approved = 0;
   v11 = 0;
   uDialogueType = 84;
   current_npc_text = (char *)pNPCTopics[667].pText;
   v0 = _4F0882_evt_VAR_PlayerItemInHands_vals.data();
-  while ( 1 )
+  //while ( 1 )
+  for ( uint i = 0; i <= 53; i++ )
   {
     if ( (unsigned __int16)_449B57_test_bit(pParty->_quest_bits, *v0) )
     {
-      v1 = 0;
-      v2 = pParty->pPlayers.data();
-      do
+      //v1 = 0;
+      //v2 = pParty->pPlayers.data();
+      for ( uint pl = 0; pl < 4; pl++ )
       {
-        LOBYTE(v3) = v2->CompareVariable(VAR_PlayerItemInHands, *(v0+1));
-        if ( v3 )
+        //LOBYTE(v3) = pParty->pPlayers[pl].CompareVariable(VAR_PlayerItemInHands, *(v0+1));
+        if ( pParty->pPlayers[pl].CompareVariable(VAR_PlayerItemInHands, *(v0 + 1)) )
           break;
-        ++v2;
-        ++v1;
+        //++v2;
+        //++v1;
       }
-      while ( (signed int)v2 < (signed int)pParty->pHirelings.data() );
-      if ( v1 == 4 )
-        break;
+      //while ( (signed int)v2 < (signed int)pParty->pHirelings.data() );
+      //if ( v1 == 4 )
+        //break;
     }
     ++v11;
-    v0 += 2;
-    if ( v0 > &_4F0882_evt_VAR_PlayerItemInHands_vals[53] )
-	  break;
+    //v0 += 2;
+    //if ( v0 > &_4F0882_evt_VAR_PlayerItemInHands_vals[53] )
+	  //break;
   }
   if ( v0 <= &_4F0882_evt_VAR_PlayerItemInHands_vals[53] )
   {
@@ -2898,41 +1701,35 @@ void OracleDialogue()
   if ( contract_approved == 601 )
   {
     v5 = 0;
-    v12 = pParty->pPlayers.data();//[0].uClass;
+    //v12 = pParty->pPlayers.data();//[0].uClass;
     v9 = 0;
-    while ( 1 )
+    //while ( 1 )
+    for ( uint i = 0; i < 4; i++ )
     {
-      if ( v12->classType == PLAYER_CLASS_LICH )
+      if ( pParty->pPlayers[i].classType == PLAYER_CLASS_LICH )
       {
         v10 = 0;
-        v6 = pParty->pPlayers.data();//[0].pInventoryItems[0].field_1A;
-        do
+        //v6 = pParty->pPlayers.data();//[0].pInventoryItems[0].field_1A;
+        for ( uint pl = 0; pl < 4; pl++ )
         {
-		  v7 = v6->pInventoryItemList.data();
-          v8 = 138;
-          do
+          for ( v8 = 0; v8 < 126; v8++ )//138
           {
-			if ( v7->uItemID == ITEM_LICH_JAR_FULL )
+            if ( pParty->pPlayers[pl].pInventoryItemList[v8].uItemID == ITEM_LICH_JAR_FULL )
             {
-			  if ( !v7->uHolderPlayer )
-				  v9 = v7;
-			  if ( v7->uHolderPlayer == v5 )
+              if ( !pParty->pPlayers[pl].pInventoryItemList[v8].uHolderPlayer )
+                v9 = &pParty->pPlayers[pl].pInventoryItemList[v8];
+              if ( pParty->pPlayers[pl].pInventoryItemList[v8].uHolderPlayer == v5 )
                 v10 = 1;
             }
-            ++v7;
-            --v8;
           }
-          while ( v8 );
-          ++v6;
         }
-		while ( v6 <= &pParty->pPlayers[3] );
         if ( !v10 )
           break;
       }
-      ++v12;
+//      ++v12;
       ++v5;
-	  if ( v12 > &pParty->pPlayers[3] )
-        return;
+	//  if ( v12 > &pParty->pPlayers[3] )
+      //  return;
     }
     if ( v9 )
 	  v9->uHolderPlayer = v5;
@@ -2940,376 +1737,293 @@ void OracleDialogue()
 }
 
 //----- (004B254D) --------------------------------------------------------
-char * _4B254D_SkillMasteryTeacher(int _this)
+const char * _4B254D_SkillMasteryTeacher(int trainerInfo)
 {
-  //Player *v1; // esi@1
-  int v2; // edx@1
-  int v3; // ecx@1
-  int v4; // edi@1
+  int teacherLevel; // edx@1
+  int skillBeingTaught; // ecx@1
   int pClassType; // eax@7
-  int v6; // eax@7
-  int v7; // ebx@7
-  //int v8; // ebx@8
-  signed int v9; // esi@8
-  int v10; // eax@8
-  char *v11; // ecx@8
-  int v12; // edi@9
-  char *v13; // edx@9
-  signed int v14; // edi@10
-  unsigned int v16; // eax@29
-  //int v17; // eax@36
-  char v18; // cl@46
-  __int16 v19; // dx@56
-  int v20; // eax@60
-  //char *v21; // [sp-Ch] [bp-38h]@82
-  //const char *v22; // [sp-8h] [bp-34h]@21
-  //unsigned int v23; // [sp-8h] [bp-34h]@38
-  //char *v24; // [sp-8h] [bp-34h]@82
-  const char *v25; // [sp-4h] [bp-30h]@14
-  //int v26; // [sp-4h] [bp-30h]@38
-  //int v27; // [sp-4h] [bp-30h]@82
-  char v28[4]; // [sp+Ch] [bp-20h]@9
-  int v29; // [sp+10h] [bp-1Ch]@13
-  int v30; // [sp+14h] [bp-18h]@15
-  int v31; // [sp+18h] [bp-14h]@16
-  unsigned __int16 a1[2]; // [sp+1Ch] [bp-10h]@7
-  //int v33; // [sp+20h] [bp-Ch]@7
-  int v34; // [sp+24h] [bp-8h]@7
-  char *v35; // [sp+28h] [bp-4h]@1
+  int currClassMaxMastery; // eax@7
+  int pointsInSkillWOutMastery; // ebx@7
+  int classBaseId; // eax@8
+  unsigned int skillMastery; // eax@29
+  unsigned __int16 pointsInSkill; // [sp+1Ch] [bp-10h]@7
+  int masteryLevelBeingTaught; // [sp+24h] [bp-8h]@7
 
   contract_approved = 0;
-  v2 = (_this - 200) % 3;
-  v3 = (_this - 200) / 3;
-  v4 = v2;
-  v35 = (char *)pNPCTopics[127].pText;
-  dword_F8B1AC_award_bit_number = v3;
-  if ( v2 )
+  teacherLevel = (trainerInfo - 200) % 3;
+  skillBeingTaught = (trainerInfo - 200) / 3;
+  Player* activePlayer = pPlayers[uActiveCharacter];
+  pClassType = activePlayer->classType;
+  currClassMaxMastery = byte_4ED970_skill_learn_ability_by_class_table[pClassType][skillBeingTaught];
+  masteryLevelBeingTaught = teacherLevel + 2;
+  dword_F8B1B0_MasteryBeingTaught = masteryLevelBeingTaught;
+  if ( currClassMaxMastery < masteryLevelBeingTaught )
   {
-    if ( v2 == 1 )
-    {
-      gold_transaction_amount = 5000;
-      dword_F8B1B0 = 3;
-    }
+    classBaseId = pClassType - pClassType % 4;
+    if (byte_4ED970_skill_learn_ability_by_class_table[classBaseId + 1][skillBeingTaught] >= masteryLevelBeingTaught)
+      sprintf(pTmpBuf.data(), pGlobalTXT_LocalizationStrings[633], pClassNames[classBaseId + 1]);//Вы должны достичь звания %s для обучения этому уровню навыка. You have to be promoted to %s to learn this skill level.
+    else if (byte_4ED970_skill_learn_ability_by_class_table[classBaseId + 2][skillBeingTaught] >= masteryLevelBeingTaught
+      && byte_4ED970_skill_learn_ability_by_class_table[classBaseId + 3][skillBeingTaught] >= masteryLevelBeingTaught)
+      sprintf(pTmpBuf.data(), pGlobalTXT_LocalizationStrings[634], pClassNames[classBaseId + 2], pClassNames[classBaseId + 3]);//Вы должны достичь звания %s или %s для обучения этому уровню навыка. You have to be promoted to %s or %s to learn this skill level.
+    else if (byte_4ED970_skill_learn_ability_by_class_table[classBaseId + 2][skillBeingTaught] >= masteryLevelBeingTaught)
+      sprintf(pTmpBuf.data(), pGlobalTXT_LocalizationStrings[633], pClassNames[classBaseId + 2]);//Вы должны достичь звания %s для обучения этому уровню навыка. You have to be promoted to %s to learn this skill level.
+    else if (byte_4ED970_skill_learn_ability_by_class_table[classBaseId + 3][skillBeingTaught] >= masteryLevelBeingTaught)
+      sprintf(pTmpBuf.data(), pGlobalTXT_LocalizationStrings[633], pClassNames[classBaseId + 3]);//Вы должны достичь звания %s для обучения этому уровню навыка. You have to be promoted to %s to learn this skill level.
     else
-    {
-      if ( v2 == 2 )
-      {
-        gold_transaction_amount = 8000;
-        dword_F8B1B0 = 4;
-      }
-    }
-  }
-  else
-  {
-    gold_transaction_amount = 2000;
-    dword_F8B1B0 = 2;
-  }
-  pClassType = pPlayers[uActiveCharacter]->classType;
-  //v33 = pClassType;
-  v6 = byte_4ED970_skill_learn_ability_by_class_table[pClassType][v3];
-  *(int *)a1 = pPlayers[uActiveCharacter]->pActiveSkills[v3];
-  v7 = a1[0] & 0x3F;
-  v34 = v2 + 2;
-  if ( v6 < v2 + 2 )
-  {
-    //v8 = v33;
-    v9 = 0;
-    v10 = pClassType - pClassType % 4;
-    v11 = &byte_4ED970_skill_learn_ability_by_class_table[pClassType - pClassType % 4][v3];
-    do
-    {
-      v12 = (unsigned __int8)*v11;
-      v13 = &v28[4 * v9];
-      *(int *)v13 = 0;
-      if ( v12 < v34 )
-      {
-        v14 = 1;
-      }
-      else
-      {
-        v14 = 1;
-        *(int *)v13 = 1;
-      }
-      ++v9;
-      v11 += 37;
-    }
-    while ( v9 < 4 );
-    __debugbreak(); // warning C4700: uninitialized local variable 'v29' used
-    if ( v29 == v14 )
-    {
-      v25 = pClassNames[v10 + 1];
-    }
-    else
-    {
-      __debugbreak(); // warning C4700: uninitialized local variable 'v30' used
-      if ( v30 == v14 )//crash
-      {
-        __debugbreak(); // warning C4700: uninitialized local variable 'v31' used
-        if ( v31 == v14 )
-        {
-          sprintf(pTmpBuf.data(), pGlobalTXT_LocalizationStrings[634], pClassNames[v10 + 2], pClassNames[v10 + 3]);//Вы должны достичь звания %s или %s для обучения этому уровню навыка.
-          return pTmpBuf.data();
-        }
-        v25 = pClassNames[v10 + 2];
-      }
-      else
-      {
-        if ( v31 != v14 )
-        {
-          sprintf(pTmpBuf.data(), pGlobalTXT_LocalizationStrings[632], pClassNames[pClassType]);//Этот уровень навыка не может быть постигнут классом %s.
-          return pTmpBuf.data();
-        }
-        v25 = pClassNames[v10 + 3];
-      }
-    }
-    sprintf(pTmpBuf.data(), pGlobalTXT_LocalizationStrings[633], v25);//Вы должны достичь звания %s для обучения этому уровню навыка.
+      sprintf(pTmpBuf.data(), pGlobalTXT_LocalizationStrings[632], pClassNames[pClassType]);//Этот уровень навыка не может быть постигнут классом %s. This skill level can not be learned by the %s class.
     return pTmpBuf.data();
   }
-  if ( !pPlayers[uActiveCharacter]->CanAct() )
-    return (char *)pNPCTopics[122].pText;
-  if ( !v7 )
-    return (char *)pNPCTopics[131].pText;
-  v16 = SkillToMastery(a1[0]);
-  if ( (signed int)v16 > v4 + 1 )
-    return (char *)pNPCTopics[v4 + 128].pText;
-  if ( v34 != 2 )
+  if ( !activePlayer->CanAct() )
+    return pNPCTopics[122].pText; //Not in your condition!
+  pointsInSkill = activePlayer->pActiveSkills[skillBeingTaught];
+  pointsInSkillWOutMastery = pointsInSkill & 0x3F;
+  if ( !pointsInSkillWOutMastery )
+    return pNPCTopics[131].pText; //You must know the skill before you can become an expert in it!
+  skillMastery = SkillToMastery(pointsInSkill);
+  if ( (signed int)skillMastery > teacherLevel + 1 )  
+    return pNPCTopics[teacherLevel + 128].pText;    // You are already an SKILLLEVEL in this skill.	
+  dword_F8B1AC_award_bit_number = skillBeingTaught;
+  if ( masteryLevelBeingTaught == 2 && pointsInSkillWOutMastery < 4 
+    || masteryLevelBeingTaught == 3 && pointsInSkillWOutMastery < 7
+    || masteryLevelBeingTaught == 4 && pointsInSkillWOutMastery < 10
+    )
+    return pNPCTopics[127].pText;  //"You don't meet the requirements, and cannot be taught until you do."
+  switch (dword_F8B1AC_award_bit_number)
   {
-    if ( v34 == 3 )
-    {
-      if ( (signed int)v16 >= 2 && v7 >= 7 )
+    case PLAYER_SKILL_STAFF:
+    case PLAYER_SKILL_SWORD:
+    case PLAYER_SKILL_DAGGER:
+    case PLAYER_SKILL_AXE:
+    case PLAYER_SKILL_SPEAR:
+    case PLAYER_SKILL_BOW:
+    case PLAYER_SKILL_MACE:
+    case PLAYER_SKILL_ARMSMASTER:
+      switch (masteryLevelBeingTaught)
       {
-        switch ( dword_F8B1AC_award_bit_number )
-        {
-          case 12:
-          case 13:
-          case 14:
-          case 15:
-          case 16:
-          case 17:
-          case 18:
-            gold_transaction_amount = 4000;
-            goto LABEL_42;
-          case 19:
-            v19 = 114;
-            if ( !(unsigned __int16)_449B57_test_bit(pParty->_quest_bits, v19) )
-              return v35;
-            if ( !gold_transaction_amount )
-              goto LABEL_79;
-            goto LABEL_42;
-          case 20:
-            v19 = 110;
-            if ( !(unsigned __int16)_449B57_test_bit(pParty->_quest_bits, v19) )
-              return v35;
-            if ( !gold_transaction_amount )
-              goto LABEL_79;
-            goto LABEL_42;
-          case 22:
-            v20 = pPlayers[uActiveCharacter]->GetBaseWillpower();
-            if ( v20 < 50 )
-              return v35;
-            if ( !gold_transaction_amount )
-              goto LABEL_79;
-            goto LABEL_42;
-          case 24:
-            gold_transaction_amount = 2500;
-            v20 = pPlayers[uActiveCharacter]->GetBaseEndurance();
-            if ( v20 < 50 )
-              return v35;
-            if ( !gold_transaction_amount )
-              goto LABEL_79;
-            goto LABEL_42;
-          case 36:
-            v20 = pPlayers[uActiveCharacter]->GetBaseIntelligence();
-            if ( v20 < 50 )
-              return v35;
-            if ( !gold_transaction_amount )
-              goto LABEL_79;
-            goto LABEL_42;
-          case 21:
-          case 23:
-          case 25:
-          case 26:
-          case 29:
-          case 32:
-          case 34:
-          case 35:
-            gold_transaction_amount = 2500;
-            goto LABEL_42;
-          case 8:
-          case 9:
-          case 10:
-          case 11:
-            gold_transaction_amount = 3000;
-            goto LABEL_42;
-          case 7:
-            gold_transaction_amount = 0;
-            if ( !gold_transaction_amount )
-              goto LABEL_79;
-            goto LABEL_42;
-          default:
-            if ( !gold_transaction_amount )
-              goto LABEL_79;
-            goto LABEL_42;
-        }
+      case 2:
+        gold_transaction_amount = 2000;
+        break;
+      case 3:
+        gold_transaction_amount = 5000;
+        break;
+      case 4:
+        gold_transaction_amount = 8000;
+        break;
+      }
+      break;
+    case PLAYER_SKILL_BLASTER:
+      switch (masteryLevelBeingTaught)
+      {
+      case 2:
         gold_transaction_amount = 0;
-        if ( !gold_transaction_amount )
-          goto LABEL_79;
-        goto LABEL_42;
-      }
-    }
-    else
-    {
-      if ( v34 != 4 )
-      {
-        if ( !gold_transaction_amount )
-          goto LABEL_79;
-        goto LABEL_42;
-      }
-      if ( (signed int)v16 >= 3 && v7 >= 10 )
-      {
-        switch ( dword_F8B1AC_award_bit_number )
-        {
-          case 19:
-            if ( pPlayers[uActiveCharacter]->ProfessionOrGuildFlagsCorrect(0x22u, 1) == 1 )
-            {
-              if ( !gold_transaction_amount )
-                goto LABEL_79;
-              goto LABEL_42;
-            }
-            if ( pPlayers[uActiveCharacter]->ProfessionOrGuildFlagsCorrect(0x1Au, 1) == 1 )
-            {
-              if ( !gold_transaction_amount )
-                goto LABEL_79;
-              goto LABEL_42;
-            }
-            return v35;
-          case 20:
-            if ( pPlayers[uActiveCharacter]->ProfessionOrGuildFlagsCorrect(0x23u, 1) == 1 )
-            {
-              if ( !gold_transaction_amount )
-                goto LABEL_79;
-              goto LABEL_42;
-            }
-            if ( pPlayers[uActiveCharacter]->ProfessionOrGuildFlagsCorrect(0x1Bu, 1) == 1 )
-            {
-              if ( !gold_transaction_amount )
-                goto LABEL_79;
-              goto LABEL_42;
-            }
-            return v35;
-          case 30:
-            v18 = LOBYTE(pPlayers[uActiveCharacter]->pActiveSkills[31]);
-            if ( (v18 & 0x3Fu) < 0xA )
-              return v35;
-            if ( !gold_transaction_amount )
-              goto LABEL_79;
-            goto LABEL_42;
-          case 31:
-            v18 = LOBYTE(pPlayers[uActiveCharacter]->pActiveSkills[30]);
-            if ( (v18 & 0x3Fu) < 0xA )
-              return v35;
-            if ( !gold_transaction_amount )
-              goto LABEL_79;
-            goto LABEL_42;
-          case 21:
-          case 23:
-          case 24:
-          case 25:
-          case 26:
-          case 29:
-          case 32:
-          case 34:
-          case 35:
-            gold_transaction_amount = 6000;
-            goto LABEL_42;
-          case 8:
-          case 9:
-          case 10:
-          case 11:
-            gold_transaction_amount = 7000;
-            goto LABEL_42;
-          case 7:
-            break;
-          default:
-            if ( !gold_transaction_amount )
-              goto LABEL_79;
-            goto LABEL_42;
-        }
+        break;
+      case 3:
         gold_transaction_amount = 0;
-        if ( !gold_transaction_amount )
-          goto LABEL_79;
-        goto LABEL_42;
+        break;
+      case 4:
+        gold_transaction_amount = 0;
+        break;
       }
-    }
-    return v35;
+      break;
+    case PLAYER_SKILL_SHIELD:
+    case PLAYER_SKILL_LEATHER:
+    case PLAYER_SKILL_CHAIN:
+    case PLAYER_SKILL_PLATE:
+      switch (masteryLevelBeingTaught)
+      {
+      case 2:
+        gold_transaction_amount = 1000;
+        break;
+      case 3:
+        gold_transaction_amount = 3000;
+        break;
+      case 4:
+        gold_transaction_amount = 7000;
+        break;
+      }
+      break;
+    case PLAYER_SKILL_FIRE:
+    case PLAYER_SKILL_AIR:
+    case PLAYER_SKILL_WATER:
+    case PLAYER_SKILL_EARTH:
+    case PLAYER_SKILL_SPIRIT:
+    case PLAYER_SKILL_MIND:
+    case PLAYER_SKILL_BODY:
+      switch (masteryLevelBeingTaught)
+      {
+      case 2:
+        gold_transaction_amount = 1000;
+        break;
+      case 3:
+        gold_transaction_amount = 4000;
+        break;
+      case 4:
+        gold_transaction_amount = 8000;
+        break;
+      }
+      break;
+    case PLAYER_SKILL_LIGHT:
+      switch (masteryLevelBeingTaught)
+      {
+      case 2:
+        gold_transaction_amount = 2000;
+        break;
+      case 3:
+        if ( !(unsigned __int16)_449B57_test_bit(pParty->_quest_bits, 114) )
+          return pNPCTopics[127].pText;
+        gold_transaction_amount = 5000;
+        break;
+      case 4:
+        if ( !activePlayer->ProfessionOrGuildFlagsCorrect(0x22u, 1) ||
+          !activePlayer->ProfessionOrGuildFlagsCorrect(0x1Au, 1))
+          return pNPCTopics[127].pText;
+        gold_transaction_amount = 8000;
+        break;
+      }
+      break;
+    case PLAYER_SKILL_DARK:
+      switch (masteryLevelBeingTaught)
+      {
+      case 2:
+        gold_transaction_amount = 2000;
+        break;
+      case 3:
+        if ( !(unsigned __int16)_449B57_test_bit(pParty->_quest_bits, 110) )
+          return pNPCTopics[127].pText;
+        gold_transaction_amount = 5000;
+        break;
+      case 4:
+        if ( !activePlayer->ProfessionOrGuildFlagsCorrect(0x23u, 1) 
+          || !activePlayer->ProfessionOrGuildFlagsCorrect(0x1Bu, 1))
+          return pNPCTopics[127].pText;
+        gold_transaction_amount = 8000;
+        break;
+      }
+      break;
+    case PLAYER_SKILL_ITEM_ID:
+    case PLAYER_SKILL_REPAIR:
+    case PLAYER_SKILL_MEDITATION:
+    case PLAYER_SKILL_PERCEPTION:
+    case PLAYER_SKILL_TRAP_DISARM:
+    case PLAYER_SKILL_MONSTER_ID:
+    case PLAYER_SKILL_STEALING:
+    case PLAYER_SKILL_ALCHEMY:
+      switch (masteryLevelBeingTaught)
+      {
+      case 2:
+        gold_transaction_amount = 500;
+        break;
+      case 3:
+        gold_transaction_amount = 2500;
+        break;
+      case 4:
+        gold_transaction_amount = 6000;
+        break;
+      }
+      break;
+    case PLAYER_SKILL_MERCHANT:
+      switch (masteryLevelBeingTaught)
+      {
+      case 2:
+        gold_transaction_amount = 2000;
+        break;
+      case 3:
+        if ( activePlayer->GetBaseWillpower() < 50 )
+          return pNPCTopics[127].pText;
+        gold_transaction_amount = 5000;
+        break;
+      case 4:
+        gold_transaction_amount = 8000;
+        break;
+      }
+      break;
+    case PLAYER_SKILL_BODYBUILDING:
+      switch (masteryLevelBeingTaught)
+      {
+      case 2:
+        gold_transaction_amount = 500;
+        break;
+      case 3:
+        if ( activePlayer->GetBaseEndurance() < 50 )
+          return pNPCTopics[127].pText;
+        gold_transaction_amount = 2500;
+        break;
+      case 4:
+        gold_transaction_amount = 6000;
+        break;
+      }
+      break;
+    case PLAYER_SKILL_DIPLOMACY:
+      Error("Diplomacy not used");
+      break;
+    case PLAYER_SKILL_TIEVERY:
+      Error("Thievery not used");
+      break;
+    case PLAYER_SKILL_DODGE:
+      switch (masteryLevelBeingTaught)
+      {
+      case 2:
+        gold_transaction_amount = 2000;
+        break;
+      case 3:
+        gold_transaction_amount = 5000;
+        break;
+      case 4:
+        if ( (activePlayer->pActiveSkills[PLAYER_SKILL_UNARMED] & 63) < 0xA )
+          return pNPCTopics[127].pText;
+        gold_transaction_amount = 8000;
+        break;
+      }
+      break;
+    case PLAYER_SKILL_UNARMED:
+      switch (masteryLevelBeingTaught)
+      {
+      case 2:
+        gold_transaction_amount = 2000;
+        break;
+      case 3:
+        gold_transaction_amount = 5000;
+        break;
+      case 4:
+        if ( (activePlayer->pActiveSkills[PLAYER_SKILL_DODGE] & 63) < 0xA )
+          return pNPCTopics[127].pText;
+        gold_transaction_amount = 8000;
+        break;
+      }
+      break;
+    case PLAYER_SKILL_LEARNING:
+      switch (masteryLevelBeingTaught)
+      {
+      case 2:
+        gold_transaction_amount = 2000;
+        break;
+      case 3:
+        if ( activePlayer->GetBaseIntelligence() < 50 )
+          return pNPCTopics[127].pText;
+        gold_transaction_amount = 5000;
+        break;
+      case 4:
+        gold_transaction_amount = 8000;
+        break;
+      }
+      break;
+    default:
+      Error("Unknown skill");
   }
-  if ( v7 < 4 )
-    return v35;
-  if ( dword_F8B1AC_award_bit_number > 27 )
-  {
-    if ( dword_F8B1AC_award_bit_number != 29
-      && dword_F8B1AC_award_bit_number != 32
-      && (dword_F8B1AC_award_bit_number <= 33 || dword_F8B1AC_award_bit_number > 35) )
-    {
-      if ( !gold_transaction_amount )
-        goto LABEL_79;
-      goto LABEL_42;
-    }
-    gold_transaction_amount = 500;
-    if ( !gold_transaction_amount )
-      goto LABEL_79;
-    goto LABEL_42;
-  }
-  if ( dword_F8B1AC_award_bit_number >= 23 )
-  {
-    gold_transaction_amount = 500;
-    if ( !gold_transaction_amount )
-      goto LABEL_79;
-    goto LABEL_42;
-  }
-  if ( dword_F8B1AC_award_bit_number == 7 )
-  {
-    gold_transaction_amount = 0;
-    goto LABEL_79;
-  }
-  if ( dword_F8B1AC_award_bit_number <= 7 )
-  {
-    if ( !gold_transaction_amount )
-      goto LABEL_79;
-    goto LABEL_42;
-  }
-  if ( dword_F8B1AC_award_bit_number > 18 )
-  {
-    if ( dword_F8B1AC_award_bit_number != 21 )
-    {
-      if ( !gold_transaction_amount )
-        goto LABEL_79;
-      goto LABEL_42;
-    }
-    gold_transaction_amount = 500;
-    if ( !gold_transaction_amount )
-      goto LABEL_79;
-    goto LABEL_42;
-  }
-  gold_transaction_amount = 1000;
-LABEL_42:
   if ( gold_transaction_amount > pParty->uNumGold )
-    return (char *)pNPCTopics[124].pText;
-LABEL_79:
+    return pNPCTopics[124].pText;  //You don't have enough gold!
   contract_approved = 1;
-  if ( v34 == 2 )
+  if ( masteryLevelBeingTaught == 2 )
   {
     sprintfex(pTmpBuf2.data(), pGlobalTXT_LocalizationStrings[534],//Получить степень ^Pr[%s] в навыке ^Pr[%s] за ^I[%lu] золот^L[ой;ых;ых]
               pGlobalTXT_LocalizationStrings[433], pSkillNames[dword_F8B1AC_award_bit_number], gold_transaction_amount);//Эксперт
-    return pTmpBuf2.data();
   }
-  if ( v34 == 3 )
+  else if ( masteryLevelBeingTaught == 3 )
   {
     sprintfex(pTmpBuf2.data(), pGlobalTXT_LocalizationStrings[534],
               pGlobalTXT_LocalizationStrings[432], pSkillNames[dword_F8B1AC_award_bit_number], gold_transaction_amount);//Мастер
-    return pTmpBuf2.data();
   }
-  if ( v34 == 4 )
+  else if ( masteryLevelBeingTaught == 4 )
     sprintfex(pTmpBuf2.data(), pGlobalTXT_LocalizationStrings[534],
               pGlobalTXT_LocalizationStrings[225], pSkillNames[dword_F8B1AC_award_bit_number], gold_transaction_amount);//Великий Магистр
   return pTmpBuf2.data();
@@ -3327,10 +2041,10 @@ void  sub_4B3E1E()
   v1 = 0;
   pDialogueWindow->eWindowType = WINDOW_MainMenu;
   pDialogueWindow->Release();
-  pDialogueWindow = GUIWindow::Create(0, 0, 640, 480, WINDOW_Dialogue, 1, 0);
+  pDialogueWindow = GUIWindow::Create(0, 0, window->GetWidth(), window->GetHeight(), WINDOW_Dialogue, 1, 0);
   if ( pNPCStats->pProfessions[v0->uProfession].pBenefits)//*(&pNPCStats->field_13A5C + 5 * v0->uProfession) )
   {
-    pDialogueWindow->CreateButton(480, 160, 140, 28, 1, 0, UIMSG_SelectNPCDialogueOption, 77, 0, pGlobalTXT_LocalizationStrings[407], 0);
+    pDialogueWindow->CreateButton(480, 160, 140, 28, 1, 0, UIMSG_SelectNPCDialogueOption, 77, 0, pGlobalTXT_LocalizationStrings[407], 0);//Подробнее
     v1 = 1;
   }
   pDialogueWindow->CreateButton(480, 30 * v1 + 160, 140, 30, 1, 0, UIMSG_SelectNPCDialogueOption, 76, 0, pGlobalTXT_LocalizationStrings[406], 0);//Нанять
@@ -3339,25 +2053,25 @@ void  sub_4B3E1E()
 
 
 //----- (004B3FE5) --------------------------------------------------------
-void __fastcall _4B3FE5_training_dialogue(int a4)
+//Originally called _4B254D_SkillMasteryTeacher to have contract_approved assigned, to be able to set some button name. 
+//But it the name gets immediately overwritten
+void _4B3FE5_training_dialogue(int a4)
 {
-  int v1; // edi@1
   const char *v2; // edi@1
-  
-  __debugbreak();
-  v1 = a4;
-  uDialogueType = 78;
+
+  //__debugbreak();
+  uDialogueType = DIALOGUE_SKILL_TRAINER;
   current_npc_text = (char *)pNPCTopics[a4 + 168].pText;
-  _4B254D_SkillMasteryTeacher(a4);
+  _4B254D_SkillMasteryTeacher(a4);  //might be needed because of contract_approved ?
   pDialogueWindow->Release();
-  pDialogueWindow = GUIWindow::Create(0, 0, 640, 0x15Eu, WINDOW_MainMenu, v1, 0);
-  v2 = "";
-  pBtn_ExitCancel = pDialogueWindow->CreateButton( 0x1D7u, 0x1BDu, 0xA9u,  0x23u,   1,  0, UIMSG_Escape, 0,   0,
+  pDialogueWindow = GUIWindow::Create(0, 0, window->GetWidth(), 350, WINDOW_MainMenu, a4, 0);
+  pBtn_ExitCancel = pDialogueWindow->CreateButton( 471, 445, 169,  35,   1,  0, UIMSG_Escape, 0,   0,
                  pGlobalTXT_LocalizationStrings[34], pIcons_LOD->GetTexture(uExitCancelTextureId), 0);
   pDialogueWindow->CreateButton(0, 0, 0, 0, 1, 0, UIMSG_BuyInShop_Identify_Repair, 0, 0, "", 0);
+  v2 = "";
   if ( contract_approved )
     v2 = pGlobalTXT_LocalizationStrings[535];
-  pDialogueWindow->CreateButton(0x1E0u, 0xA0u, 0x8Cu, 0x1Eu, 1, 0, UIMSG_ClickNPCTopic, 0x4Fu, 0, v2, 0);
+  pDialogueWindow->CreateButton(480, 160, 0x8Cu, 0x1Eu, 1, 0, UIMSG_ClickNPCTopic, 0x4Fu, 0, v2, 0);
   pDialogueWindow->_41D08F_set_keyboard_control_group(1, 1, 0, 2);
   dialog_menu_id = HOUSE_DIALOGUE_OTHER;
 }
@@ -3367,10 +2081,8 @@ void __fastcall _4B3FE5_training_dialogue(int a4)
 //----- (004B46A5) --------------------------------------------------------
 void __fastcall DrawTextAtStatusBar( const char *Str, int a5 )
 {
-  int v4; // eax@1
   pRenderer->DrawTextureRGB(0, 352, pTexture_StatusBar);
-  v4 = pFontLucida->AlignText_Center(450, Str);
-  pPrimaryWindow->DrawText(pFontLucida, v4 + 11, 357, a5, Str, 0, 0, 0);
+  pPrimaryWindow->DrawText(pFontLucida, pFontLucida->AlignText_Center(450, Str) + 11, 357, a5, Str, 0, 0, 0);
 }
 
 //----- (004B46F8) --------------------------------------------------------
@@ -3388,319 +2100,164 @@ __int64 GetExperienceRequiredForLevel(int level)
 //----- (004BC49B) --------------------------------------------------------
 void OnSelectNPCDialogueOption(DIALOGUE_TYPE newDialogueType)
 {
-	//unsigned int v1; // esi@1
-    NPCData *speakingNPC; // ebp@1
-    //unsigned int v3; // eax@1
-    int npc_event_id; // ecx@10
-    signed int v5; // edi@14
-    char *v6; // esi@15
-    const char *v7; // ecx@22
-    signed int v8; // edi@37
-    //unsigned int v9; // eax@56
-    unsigned int v10; // ecx@57
-    void *v11; // [sp-Ch] [bp-1Ch]@46
-    int v12; // [sp-8h] [bp-18h]@46
-    char *v13; // [sp-8h] [bp-18h]@60
-    size_t v14; // [sp-4h] [bp-14h]@46
-    const char *v15; // [sp-4h] [bp-14h]@60
+  NPCData *speakingNPC; // ebp@1
+  int npc_event_id; // ecx@10
+  char *v13; // [sp-8h] [bp-18h]@60
 
-    //v1 = _this;
-	speakingNPC = GetNPCData(sDialogue_SpeakingActorNPC_ID);
-    //v3 = v1;
-	uDialogueType = newDialogueType;
-	if (!speakingNPC->uFlags)
-	{
-		speakingNPC->uFlags = 1;
-		//v3 = uDialogueType;
-	}
-
-	if(newDialogueType == DIALOGUE_PROFESSION_DETAILS)
-	{
-		dialogue_show_profession_details = ~dialogue_show_profession_details;
-	}
-	else if(newDialogueType == DIALOGUE_76)
-	{
-		if (speakingNPC->Hired())
-		{
-			v8 = 0;
-			if ( (signed int)pNPCStats->uNumNewNPCs > 0 )
-			{
-				v6 = (char *)pNPCStats->pNewNPCData;
-				while ( !(v6[8] & 0x80) || strcmp(speakingNPC->pName, *(const char **)v6) )
-				{
-					++v8;
-					v6 += 76;
-					if ( v8 >= (signed int)pNPCStats->uNumNewNPCs )
-						break;
-				}
-				if( v8 < (signed int)pNPCStats->uNumNewNPCs )
-					v6[8] &= 0x7Fu;
-			}
-			if ( pParty->pHirelings[0].pName && !_stricmp(pParty->pHirelings[0].pName, speakingNPC->pName) )
-			{
-				v11 = pParty->pHirelings.data();
-				memset(v11, 0, sizeof(NPCData));
-			}
-			else if ( pParty->pHirelings[1].pName && !_stricmp(pParty->pHirelings[1].pName, speakingNPC->pName) )
-			{
-				v11 = &pParty->pHirelings[1];
-				memset(v11, 0, sizeof(NPCData));
-			}
-			pParty->hirelingScrollPosition = 0;
-			pParty->CountHirelings();
-			dword_591084 = 0;
-			pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 1, 0);
-			dword_7241C8 = 0;
-			return;
-		}
-		if ( pParty->pHirelings[0].pName && pParty->pHirelings[1].pName )
-		{
-			v7 = pGlobalTXT_LocalizationStrings[533]; // ""I cannot join you, you're party is full""
-			ShowStatusBarString(v7, 2u);
-		}
-		else
-		{
-			//v9 = v2->uProfession;
-			if ( speakingNPC->uProfession != 51 )
-			{
-				v10 = pNPCStats->pProfessions[speakingNPC->uProfession - 1].uHirePrice;
-																	if ( pParty->uNumGold < v10 )
-			{
-				ShowStatusBarString(pGlobalTXT_LocalizationStrings[155], 2u);// "You don't have enough gold"
-				dialogue_show_profession_details = false;
-				uDialogueType = 13;
-				if ( uActiveCharacter )
-					pPlayers[uActiveCharacter]->PlaySound(SPEECH_NotEnoughGold, 0);
-				v7 = pGlobalTXT_LocalizationStrings[155];
-				ShowStatusBarString(pGlobalTXT_LocalizationStrings[155], 2u);
-				if ( !dword_7241C8 )
-					pGame->Draw();
-				dword_7241C8 = 0;
-				return;
-			}
-				Party::TakeGold(v10);
-			}
-			LOBYTE(speakingNPC->uFlags) |= 0x80u;
-			if ( pParty->pHirelings[0].pName )
-			{
-				memcpy(&pParty->pHirelings[1], speakingNPC, sizeof(pParty->pHirelings[1]));
-				v15 = speakingNPC->pName;
-				v13 = pParty->pHireling2Name;
-			}
-			else
-			{
-				memcpy(pParty->pHirelings.data(), speakingNPC, 0x4Cu);
-				v15 = speakingNPC->pName;
-				v13 = pParty->pHireling1Name;
-			}
-			strcpy(v13, v15);
-			pParty->hirelingScrollPosition = 0;
-			pParty->CountHirelings();
-
-			pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 1, 0);
-
-			if ( sDialogue_SpeakingActorNPC_ID >= 0 )
-				pDialogue_SpeakingActor->uAIState = Removed;
-			if ( uActiveCharacter )
-				pPlayers[uActiveCharacter]->PlaySound(SPEECH_61, 0);
-		}
-	}
-	else if ( (signed int)newDialogueType > 84 && (signed int)newDialogueType <= 88 )
-	{
-		ArenaFight();
-		return;
-	}
-	else if(newDialogueType == DIALOGUE_USE_NPC_ABILITY)
-	{
-		if (UseNPCSkill((NPCProf)speakingNPC->uProfession) == 0)
-		{
-			if ( speakingNPC->uProfession != GateMaster )
-				speakingNPC->bHasUsedTheAbility = 1;
-
-			pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 1, 0);
-		}
-		else
-			ShowStatusBarString(pGlobalTXT_LocalizationStrings[140], 2); //"Your packs are already full!"
-	}
-	else if(newDialogueType == DIALOGUE_13)
-	{
-		if (!speakingNPC->Hired())
-		{
-			sub_4B3E1E();
-			dialogue_show_profession_details = false;
-		}
-		else
-		{
-			v5 = 0;
-			if ( (signed int)pNPCStats->uNumNewNPCs > 0 )
-			{
-				v6 = (char *)pNPCStats->pNewNPCData;
-				while ( !(v6[8] & 0x80) || strcmp(speakingNPC->pName, *(const char **)v6) )
-				{
-					++v5;
-					v6 += 76;
-					if ( v5 >= (signed int)pNPCStats->uNumNewNPCs )
-						break;
-				}
-				if ( v5 < (signed int)pNPCStats->uNumNewNPCs )
-					v6[8] &= 0x7Fu;
-			}
-			if ( pParty->pHirelings[0].pName && !_stricmp(pParty->pHirelings[0].pName, speakingNPC->pName) )
-			{
-				v11 = pParty->pHirelings.data();
-				memset(v11, 0, sizeof(NPCData));
-			}
-			else if ( pParty->pHirelings[1].pName && !_stricmp(pParty->pHirelings[1].pName, speakingNPC->pName) )
-			{
-				v11 = &pParty->pHirelings[1];
-				memset(v11, 0, sizeof(NPCData));
-			}
-			pParty->hirelingScrollPosition = 0;
-			pParty->CountHirelings();
-			dword_591084 = 0;
-			pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 1, 0);
-			dword_7241C8 = 0;
-			return;
-		}
-	}
-	else if(newDialogueType >= 19 && newDialogueType <= 24)
-	{
-		switch(newDialogueType)
-		{
-			case DIALOGUE_19:  npc_event_id = speakingNPC->evt_A; break;
-			case DIALOGUE_20:  npc_event_id = speakingNPC->evt_B; break;
-			case DIALOGUE_21:  npc_event_id = speakingNPC->evt_C; break;
-			case DIALOGUE_22:	 npc_event_id = speakingNPC->evt_D; break;
-			case DIALOGUE_23:  npc_event_id = speakingNPC->evt_E; break;
-			case DIALOGUE_24:	 npc_event_id = speakingNPC->evt_F; break;
-		}
-		if ( (npc_event_id >= 200) && (npc_event_id <= 310) )
-			_4B3FE5_training_dialogue(npc_event_id); //200-310
-		else if (( npc_event_id >= 400) && (npc_event_id <= 410) )
-		{ //400-410
-			dword_F8B1D8 = newDialogueType;
-			DrawJoinGuildWindow(npc_event_id - 400);
-		}
-		else
-		{
-			switch ( npc_event_id )
-			{
-				case 139:
-					OracleDialogue();
-					break;
-				case 311:
-					CheckBountyRespawnAndAward();
-					break;
-				case 399:
-					Arena_SelectionFightLevel();
-					break;
-				default:
-					activeLevelDecoration = (LevelDecoration*)1;
-					current_npc_text = 0;
-					EventProcessor(npc_event_id, 0, 1);
-					activeLevelDecoration = NULL;
-					break;
-			}
-		}
-	}
-	if ( !dword_7241C8 )
-		pGame->Draw();
-	dword_7241C8 = 0;
+  speakingNPC = GetNPCData(sDialogue_SpeakingActorNPC_ID);
+  uDialogueType = newDialogueType;
+  if (!speakingNPC->uFlags)
+    speakingNPC->uFlags = 1;
+  if(newDialogueType == DIALOGUE_PROFESSION_DETAILS)
+    dialogue_show_profession_details = ~dialogue_show_profession_details;
+  else if(newDialogueType == DIALOGUE_76)
+  {
+    if (speakingNPC->Hired())
+    {
+      if ( (signed int)pNPCStats->uNumNewNPCs > 0 )
+      {
+        for ( uint i = 0; i < (unsigned int)pNPCStats->uNumNewNPCs; ++i )
+        {
+          if ( pNPCStats->pNewNPCData[i].uFlags & 0x80 && !strcmp(speakingNPC->pName, pNPCStats->pNewNPCData[i].pName) )
+            pNPCStats->pNewNPCData[i].uFlags &= 0x7Fu;
+        }
+      }
+      if ( pParty->pHirelings[0].pName && !_stricmp(pParty->pHirelings[0].pName, speakingNPC->pName) )
+        memset(&pParty->pHirelings[0], 0, sizeof(NPCData));
+      else if ( pParty->pHirelings[1].pName && !_stricmp(pParty->pHirelings[1].pName, speakingNPC->pName) )
+        memset(&pParty->pHirelings[1], 0, sizeof(NPCData));
+      pParty->hirelingScrollPosition = 0;
+      pParty->CountHirelings();
+      dword_591084 = 0;
+      pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 1, 0);
+      dword_7241C8 = 0;
+      return;
+    }
+    if ( pParty->pHirelings[0].pName && pParty->pHirelings[1].pName )
+      ShowStatusBarString(pGlobalTXT_LocalizationStrings[533], 2);// ""I cannot join you, you're party is full""
+    else
+    {
+      if ( speakingNPC->uProfession != 51 ) //burglars have no hiring price
+      {
+        if ( pParty->uNumGold < pNPCStats->pProfessions[speakingNPC->uProfession].uHirePrice )
+        {
+          ShowStatusBarString(pGlobalTXT_LocalizationStrings[155], 2);// "You don't have enough gold"
+          dialogue_show_profession_details = false;
+          uDialogueType = 13;
+          if ( uActiveCharacter )
+            pPlayers[uActiveCharacter]->PlaySound(SPEECH_NotEnoughGold, 0);
+          if ( !dword_7241C8 )
+            pGame->Draw();
+          dword_7241C8 = 0;
+          return;
+        }
+        Party::TakeGold(pNPCStats->pProfessions[speakingNPC->uProfession].uHirePrice);
+      }
+      LOBYTE(speakingNPC->uFlags) |= 0x80u;
+      if ( pParty->pHirelings[0].pName )
+      {
+        memcpy(&pParty->pHirelings[1], speakingNPC, sizeof(pParty->pHirelings[1]));
+        v13 = pParty->pHireling2Name;
+      }
+      else
+      {
+        memcpy(&pParty->pHirelings[0], speakingNPC, sizeof(pParty->pHirelings[0]));
+        v13 = pParty->pHireling1Name;
+      }
+      strcpy(v13, speakingNPC->pName);
+      pParty->hirelingScrollPosition = 0;
+      pParty->CountHirelings();
+      pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 1, 0);
+      if ( sDialogue_SpeakingActorNPC_ID >= 0 )
+        pDialogue_SpeakingActor->uAIState = Removed;
+      if ( uActiveCharacter )
+        pPlayers[uActiveCharacter]->PlaySound(SPEECH_61, 0);
+    }
+  }
+  else if ( (signed int)newDialogueType > DIALOGUE_84 && (signed int)newDialogueType <= DIALOGUE_ARENA_SELECT_CHAMPION ) //выбор уровня сложности боя
+  {
+    ArenaFight();
+    return;
+  }
+  else if(newDialogueType == DIALOGUE_USE_NPC_ABILITY)
+  {
+    if (UseNPCSkill((NPCProf)speakingNPC->uProfession) == 0)
+    {
+      if ( speakingNPC->uProfession != GateMaster )
+        speakingNPC->bHasUsedTheAbility = 1;
+      pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 1, 0);
+    }
+    else
+      ShowStatusBarString(pGlobalTXT_LocalizationStrings[140], 2); //"Your packs are already full!"
+  }
+  else if(newDialogueType == DIALOGUE_13)
+  {
+    if (!speakingNPC->Hired())
+    {
+      sub_4B3E1E();
+      dialogue_show_profession_details = false;
+    }
+    else
+    {
+      for ( uint i = 0; i < (signed int)pNPCStats->uNumNewNPCs; ++i )
+      {
+        if ( pNPCStats->pNewNPCData[i].uFlags & 0x80 && !strcmp(speakingNPC->pName, pNPCStats->pNewNPCData[i].pName) )
+          pNPCStats->pNewNPCData[i].uFlags &= 0x7Fu;
+      }
+      if ( pParty->pHirelings[0].pName && !_stricmp(pParty->pHirelings[0].pName, speakingNPC->pName) )
+        memset(&pParty->pHirelings[0], 0, sizeof(NPCData));
+      else if ( pParty->pHirelings[1].pName && !_stricmp(pParty->pHirelings[1].pName, speakingNPC->pName) )
+        memset(&pParty->pHirelings[1], 0, sizeof(NPCData));
+      pParty->hirelingScrollPosition = 0;
+      pParty->CountHirelings();
+      dword_591084 = 0;
+      pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 1, 0);
+      dword_7241C8 = 0;
+      return;
+    }
+  }
+  else if(newDialogueType >= DIALOGUE_EVT_A && newDialogueType <= DIALOGUE_EVT_F)
+  {
+    switch(newDialogueType)
+    {
+      case DIALOGUE_EVT_A:  npc_event_id = speakingNPC->evt_A; break;
+      case DIALOGUE_EVT_B:  npc_event_id = speakingNPC->evt_B; break;
+      case DIALOGUE_EVT_C:  npc_event_id = speakingNPC->evt_C; break;
+      case DIALOGUE_EVT_D:  npc_event_id = speakingNPC->evt_D; break;
+      case DIALOGUE_EVT_E:  npc_event_id = speakingNPC->evt_E; break;
+      case DIALOGUE_EVT_F:  npc_event_id = speakingNPC->evt_F; break;
+    }
+    if ( (npc_event_id >= 200) && (npc_event_id <= 310) )
+      _4B3FE5_training_dialogue(npc_event_id); //200-310
+    else if (( npc_event_id >= 400) && (npc_event_id <= 410) )
+    { //400-410
+      dword_F8B1D8 = newDialogueType;
+      DrawJoinGuildWindow(npc_event_id - 400);
+    }
+    else
+    {
+      switch ( npc_event_id )
+      {
+        case 139:
+          OracleDialogue();
+          break;
+        case 311:
+          CheckBountyRespawnAndAward();
+          break;
+        case 399:
+          Arena_SelectionFightLevel();
+          break;
+        default:
+          activeLevelDecoration = (LevelDecoration*)1;
+          current_npc_text = 0;
+          EventProcessor(npc_event_id, 0, 1);
+          activeLevelDecoration = nullptr;
+          break;
+      }
+    }
+  }
+  if ( !dword_7241C8 )
+    pGame->Draw();
+  dword_7241C8 = 0;
 }
-
-//----- (004BDAAF) --------------------------------------------------------
-bool __fastcall MerchandiseTest(ItemGen *item, int _2da_idx)
-{
-  int v6; // edx@8
-  int v7; // edx@9
-  int v8; // edx@10
-  unsigned __int8 v9; // zf@16
-  char v10; // sf@16
-  unsigned __int8 v11; // of@16
-  bool test;
-
-  if ( (p2DEvents[_2da_idx - 1].uType != 4 || (signed int)item->uItemID < 740 || (signed int)item->uItemID > 771)
-    && ((signed int)item->uItemID >= 600 || (signed int)item->uItemID >= 529 && (signed int)item->uItemID <= 599) || item->IsStolen())
-    return 0;
-  switch( p2DEvents[_2da_idx - 1].uType )
-  {
-    case BuildingType_WeaponShop:
-    {
-      test = item->GetItemEquipType() <= 2;
-      break;
-    }
-    case BuildingType_ArmorShop:
-    {
-      test = item->GetItemEquipType() >= 3;
-      break;
-    }
-    case BuildingType_MagicShop:
-    {
-      test = item->GetPlayerSkillType() == 38 || item->GetItemEquipType() == 16;
-      break;
-    }
-    case BuildingType_AlchemistShop:
-    {
-      test = item->GetItemEquipType() == 13 || item->GetItemEquipType() == 14 
-            || (item->GetItemEquipType() > 14 && !(item->GetItemEquipType() != 17 
-            || (signed int)item->uItemID < 740) && item->uItemID != 771);
-      break;
-    }
-    default:
-    {
-      test = false;
-      break;
-    }
-  }
-  return test;
-/*
-  if ( p2DEvents[a2 - 1].uType == 1 )
-  {
-    v11 = __OFSUB__(v5, 2);
-    v9 = v5 == 2;
-    v10 = v5 - 2 < 0;
-    goto LABEL_23;
-  }
-  if ( p2DEvents[a2 - 1].uType > 2 )
-  {
-    if ( p2DEvents[a2 - 1].uType == 3 )
-    {
-      if ( pItemsTable->pItems[v4].uSkillType != 38 )
-        return v5 == 16;
-      return 1;
-    }
-    if ( p2DEvents[a2 - 1].uType != 4 || v5 < 13 )
-      return 0;
-	if ( p2DEvents[a2 - 1].uType == 4)
-	{
-		if ( v5 < 13 )
-		  return 0;
-		if ( v5 <= 14 )
-		  return 1;
-		if ( v5 != 17 || (signed int)v3 < 740 )
-		  return 0;
-		v11 = __OFSUB__(v3, 771);
-		v9 = v3 == 771;
-		v10 = ((v3 - 771) & 0x80000000u) != 0;
-LABEL_23:
-		if ( !((unsigned __int8)(v10 ^ v11) | v9) )
-		  return 0;
-		return 1;
-	}
-  }
-  if ( p2DEvents[a2 - 1].uType == 2 )
-  {
-	  if ( v5 >= 3 )
-	  {
-		v11 = __OFSUB__(v5, 9);
-		v9 = v5 == 9;
-		v10 = v5 - 9 < 0;
-		goto LABEL_23;
-	  }
-  }
-  return 0;
-*/
-}
-
-
 

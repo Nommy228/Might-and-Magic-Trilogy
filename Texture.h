@@ -10,7 +10,7 @@ struct RGBTexture
 {
   RGBTexture();
   void Release();
-  int _40E55E(const char *Filename, unsigned int a3);
+  int LoadPCXFile(const char *Filename, unsigned int a3);
   unsigned int LoadFromFILE(FILE *pFile, unsigned int mode, unsigned int bCloseFile);
   int DecodePCX(char *pPcx, unsigned __int16 *pOutPixels, unsigned int uNumPixels);
   int Load(const char *pContainer, int mode);

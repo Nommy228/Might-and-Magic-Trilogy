@@ -51,11 +51,11 @@ public:
   {
     uCursorTextureID = 0;
     uCursorTextureID_2 = 0;
-    pCursorBitmap_sysmem = 0;
+    pCursorBitmap_sysmem = nullptr;
     field_34 = 0;
-    pCursorBitmap2_sysmem = 0;
-    pCursorBitmap3_sysmembits_16bit = 0;
-    ptr_90 = 0;
+    pCursorBitmap2_sysmem = nullptr;
+    pCursorBitmap3_sysmembits_16bit = nullptr;
+    ptr_90 = nullptr;
     pWard = pWard;
   }
 
@@ -73,12 +73,15 @@ public:
   void SetActive(bool active);
   void Deactivate();
   void DrawCursor();
-  void _469E1C();
+  void Activate();
   void _469E24();
   void DrawCursorToTarget();
-  void _469EA4();
-  void Activate(int bActive);
+  void ReadCursorWithItem();
+  void ChangeActivation(int a1);
   void SetMouseClick(int x, int y);
+
+  static void UI_OnMouseLeftClick(int *pXY); // idb
+  static bool UI_OnKeyDown(unsigned int vkKey);
 
 
   unsigned int uPointingObjectID;
@@ -98,10 +101,10 @@ public:
   int field_34;
   unsigned __int8 *pCursorBitmap2_sysmem;
   unsigned __int16 *pCursorBitmap3_sysmembits_16bit;
-  int field_40;
-  int field_44;
-  int field_48;
-  int field_4C;
+  int uCursorWithItemX;
+  int uCursorWithItemY;
+  int uCursorWithItemW;
+  int uCursorWithItemZ;
   int field_50;
   int field_54;
   int uCursorBitmapPitch;

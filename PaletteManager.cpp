@@ -1,12 +1,11 @@
-#ifdef _MSC_VER
 #define _CRT_SECURE_NO_WARNINGS
-#endif
-
+#include "ErrorHandling.h"
 #include "PaletteManager.h"
 #include "Texture.h"
 #include "Game.h"
 #include "LOD.h"
 #include "Log.h"
+#include "OurMath.h"
 
 #include "mm7_data.h"
 
@@ -17,6 +16,24 @@ PaletteManager *pPaletteManager = new PaletteManager;
 
 
 
+//----- (00452AE2) --------------------------------------------------------
+int __fastcall MakeColorMaskFromBitDepth(int a1)
+{
+  signed __int64 v1; // qax@1
+
+  v1 = 4294967296i64;
+  if ( a1 > 0 )
+  {
+    do
+    {
+      LODWORD(v1) = HIDWORD(v1) + v1;
+      HIDWORD(v1) *= 2;
+      --a1;
+    }
+    while ( a1 );
+  }
+  return v1;
+}
 
 //----- (0048A643) --------------------------------------------------------
 bool __fastcall HSV2RGB(float *a1, float *a2, float *a3, float a4, float a5, float a6)
@@ -133,10 +150,10 @@ void __fastcall RGB2HSV(float *a1, float *a2, float a3, float a4, float a5, floa
   double v8; // st5@12
   double v9; // st7@15
   double v10; // st7@17
-  double v11; // st7@21
-  __int16 v12; // fps@21
-  unsigned __int8 v13; // c0@21
-  unsigned __int8 v14; // c2@21
+//  double v11; // st7@21
+//  __int16 v12; // fps@21
+//  unsigned __int8 v13; // c0@21
+//  unsigned __int8 v14; // c2@21
   float a6a; // [sp+14h] [bp+14h]@16
 
   if ( a3 <= (double)a4 )
@@ -160,7 +177,7 @@ void __fastcall RGB2HSV(float *a1, float *a2, float a3, float a4, float a5, floa
   if ( v8 == 0.0 )
   {
     v9 = 0.0;
-LABEL_23:
+//LABEL_23:
     *a1 = v9;
     return;
   }
@@ -264,9 +281,9 @@ void PaletteManager::CalcPalettes_LUT(int a2)
   //int v12; // ebx@8
   //int v13; // eax@8
   //float v14; // ebx@8
-  float v15; // ST08_4@8
-  float v16; // ST04_4@8
-  float v17; // ST00_4@8
+//  float v15; // ST08_4@8
+//  float v16; // ST04_4@8
+//  float v17; // ST00_4@8
   //unsigned __int8 v18; // sf@8
   //unsigned __int8 v19; // of@8
   //int v20; // eax@10
@@ -315,7 +332,7 @@ void PaletteManager::CalcPalettes_LUT(int a2)
   float v63[256]; // [sp+1Ch] [bp-C38h]@5
   float v64[256]; // [sp+41Ch] [bp-838h]@5
   float a6[256]; // [sp+81Ch] [bp-438h]@5
-  int v66; // [sp+C1Ch] [bp-38h]@43
+//  int v66; // [sp+C1Ch] [bp-38h]@43
   float v67; // [sp+C20h] [bp-34h]@43
   float v68; // [sp+C24h] [bp-30h]@43
   //PaletteManager *v69; // [sp+C28h] [bp-2Ch]@9
@@ -734,7 +751,7 @@ int PaletteManager::LoadPalette(unsigned int uPaletteID)
   //char v11; // [sp+19h] [bp-387h]@17
   //char v12[766]; // [sp+1Ah] [bp-386h]@17
   char Source[32]; // [sp+360h] [bp-40h]@4
-  PaletteManager *v15; // [sp+380h] [bp-20h]@1
+  //PaletteManager *v15; // [sp+380h] [bp-20h]@1
   float v16; // [sp+384h] [bp-1Ch]@7
   int v17; // [sp+388h] [bp-18h]@6
   float v18; // [sp+38Ch] [bp-14h]@7
@@ -743,7 +760,7 @@ int PaletteManager::LoadPalette(unsigned int uPaletteID)
   float a6; // [sp+398h] [bp-8h]@7
   float a3; // [sp+39Ch] [bp-4h]@7
 
-  v15 = this;
+  //v15 = this;
   v2 = (unsigned int *)&this->pPaletteIDs[1];
   result = 1;
   while ( *v2 != uPaletteID )
@@ -772,9 +789,7 @@ int PaletteManager::LoadPalette(unsigned int uPaletteID)
           RGB2HSV(&v16, &v18, a1, a2a, a3, &a6);
           v5 = a6 * 1.1;
           if ( v5 >= 0.0 && v5 >= 1.0 )
-          {
             v5 = 1.0;
-          }
           else
           {
             if ( v5 < 0.0 )
@@ -783,9 +798,7 @@ int PaletteManager::LoadPalette(unsigned int uPaletteID)
           a6 = v5;
           v6 = v18 * 0.64999998;
           if ( v6 >= 0.0 && v6 >= 1.0 )
-          {
             v6 = 1.0;
-          }
           else
           {
             if ( v6 < 0.0 )
@@ -803,12 +816,10 @@ int PaletteManager::LoadPalette(unsigned int uPaletteID)
         }
         while ( v4 < 768 );
         tex.Release();
-        result = v15->MakeBasePaletteLut(uPaletteID, v10);
+        result = this->MakeBasePaletteLut(uPaletteID, v10);
       }
       else
-      {
         result = 0;
-      }
       return result;
     }
   }
@@ -835,8 +846,6 @@ int PaletteManager::MakeBasePaletteLut(int idx, char *entries)
   for (uint i = 0; i < 50; ++i)
     if (pPaletteIDs[i] == idx)
       return i;
-
-
 
       v6 = (int)&pPaletteIDs[1];
       v7 = 1;
@@ -946,3 +955,27 @@ unsigned __int16 *PaletteManager::_47C33F_get_palette(int a1, char a2)
   return result;
 }
 // 4D864C: using guessed type char byte_4D864C;
+
+
+//----- (0048A959) --------------------------------------------------------
+signed int ReplaceHSV(unsigned int uColor, float h_replace, float s_replace, float v_replace)
+{
+  float r = ((uColor & 0x00FF0000) >> 16) / 255.0f,
+    g = ((uColor & 0x0000FF00) >> 8) / 255.0f,
+    b = (uColor & 0x000000FF) / 255.0f;
+
+  float h, s, v;
+  RGB2HSV(&h, &s, r, g, b, &v);
+
+  if ( h_replace != -1.0 )
+    h = h_replace;
+  if ( s_replace != -1.0 )
+    s = s_replace;
+  if ( v_replace != -1.0 )
+    v = v_replace;
+  HSV2RGB(&r, &g, &b, h, s, v);
+
+  return (((uint)round_to_int(r * 255.0f) & 0xFF) << 16) |
+    (((uint)round_to_int(g * 255.0f) & 0xFF) << 8) |
+    (((uint)round_to_int(b * 255.0f) & 0xFF));
+}

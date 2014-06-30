@@ -1,3 +1,4 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include "stru9.h"
 #include "IndoorCameraD3D.h"
 
@@ -26,7 +27,7 @@ bool stru9::_498377(struct RenderVertexSoft *pPortalBounding, unsigned int uNumV
   signed int v21; // [sp+1Ch] [bp-Ch]@7
   //RenderVertexSoft *a2; // [sp+20h] [bp-8h]@8
   //stru9 *thisa; // [sp+24h] [bp-4h]@1
-  signed int a3a; // [sp+38h] [bp+10h]@12
+//  signed int a3a; // [sp+38h] [bp+10h]@12
   //int a3b; // [sp+38h] [bp+10h]@25
 
   //__debugbreak();
@@ -309,9 +310,7 @@ bool stru9::_498774(struct RenderVertexSoft *a1, struct RenderVertexSoft *a2, st
           v10 = (float)0.0;
       }
       else
-      {
         v10 = 1.0;
-      }
     }
     else
     {
@@ -325,9 +324,7 @@ bool stru9::_498774(struct RenderVertexSoft *a1, struct RenderVertexSoft *a2, st
           v10 = (float)1.0;
       }
       else
-      {
         v10 = 0.0;
-      }
     }
     result = (bool)a5;
     a5->vWorldPosition.x = (a2->vWorldPosition.x - v6->vWorldPosition.x) * v10 + v6->vWorldPosition.x;
@@ -335,20 +332,15 @@ bool stru9::_498774(struct RenderVertexSoft *a1, struct RenderVertexSoft *a2, st
     a5->vWorldPosition.z = (a2->vWorldPosition.z - v6->vWorldPosition.z) * v10 + v6->vWorldPosition.z;
     a5->u = (a2->u - v6->u) * v10 + v6->u;
     a5->v = (a2->v - v6->v) * v10 + v6->v;
-    goto LABEL_15;
+    return 1;
   }
   v13 = v8 < 0.0;
   v14 = 0;
   v15 = v8 == 0.0;
-  BYTE1(result) = HIBYTE(v9);
+ // BYTE1(result) = HIBYTE(v9);
   if ( v8 < 0.0 )
-  {
-LABEL_15:
-    LOBYTE(result) = 1;
-    return result;
-  }
-  LOBYTE(result) = 0;
-  return result;
+    return 1;
+  return 0;
 }
 // AE3398: using guessed type char static_init_flag__AE3388_bit1__AE3378_bit2;
 

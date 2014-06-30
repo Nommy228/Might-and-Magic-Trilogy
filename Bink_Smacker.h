@@ -23,23 +23,7 @@ int __stdcall BinkGoto(HBINK, long a2, long a3);
 int __stdcall BinkBufferSetOffset(void *, int, int);
 int __stdcall BinkBufferSetScale(void *, unsigned int uWidth, unsigned int uHeight);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-void SMACKW32_DLL_Initialize();
+  void SMACKW32_DLL_Initialize();
 
 struct _SMACK
 {
@@ -143,6 +127,52 @@ struct _SMACKBUF
         int numrects;
         HDC lastdc;
 };
+#define BINKFRAMERATE            0x00001000L // Override fr (call BinkFrameRate first)
+#define BINKPRELOADALL            0x00002000L // Preload the entire animation
+#define BINKSNDTRACK            0x00004000L // Set the track number to play
+#define BINKOLDFRAMEFORMAT        0x00008000L // using the old Bink frame format (internal use only)
+#define BINKRBINVERT            0x00010000L // use reversed R and B planes (internal use only)
+#define BINKGRAYSCALE            0x00020000L // Force Bink to use grayscale
+#define BINKNOMMX                0x00040000L // Don't use MMX
+#define BINKNOSKIP                0x00080000L // Don't skip frames if falling behind
+#define BINKALPHA                0x00100000L // Decompress alpha plane (if present)
+#define BINKNOFILLIOBUF            0x00200000L // Fill the IO buffer in SmackOpen
+#define BINKSIMULATE            0x00400000L // Simulate the speed (call BinkSim first)
+#define BINKFILEHANDLE            0x00800000L // Use when passing in a file handle
+#define BINKIOSIZE                0x01000000L // Set an io size (call BinkIOSize first)
+#define BINKIOPROCESSOR            0x02000000L // Set an io processor (call BinkIO first)
+#define BINKFROMMEMORY            0x04000000L // Use when passing in a pointer to the file
+#define BINKNOTHREADEDIO        0x08000000L // Don't use a background thread for IO
+
+#define BINKSURFACEFAST            0x00000000L
+#define BINKSURFACESLOW            0x08000000L
+#define BINKSURFACEDIRECT        0x04000000L
+
+#define BINKCOPYALL                0x80000000L // copy all pixels (not just changed)
+#define BINKCOPY2XH                0x10000000L // Force doubling height scaling
+#define BINKCOPY2XHI            0x20000000L // Force interleaving height scaling
+#define BINKCOPY2XW                0x30000000L // copy the width zoomed by two
+#define BINKCOPY2XWH            0x40000000L // copy the width and height zoomed by two
+#define BINKCOPY2XWHI            0x50000000L // copy the width and height zoomed by two
+#define BINKCOPY1XI                0x60000000L // copy the width and height zoomed by two
+#define BINKCOPYNOSCALING        0x70000000L // Force scaling off
+
+#define SMACKNEEDPAN    0x00020L // Will be setting the pan
+#define SMACKNEEDVOLUME 0x00040L // Will be setting the volume
+#define SMACKFRAMERATE  0x00080L // Override fr (call SmackFrameRate first)
+#define SMACKLOADEXTRA  0x00100L // Load the extra buffer during SmackOpen
+#define SMACKPRELOADALL 0x00200L // Preload the entire animation
+#define SMACKNOSKIP     0x00400L // Don't skip frames if falling behind
+#define SMACKSIMULATE   0x00800L // Simulate the speed (call SmackSim first)
+#define SMACKFILEHANDLE 0x01000L // Use when passing in a file handle
+#define SMACKTRACK1     0x02000L // Play audio track 1
+#define SMACKTRACK2     0x04000L // Play audio track 2
+#define SMACKTRACK3     0x08000L // Play audio track 3
+#define SMACKTRACK4     0x10000L // Play audio track 4
+#define SMACKTRACK5     0x20000L // Play audio track 5
+#define SMACKTRACK6     0x40000L // Play audio track 6
+#define SMACKTRACK7     0x80000L // Play audio track 7
+
 
 #define SMACKBUFFER555      0x80000000
 #define SMACKBUFFER565      0xC0000000
@@ -180,10 +210,10 @@ int __fastcall SmackVolumePan(_SMACK *a3, long a4, long a5, long a6);
 int __stdcall SmackGoto(_SMACK *a1, long a2);
 
 // sub_4D83D0: using guessed type int __stdcall SmackBufferNewPalette(_DWORD, _DWORD, _DWORD);
-int __stdcall SmackBufferNewPalette(long a1, long a2, long a3);
+void __stdcall SmackBufferNewPalette(HSMACKBUF a1, void *a2, unsigned int a3);
 
 // sub_4D83D4: using guessed type int __stdcall SmackColorRemapWithTrans(_DWORD, _DWORD, _DWORD, _DWORD, _DWORD);
-int __stdcall SmackColorRemapWithTrans(long a1, long a2, long a3, long a4, long a5);
+void __stdcall SmackColorRemapWithTrans(_SMACK *a1, void *a2, unsigned int a3, unsigned int a4, unsigned int a5);
 
 
 

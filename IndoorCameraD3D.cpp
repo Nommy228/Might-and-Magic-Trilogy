@@ -1,3 +1,5 @@
+#define _CRT_SECURE_NO_WARNINGS
+#include "ErrorHandling.h"
 #include "IndoorCameraD3D.h"
 #include "VectorTypes.h"
 #include "Game.h"
@@ -6,7 +8,7 @@
 #include "Outdoor_stuff.h"
 #include "Render.h"
 #include "LOD.h"
-#include "Math.h"
+#include "OurMath.h"
 #include "mm7_data.h"
 
 #include "stru9.h"
@@ -23,86 +25,41 @@ float _calc_fov(int viewport_width, int angle_degree)
 //----- (004361EF) --------------------------------------------------------
 IndoorCameraD3D::IndoorCameraD3D()
 {
-  IndoorCameraD3D *v1; // esi@1
-  //double v2; // st7@1
-  //double v3; // st6@1
-  //double v4; // st5@1
-  //double v5; // st7@1
-  //double v6; // st6@1
-  //double v7; // st5@1
-
-  v1 = this;
-  //IndoorCameraD3D_Vec3::IndoorCameraD3D_Vec3(&this->field_4);
-  //IndoorCameraD3D_Vec3::IndoorCameraD3D_Vec3(&v1->field_14);
-  //IndoorCameraD3D_Vec3::IndoorCameraD3D_Vec3(&v1->field_24);
-  /*_eh_vector_constructor_iterator_(v1->std__vector_000034_prolly_frustrum,
-    24,
-    6,
-    (void ( *)(void *))IndoorCameraD3D_Vec4::IndoorCameraD3D_Vec4,
-    (void ( *)(void *))IndoorCameraD3D_Vec4::dtor);*/
-  //v2 = 0;//(double)pBLVRenderParams->vPartyPos.z;
-  //v3 = 0;//(double)pBLVRenderParams->vPartyPos.y;
-  //v4 = 0;//(double)pBLVRenderParams->vPartyPos.x;
-  v1->field_108 = 0.0;
-  //v1->blv_party_x = 0;
-  //v1->blv_party_y = 0;
-  //v1->blv_party_z = 0;
-  //v5 = 0;//(double)pBLVRenderParams->vPartyPos.z;
-  //v6 = 0;//(double)pBLVRenderParams->vPartyPos.y;
-  //v7 = 300;//(double)(pBLVRenderParams->vPartyPos.x + 300);
-  v1->field_138 = 0.0;
-  //v1->blv_party_x_2 = 300;
-  //v1->blv_party_y_2 = 0;
-  //v1->blv_party_z_2 = 0;
-  v1->field_168 = 0.0;
-  v1->field_198 = 0.0;
-  v1->field_1C8 = 0.0;
-  v1->field_1F8 = 0.0;
-  v1->field_228 = 0.0;
-  v1->field_258 = 0.0;
-  v1->field_288 = 0.0;
-  v1->field_2B8 = 0.0;
-  v1->field_2E8 = 0.0;
-  v1->field_2BC = 0.0;
-  v1->field_2C0 = 0.0;
-  v1->field_2C4 = 0.0;
-  v1->field_318 = 0.0;
-  v1->field_2EC = 0.0;
-  v1->field_2F0 = 0.0;
-  v1->field_2F4 = 0.0;
-  v1->field_348 = 0.0;
-  v1->field_31C = 0.0;
-  v1->field_320 = 0.0;
-  v1->field_324 = 0.0;
-  v1->field_378 = 0.0;
-  v1->field_34C = 0.0;
-  v1->field_350 = 0.0;
-  v1->field_354 = 0.0;
+  this->field_108 = 0.0;
+  this->field_138 = 0.0;
+  this->field_168 = 0.0;
+  this->field_198 = 0.0;
+  this->field_1C8 = 0.0;
+  this->field_1F8 = 0.0;
+  this->field_228 = 0.0;
+  this->field_258 = 0.0;
+  this->field_288 = 0.0;
+  this->field_2B8 = 0.0;
+  this->field_2E8 = 0.0;
+  this->field_2BC = 0.0;
+  this->field_2C0 = 0.0;
+  this->field_2C4 = 0.0;
+  this->field_318 = 0.0;
+  this->field_2EC = 0.0;
+  this->field_2F0 = 0.0;
+  this->field_2F4 = 0.0;
+  this->field_348 = 0.0;
+  this->field_31C = 0.0;
+  this->field_320 = 0.0;
+  this->field_324 = 0.0;
+  this->field_378 = 0.0;
+  this->field_34C = 0.0;
+  this->field_350 = 0.0;
+  this->field_354 = 0.0;
   for (uint i = 0; i < 16384; ++i)
   {
     list_0037C[i].field_0 = 0;
     list_0037C[i].flt_30 = 0.0f;
   }
-
   list_0037C_size = 0;
   for (uint i = 0; i < 256; ++i)
     list_E0380[i].mm7__vector_000004_size = 0;
-  /*v10 = v1->list_E0380;
-  v12 = 256;
-  do
-  {
-    v10->mm7__vector_000004_size = 0;
-    //mm7__vector_constructor(
-    //  v10->mm7__vector_000004,
-    //  48,
-    //  64,
-    //  (int ( *)(int))IndoorCameraD3D_stru1::IndoorCameraD3D_stru1);
-    //++v10;
-    --v12;
-  }
-  while ( v12 );*/
   list_E0380_size = 0;
-  //v1->vdestructor_ptr = &stru8_pvdtor;
 }
 
 
@@ -150,7 +107,7 @@ bool IndoorCameraD3D::ApplyViewTransform_TrueIfStillVisible_BLV(int x, int y, in
   int v14; // [sp+8h] [bp-4h]@3
   int to_x; // [sp+14h] [bp+8h]@1
   int to_y; // [sp+18h] [bp+Ch]@1
-  int a2b; // [sp+18h] [bp+Ch]@5
+//  int a2b; // [sp+18h] [bp+Ch]@5
   int a3a; // [sp+1Ch] [bp+10h]@5
 
   to_x = x - pGame->pIndoorCameraD3D->vPartyPos.x;
@@ -166,12 +123,9 @@ bool IndoorCameraD3D::ApplyViewTransform_TrueIfStillVisible_BLV(int x, int y, in
          - (unsigned __int64)(to_y * (signed __int64)pGame->pIndoorCameraD3D->int_cosine_y);
     //}
     a3a = (z - pGame->pIndoorCameraD3D->vPartyPos.z) << 16;
-    a2b = (unsigned __int64)(to_z * (signed __int64)pGame->pIndoorCameraD3D->int_sine_x) >> 16;
-    //v10 = pOutX;
-    *pOutX = ((unsigned __int64)(v14 * (signed __int64)pGame->pIndoorCameraD3D->int_cosine_x) >> 16) - a2b;
+    *pOutX = fixpoint_mul(v14, pGame->pIndoorCameraD3D->int_cosine_x) - fixpoint_mul(to_z, pGame->pIndoorCameraD3D->int_sine_x);
     *pOutZ = v9;
-    *pOutY = ((unsigned __int64)(v14 * (signed __int64)pGame->pIndoorCameraD3D->int_sine_x) >> 16)
-           + ((unsigned __int64)(a3a * (signed __int64)pGame->pIndoorCameraD3D->int_cosine_x) >> 16);
+    *pOutY = fixpoint_mul(v14, pGame->pIndoorCameraD3D->int_sine_x) + fixpoint_mul(a3a, pGame->pIndoorCameraD3D->int_cosine_x);
   }
   else
   {
@@ -196,6 +150,17 @@ bool IndoorCameraD3D::ApplyViewTransform_TrueIfStillVisible_BLV(int x, int y, in
 bool IndoorCameraD3D::IsCulled(BLVFace *pFace)
 {
   RenderVertexSoft v; // [sp+8h] [bp-30h]@1
+
+  //----- (0043648F) --------------------------------------------------------
+  auto Vec3_short__to_RenderVertexSoft = [](RenderVertexSoft *_this, Vec3_short_ *a2) -> void
+  {
+    _this->flt_2C = 0.0;
+
+    _this->vWorldPosition.x = a2->x;
+    _this->vWorldPosition.y = a2->y;
+    _this->vWorldPosition.z = a2->z;
+  };
+
 
   Vec3_short__to_RenderVertexSoft(&v, &pIndoor->pVertices[*pFace->pVertexIDs]);
   return is_face_faced_to_camera(pFace, &v);
@@ -222,7 +187,7 @@ void IndoorCameraD3D::ViewTransform(RenderVertexSoft *a1a, unsigned int uNumVert
     for (uint i = 0; i < uNumVertices; ++i)
     {
           float st0, st1, st2;
-          if ( pRenderer->pRenderD3D )
+          //if ( pRenderer->pRenderD3D )
           {
             /*__asm
             {
@@ -266,7 +231,7 @@ void IndoorCameraD3D::ViewTransform(RenderVertexSoft *a1a, unsigned int uNumVert
             st1 = cos_y * (a1a[i].vWorldPosition.x - pGame->pIndoorCameraD3D->vPartyPos.x) + sin_y * (a1a[i].vWorldPosition.y - pGame->pIndoorCameraD3D->vPartyPos.y);
             st2 = (a1a[i].vWorldPosition.z - pGame->pIndoorCameraD3D->vPartyPos.z);
           }
-          else
+          if (false)//else
           {
             /*__asm
             {
@@ -344,7 +309,7 @@ void IndoorCameraD3D::ViewTransform(RenderVertexSoft *a1a, unsigned int uNumVert
     {
       for (uint i = 0; i < uNumVertices; ++i)
       {
-          if ( pRenderer->pRenderD3D )
+          //if ( pRenderer->pRenderD3D )
           {
             /*__asm
             {
@@ -400,7 +365,7 @@ void IndoorCameraD3D::ViewTransform(RenderVertexSoft *a1a, unsigned int uNumVert
             a1a[i].vWorldViewPosition.y = sin_y * (a1a[i].vWorldPosition.x - pGame->pIndoorCameraD3D->vPartyPos.x) - cos_y * (a1a[i].vWorldPosition.y - pGame->pIndoorCameraD3D->vPartyPos.y);
             a1a[i].vWorldViewPosition.z = (a1a[i].vWorldPosition.z - pGame->pIndoorCameraD3D->vPartyPos.z);
           }
-          else
+          if (false)//else
           {
             __debugbreak();
             /*__asm
@@ -548,157 +513,81 @@ bool IndoorCameraD3D::is_face_faced_to_camera(BLVFace *pFace, RenderVertexSoft *
   return true;
 }
 
-//----- (00437C96) --------------------------------------------------------
-void IndoorCameraD3D::do_draw_debug_line_d3d(const RenderVertexD3D3 *pLineBegin, unsigned int uDiffuseBegin, const RenderVertexD3D3 *pLineEnd, unsigned int uDiffuseEnd, float z_stuff)
-{
-  double v6; // st7@2
-  IDirect3DDevice3 *v7; // eax@2
-  HRESULT v8; // eax@2
-  std::string v9; // [sp-18h] [bp-60h]@3
-  const char *v10; // [sp-Ch] [bp-54h]@2
-  const char *v11; // [sp-8h] [bp-50h]@2
-  int v12; // [sp-4h] [bp-4Ch]@2
-  RenderVertexD3D3 v13[2]; // [sp+8h] [bp-40h]@2
-
-  if ( pRenderer->pRenderD3D )
-  {
-    v6 = 0.001 - z_stuff;
-    memcpy(v13, pLineBegin, 0x20u);
-    memcpy(&v13[1], pLineEnd, sizeof(v13[1]));
-    v13[0].pos.z = v6;
-    v13[1].pos.z = v6;
-    v12 = 0;
-    v13[0].diffuse = uDiffuseBegin;
-    v13[1].diffuse = uDiffuseEnd;
-    v7 = pRenderer->pRenderD3D->pDevice;
-    v11 = 0;
-    //v10 = (const char *)v7;
-    ErrD3D(pRenderer->pRenderD3D->pDevice->SetTexture(0, nullptr));
-    ErrD3D(pRenderer->pRenderD3D->pDevice->DrawPrimitive(
-           D3DPT_LINELIST,
-           452,
-           v13,
-           2,
-           16));
-  }
-  else
-  {
-    MessageBoxW(nullptr, L"draw_debug_line() not implemented for SW rendering", L"E:\\WORK\\MSDEV\\MM7\\MM7\\Code\\Core3D.cpp:1415", 0);
-  }
-}
 
 //----- (00437AB5) --------------------------------------------------------
-void IndoorCameraD3D::do_draw_debug_line_sw(RenderVertexSoft *pLineBegin, unsigned int uStartDiffuse, RenderVertexSoft *pLineEnd, unsigned int uEndDiffuse, unsigned int uOutNumVertices, float z_stuff)
+void IndoorCameraD3D::do_draw_debug_line_sw(RenderVertexSoft *pLineBegin, signed int sStartDiffuse, RenderVertexSoft *pLineEnd, signed int sEndDiffuse, unsigned int uOutNumVertices, float z_stuff)
 {
-  char *v7; // eax@2
-  signed int v8; // edx@2
-  float v9; // ecx@5
-  float v10; // eax@5
-  char *v11; // eax@6
-  signed int v12; // edx@6
-  float v13; // edx@8
-  float v14; // eax@8
-  float v15; // eax@8
-  double v16; // st7@11
-  HRESULT v17; // eax@11
-  std::string v18; // [sp-18h] [bp-7E4h]@12
-  IDirect3DDevice3 *v19; // [sp-Ch] [bp-7D8h]@8
-  const char *v20; // [sp-8h] [bp-7D4h]@8
-  int v21; // [sp-4h] [bp-7D0h]@8
   RenderVertexSoft a1[20]; // [sp+8h] [bp-7C4h]@6
   RenderVertexSoft pVertices[20]; // [sp+3C8h] [bp-404h]@2
   RenderVertexD3D3 v24[2]; // [sp+788h] [bp-44h]@11
-  IndoorCameraD3D *v25; // [sp+7C8h] [bp-4h]@1
 
-  v25 = this;
-  if ( pRenderer->pRenderD3D )
-  {
-    v7 = (char *)&pVertices[0].flt_2C;
-    v8 = 20;
-    do
-    {
-      *(float *)v7 = 0.0;
-      v7 += 48;
-      --v8;
-    }
-    while ( v8 );
+  //if ( pRenderer->pRenderD3D )
+  //{
+    for ( uint i = 0; i < 20; i++ )
+      pVertices[i].flt_2C = 0.0;
     if ( (char)uOutNumVertices )
     {
-      v9 = pLineBegin->vWorldViewProjX;
+      pVertices[0].vWorldViewProjX = pLineBegin->vWorldViewProjX;
       pVertices[0].vWorldViewProjY = pLineBegin->vWorldViewProjY;
-      pVertices[0].vWorldViewProjX = v9;
-      v10 = pLineEnd->vWorldViewProjY;
+
       pVertices[1].vWorldViewProjX = pLineEnd->vWorldViewProjX;
-      pVertices[1].vWorldViewProjY = v10;
-LABEL_11:
-      v16 = 0.001 - z_stuff;
+      pVertices[1].vWorldViewProjY = pLineEnd->vWorldViewProjY;
       v24[0].specular = 0;
       v24[0].pos.x = pVertices[0].vWorldViewProjX;
       v24[0].pos.y = pVertices[0].vWorldViewProjY;
-      v24[0].pos.z = v16;
-      v24[0].diffuse = uStartDiffuse;
+      v24[0].pos.z = 0.001 - z_stuff;
+      v24[0].diffuse = sStartDiffuse;
       v24[0].rhw = 0.001;
-      v24[1].pos.x = pVertices[1].vWorldViewProjX;
       v24[0].texcoord.x = 0.0;
-      v24[1].pos.y = pVertices[1].vWorldViewProjY;
       v24[0].texcoord.y = 0.0;
-      v24[1].diffuse = uEndDiffuse;
-      v24[1].pos.z = v16;
+
+      v24[1].pos.x = pVertices[1].vWorldViewProjX;
+      v24[1].pos.y = pVertices[1].vWorldViewProjY;
+      v24[1].diffuse = sEndDiffuse;
+      v24[1].pos.z = 0.001 - z_stuff;
       v24[1].specular = 0;
-      v21 = 0;
       v24[1].rhw = 0.001;
-      v20 = 0;
       v24[1].texcoord.x = 0.0;
       v24[1].texcoord.y = 0.0;
       //v19 = pRenderer->pRenderD3D->pDevice;
-      ErrD3D(pRenderer->pRenderD3D->pDevice->SetTexture(0, nullptr));
-      ErrD3D(pRenderer->pRenderD3D->pDevice->DrawPrimitive(
-              D3DPT_LINELIST,
-              D3DFVF_XYZRHW | D3DFVF_DIFFUSE | D3DFVF_SPECULAR | D3DFVF_TEX1,
-              v24,
-              2,
-              16));
+      pRenderer->DrawLines(v24, 2);
       return;
     }
-    v11 = (char *)&a1[0].flt_2C;
-    v12 = 20;
-    do
-    {
-      *(float *)v11 = 0.0;
-      v11 += 48;
-      --v12;
-    }
-    while ( v12 );
-    v21 = 0;
-    v20 = (const char *)1;
-    v19 = (IDirect3DDevice3 *)4;
-    v13 = pLineBegin->vWorldPosition.x;
+    for ( uint i = 0; i < 20; i++ )
+      a1[i].flt_2C = 0.0;
     uOutNumVertices = 2;
-    a1[0].vWorldPosition.x = v13;
-    v14 = pLineBegin->vWorldPosition.z;
+    a1[0].vWorldPosition.x = pLineBegin->vWorldPosition.x;
     a1[0].vWorldPosition.y = pLineBegin->vWorldPosition.y;
-    a1[0].vWorldPosition.z = v14;
+    a1[0].vWorldPosition.z = pLineBegin->vWorldPosition.z;
     a1[1].vWorldPosition.x = pLineEnd->vWorldPosition.x;
-    v15 = pLineEnd->vWorldPosition.z;
     a1[1].vWorldPosition.y = pLineEnd->vWorldPosition.y;
-    a1[1].vWorldPosition.z = v15;
-    if ( CalcPortalShape(
-           a1,
-           &uOutNumVertices,
-           pVertices,
-           this->std__vector_000034_prolly_frustrum,
-           4,
-           1,
-           0) != 1
-      || (signed int)uOutNumVertices >= 2 )
+    a1[1].vWorldPosition.z = pLineEnd->vWorldPosition.z;
+    if ( CalcPortalShape(a1, &uOutNumVertices, pVertices, this->std__vector_000034_prolly_frustrum, 4, 1, 0) != 1 || (signed int)uOutNumVertices >= 2 )
     {
-      ViewTransform(pVertices, 2u);
-      Project(pVertices, 2u, 0);
-      goto LABEL_11;
+      ViewTransform(pVertices, 2);
+      Project(pVertices, 2, 0);
+      v24[0].specular = 0;
+      v24[0].pos.x = pVertices[0].vWorldViewProjX;
+      v24[0].pos.y = pVertices[0].vWorldViewProjY;
+      v24[0].pos.z = 0.001 - z_stuff;
+      v24[0].diffuse = sStartDiffuse;
+      v24[0].rhw = 0.001;
+      v24[0].texcoord.x = 0.0;
+      v24[0].texcoord.y = 0.0;
+
+      v24[1].pos.x = pVertices[1].vWorldViewProjX;
+      v24[1].pos.y = pVertices[1].vWorldViewProjY;
+      v24[1].diffuse = sEndDiffuse;
+      v24[1].pos.z = 0.001 - z_stuff;
+      v24[1].specular = 0;
+      v24[1].rhw = 0.001;
+      v24[1].texcoord.x = 0.0;
+      v24[1].texcoord.y = 0.0;
+      //v19 = pRenderer->pRenderD3D->pDevice;
+      pRenderer->DrawLines(v24, 2);
+      return;
     }
-  }
-  else
-    MessageBoxW(nullptr, L"draw_debug_line() not implemented for SW rendering", L"E:\\WORK\\MSDEV\\MM7\\MM7\\Code\\Core3D.cpp:1383", 0);
+  //}
 }
 
 //----- (00437A55) --------------------------------------------------------
@@ -708,52 +597,33 @@ void IndoorCameraD3D::debug_outline_d3d(const RenderVertexD3D3 *pLineVertices, u
   const RenderVertexD3D3 *v6; // ecx@2
   unsigned int v7; // ebx@2
   const RenderVertexD3D3 *v8; // edi@3
-  IndoorCameraD3D *thisa; // [sp+10h] [bp-4h]@1
 
   v5 = 0;
-  thisa = this;
   if ( (signed int)(uNumLines - 1) > 0 )
   {
     v6 = pLineVertices;
-    v7 = uNumLines - 1;
     v5 = uNumLines - 1;
-    do
+    for ( v7 = uNumLines - 1; v7; --v7 )
     {
       v8 = v6 + 1;
-      do_draw_debug_line_d3d(v6, uDiffuse, v6 + 1, uDiffuse, z_stuff);
-      --v7;
+      pRenderer->do_draw_debug_line_d3d(v6, uDiffuse, v6 + 1, uDiffuse, z_stuff);
       v6 = v8;
     }
-    while ( v7 );
   }
-  do_draw_debug_line_d3d(&pLineVertices[v5], uDiffuse, pLineVertices, uDiffuse, z_stuff);
+  pRenderer->do_draw_debug_line_d3d(&pLineVertices[v5], uDiffuse, pLineVertices, uDiffuse, z_stuff);
 }
 
 //----- (004379EE) --------------------------------------------------------
 void IndoorCameraD3D::debug_outline_sw(RenderVertexSoft *a2, unsigned int uNumVertices, unsigned int uDiffuse, float a5)
 {
-  unsigned int v5; // esi@1
-  RenderVertexSoft *v6; // eax@2
-  RenderVertexSoft *v7; // edi@3
-  char v8; // zf@3
-  unsigned int uNumVerticesa; // [sp+20h] [bp+Ch]@2
-
-  v5 = 0;
+  if ( !uNumVertices )
+    return;
   if ( (signed int)(uNumVertices - 1) > 0 )
   {
-    v6 = a2;
-    v5 = uNumVertices - 1;
-    uNumVerticesa = uNumVertices - 1;
-    do
-    {
-      v7 = v6 + 1;
-      do_draw_debug_line_sw(v6, uDiffuse, v6 + 1, uDiffuse, 0, a5);
-      v8 = uNumVerticesa-- == 1;
-      v6 = v7;
-    }
-    while ( !v8 );
+    for ( uint i = 0; i < uNumVertices - 1; i++ )
+      do_draw_debug_line_sw(&a2[i], uDiffuse, &a2[i + 1], uDiffuse, 0, a5);
   }
-  do_draw_debug_line_sw(&a2[v5], uDiffuse, a2, uDiffuse, 0, a5);
+  do_draw_debug_line_sw(&a2[uNumVertices - 1], uDiffuse, a2, uDiffuse, 0, a5);
 }
 
 
@@ -788,25 +658,7 @@ void IndoorCameraD3D::DebugDrawPortal(BLVFace *pFace)
     v[i].texcoord.y = 0;
   }
 
-
-  //ErrD3D(pRenderer->pRenderD3D->pDevice->SetRenderState(D3DRENDERSTATE_ZWRITEENABLE, false));
-  //ErrD3D(pRenderer->pRenderD3D->pDevice->SetRenderState(D3DRENDERSTATE_ZENABLE, false));
-  ErrD3D(pRenderer->pRenderD3D->pDevice->SetRenderState(D3DRENDERSTATE_ALPHABLENDENABLE, TRUE));
-  ErrD3D(pRenderer->pRenderD3D->pDevice->SetRenderState(D3DRENDERSTATE_SRCBLEND, D3DBLEND_SRCALPHA));
-  ErrD3D(pRenderer->pRenderD3D->pDevice->SetRenderState(D3DRENDERSTATE_DESTBLEND, D3DBLEND_INVSRCALPHA));
-  
-  ErrD3D(pRenderer->pRenderD3D->pDevice->SetTexture(0, nullptr));
-  ErrD3D(pRenderer->pRenderD3D->pDevice->DrawPrimitive(D3DPT_TRIANGLEFAN,
-                D3DFVF_XYZRHW | D3DFVF_DIFFUSE | D3DFVF_SPECULAR | D3DFVF_TEX1,
-                v,
-                pFace->uNumVertices,
-                28));
-
-  ErrD3D(pRenderer->pRenderD3D->pDevice->SetRenderState(D3DRENDERSTATE_SRCBLEND, D3DBLEND_ONE));
-  ErrD3D(pRenderer->pRenderD3D->pDevice->SetRenderState(D3DRENDERSTATE_DESTBLEND, D3DBLEND_ZERO));
-  ErrD3D(pRenderer->pRenderD3D->pDevice->SetRenderState(D3DRENDERSTATE_ALPHABLENDENABLE, FALSE));
-  //ErrD3D(pRenderer->pRenderD3D->pDevice->SetRenderState(D3DRENDERSTATE_ZENABLE, TRUE));
-  //ErrD3D(pRenderer->pRenderD3D->pDevice->SetRenderState(D3DRENDERSTATE_ZWRITEENABLE, TRUE));
+  pRenderer->DrawFansTransparent(v, pFace->uNumVertices);
 }
 
 //----- (00437906) --------------------------------------------------------
@@ -832,8 +684,7 @@ void IndoorCameraD3D::PrepareAndDrawDebugOutline(BLVFace *pFace, unsigned int uD
       static_sub_437906_array_50CDD0[i].v = (double)pFace->pVertexVIDs[i];
     }
   }
-  extern bool draw_debug_line;
-  if ( draw_debug_line )
+  if ( draw_portals_loops )
     debug_outline_sw(static_sub_437906_array_50CDD0, pFace->uNumVertices, uDiffuse, 0.0);
 }
 // 50D9D0: using guessed type char static_sub_437906_byte_50D9D0_init_flag;
@@ -842,44 +693,27 @@ void IndoorCameraD3D::PrepareAndDrawDebugOutline(BLVFace *pFace, unsigned int uD
 void IndoorCameraD3D::MatrixMultiply(Matrix3x3_float_ *a1, Matrix3x3_float_ *a2, Matrix3x3_float_ *out)
 {
   float *v4; // ecx@1
-  float *v5; // eax@1
-  signed int v6; // ebx@1
-  float *v7; // edx@2
-  float *v8; // ecx@2
-  signed int v9; // edi@2
   double v10; // st7@3
   double v11; // st6@3
 
   v4 = (float *)out;
-  v5 = &a1->_12;
-  v6 = 3;
-  do
+  for ( uint i = 0; i < 3; i++ )
   {
-    v7 = v4;
-    v8 = &a2->_21;
-    v9 = 3;
-    do
+    for ( uint j = 0; j < 3; j++ )
     {
-      v10 = v8[3] * v5[1] + *(v8 - 3) * *(v5 - 1);
-      v11 = *v8 * *v5;
-      ++v8;
-      *v7 = v10 + v11;
-      ++v7;
-      --v9;
+      v10 = a2->v[2][j] * a1->v[i][2] + a2->v[0][j] * a1->v[i][0];
+      v11 = a2->v[1][j] * a1->v[i][1];
+      *v4 = v10 + v11;
+      ++v4;
     }
-    while ( v9 );
-    v5 += 3;
-    --v6;
-    v4 = v7;
   }
-  while ( v6 );
 }
 
 //----- (004376E7) --------------------------------------------------------
 void IndoorCameraD3D::CreateWorldMatrixAndSomeStuff()
 {
   //IndoorCameraD3D *v1; // esi@1
-  double v2; // st7@1
+//  double v2; // st7@1
   //signed int v3; // edi@1
   //int v4; // eax@1
   //double v5; // st7@2
@@ -889,7 +723,7 @@ void IndoorCameraD3D::CreateWorldMatrixAndSomeStuff()
   Matrix3x3_float_ m3; // [sp+58h] [bp-70h]@1
   Matrix3x3_float_ m4; // [sp+7Ch] [bp-4Ch]@1
   Matrix3x3_float_ m5; // [sp+A0h] [bp-28h]@1
-  float v12; // [sp+C4h] [bp-4h]@1
+//  float v12; // [sp+C4h] [bp-4h]@1
 
  //RotationZ(0)
   m5._11 = cosf(0);         m5._12 = sinf(0);        m5._13 = 0;
@@ -1002,56 +836,57 @@ void IndoorCameraD3D::_4374E8_ProllyBuildFrustrum()
 //----- (00437376) --------------------------------------------------------
 char IndoorCameraD3D::_437376(stru154 *thisa, RenderVertexSoft *a2, unsigned int *pOutNumVertices)
 {
-  unsigned int v4; // ebx@1
-  RenderVertexSoft *v5; // edx@2
+  //unsigned int v4; // ebx@1
+  //RenderVertexSoft *v5; // edx@2
   double v6; // st7@3
-  unsigned int v7; // edi@5
+  //unsigned int v7; // edi@5
   signed int v8; // esi@6
   int v9; // ebx@8
   int v10; // eax@8
-  int v11; // ecx@14
-  int v12; // eax@14
+  //int v11; // ecx@14
+  //int v12; // eax@14
   int v13; // eax@15
   signed int v14; // ebx@17
-  RenderVertexSoft *v15; // eax@18
+  //RenderVertexSoft *v15; // eax@18
   unsigned int *v16; // eax@20
-  char result; // al@24
+//  char result; // al@24
   RenderVertexSoft v18; // [sp+Ch] [bp-34h]@2
   int v19; // [sp+3Ch] [bp-4h]@8
   signed int thisb; // [sp+48h] [bp+8h]@6
-  char a2_3; // [sp+4Fh] [bp+Fh]@5
+  bool a2_3; // [sp+4Fh] [bp+Fh]@5
 
-  v4 = *pOutNumVertices;
+  //v4 = *pOutNumVertices;
+  //v5 = a2;
+  memcpy(&v18, a2, sizeof(v18));
+  a2_3 = false;
+  memcpy(&a2[*pOutNumVertices], a2, sizeof(a2[*pOutNumVertices]));
+  memcpy(&a2[*pOutNumVertices + 1], &a2[1], sizeof(a2[*pOutNumVertices + 1]));
+  //v7 = *pOutNumVertices;
+
   if ( (signed int)*pOutNumVertices <= 3
-    || ((v5 = a2,
-         memcpy(&v18, a2, sizeof(v18)),
-         (v18.vWorldPosition.z - (double)pGame->pIndoorCameraD3D->vPartyPos.z) * thisa->face_plane.vNormal.z
+    || (((v18.vWorldPosition.z - (double)pGame->pIndoorCameraD3D->vPartyPos.z) * thisa->face_plane.vNormal.z
        + (v18.vWorldPosition.y - (double)pGame->pIndoorCameraD3D->vPartyPos.y) * thisa->face_plane.vNormal.y
        + (v18.vWorldPosition.x - (double)pGame->pIndoorCameraD3D->vPartyPos.x) * thisa->face_plane.vNormal.x < 0.0) ? (v6 = 1.0) : (v6 = -1.0),
-        a2_3 = 0,
-        memcpy(&v5[v4], v5, sizeof(v5[v4])),
-        memcpy(&v5[*pOutNumVertices + 1], &v5[1], sizeof(v5[*pOutNumVertices + 1])),
-        v7 = *pOutNumVertices,
         (signed int)*pOutNumVertices <= 0) )
-    goto LABEL_28;
+    return 0;
   v8 = 1;
-  for ( thisb = 1; ; v8 = thisb )
+  for ( thisb = 1; thisb - 1 < (signed int)*pOutNumVertices; v8 = thisb )
   {
     v9 = v8 - 1;
     v10 = v8 + 1;
     v19 = v8 + 1;
-    if ( v8 - 1 >= (signed int)v7 )
-      v9 -= v7;
-    if ( v8 >= (signed int)v7 )
-      v8 -= v7;
-    if ( v19 >= (signed int)v7 )
-      v10 = v19 - v7;
-    v11 = (int)&v5[v10];
-    v12 = (int)&v5[v9];
-    if ( -0.009999999776482582 > ((v5[v8].vWorldViewProjX - *(float *)(v12 + 24))
-                                * (*(float *)(v11 + 28) - *(float *)(v12 + 28))
-                                - (v5[v8].vWorldViewProjY - *(float *)(v12 + 28))
-                                * (*(float *)(v11 + 24) - *(float *)(v12 + 24)))
+    if ( v8 - 1 >= (signed int)*pOutNumVertices )
+      v9 -= *pOutNumVertices;
+    if ( v8 >= (signed int)*pOutNumVertices )
+      v8 -= *pOutNumVertices;
+    if ( v19 >= (signed int)*pOutNumVertices )
+      v10 = v19 - *pOutNumVertices;
+    //v11 = (int)&a2[v10];
+    //v12 = (int)&a2[v9];
+    if ( -0.009999999776482582 > ((a2[v8].vWorldViewProjX - a2[v9].vWorldViewProjX)
+                                * (a2[v10].vWorldViewProjY - a2[v9].vWorldViewProjY)
+                                - (a2[v8].vWorldViewProjY - a2[v9].vWorldViewProjY)
+                                * (a2[v10].vWorldViewProjX - a2[v9].vWorldViewProjX))
                                * v6 )
     {
       thisb = v19;
@@ -1060,41 +895,32 @@ char IndoorCameraD3D::_437376(stru154 *thisa, RenderVertexSoft *a2, unsigned int
     else
     {
       v13 = thisb;
-      if ( thisb >= (signed int)v7 )
-        v13 = thisb - v7;
-      v14 = v13;
-      if ( v13 < (signed int)v7 )
+      if ( thisb >= (signed int)*pOutNumVertices )
+        v13 = thisb - *pOutNumVertices;
+      if ( v13 < (signed int)*pOutNumVertices )
       {
-        v15 = &v5[v13];
-        do
-        {
-          memcpy(v15, &v15[1], 0x30u);
-          ++v14;
-          ++v15;
-        }
-        while ( v14 < (signed int)*pOutNumVertices );
+        for ( v14 = v13; v14 < (signed int)*pOutNumVertices; ++v14 )
+          memcpy(&a2[v14], &a2[v14 + 1], sizeof(a2[v14]));
       }
       v16 = pOutNumVertices;
-      a2_3 = 1;
+      a2_3 = true;
       --*v16;
     }
-    v7 = *v16;
-    if ( thisb - 1 >= (signed int)*v16 )
-      break;
+    *pOutNumVertices = *v16;
+    //if ( thisb - 1 >= (signed int)*v16 )
+      //break;
   }
   if ( a2_3 )
-    result = 1;
+    return true;
   else
-LABEL_28:
-    result = 0;
-  return result;
+    return false;
 }
 
 //----- (00437285) --------------------------------------------------------
 bool IndoorCameraD3D::CalcPortalShape(RenderVertexSoft *a1, unsigned int *pOutNumVertices, RenderVertexSoft *pVertices, IndoorCameraD3D_Vec4 *a4, signed int uNumVertices, char a6, int _unused)
 {
-  char *v8; // eax@2
-  signed int v9; // ecx@2
+//  char *v8; // eax@2
+//  signed int v9; // ecx@2
   //bool result; // eax@5
   int v11; // ecx@5
   //signed int v12; // ecx@6
@@ -1160,8 +986,8 @@ bool IndoorCameraD3D::CalcPortalShape(RenderVertexSoft *a1, unsigned int *pOutNu
 //----- (004371C3) --------------------------------------------------------
 bool IndoorCameraD3D::_4371C3(RenderVertexSoft *pVertices, unsigned int *pOutNumVertices, int _unused)
 {
-  char *v4; // eax@2
-  signed int v5; // ecx@2
+//  char *v4; // eax@2
+//  signed int v5; // ecx@2
   RenderVertexSoft *v6; // esi@5
   unsigned int *v7; // edi@5
   char *v8; // ecx@6
@@ -1218,42 +1044,22 @@ bool IndoorCameraD3D::_4371C3(RenderVertexSoft *pVertices, unsigned int *pOutNum
 // 50F1E0: using guessed type char static_sub_4371C3_byte_50F1E0_init_flags;
 
 //----- (00437143) --------------------------------------------------------
-int IndoorCameraD3D::_437143(unsigned int uNumInVertices, RenderVertexSoft *pOutVertices, RenderVertexSoft *pInVertices, unsigned int *pOutNumVertices)
+void IndoorCameraD3D::_437143(unsigned int uNumInVertices, RenderVertexSoft *pOutVertices, RenderVertexSoft *pInVertices, unsigned int *pOutNumVertices)
 {
-  unsigned int v5; // edi@1
-  char *pOutVertices_; // edx@2
-  char *v7; // eax@2
-  unsigned int v8; // ebx@2
   double v9; // st7@3
-  double v10; // st6@3
-  int result; // eax@5
-  unsigned int a2a; // [sp+10h] [bp+Ch]@2
 
-  v5 = uNumInVertices;
-  if ( (signed int)uNumInVertices > 0 )
+  uint i = 0;
+
+  for ( i; i < uNumInVertices; ++i )
   {
-    pOutVertices_ = (char *)&pOutVertices->vWorldViewProjY;
-    v7 = (char *)&pInVertices->_rhw;
-    v8 = (char *)pOutVertices - (char *)pInVertices;
-    a2a = uNumInVertices;
-    do
-    {
-      *(float *)v7 = 1.0 / (*((float *)v7 - 5) + 0.0000001);
-      memcpy(pOutVertices_ - 28, v7 - 32, 0x30u);
-      v9 = (double)pODMRenderParams->int_fov_rad * *(float *)&v7[v8];
-      v10 = (double)pViewport->uScreenCenterX - v9 * *((float *)v7 - 4);
-      v7 += 48;
-      *((float *)pOutVertices_ - 1) = v10;
-      *(float *)pOutVertices_ = (double)pViewport->uScreenCenterY - v9 * *((float *)v7 - 15);
-      pOutVertices_ += 48;
-      --a2a;
-    }
-    while ( a2a );
-    v5 = uNumInVertices;
+    pInVertices[i]._rhw = 1.0 / (pInVertices[i].vWorldViewPosition.x + 0.0000001);
+    memcpy(&pOutVertices[i], &pInVertices[i], sizeof(pOutVertices[i]));
+    v9 = (double)pODMRenderParams->int_fov_rad * pInVertices[i]._rhw;
+    pOutVertices[i].vWorldViewProjX = (double)pViewport->uScreenCenterX - v9 * pInVertices[i].vWorldViewPosition.y;
+    pOutVertices[i].vWorldViewProjY = (double)pViewport->uScreenCenterY - v9 * pInVertices[i].vWorldViewPosition.z;
   }
-  result = (int)pOutNumVertices;
-  *pOutNumVertices = v5;
-  return result;
+  *pOutNumVertices = i;
+  return;
 }
 
 //----- (00436F09) --------------------------------------------------------
@@ -1528,12 +1334,12 @@ void IndoorCameraD3D::Project(signed int x, signed int y, signed int z, int *a5,
   double v6; // ST00_8@2
   //double v7; // ST08_8@2
   //double v8; // ST00_8@2
-  signed __int64 v9; // qtt@3
-  int v10; // ST04_4@3
+//  signed __int64 v9; // qtt@3
+//  int v10; // ST04_4@3
   float a2a; // [sp+18h] [bp+8h]@2
   float a2b; // [sp+18h] [bp+8h]@2
 
-  if ( pRenderer->pRenderD3D )
+  //if ( pRenderer->pRenderD3D )
   {
     v6 = 1.0 / (double)x;
     a2a = (double)y * fov * v6 + screenCenterX;
@@ -1589,28 +1395,16 @@ struct IDirect3DTexture2 *IndoorCameraD3D::LoadTextureAndGetHardwarePtr(char *St
 //----- (00436A40) --------------------------------------------------------
 double IndoorCameraD3D::GetPolygonMaxZ(RenderVertexSoft *pVertex, unsigned int uStripType)
 {
-  unsigned int v3; // edx@1
   double result; // st7@1
-  float *v5; // ecx@2
 
-  v3 = uStripType;
   result = 1.1754944e-38;
-  if ( (signed int)uStripType > 0 )
+  for ( uint i = 0; i < uStripType; i++ )
   {
-    v5 = &pVertex->vWorldPosition.z;
-    do
-    {
-      if ( *v5 > result )
-        result = *v5;
-      v5 += 12;
-      --v3;
-    }
-    while ( v3 );
+    if ( pVertex[i].vWorldPosition.z > result )
+      result = pVertex[i].vWorldPosition.z;
   }
   return result;
 }
-
-
 
 // -- new
 // merged from IndoorCamera::Initialize2

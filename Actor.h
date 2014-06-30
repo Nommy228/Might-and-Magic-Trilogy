@@ -13,11 +13,7 @@
 struct stru319
 {
   int which_player_to_attack(struct Actor *pActor);
-  int PlayerHitOrMiss(struct Player *pPlayer, struct Actor *pActor, int a3, int a4);
-  bool ActorHitOrMiss(struct Actor *pActor, struct Player *pPlayer);
   int _427546(int a2);
-  int CalcMagicalDamageToActor(struct Actor *pActor, int a2, signed int a3);
-  bool GetMagicalResistance(struct Actor *pActor, unsigned int uType);
   int FindClosestActor(int a2, int a3, int a4);
 
   char field_0;
@@ -162,40 +158,23 @@ struct ActorJob
 #pragma pack(push, 1)
 struct Actor
 {
-  //----- (0041F4C1) --------------------------------------------------------
+//----- (0041F4C1) --------------------------------------------------------
   inline Actor()
   {
-    Actor *v1; // esi@1
-    SpellBuff *v2; // eax@1
-    signed int v3; // edx@1
-    ItemGen *v4; // edi@3
-    signed int v5; // ebx@3
+    signed int i; // edx@1
 
-  v1 = this;
-  v2 = this->pActorBuffs;
-  v3 = 22;
-  do
-  {
-    v2->uSkill = 0;
-    v2->uPower = 0;
-    v2->uExpireTime = 0;
-    v2->uCaster = 0;
-    v2->uFlags = 0;
-    ++v2;
-    --v3;
+    for ( i = 0; i < 22; i++ )
+    {
+      this->pActorBuffs[i].uSkill = 0;
+      this->pActorBuffs[i].uPower = 0;
+      this->pActorBuffs[i].uExpireTime = 0;
+      this->pActorBuffs[i].uCaster = 0;
+      this->pActorBuffs[i].uFlags = 0;
+    }
+    for ( i = 0; i < 4; i++ )
+      this->ActorHasItems[i].Reset();
+    Reset();
   }
-  while ( v3 );
-  v4 = this->array_000234;
-  v5 = 4;
-  do
-  {
-    v4->Reset();
-    ++v4;
-    --v5;
-  }
-  while ( v5 );
-  Reset();
-}
 
   void SummonMinion(int summonerId);
   void Reset();
@@ -234,6 +213,7 @@ struct Actor
   static void Explode(unsigned int uActorID);
   static void AI_RangedAttack(unsigned int uActorID, struct AIDirection *a2, int type, char a4);
   static void AI_SpellAttack(unsigned int uActorID, struct AIDirection *pDir, int uSpellID, int a4, unsigned int uSkillLevel);
+  static void ActorDamageFromMonster(signed int attacker_id, unsigned int actor_id, struct Vec3_int_ *pVelocity, signed int a4);
 
   static unsigned short GetObjDescId( int spellId );
 
@@ -248,13 +228,25 @@ struct Actor
   static void AddBloodsplatOnDamageOverlay(unsigned int uActorID, int a2, signed int a3);
 
   static bool _46DF1A_collide_against_actor(int a1, int a2);
-  static void _4BBF61_summon_actor(int a1, __int16 x, int y, int z); // idb
+  static void Arena_summon_actor(int monster_id, __int16 x, int y, int z);
+  static void DamageMonsterFromParty(signed int a1, unsigned int uActorID_Monster, struct Vec3_int_ *pVelocity);
+  static void MakeActorAIList_ODM();
+  static int MakeActorAIList_BLV();
+  static void UpdateActorAI();
+  static void InitializeActors();
+  static unsigned int SearchAliveActors(unsigned int *pTotalActors);
+  static unsigned int SearchActorByMonsterID(unsigned int *pTotalActors, int uMonsterID);
+  static unsigned int SearchActorByGroup(unsigned int *pTotalActors, unsigned int uGroup);
+  static unsigned int SearchActorByID(unsigned int *pTotalActors, unsigned int a2);
 
 
   void LootActor();
   bool _427102_IsOkToCastSpell(signed int a2);
   ABILITY_INDEX special_ability_use_check(int a2);
   bool _4273BB_DoesHitOtherActor(Actor *defender, int a3, int a4);
+  bool ActorHitOrMiss(Player *pPlayer);
+  int CalcMagicalDamageToActor(DAMAGE_TYPE dmgType, signed int incomingDmg);
+  bool DoesDmgTypeDoDamage(DAMAGE_TYPE uType);
 
   char pActorName[32];
   signed __int16 sNPC_ID;
@@ -286,7 +278,7 @@ struct Actor
   unsigned __int16 pSpriteIDs[8];
   unsigned __int16 pSoundSampleIDs[4]; // 1 die     3 bored
   struct SpellBuff pActorBuffs[22];
-  struct ItemGen array_000234[4];
+  struct ItemGen ActorHasItems[4];
   unsigned int uGroup;
   unsigned int uAlly;
   struct ActorJob pScheduledJobs[8];
@@ -308,3 +300,10 @@ extern std::array<Actor, 500> pActors;
 extern size_t uNumActors;
 
 bool CheckActors_proximity();
+int __fastcall IsActorAlive(unsigned int uType, unsigned int uParam, unsigned int uNumAlive); // idb
+void __fastcall sub_448518_npc_set_item(int npc, unsigned int item, int a3);
+void __fastcall ToggleActorGroupFlag(unsigned int uGroupID, unsigned int uFlag, unsigned int bToggle);
+bool __fastcall sub_4070EF_prolly_detect_player(unsigned int uObjID, unsigned int uObj2ID);
+bool __fastcall SpawnActor(unsigned int uMonsterID);
+int __fastcall sub_44FA4C_spawn_light_elemental(int a1, int a2, int a3);
+void SpawnEncounter(struct MapInfo *pMapInfo, struct SpawnPointMM7 *spawn, int a3, int a4, int a5);

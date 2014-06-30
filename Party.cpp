@@ -1,10 +1,9 @@
-#ifdef _MSC_VER
 #define _CRT_SECURE_NO_WARNINGS
-#endif
-
+#include "ErrorHandling.h"
+#include "mm7_unsorted_subs.h"
 #include "Party.h"
 #include "MapInfo.h"
-#include "Time.h"
+#include "Timer.h"
 #include "AudioPlayer.h"
 #include "IconFrameTable.h"
 #include "Mouse.h"
@@ -60,54 +59,51 @@ void Party::CountHirelings()
 //----- (mm6c::004858D0) --------------------------------------------------
 void Party::Zero()
 {
-  
   uFlags2 = 0;
   uNumGoldInBank = 0;
 
-    uCurrentYear = 0;
-    uCurrentMonth = 0;
-    uCurrentMonthWeek = 0;
-    uDaysPlayed = 0;
-    uCurrentHour = 0;
-    uCurrentMinute = 0;
-    uCurrentTimeSecond = 0;
+  uCurrentYear = 0;
+  uCurrentMonth = 0;
+  uCurrentMonthWeek = 0;
+  uDaysPlayed = 0;
+  uCurrentHour = 0;
+  uCurrentMinute = 0;
+  uCurrentTimeSecond = 0;
 
-    field_6FC = 0;
-    days_played_without_rest = 0;
+  field_6FC = 0;
+  days_played_without_rest = 0;
+  vPosition.x = 0;
+  vPosition.y = 0;
+  vPosition.z = 0;
+  uFallStartY = 0;
+  sRotationY = 0;
+  sRotationX = 0;
+  uFallSpeed = 0;
+  field_28 = 0;
+  uDefaultPartyHeight = 192;
+  field_14_radius = 37;
+  y_rotation_granularity = 25;
+  y_rotation_speed = 90;
 
-    vPosition.y = 0;
-    vPosition.z = 0;
-    vPosition.x = 0;
-    uFallStartY = 0;
-    sRotationY = 0;
-    sRotationX = 0;
-    uFallSpeed = 0;
-    field_28 = 0;
-    uDefaultPartyHeight = 120;
-    field_14_radius = 37;
-    y_rotation_granularity = 25;
-    y_rotation_speed = 90;
+  uWalkSpeed = 384;
+  walk_sound_timer = 0;
 
-    uWalkSpeed = 384;
-    walk_sound_timer = 0;
+  field_24 = 5;
+  field_6FC = 0;
+  field_708 = 15;
+  field_0 = 25;
 
-    field_24 = 5;
-    field_6FC = 0;
-    field_708 = 15;
-    field_0 = 25;
-
-    uNumDeaths = 0;
-    uNumPrisonTerms = 0;
-    uNumBountiesCollected = 0;
-    monster_for_hunting_killed.fill(0);
-    monster_id_for_hunting.fill(0);
-    memset(_quest_bits, 0, sizeof(_quest_bits));
-    pArcomageWins.fill(0);
-    uNumArenaPageWins = 0;
-    uNumArenaSquireWins = 0;
-    uNumArenaKnightWins = 0;
-    uNumArenaLordWins = 0;
-
+  uNumDeaths = 0;
+  uNumPrisonTerms = 0;
+  uNumBountiesCollected = 0;
+  monster_for_hunting_killed.fill(0);
+  monster_id_for_hunting.fill(0);
+  memset(_quest_bits, 0, sizeof(_quest_bits));
+  pArcomageWins.fill(0);
+  uNumArenaPageWins = 0;
+  uNumArenaSquireWins = 0;
+  uNumArenaKnightWins = 0;
+  uNumArenaLordWins = 0;
 }
 
 //inlined
@@ -160,14 +156,13 @@ void Party::SetHoldingItem(ItemGen *pItem)
 int Party::GetNextActiveCharacter()
 {
   int v2; // eax@4
-  Player *v6; // eax@7
   signed int v8; // esi@23
   int v12; // [sp+Ch] [bp-4h]@1
 
   v12 = 0;
   if ( pParty->bTurnBasedModeOn == 1 )
   {
-    if ( pTurnEngine->turn_stage != 2 || PID_TYPE(pTurnEngine->pQueue[0].uPackedID) != OBJECT_Player)
+    if ( pTurnEngine->turn_stage != TE_ATTACK || PID_TYPE(pTurnEngine->pQueue[0].uPackedID) != OBJECT_Player)
       return 0;
     v2 = PID_ID(pTurnEngine->pQueue[0].uPackedID);
     return v2 + 1;
@@ -177,12 +172,8 @@ int Party::GetNextActiveCharacter()
     playerAlreadyPicked.fill(false);
   for (int i = 0; i < 4; i++)
   {
-    v6 = &this->pPlayers[i];
-    if ( !v6->CanAct()
-      || v6->uTimeToRecovery > 0)
-    {
+    if ( !this->pPlayers[i].CanAct() || this->pPlayers[i].uTimeToRecovery > 0)
       playerAlreadyPicked[i] = true;
-    }
     else if ( !playerAlreadyPicked[i] )
     {
       playerAlreadyPicked[i] = true;
@@ -194,8 +185,7 @@ int Party::GetNextActiveCharacter()
 
   for (int i = 0; i < 4; i++)
   {
-    if ( this->pPlayers[i].CanAct()
-      && this->pPlayers[i].uTimeToRecovery == 0 )
+    if ( this->pPlayers[i].CanAct() && this->pPlayers[i].uTimeToRecovery == 0 )
     {
       if ( v12 == 0 || this->pPlayers[i].uSpeedBonus > v8 )
       {
@@ -553,7 +543,7 @@ int Party::Reset()
   pWindowList_at_506F50_minus1_indexing_buttons____and_an_int_[0] = 100;  // default character ui - stats
   uFlags = 0;
   memset(_autonote_bits, 0, sizeof(_autonote_bits));
-  memset(_quest_bits, 0, sizeof(_autonote_bits));
+  memset(_quest_bits, 0, sizeof(_quest_bits));
   pIsArtifactFound.fill(0);
   _449B7E_toggle_bit(_quest_bits, PARTY_QUEST_EMERALD_RED_POTION_ACTIVE, 1);
   _449B7E_toggle_bit(_quest_bits, PARTY_QUEST_EMERALD_SEASHELL_ACTIVE, 1);
@@ -704,12 +694,12 @@ void Party::UpdatePlayersAndHirelingsEmotions()
         case Condition_Fear:        player->expression = CHARACTER_EXPRESSION_FEAR; break;
         case Condition_Drunk:       player->expression = CHARACTER_EXPRESSION_DRUNK; break;
         case Condition_Insane:      player->expression = CHARACTER_EXPRESSION_INSANE; break;
-        case Condition_Poison1:
-        case Condition_Poison2:
-        case Condition_Poison3:     player->expression = CHARACTER_EXPRESSION_POISONED; break;
-        case Condition_Disease1:
-        case Condition_Disease2:
-        case Condition_Disease3:    player->expression = CHARACTER_EXPRESSION_DISEASED; break;
+        case Condition_Poison_Weak:
+        case Condition_Poison_Medium:
+        case Condition_Poison_Severe:     player->expression = CHARACTER_EXPRESSION_POISONED; break;
+        case Condition_Disease_Weak:
+        case Condition_Disease_Medium:
+        case Condition_Disease_Severe:    player->expression = CHARACTER_EXPRESSION_DISEASED; break;
         case Condition_Paralyzed:   player->expression = CHARACTER_EXPRESSION_PARALYZED; break;
         case Condition_Unconcious:  player->expression = CHARACTER_EXPRESSION_UNCONCIOUS; break;
         default:
@@ -770,7 +760,7 @@ void Party::RestAndHeal()
     if ( pPlayer->classType == PLAYER_CLASS_LICH )
     {
       have_vessels_soul = false;
-      for ( uint i = 0; i < 138; i++ )
+      for ( uint i = 0; i < 126; i++ )
       {
         if ( pPlayer->pInventoryItemList[i].uItemID == ITEM_LICH_JAR_FULL && pPlayer->pInventoryItemList[i].uHolderPlayer == pPlayerID + 1 )
           have_vessels_soul = true;
@@ -787,17 +777,17 @@ void Party::RestAndHeal()
       pPlayer->sMana = 0;
       pPlayer->sHealth /= 2;
     }
-    else if ( pPlayer->pConditions[Condition_Poison3] || pPlayer->pConditions[Condition_Disease3] )
+    else if ( pPlayer->pConditions[Condition_Poison_Severe] || pPlayer->pConditions[Condition_Disease_Severe] )
     {
       pPlayer->sHealth /= 4;
       pPlayer->sMana /= 4;
     }
-    else if ( pPlayer->pConditions[Condition_Poison2] || pPlayer->pConditions[Condition_Disease2] )
+    else if ( pPlayer->pConditions[Condition_Poison_Medium] || pPlayer->pConditions[Condition_Disease_Medium] )
     {
       pPlayer->sHealth /= 3;
       pPlayer->sMana /= 3;
     }
-    else if ( pPlayer->pConditions[Condition_Poison1] || pPlayer->pConditions[Condition_Disease1] )
+    else if ( pPlayer->pConditions[Condition_Poison_Weak] || pPlayer->pConditions[Condition_Disease_Weak] )
     {
       pPlayer->sHealth /= 2;
       pPlayer->sMana /=  2;
@@ -815,12 +805,12 @@ void __fastcall Rest(unsigned int uHoursToSleep)
   signed __int64 v2; // st7@3
 
   if ( uHoursToSleep > 240 )
-    InitializeActors();
+    Actor::InitializeActors();
   v2 = (signed __int64)((7680 * uHoursToSleep) * 0.033333335);
   pParty->uTimePlayed += v2;
-  for (int i = 0; i < 4; i++)
+  for (int i = 1; i <= 4; i++)
   {
-    pPlayers[i + 1]->Recover((int)v2);
+    pPlayers[i]->Recover((int)v2);
   }
   _494035_timed_effects__water_walking_damage__etc();
 }
@@ -847,7 +837,7 @@ void RestAndHeal(__int64 uNumMinutes)
   pParty->uCurrentMonth = v5 % 0xC;
   pParty->uCurrentYear = v5 / 0xC + game_starting_year;
   pParty->RestAndHeal();
-  dword_507B94 = 1;
+
   for (int i = 0; i < 4; i++)
   {
     pParty->pPlayers[i].uTimeToRecovery = 0;
@@ -859,7 +849,7 @@ void RestAndHeal(__int64 uNumMinutes)
   pParty->UpdatePlayersAndHirelingsEmotions();
 }
 //----- (0041F5BE) --------------------------------------------------------
-void  Sleep6Hours()
+void  Party::Sleep6Hours()
 {
   if ( _506F18_num_minutes_to_sleep < 6 )
   {
@@ -867,7 +857,7 @@ void  Sleep6Hours()
     {
       Rest(_506F18_num_minutes_to_sleep);
       _506F18_num_minutes_to_sleep = 0;
-      LoadActualSkyFrame();
+      OutdoorLocation::LoadActualSkyFrame();
     }
     if ( dword_506F14 == 2 )
     {
@@ -878,9 +868,14 @@ void  Sleep6Hours()
   {
     Rest(6u);
     _506F18_num_minutes_to_sleep -= 6;
-    LoadActualSkyFrame();
+    OutdoorLocation::LoadActualSkyFrame();
   }
   viewparams->bRedrawGameUI = 1;
+}
+
+bool TestPartyQuestBit( PARTY_QUEST_BITS bit )
+{
+  return _449B57_test_bit(pParty->_quest_bits, bit);
 }
 
 //----- (0047752B) --------------------------------------------------------
@@ -1120,9 +1115,13 @@ bool Party::AddItemToParty(ItemGen *pItem)
     v7 = pIcons_LOD->LoadTexturePtr(v5, TEXTURE_16BIT_PALETTE);
     v21 = areWeLoadingTexture;
     v8 = 0;
+    uint current_player = uActiveCharacter;
     for (int i = 0; i < 4; i++)
     {
-      v9 = ::pPlayers[(uActiveCharacter + i) % 4];  //start with current active player, then cycle right if item won't fit
+     current_player = current_player + i;
+     if ( current_player > 4 )
+       current_player = current_player - 4;
+      v9 = ::pPlayers[current_player];
       v10 = v9->AddItem(-1, pItem->uItemID);
       if ( v10 )
       {
@@ -1162,3 +1161,54 @@ bool Party::IsPartyGood()
 {
   return _449B57_test_bit(_quest_bits, 99);
 }
+
+
+
+//----- (0046A89E) --------------------------------------------------------
+int Party::_46A89E_immolation_effect(int* affected, int affectedArrSize, int effectRange)
+{
+  int v5; // ebx@3
+  int v17; // [sp+Ch] [bp-10h]@3
+  int v18; // [sp+10h] [bp-Ch]@3
+  int affectedCount; // [sp+18h] [bp-4h]@1
+
+  affectedCount = 0;
+  for ( size_t i = 0; i < uNumActors; ++i )
+  {
+    v5 = abs(pActors[i].vPosition.x - this->vPosition.x);
+    v17 = abs(pActors[i].vPosition.y - this->vPosition.y);
+    v18 = abs(pActors[i].vPosition.z - this->vPosition.z);
+    if ( int_get_vector_length(v5, v17, v18) <= effectRange )
+    {
+      if ( pActors[i].uAIState != Dead && pActors[i].uAIState != Dying && pActors[i].uAIState != Removed
+        && pActors[i].uAIState != Disabled && pActors[i].uAIState != Summoned )
+      {
+        affected[affectedCount] = i;
+        affectedCount++;
+        if ( affectedCount >= affectedArrSize )
+          break;
+      }
+    }
+  }
+  return affectedCount;
+}
+
+//----- (00444D80) --------------------------------------------------------
+int GetTravelTime()
+{
+  signed int new_travel_time; // esi@1
+
+  new_travel_time = uDefaultTravelTime_ByFoot;
+  if ( CheckHiredNPCSpeciality(Guide) )
+    --new_travel_time;
+  if ( CheckHiredNPCSpeciality(Tracker) )
+    new_travel_time -= 2;
+  if ( CheckHiredNPCSpeciality(Pathfinder) )
+    new_travel_time -= 3;
+  if ( CheckHiredNPCSpeciality(Explorer) )
+    --new_travel_time;
+  if ( new_travel_time < 1 )
+    new_travel_time = 1;
+  return new_travel_time;
+}
+// 6BD07C: using guessed type int uDefaultTravelTime_ByFoot;

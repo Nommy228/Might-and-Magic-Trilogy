@@ -43,10 +43,10 @@ struct OutdoorLocationTerrain
   //----- (0047C794) --------------------------------------------------------
   inline OutdoorLocationTerrain()
   {
-    pHeightmap = NULL;
-    pTilemap = NULL;
-    pAttributemap = NULL;
-    pDmap = NULL;;
+    pHeightmap = nullptr;
+    pTilemap = nullptr;
+    pAttributemap = nullptr;
+    pDmap = nullptr;;
     this->field_10 = 0;
     this->field_12 = 0;
 
@@ -82,13 +82,16 @@ struct ODMFace
   bool HasEventHint();
 
   
-  static bool IsBackfaceCulled(struct ODMFace *a1, struct RenderVertexSoft *a2, struct Polygon *a3);
+  static bool IsBackfaceNotCulled(struct RenderVertexSoft *a2, struct Polygon *polygon);
   
   inline bool Invisible() const {return (uAttributes & FACE_INVISIBLE) != 0;}
   inline bool Visible() const   {return !Invisible();}
   inline bool Portal() const    {return (uAttributes & FACE_PORTAL) != 0;}
   inline bool Fluid() const     {return (uAttributes & FACE_FLUID) != 0;}
+  inline bool Indoor_sky() const {return (uAttributes & FACE_INDOOR_SKY) != 0;}
   inline bool Clickable() const {return (uAttributes & FACE_CLICKABLE) != 0;}
+  inline bool Pressure_Plate() const {return (uAttributes & FACE_PRESSURE_PLATE) != 0;}
+  inline bool Ethereal() const {return (uAttributes & FACE_ETHEREAL) != 0;}
 
   struct Plane_int_ pFacePlane;
   int zCalc1;
@@ -137,17 +140,17 @@ struct OutdoorLocation
   void Release();
   bool Load(const char *pFilename, ODMFace *File, size_t a4, int thisa);
   int GetTileIdByTileMapId(signed int a2);
-  unsigned int DoGetTileTexture(unsigned int uX, unsigned int uZ);
+  unsigned int DoGetTileTexture(signed int uX, signed int uZ);
   int _47ED83(signed int a2, signed int a3);
-  int ActuallyGetSomeOtherTileInfo(unsigned int uX, unsigned int uY);
-  int DoGetHeightOnTerrain(unsigned int uX, unsigned int uZ);
+  int ActuallyGetSomeOtherTileInfo(signed int uX, signed int uY);
+  int DoGetHeightOnTerrain(signed int sX, signed int sZ);
   int GetSoundIdByPosition(signed int X_pos, signed int Y_pos, int a4);
   int UpdateDiscoveredArea(int a2, int a3, int a4);
-  bool _47F04C(signed int a2, signed int a3);
-  bool _47F097(signed int a2, signed int a3);
+  bool IsMapCellFullyRevealed(signed int a2, signed int a3);
+  bool IsMapCellPartiallyRevealed(signed int a2, signed int a3);
   bool _47F0E2();
   bool PrepareDecorations();
-  int _47F223_LooksLikeGenerateMonsterLoot();
+  void ArrangeSpriteObjects();
   bool InitalizeActors(int a1);
   bool LoadRoadTileset();
   bool LoadTileGroupIds();
@@ -165,6 +168,8 @@ struct OutdoorLocation
   void SetFog();
   void Draw();
 
+  static void LoadActualSkyFrame();
+
 
   char pLevelFilename[32];
   char pLocationFileName[32];
@@ -179,8 +184,8 @@ struct OutdoorLocation
   unsigned int numFaceIDListElems;
   unsigned __int16 *pFaceIDLIST;
   unsigned int *pOMAP;
-  unsigned int uSky_TextureID;
-  unsigned int uMainTile_BitmapID;
+  signed int sSky_TextureID;
+  signed int sMainTile_BitmapID;
   __int16 field_F0;
   __int16 field_F2;
   int field_F4;
@@ -195,8 +200,8 @@ struct OutdoorLocation
   //int day_fogrange_1;
   //int day_fogrange_2;
  // char field_510[24];
-  unsigned char uUndiscoveredArea[88][11];//968
-  unsigned char uDicovered_area[88][11];//[968]
+  unsigned char uFullyRevealedCellOnMap[88][11];//968         the inner array is 11 bytes long, because every bit is used for a separate cell, so in the end it's 11 * 8 bits = 88 values
+  unsigned char uPartiallyRevealedCellOnMap[88][11];//[968]
   int field_CB8;
   int max_terrain_dimming_level;
   int field_CC0;
@@ -242,6 +247,14 @@ struct OutdoorLocation
 
 extern struct OutdoorLocation *pOutdoor;
 
+void ODM_UpdateUserInputAndOther();
+int ODM_GetFloorLevel(int X, signed int Y, int Z, int, int *pOnWater, int *bmodel_pid, int bWaterWalk);
+int GetCeilingHeight(int Party_X, signed int Party_Y, int Party_ZHeight, int pFaceID);
+void ODM_GetTerrainNormalAt(int pos_x, int pos_z, Vec3_int_ *out);
+void UpdateActors_ODM();
+void ODM_ProcessPartyActions();
+char Is_out15odm_underwater();
+void SetUnderwaterFog();
 
 
 

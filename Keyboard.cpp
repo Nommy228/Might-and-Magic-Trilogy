@@ -1,30 +1,109 @@
-#ifdef _MSC_VER
 #define _CRT_SECURE_NO_WARNINGS
-#endif
-
-
 #include "Keyboard.h"
 #include "GUIWindow.h"
 #include "Game.h"
-#include "OSInfo.h"
 
 #include "mm7_data.h"
 #include "Vis.h"
 #include "MM7.h"
 #include "Actor.h"
+#include "Party.h"
+#include "Timer.h"
+#include "TurnEngine.h"
+#include "Weather.h"
+#include "CastSpellInfo.h"
 #include "DecorationList.h"
 #include "Indoor.h"
 #include "viewport.h"
 #include "AudioPlayer.h"
+#include "Registry.h"
 #include "Level/Decoration.h"
 
+#include <tuple>
+#include <vector>
+#include <string>
 
 struct KeyboardActionMapping *pKeyActionMap;
-struct AsyncKeyboard *pAsyncKeyboard;
 
 
+class CKeyListElement{
+public:
+  std::string m_keyName;
+  unsigned char m_keyDefaultCode;
+  unsigned short m_cmdId;
+  KeyToggleType m_toggType;
+  CKeyListElement(std::string keyName, unsigned char keyDefaultCode, unsigned short cmdId, KeyToggleType toggType):
+    m_keyName(keyName),
+    m_keyDefaultCode(keyDefaultCode),
+    m_cmdId(cmdId),
+    m_toggType(toggType)
+  {
 
+  }
+};
 
+std::array<CKeyListElement, 30>keyMappingParams = {
+  CKeyListElement("KEY_FORWARD", VK_UP, INPUT_MoveForward, TOGGLE_Continuously),
+  CKeyListElement("KEY_BACKWARD", VK_DOWN, INPUT_MoveBackwards, TOGGLE_Continuously),
+  CKeyListElement("KEY_LEFT", VK_LEFT, INPUT_TurnLeft, TOGGLE_Continuously),
+  CKeyListElement("KEY_RIGHT", VK_RIGHT, INPUT_TurnRight, TOGGLE_Continuously),
+  CKeyListElement("KEY_ATTACK", 'A', INPUT_Attack, TOGGLE_OneTimePress),
+  CKeyListElement("KEY_CASTREADY", 'S', INPUT_CastReady, TOGGLE_OneTimePress),
+  CKeyListElement("KEY_YELL", 'Y', INPUT_Yell, TOGGLE_OneTimePress),
+  CKeyListElement("KEY_JUMP", 'X', INPUT_Jump, TOGGLE_OneTimePress),
+  CKeyListElement("KEY_COMBAT", VK_RETURN, INPUT_Combat, TOGGLE_OneTimePress),
+  CKeyListElement("KEY_EVENTTRIGGER", VK_SPACE, INPUT_EventTrigger, TOGGLE_OneTimePress),
+  CKeyListElement("KEY_CAST", 'C', INPUT_Cast, TOGGLE_OneTimePress),
+  CKeyListElement("KEY_PASS", 'B', INPUT_Pass, TOGGLE_OneTimePress),
+  CKeyListElement("KEY_CHARCYCLE", VK_TAB, INPUT_CharCycle, TOGGLE_OneTimePress),
+  CKeyListElement("KEY_QUEST", 'Q', INPUT_Quest, TOGGLE_OneTimePress),
+  CKeyListElement("KEY_QUICKREF", 'Z', INPUT_QuickRef, TOGGLE_OneTimePress),
+  CKeyListElement("KEY_REST", 'R', INPUT_Rest, TOGGLE_OneTimePress),
+  CKeyListElement("KEY_TIMECAL", 'T', INPUT_TimeCal, TOGGLE_OneTimePress),
+  CKeyListElement("KEY_AUTONOTES", 'N', INPUT_Autonotes, TOGGLE_OneTimePress),
+  CKeyListElement("KEY_MAPBOOK", 'M', INPUT_Mapbook, TOGGLE_OneTimePress),
+  CKeyListElement("KEY_LOOKUP", VK_NEXT, INPUT_LookUp, TOGGLE_OneTimePress),
+  CKeyListElement("KEY_LOOKDOWN", VK_DELETE, INPUT_LookDown, TOGGLE_OneTimePress),
+  CKeyListElement("KEY_CENTERVIEWPT", VK_END, INPUT_CenterView, TOGGLE_OneTimePress),
+  CKeyListElement("KEY_ZOOMIN", VK_ADD, INPUT_ZoomIn, TOGGLE_OneTimePress),
+  CKeyListElement("KEY_ZOOMOUT", VK_SUBTRACT, INPUT_ZoomOut, TOGGLE_OneTimePress),
+  CKeyListElement("KEY_FLYUP", VK_PRIOR, INPUT_FlyUp, TOGGLE_Continuously),
+  CKeyListElement("KEY_FLYDOWN", VK_INSERT, INPUT_FlyDown, TOGGLE_Continuously),
+  CKeyListElement("KEY_LAND", VK_HOME, INPUT_Land, TOGGLE_OneTimePress),
+  CKeyListElement("KEY_ALWAYSRUN", 'U', INPUT_AlwaysRun, TOGGLE_OneTimePress),
+  CKeyListElement("KEY_STEPLEFT", VK_OEM_4, INPUT_StrafeLeft, TOGGLE_Continuously),
+  CKeyListElement("KEY_STEPRIGHT", VK_OEM_6, INPUT_StrafeRight, TOGGLE_Continuously)
+}; 
+
+std::array<std::tuple<const char*, const unsigned __int8>, 26> keyNameToCodeTranslationMap =
+{
+  std::tuple<const char*, const unsigned __int8>("UP", VK_UP),
+  std::tuple<const char*, const unsigned __int8>("DOWN", VK_DOWN),
+  std::tuple<const char*, const unsigned __int8>("LEFT", VK_LEFT),
+  std::tuple<const char*, const unsigned __int8>("бкебн", VK_LEFT),
+  std::tuple<const char*, const unsigned __int8>("RIGHT", VK_RIGHT),
+  std::tuple<const char*, const unsigned __int8>("бопюбн", VK_RIGHT),
+  std::tuple<const char*, const unsigned __int8>("RETURN", VK_RETURN),
+  std::tuple<const char*, const unsigned __int8>("SPACE", VK_SPACE),
+  std::tuple<const char*, const unsigned __int8>("PAGE_DOWN", VK_NEXT),
+  std::tuple<const char*, const unsigned __int8>("PAGE_UP", VK_PRIOR),
+  std::tuple<const char*, const unsigned __int8>("TAB", VK_TAB),
+  std::tuple<const char*, const unsigned __int8>("SUBTRACT", VK_SUBTRACT),
+  std::tuple<const char*, const unsigned __int8>("ADD", VK_ADD),
+  std::tuple<const char*, const unsigned __int8>("END", VK_END),
+  std::tuple<const char*, const unsigned __int8>("DELETE", VK_DELETE),
+  std::tuple<const char*, const unsigned __int8>("HOME", VK_HOME),
+  std::tuple<const char*, const unsigned __int8>("INSERT", VK_INSERT),
+  std::tuple<const char*, const unsigned __int8>("COMMA", VK_OEM_COMMA),
+  std::tuple<const char*, const unsigned __int8>("DECIMAL", VK_DECIMAL),
+  std::tuple<const char*, const unsigned __int8>("SEMICOLON", VK_OEM_1),
+  std::tuple<const char*, const unsigned __int8>("PERIOD", VK_OEM_PERIOD),
+  std::tuple<const char*, const unsigned __int8>("SLASH", VK_OEM_2),
+  std::tuple<const char*, const unsigned __int8>("SQUOTE", VK_OEM_7),
+  std::tuple<const char*, const unsigned __int8>("BACKSLASH", VK_OEM_5),
+  std::tuple<const char*, const unsigned __int8>("BACKSPACE", VK_BACK),
+  std::tuple<const char*, const unsigned __int8>("CONTROL", VK_CONTROL),
+};
 
 //----- (00459C68) --------------------------------------------------------
 void KeyboardActionMapping::SetKeyMapping(int uAction, int vKey, KeyToggleType type)
@@ -58,58 +137,10 @@ KeyboardActionMapping::KeyboardActionMapping()
 //----- (00459CC4) --------------------------------------------------------
 void KeyboardActionMapping::SetDefaultMapping()
 {
-  pVirtualKeyCodesMapping[0] = VK_UP;
-  pToggleTypes[0] = TOGGLE_Continuously;
-  pVirtualKeyCodesMapping[1] = VK_DOWN;
-  pToggleTypes[1] = TOGGLE_Continuously;
-  pVirtualKeyCodesMapping[2] = VK_LEFT;
-  pToggleTypes[2] = TOGGLE_Continuously;
-  pVirtualKeyCodesMapping[3] = VK_RIGHT;
-  pToggleTypes[3] = TOGGLE_Continuously;
-  pVirtualKeyCodesMapping[8] = 'A';
-  pToggleTypes[8] = TOGGLE_OneTimePress;
-  pVirtualKeyCodesMapping[7] = 'S';
-  pToggleTypes[7] = TOGGLE_OneTimePress;
-  pVirtualKeyCodesMapping[4] = 'Y';
-  pToggleTypes[4] = TOGGLE_OneTimePress;
-  pVirtualKeyCodesMapping[5] = 'X';
-  pToggleTypes[5] = TOGGLE_OneTimePress;
-  pVirtualKeyCodesMapping[6] = VK_RETURN;
-  pToggleTypes[6] = TOGGLE_OneTimePress;
-  pVirtualKeyCodesMapping[9] = VK_SPACE;
-  pToggleTypes[9] = TOGGLE_OneTimePress;
-  pVirtualKeyCodesMapping[10] = 'C';
-  pToggleTypes[10] = TOGGLE_OneTimePress;
-  pVirtualKeyCodesMapping[11] = 'B';
-  pToggleTypes[11] = TOGGLE_OneTimePress;
-  pVirtualKeyCodesMapping[12] = VK_TAB;
-  pToggleTypes[12] = TOGGLE_OneTimePress;
-  pVirtualKeyCodesMapping[13] = 'Q';
-  pToggleTypes[13] = TOGGLE_OneTimePress;
-  pVirtualKeyCodesMapping[14] = 'Z';
-  pToggleTypes[14] = TOGGLE_OneTimePress;
-  pVirtualKeyCodesMapping[15] = 'R';
-  pToggleTypes[15] = TOGGLE_OneTimePress;
-  pVirtualKeyCodesMapping[16] = 'T';
-  pToggleTypes[16] = TOGGLE_OneTimePress;
-  pVirtualKeyCodesMapping[17] = 'N';
-  pToggleTypes[17] = TOGGLE_OneTimePress;
-  pVirtualKeyCodesMapping[18] = 'M';
-  pToggleTypes[18] = TOGGLE_OneTimePress;
-  pVirtualKeyCodesMapping[20] = VK_NEXT;
-  pToggleTypes[20] = TOGGLE_Continuously;
-  pVirtualKeyCodesMapping[21] = VK_DELETE;
-  pToggleTypes[21] = TOGGLE_Continuously;
-
-  SetKeyMapping(INPUT_CenterView, VK_END, TOGGLE_Continuously);
-  SetKeyMapping(INPUT_ZoomIn, VK_ADD, TOGGLE_OneTimePress);
-  SetKeyMapping(INPUT_ZoomOut, VK_SUBTRACT, TOGGLE_OneTimePress);
-  SetKeyMapping(INPUT_FlyUp, VK_PRIOR, TOGGLE_Continuously);
-  SetKeyMapping(INPUT_FlyDown, VK_INSERT, TOGGLE_Continuously);
-  SetKeyMapping(INPUT_Land, VK_HOME, TOGGLE_OneTimePress);
-  SetKeyMapping(INPUT_AlwaysRun, 'U', TOGGLE_OneTimePress);
-  SetKeyMapping(INPUT_StrafeLeft, VK_OEM_4, TOGGLE_Continuously);
-  SetKeyMapping(INPUT_StrafeRight, VK_OEM_6, TOGGLE_Continuously);
+  for ( size_t i = 0; i < keyMappingParams.size(); i++)
+  {
+    SetKeyMapping(keyMappingParams[i].m_cmdId, keyMappingParams[i].m_keyDefaultCode, keyMappingParams[i].m_toggType);
+  }
 }
 
 //----- (00459E3F) --------------------------------------------------------
@@ -145,799 +176,149 @@ void KeyboardActionMapping::SetWindowInputStatus(int a2)
 }
 
 //----- (00459F10) --------------------------------------------------------
-bool KeyboardActionMapping::_459F10(unsigned int a2)
+bool KeyboardActionMapping::ProcessTextInput(unsigned int a2)
 {
-  int v3; // [sp-4h] [bp-4h]@3
-
   pKeyActionMap->uLastKeyPressed = a2;
   if ( uGameMenuUI_CurentlySelectedKeyIdx == -1 )
   {
-    if ( pKeyActionMap->field_204 == 1 )
+    if ( pKeyActionMap->field_204 != 1 && pKeyActionMap->field_204 != 2 )
+      return 0;
+    if ( a2 == VK_BACK)
     {
-      if ( a2 != 8 )
+      if (pKeyActionMap->uNumKeysPressed > 0)
       {
-        if ( a2 == 9 )
-          return 1;
-        if ( a2 == 13 )
-          goto LABEL_3;
-        if ( a2 == 27 )
-          goto LABEL_15;
-        if ( this->uNumKeysPressed >= this->max_input_string_len )
-          return 1;
-        pKeyActionMap->pPressedKeysBuffer[pKeyActionMap->uNumKeysPressed] = a2;
-        ++pKeyActionMap->uNumKeysPressed;
-LABEL_24:
+        --pKeyActionMap->uNumKeysPressed;
         pKeyActionMap->pPressedKeysBuffer[pKeyActionMap->uNumKeysPressed] = 0;
-        return 1;
       }
     }
-    else
+    else if ( a2 == VK_RETURN )
     {
-      if ( pKeyActionMap->field_204 != 2 )
-        return 0;
-      if ( a2 != 8 )
+      pKeyActionMap->SetWindowInputStatus(WINDOW_INPUT_CONFIRMED);
+    }
+    else if ( a2 == VK_ESCAPE )
+    {
+      pKeyActionMap->SetWindowInputStatus(WINDOW_INPUT_CANCELLED);
+    }
+    else if (this->uNumKeysPressed < this->max_input_string_len)
+    {
+      if ( pKeyActionMap->field_204 == 1 )
       {
-        if ( a2 == 13 )
-          goto LABEL_3;
-        if ( a2 != 27 )
+        if ( a2 != VK_TAB )
         {
-          if ( (signed int)a2 >= 48 && (signed int)a2 <= 57 )
-          {
-            if ( pKeyActionMap->uNumKeysPressed < this->max_input_string_len )
-            {
-              pKeyActionMap->pPressedKeysBuffer[pKeyActionMap->uNumKeysPressed] = a2;
-              ++pKeyActionMap->uNumKeysPressed;
-            }
-          }
-          return 1;
+          pKeyActionMap->pPressedKeysBuffer[pKeyActionMap->uNumKeysPressed] = a2;
+          ++pKeyActionMap->uNumKeysPressed;
+          pKeyActionMap->pPressedKeysBuffer[pKeyActionMap->uNumKeysPressed] = 0;
         }
-LABEL_15:
-        pKeyActionMap->SetWindowInputStatus(WINDOW_INPUT_CANCELLED);
-        return 1;
+      }
+      else if (pKeyActionMap->field_204 == 2)
+      {
+        if ( isdigit(a2))
+        {
+          pKeyActionMap->pPressedKeysBuffer[pKeyActionMap->uNumKeysPressed] = a2;
+          ++pKeyActionMap->uNumKeysPressed;
+        }
       }
     }
-    if ( !pKeyActionMap->uNumKeysPressed )
-      return 1;
-    --pKeyActionMap->uNumKeysPressed;
-    goto LABEL_24;
   }
-  pKeyActionMap->pPressedKeysBuffer[pKeyActionMap->uNumKeysPressed] = a2;
-  ++pKeyActionMap->uNumKeysPressed;
-  pKeyActionMap->pPressedKeysBuffer[pKeyActionMap->uNumKeysPressed] = 0;
-
-LABEL_3:
-  pKeyActionMap->SetWindowInputStatus(WINDOW_INPUT_CONFIRMED);
+  else
+  {
+    pKeyActionMap->pPressedKeysBuffer[pKeyActionMap->uNumKeysPressed] = a2;
+    ++pKeyActionMap->uNumKeysPressed;
+    pKeyActionMap->pPressedKeysBuffer[pKeyActionMap->uNumKeysPressed] = 0;
+    pKeyActionMap->SetWindowInputStatus(WINDOW_INPUT_CONFIRMED);
+  }
   return 1;
 }
 // 506E68: using guessed type int uGameMenuUI_CurentlySelectedKeyIdx;
 
+
+
 //----- (00459FFC) --------------------------------------------------------
 void KeyboardActionMapping::ReadMappings()
 {
-  //KeyboardActionMapping *v1; // esi@1
-  int v2; // eax@2
-  unsigned int v3; // eax@3
-  int v4; // eax@6
-  unsigned int v5; // eax@7
-  int v6; // eax@10
-  unsigned int v7; // eax@11
-  int v8; // eax@14
-  unsigned int v9; // eax@15
-  int v10; // eax@18
-  unsigned int v11; // eax@19
-  int v12; // eax@22
-  //unsigned int v13; // eax@23
-  int v14; // eax@26
-  //unsigned int v15; // eax@27
-  int v16; // eax@30
-  //unsigned int v17; // eax@31
-  int v18; // eax@34
-  //unsigned int v19; // eax@35
-  int v20; // eax@38
-  //unsigned int v21; // eax@39
-  int v22; // eax@42
-  //unsigned int v23; // eax@43
-  int v24; // eax@46
-  //unsigned int v25; // eax@47
-  int v26; // eax@50
-  //unsigned int v27; // eax@51
-  int v28; // eax@54
-  //unsigned int v29; // eax@55
-  int v30; // eax@58
-  //unsigned int v31; // eax@59
-  int v32; // eax@62
-  //unsigned int v33; // eax@63
-  int v34; // eax@66
-  //unsigned int v35; // eax@67
-  int v36; // eax@70
-  //unsigned int v37; // eax@71
-  int v38; // eax@74
-  //unsigned int v39; // eax@75
-  int v40; // eax@78
-  //unsigned int v41; // eax@79
-  int v42; // eax@82
-  //unsigned int v43; // eax@83
-  int v44; // eax@86
-  //unsigned int v45; // eax@87
-  int v46; // eax@90
-  //unsigned int v47; // eax@91
-  int v48; // eax@94
-  //unsigned int v49; // eax@95
-  int v50; // eax@98
-  //unsigned int v51; // eax@99
-  int v52; // eax@102
-  //unsigned int v53; // eax@103
-  int v54; // eax@106
-  //unsigned int v55; // eax@107
-  int v56; // eax@110
-  unsigned int v57; // eax@111
-  int v58; // eax@114
-  unsigned int v59; // eax@115
-  int v60; // eax@118
-  unsigned int v61; // eax@119
-  //char str[32]; // [sp+Ch] [bp-20h]@1
-
   char str[32];
 
-  ReadWindowsRegistryString("KEY_FORWARD", str, 32, "DEFAULT");
-  if ( strcmp(str, "DEFAULT") && (LOBYTE(v2) = GetActionDefaultVKey(str), v2 != -1) )
+  for (size_t i = 0; i < keyMappingParams.size(); i++)
   {
-    pVirtualKeyCodesMapping[0] = GetActionDefaultVKey(str);
-  }
-  else
-  {
-    pVirtualKeyCodesMapping[0] = VK_UP;
-  }
-  pToggleTypes[0] = TOGGLE_Continuously;
-  ReadWindowsRegistryString("KEY_BACKWARD", str, 0x20u, "DEFAULT");
-  if ( strcmp(str, "DEFAULT") && (LOBYTE(v4) = GetActionDefaultVKey(str), v4 != -1) )
-  {
-    pVirtualKeyCodesMapping[1] = GetActionDefaultVKey(str);
-  }
-  else
-  {
-    pVirtualKeyCodesMapping[1] = VK_DOWN;
-  }
-  pToggleTypes[1] = TOGGLE_Continuously;
+    const char* keyName = keyMappingParams[i].m_keyName.c_str();
+    short commandDefaultKeyCode = keyMappingParams[i].m_keyDefaultCode;
+    short commandId = keyMappingParams[i].m_cmdId;
+    KeyToggleType toggType = keyMappingParams[i].m_toggType;
 
-  ReadWindowsRegistryString("KEY_LEFT", str, 0x20u, "DEFAULT");
-  if ( strcmp(str, "DEFAULT") && (LOBYTE(v6) = GetActionDefaultVKey(str), v6 != -1) )
-  {
-    pVirtualKeyCodesMapping[2] = GetActionDefaultVKey(str);
+    ReadWindowsRegistryString(keyName, str, 32, "DEFAULT");
+    if ( strcmp(str, "DEFAULT") && ( TranslateKeyNameToKeyCode(str) != -1) )
+    {
+      pVirtualKeyCodesMapping[commandId] = TranslateKeyNameToKeyCode(str);
+    }
+    else
+    {
+      pVirtualKeyCodesMapping[commandId] = commandDefaultKeyCode;
+    }
+    pToggleTypes[commandId] = toggType;
   }
-  else
-  {
-    pVirtualKeyCodesMapping[2] = VK_LEFT;
-  }
-  pToggleTypes[2] = TOGGLE_Continuously;
-
-  ReadWindowsRegistryString("KEY_RIGHT", str, 0x20u, "DEFAULT");
-  if ( strcmp(str, "DEFAULT") && (LOBYTE(v8) = GetActionDefaultVKey(str), v8 != -1) )
-  {
-    pVirtualKeyCodesMapping[3] = GetActionDefaultVKey(str);
-  }
-  else
-  {
-    pVirtualKeyCodesMapping[3] = VK_RIGHT;
-  }
-  pToggleTypes[3] = TOGGLE_Continuously;
-
-  ReadWindowsRegistryString("KEY_ATTACK", str, 0x20u, "DEFAULT");
-  if ( strcmp(str, "DEFAULT") && (LOBYTE(v10) = GetActionDefaultVKey(str), v10 != -1) )
-  {
-    pVirtualKeyCodesMapping[8] = GetActionDefaultVKey(str);
-  }
-  else
-  {
-    pVirtualKeyCodesMapping[8] = 'A';
-  }
-  pToggleTypes[8] = TOGGLE_OneTimePress;
-
-  ReadWindowsRegistryString("KEY_CASTREADY", str, 0x20u, "DEFAULT");
-  if ( strcmp(str, "DEFAULT") && (LOBYTE(v12) = GetActionDefaultVKey(str), v12 != -1) )
-  {
-    pVirtualKeyCodesMapping[7] = GetActionDefaultVKey(str);
-  }
-  else
-  {
-    pVirtualKeyCodesMapping[7] = 'S';
-  }
-  pToggleTypes[7] = TOGGLE_OneTimePress;
-
-  ReadWindowsRegistryString("KEY_YELL", str, 0x20u, "DEFAULT");
-  if ( strcmp(str, "DEFAULT") && (LOBYTE(v14) = GetActionDefaultVKey(str), v14 != -1) )
-  {
-    pVirtualKeyCodesMapping[4] = GetActionDefaultVKey(str);
-  }
-  else
-  {
-    pVirtualKeyCodesMapping[4] = 'Y';
-  }
-  pToggleTypes[4] = TOGGLE_OneTimePress;
-
-  ReadWindowsRegistryString("KEY_JUMP", str, 0x20u, "DEFAULT");
-  if ( strcmp(str, "DEFAULT") && (LOBYTE(v16) = GetActionDefaultVKey(str), v16 != -1) )
-  {
-    pVirtualKeyCodesMapping[5] = GetActionDefaultVKey(str);
-  }
-  else
-  {
-    pVirtualKeyCodesMapping[5] = 'X';
-  }
-  pToggleTypes[5] = TOGGLE_OneTimePress;
-
-  ReadWindowsRegistryString("KEY_COMBAT", str, 0x20u, "DEFAULT");
-  if ( strcmp(str, "DEFAULT") && (LOBYTE(v18) = GetActionDefaultVKey(str), v18 != -1) )
-  {
-    pVirtualKeyCodesMapping[6] = GetActionDefaultVKey(str);
-  }
-  else
-  {
-    pVirtualKeyCodesMapping[6] = VK_RETURN;
-  }
-  pToggleTypes[6] = TOGGLE_OneTimePress;
-
-  ReadWindowsRegistryString("KEY_EVENTTRIGGER", str, 0x20u, "DEFAULT");
-  if ( strcmp(str, "DEFAULT") && (LOBYTE(v20) = GetActionDefaultVKey(str), v20 != -1) )
-  {
-    pVirtualKeyCodesMapping[9] = GetActionDefaultVKey(str);
-  }
-  else
-  {
-    pVirtualKeyCodesMapping[9] = VK_SPACE;
-  }
-  pToggleTypes[9] = TOGGLE_OneTimePress;
-
-  ReadWindowsRegistryString("KEY_CAST", str, 0x20u, "DEFAULT");
-  if ( strcmp(str, "DEFAULT") && (LOBYTE(v22) = GetActionDefaultVKey(str), v22 != -1) )
-  {
-    pVirtualKeyCodesMapping[10] = GetActionDefaultVKey(str);
-  }
-  else
-  {
-    pVirtualKeyCodesMapping[10] = 'C';
-  }
-  pToggleTypes[10] = TOGGLE_OneTimePress;
-
-  ReadWindowsRegistryString("KEY_PASS", str, 0x20u, "DEFAULT");
-  if ( strcmp(str, "DEFAULT") && (LOBYTE(v24) = GetActionDefaultVKey(str), v24 != -1) )
-  {
-    pVirtualKeyCodesMapping[11] = GetActionDefaultVKey(str);
-  }
-  else
-  {
-    pVirtualKeyCodesMapping[11] = 'B';
-  }
-  pToggleTypes[11] = TOGGLE_OneTimePress;
-
-  ReadWindowsRegistryString("KEY_CHARCYCLE", str, 0x20u, "DEFAULT");
-  if ( strcmp(str, "DEFAULT") && (LOBYTE(v26) = GetActionDefaultVKey(str), v26 != -1) )
-  {
-    pVirtualKeyCodesMapping[12] = GetActionDefaultVKey(str);
-  }
-  else
-  {
-    pVirtualKeyCodesMapping[12] = VK_TAB;
-  }
-  pToggleTypes[12] = TOGGLE_OneTimePress;
-
-  ReadWindowsRegistryString("KEY_QUEST", str, 0x20u, "DEFAULT");
-  if ( strcmp(str, "DEFAULT") && (LOBYTE(v28) = GetActionDefaultVKey(str), v28 != -1) )
-  {
-    pVirtualKeyCodesMapping[13] = GetActionDefaultVKey(str);
-  }
-  else
-  {
-    pVirtualKeyCodesMapping[13] = 'Q';
-  }
-  pToggleTypes[13] = TOGGLE_OneTimePress;
-
-  ReadWindowsRegistryString("KEY_QUICKREF", str, 0x20u, "DEFAULT");
-  if ( strcmp(str, "DEFAULT") && (LOBYTE(v30) = GetActionDefaultVKey(str), v30 != -1) )
-  {
-    pVirtualKeyCodesMapping[14] = GetActionDefaultVKey(str);
-  }
-  else
-  {
-    pVirtualKeyCodesMapping[14] = 'Z';
-  }
-  pToggleTypes[14] = TOGGLE_OneTimePress;
-
-  ReadWindowsRegistryString("KEY_REST", str, 0x20u, "DEFAULT");
-  if ( strcmp(str, "DEFAULT") && (LOBYTE(v32) = GetActionDefaultVKey(str), v32 != -1) )
-  {
-    pVirtualKeyCodesMapping[15] = GetActionDefaultVKey(str);
-  }
-  else
-  {
-    pVirtualKeyCodesMapping[15] = 'R';
-  }
-  pToggleTypes[15] = TOGGLE_OneTimePress;
-
-  ReadWindowsRegistryString("KEY_TIMECAL", str, 0x20u, "DEFAULT");
-  if ( strcmp(str, "DEFAULT") && (LOBYTE(v34) = GetActionDefaultVKey(str), v34 != -1) )
-  {
-    pVirtualKeyCodesMapping[16] = GetActionDefaultVKey(str);
-  }
-  else
-  {
-    pVirtualKeyCodesMapping[16] = 'T';
-  }
-  pToggleTypes[16] = TOGGLE_OneTimePress;
-
-  ReadWindowsRegistryString("KEY_AUTONOTES", str, 0x20u, "DEFAULT");
-  if ( strcmp(str, "DEFAULT") && (LOBYTE(v36) = GetActionDefaultVKey(str), v36 != -1) )
-  {
-    pVirtualKeyCodesMapping[17] = GetActionDefaultVKey(str);
-  }
-  else
-  {
-    pVirtualKeyCodesMapping[17] = 'N';
-  }
-  pToggleTypes[17] = TOGGLE_OneTimePress;
-
-  ReadWindowsRegistryString("KEY_MAPBOOK", str, 0x20u, "DEFAULT");
-  if ( strcmp(str, "DEFAULT") && (LOBYTE(v38) = GetActionDefaultVKey(str), v38 != -1) )
-  {
-    pVirtualKeyCodesMapping[18] = GetActionDefaultVKey(str);
-  }
-  else
-  {
-    pVirtualKeyCodesMapping[18] = 'M';
-  }
-  pToggleTypes[18] = TOGGLE_OneTimePress;
-
-  ReadWindowsRegistryString("KEY_LOOKUP", str, 0x20u, "DEFAULT");
-  if ( strcmp(str, "DEFAULT") && (LOBYTE(v40) = GetActionDefaultVKey(str), v40 != -1) )
-  {
-    pVirtualKeyCodesMapping[20] = GetActionDefaultVKey(str);
-  }
-  else
-  {
-    pVirtualKeyCodesMapping[20] = VK_NEXT;
-  }
-  pToggleTypes[20] = TOGGLE_OneTimePress;
-
-  ReadWindowsRegistryString("KEY_LOOKDOWN", str, 0x20u, "DEFAULT");
-  if ( strcmp(str, "DEFAULT") && (LOBYTE(v42) = GetActionDefaultVKey(str), v42 != -1) )
-  {
-    pVirtualKeyCodesMapping[21] = GetActionDefaultVKey(str);
-  }
-  else
-  {
-    pVirtualKeyCodesMapping[21] = VK_DELETE;
-  }
-  pToggleTypes[21] = TOGGLE_OneTimePress;
-
-  ReadWindowsRegistryString("KEY_CENTERVIEWPT", str, 0x20u, "DEFAULT");
-  if ( strcmp(str, "DEFAULT") && (LOBYTE(v44) = GetActionDefaultVKey(str), v44 != -1) )
-  {
-    pVirtualKeyCodesMapping[22] = GetActionDefaultVKey(str);
-  }
-  else
-  {
-    pVirtualKeyCodesMapping[22] = VK_END;
-  }
-  pToggleTypes[22] = TOGGLE_OneTimePress;
-
-  ReadWindowsRegistryString("KEY_ZOOMIN", str, 0x20u, "DEFAULT");
-  if ( strcmp(str, "DEFAULT") && (LOBYTE(v46) = GetActionDefaultVKey(str), v46 != -1) )
-  {
-    pVirtualKeyCodesMapping[23] = GetActionDefaultVKey(str);
-  }
-  else
-  {
-    pVirtualKeyCodesMapping[23] = VK_ADD;
-  }
-  pToggleTypes[23] = TOGGLE_OneTimePress;
-
-  ReadWindowsRegistryString("KEY_ZOOMOUT", str, 0x20u, "DEFAULT");
-  if ( strcmp(str, "DEFAULT") && (LOBYTE(v48) = GetActionDefaultVKey(str), v48 != -1) )
-  {
-    pVirtualKeyCodesMapping[24] = GetActionDefaultVKey(str);
-  }
-  else
-  {
-    pVirtualKeyCodesMapping[24] = VK_SUBTRACT;
-  }
-  pToggleTypes[24] = TOGGLE_OneTimePress;
-
-  ReadWindowsRegistryString("KEY_FLYUP", str, 0x20u, "DEFAULT");
-  if ( strcmp(str, "DEFAULT") && (LOBYTE(v50) = GetActionDefaultVKey(str), v50 != -1) )
-  {
-    pVirtualKeyCodesMapping[25] = GetActionDefaultVKey(str);
-  }
-  else
-  {
-    pVirtualKeyCodesMapping[25] = VK_PRIOR;
-  }
-  pToggleTypes[25] = TOGGLE_Continuously;
-
-  ReadWindowsRegistryString("KEY_FLYDOWN", str, 0x20u, "DEFAULT");
-  if ( strcmp(str, "DEFAULT") && (LOBYTE(v52) = GetActionDefaultVKey(str), v52 != -1) )
-  {
-    pVirtualKeyCodesMapping[26] = GetActionDefaultVKey(str);
-  }
-  else
-  {
-    pVirtualKeyCodesMapping[26] = VK_INSERT;
-  }
-  pToggleTypes[26] = TOGGLE_Continuously;
-
-  ReadWindowsRegistryString("KEY_LAND", str, 0x20u, "DEFAULT");
-  if ( strcmp(str, "DEFAULT") && (LOBYTE(v54) = GetActionDefaultVKey(str), v54 != -1) )
-  {
-    pVirtualKeyCodesMapping[27] = GetActionDefaultVKey(str);
-  }
-  else
-  {
-    pVirtualKeyCodesMapping[27] = VK_HOME;
-  }
-  pToggleTypes[27] = TOGGLE_OneTimePress;
-
-  ReadWindowsRegistryString("KEY_ALWAYSRUN", str, 0x20u, "DEFAULT");
-  if ( strcmp(str, "DEFAULT") && (LOBYTE(v56) = GetActionDefaultVKey(str), v56 != -1) )
-  {
-    pVirtualKeyCodesMapping[19] = GetActionDefaultVKey(str);
-  }
-  else
-  {
-    pVirtualKeyCodesMapping[19] = 'U';
-  }
-  pToggleTypes[19] = TOGGLE_OneTimePress;
 
   bAlwaysRun = ReadWindowsRegistryInt("valAlwaysRun", 0) != 0;
   bFlipOnExit = ReadWindowsRegistryInt("FlipOnExit", 0) != 0;
-  ReadWindowsRegistryString("KEY_STEPLEFT", str, 0x20u, "DEFAULT");
-  if ( strcmp(str, "DEFAULT") && (LOBYTE(v58) = GetActionDefaultVKey(str), v58 != -1) )
-  {
-    pVirtualKeyCodesMapping[28] = GetActionDefaultVKey(str);
-    pToggleTypes[28] = TOGGLE_OneTimePress;
-  }
-  else
-  {
-    pToggleTypes[28] = TOGGLE_Continuously;
-    pVirtualKeyCodesMapping[28] = VK_OEM_4;
-  }
-
-  ReadWindowsRegistryString("KEY_STEPRIGHT", str, 0x20u, "DEFAULT");
-  if ( strcmp(str, "DEFAULT") && (LOBYTE(v60) = GetActionDefaultVKey(str), v60 != -1) )
-  {
-    pVirtualKeyCodesMapping[29] = GetActionDefaultVKey(str);
-    pToggleTypes[29] = TOGGLE_OneTimePress;
-  }
-  else
-  {
-    pToggleTypes[29] = TOGGLE_Continuously;
-    pVirtualKeyCodesMapping[29] = VK_OEM_6;
-  }
 }
 
 //----- (0045A960) --------------------------------------------------------
 void KeyboardActionMapping::StoreMappings()
 {
-  const char *v2; // eax@1
-  const char *v3; // eax@1
-  const char *v4; // eax@1
-  const char *v5; // eax@1
-  const char *v6; // eax@1
-  const char *v7; // eax@1
-  const char *v8; // eax@1
-  const char *v9; // eax@1
-  const char *v10; // eax@1
-  const char *v11; // eax@1
-  const char *v12; // eax@1
-  const char *v13; // eax@1
-  const char *v14; // eax@1
-  const char *v15; // eax@1
-  const char *v16; // eax@1
-  const char *v17; // eax@1
-  const char *v18; // eax@1
-  const char *v19; // eax@1
-  const char *v20; // eax@1
-  const char *v21; // eax@1
-  const char *v22; // eax@1
-  const char *v23; // eax@1
-  const char *v24; // eax@1
-  const char *v25; // eax@1
-  const char *v26; // eax@1
-  const char *v27; // eax@1
-  const char *v28; // eax@1
-  const char *v29; // eax@1
 
-  v2 = GetVKeyDisplayName(pVirtualKeyCodesMapping[0]);
-  WriteWindowsRegistryString("KEY_FORWARD", v2);
-  v3 = GetVKeyDisplayName(pVirtualKeyCodesMapping[1]);
-  WriteWindowsRegistryString("KEY_BACKWARD", v3);
-  v4 = GetVKeyDisplayName(pVirtualKeyCodesMapping[2]);
-  WriteWindowsRegistryString("KEY_LEFT", v4);
-  v5 = GetVKeyDisplayName(pVirtualKeyCodesMapping[3]);
-  WriteWindowsRegistryString("KEY_RIGHT", v5);
-  v6 = GetVKeyDisplayName(pVirtualKeyCodesMapping[8]);
-  WriteWindowsRegistryString("KEY_ATTACK", v6);
-  v7 = GetVKeyDisplayName(pVirtualKeyCodesMapping[7]);
-  WriteWindowsRegistryString("KEY_CASTREADY", v7);
-  v8 = GetVKeyDisplayName(pVirtualKeyCodesMapping[4]);
-  WriteWindowsRegistryString("KEY_YELL", v8);
-  v9 = GetVKeyDisplayName(pVirtualKeyCodesMapping[5]);
-  WriteWindowsRegistryString("KEY_JUMP", v9);
-  v10 = GetVKeyDisplayName(pVirtualKeyCodesMapping[6]);
-  WriteWindowsRegistryString("KEY_COMBAT", v10);
-  v11 = GetVKeyDisplayName(pVirtualKeyCodesMapping[9]);
-  WriteWindowsRegistryString("KEY_EVENTTRIGGER", v11);
-  v12 = GetVKeyDisplayName(pVirtualKeyCodesMapping[10]);
-  WriteWindowsRegistryString("KEY_CAST", v12);
-  v13 = GetVKeyDisplayName(pVirtualKeyCodesMapping[11]);
-  WriteWindowsRegistryString("KEY_PASS", v13);
-  v14 = GetVKeyDisplayName(pVirtualKeyCodesMapping[12]);
-  WriteWindowsRegistryString("KEY_CHARCYCLE", v14);
-  v15 = GetVKeyDisplayName(pVirtualKeyCodesMapping[13]);
-  WriteWindowsRegistryString("KEY_QUEST", v15);
-  v16 = GetVKeyDisplayName(pVirtualKeyCodesMapping[14]);
-  WriteWindowsRegistryString("KEY_QUICKREF", v16);
-  v17 = GetVKeyDisplayName(pVirtualKeyCodesMapping[15]);
-  WriteWindowsRegistryString("KEY_REST", v17);
-  v18 = GetVKeyDisplayName(pVirtualKeyCodesMapping[16]);
-  WriteWindowsRegistryString("KEY_TIMECAL", v18);
-  v19 = GetVKeyDisplayName(pVirtualKeyCodesMapping[17]);
-  WriteWindowsRegistryString("KEY_AUTONOTES", v19);
-  v20 = GetVKeyDisplayName(pVirtualKeyCodesMapping[18]);
-  WriteWindowsRegistryString("KEY_MAPBOOK", v20);
-  v21 = GetVKeyDisplayName(pVirtualKeyCodesMapping[20]);
-  WriteWindowsRegistryString("KEY_LOOKUP", v21);
-  v22 = GetVKeyDisplayName(pVirtualKeyCodesMapping[21]);
-  WriteWindowsRegistryString("KEY_LOOKDOWN", v22);
-  v23 = GetVKeyDisplayName(pVirtualKeyCodesMapping[22]);
-  WriteWindowsRegistryString("KEY_CENTERVIEWPT", v23);
-  v24 = GetVKeyDisplayName(pVirtualKeyCodesMapping[23]);
-  WriteWindowsRegistryString("KEY_ZOOMIN", v24);
-  v25 = GetVKeyDisplayName(pVirtualKeyCodesMapping[24]);
-  WriteWindowsRegistryString("KEY_ZOOMOUT", v25);
-  v26 = GetVKeyDisplayName(pVirtualKeyCodesMapping[25]);
-  WriteWindowsRegistryString("KEY_FLYUP", v26);
-  v27 = GetVKeyDisplayName(pVirtualKeyCodesMapping[26]);
-  WriteWindowsRegistryString("KEY_FLYDOWN", v27);
-  v28 = GetVKeyDisplayName(pVirtualKeyCodesMapping[27]);
-  WriteWindowsRegistryString("KEY_LAND", v28);
-  v29 = GetVKeyDisplayName(pVirtualKeyCodesMapping[19]);
-  WriteWindowsRegistryString("KEY_ALWAYSRUN", v29);
+  const char *v2; // eax@1
+
+  for ( size_t i = 0; i < keyMappingParams.size(); i++)
+  {
+    v2 = GetVKeyDisplayName(pVirtualKeyCodesMapping[keyMappingParams[i].m_cmdId]);
+    WriteWindowsRegistryString(keyMappingParams[i].m_keyName.c_str(), v2);
+  }
 }
 
 //----- (0045ABCA) --------------------------------------------------------
-const unsigned __int8 KeyboardActionMapping::GetActionDefaultVKey(const char *Str)
+const unsigned __int8 KeyboardActionMapping::TranslateKeyNameToKeyCode(const char *Str)
 {
-  unsigned __int8 result; // al@3
-
-  if ( !strcmp(Str, "UP") )
-    return VK_UP;
-  if ( !strcmp(Str, "DOWN") )
-    return VK_DOWN;
-  if (!strcmp(Str, "бкебн") || !strcmp(Str, "LEFT"))
-    return VK_LEFT;
-  if (!strcmp(Str, "бопюбн") || !strcmp(Str, "RIGHT"))
-    return VK_RIGHT;
-  if ( !strcmp(Str, "RETURN") )
-    return VK_RETURN;
-  if ( !strcmp(Str, "SPACE") )
-    return VK_SPACE;
-  if ( !strcmp(Str, "PAGE_DOWN") )
-    return VK_NEXT;
-  if ( !strcmp(Str, "PAGE_UP") )
-    return VK_PRIOR;
-  if ( !strcmp(Str, "TAB") )
-    return VK_TAB;
-  if ( !strcmp(Str, "SUBTRACT") )
-    return VK_SUBTRACT;
-  if ( !strcmp(Str, "ADD") )
-    return VK_ADD;
-  if ( !strcmp(Str, "END") )
-    return VK_END;
-  if ( !strcmp(Str, "DELETE") )
-    return VK_DELETE;
-  if ( !strcmp(Str, "HOME") )
-    return VK_HOME;
-  if ( !strcmp(Str, "INSERT") )
-    return VK_INSERT;
-  if ( strcmp(Str, "COMMA") )
+  if (strlen(Str) == 1)
   {
-    if ( !strcmp(Str, "DECIMAL") )
-      return VK_DECIMAL;
-    if ( strcmp(Str, "SEMICOLON") )
-    {
-      if ( strcmp(Str, "PERIOD") )
-      {
-        if ( strcmp(Str, "SLASH") )
-        {
-          if ( strcmp(Str, "SQUOTE") )
-          {
-            if ( strcmp(Str, "BACKSLASH") )
-            {
-              if ( !strcmp(Str, "BACKSPACE") )
-                return VK_BACK;
-              if ( !strcmp(Str, "CONTROL") )
-                return VK_CONTROL;
-              if ( strlen(Str) != 1 || (result = *Str, (unsigned __int8)*Str < 0x41u) || result > 0x5Au )
-                result = -1;
-            }
-            else
-            {
-              result = -36;
-            }
-          }
-          else
-          {
-            result = -34;
-          }
-        }
-        else
-        {
-          result = -65;
-        }
-      }
-      else
-      {
-        result = -66;
-      }
-    }
+    if( Str[0] >= 65 && Str[0] <= 90 )
+      return *Str;
     else
-    {
-      result = -70;
-    }
+      return 0xFF;
   }
-  else
+
+  for ( size_t i = 0; i < keyNameToCodeTranslationMap.size(); i++)
   {
-    result = -68;
+    if (!strcmp(Str, std::get<0>(keyNameToCodeTranslationMap[i])))
+      return std::get<1>(keyNameToCodeTranslationMap[i]);
   }
-  return result;
+  return 0xFF;
 }
 
 //----- (0045AE2C) --------------------------------------------------------
-const char *KeyboardActionMapping::GetVKeyDisplayName(signed int a1)
+const char * KeyboardActionMapping::GetVKeyDisplayName(unsigned char a1)
 {
-  char *v3; // [sp-4h] [bp-8h]@2
+  static char static_sub_45AE2C_string_69ADE0_keyName[32];
 
-  static char static_sub_45AE2C_string_69ADE0[32];
+  if ( a1 >= 65 && a1 <= 90 )
+  {
+    static_sub_45AE2C_string_69ADE0_keyName[0] = a1;
+    static_sub_45AE2C_string_69ADE0_keyName[1] = '\0';
+    return static_sub_45AE2C_string_69ADE0_keyName;
+  }
 
-  if ( a1 == VK_UP )
+  for ( size_t i = 0; i < keyNameToCodeTranslationMap.size(); i++)
   {
-    v3 = "UP";
-LABEL_53:
-    strcpy(static_sub_45AE2C_string_69ADE0, v3);
-    return static_sub_45AE2C_string_69ADE0;
+    if ( a1 == std::get<1>(keyNameToCodeTranslationMap[i]))
+    {
+      const char* keyName =  std::get<0>(keyNameToCodeTranslationMap[i]);
+      strcpy_s(static_sub_45AE2C_string_69ADE0_keyName, keyName);
+      return static_sub_45AE2C_string_69ADE0_keyName;
+    }
   }
-  if ( a1 == VK_DOWN )
-  {
-    v3 = "DOWN";
-    goto LABEL_53;
-  }
-  if ( a1 == VK_LEFT )
-  {
-    v3 = "LEFT";
-    goto LABEL_53;
-  }
-  if ( a1 == VK_RIGHT )
-  {
-    v3 = "RIGHT";
-    goto LABEL_53;
-  }
-  if ( a1 == VK_RETURN )
-  {
-    v3 = "RETURN";
-    goto LABEL_53;
-  }
-  if ( a1 == VK_SPACE )
-  {
-    v3 = "SPACE";
-    goto LABEL_53;
-  }
-  if ( a1 == VK_NEXT )
-  {
-    v3 = "PAGE_DOWN";
-    goto LABEL_53;
-  }
-  if ( a1 == VK_PRIOR )
-  {
-    v3 = "PAGE_UP";
-    goto LABEL_53;
-  }
-  if ( a1 == VK_TAB )
-  {
-    v3 = "TAB";
-    goto LABEL_53;
-  }
-  if ( a1 == 'm' )
-  {
-    v3 = "SUBTRACT";
-    goto LABEL_53;
-  }
-  if ( a1 == 'k' )
-  {
-    v3 = "ADD";
-    goto LABEL_53;
-  }
-  if ( a1 == VK_END )
-  {
-    v3 = "END";
-    goto LABEL_53;
-  }
-  if ( a1 == VK_DELETE )
-  {
-    v3 = "DELETE";
-    goto LABEL_53;
-  }
-  if ( a1 == VK_HOME )
-  {
-    v3 = "HOME";
-    goto LABEL_53;
-  }
-  if ( a1 == VK_INSERT )
-  {
-    v3 = "INSERT";
-    goto LABEL_53;
-  }
-  if ( a1 == VK_DECIMAL )
-  {
-    v3 = "DECIMAL";
-    goto LABEL_53;
-  }
-  if ( a1 == VK_OEM_COMMA )
-  {
-    v3 = "COMMA";
-    goto LABEL_53;
-  }
-  if ( a1 == VK_OEM_1 )
-  {
-    v3 = "SEMICOLON";
-    goto LABEL_53;
-  }
-  if ( a1 == VK_OEM_PERIOD )
-  {
-    v3 = "PERIOD";
-    goto LABEL_53;
-  }
-  if ( a1 == VK_OEM_2 )
-  {
-    v3 = "SLASH";
-    goto LABEL_53;
-  }
-  if ( a1 == VK_OEM_7 )
-  {
-    v3 = "SQUOTE";
-    goto LABEL_53;
-  }
-  if ( a1 == VK_OEM_5 )
-  {
-    v3 = "BACKSLASH";
-    goto LABEL_53;
-  }
-  if ( a1 == VK_CONTROL )
-  {
-    v3 = "CONTROL";
-    goto LABEL_53;
-  }
-  if ( a1 == VK_BACK )
-  {
-    v3 = "BACKSPACE";
-    goto LABEL_53;
-  }
-  if ( a1 < 65 || a1 > 90 )
-  {
-    v3 = "-мер -";
-    goto LABEL_53;
-  }
-  *(unsigned short *)static_sub_45AE2C_string_69ADE0 = (unsigned __int8)a1;
-  return static_sub_45AE2C_string_69ADE0;
+
+  strcpy_s(static_sub_45AE2C_string_69ADE0_keyName, "-мер -");
+  return static_sub_45AE2C_string_69ADE0_keyName;
 }
 
-//----- (0045AFD9) --------------------------------------------------------
-Keyboard::Keyboard()
-{
-  bUsingAsynKeyboard = false;
-
-  if (pVersion->pVersionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT &&
-      pVersion->pVersionInfo.dwMajorVersion == 4)
-    bUsingAsynKeyboard = false;
-}
 
 //----- (0045B019) --------------------------------------------------------
 void Keyboard::EnterCriticalSection()
@@ -947,25 +328,25 @@ void Keyboard::EnterCriticalSection()
 //----- (0045B06E) --------------------------------------------------------
 bool Keyboard::IsShiftHeld()
 {
-  return GetAsyncKeyState(VK_SHIFT);
+  return (GetAsyncKeyState(VK_SHIFT) & 0x8001) != 0;
 }
 
 //----- (0045B0A9) --------------------------------------------------------
 bool Keyboard::IsKeyBeingHeld(int vKey)
 {
-  return GetAsyncKeyState(vKey) & 0x8001;
+  return (GetAsyncKeyState(vKey) & 0x8001) != 0;
 }
 
 //----- (0045B0CE) --------------------------------------------------------
 bool Keyboard::WasKeyPressed(int vKey)
 {
-  return GetAsyncKeyState(vKey) & 1;
+  return (GetAsyncKeyState(vKey) & 1) != 0;
 }
 //----- (0046A14B) --------------------------------------------------------
 void OnPressSpace()
 {
   //SHORT v0; // ax@2
-  int *v1; // eax@2
+  /*int *v1; // eax@2
   char *v2; // ebx@5
   unsigned int v3; // esi@5
   signed int v4; // edi@7
@@ -985,11 +366,11 @@ void OnPressSpace()
   int v19; // [sp+10h] [bp-10h]@8
   int *v20; // [sp+14h] [bp-Ch]@5
   int *v21; // [sp+18h] [bp-8h]@7
-  int v22; // [sp+1Ch] [bp-4h]@4
+  int v22; // [sp+1Ch] [bp-4h]@4*/
 
-  if ( pRenderer->pRenderD3D )
+  //if ( pRenderer->pRenderD3D )
   {
-    pGame->PickKeyboard(GetAsyncKeyState(VK_CONTROL) & 0x8001, &vis_sprite_filter_3, &vis_door_filter);
+    pGame->PickKeyboard(Keyboard::IsKeyBeingHeld(VK_CONTROL), &vis_sprite_filter_3, &vis_door_filter);
     int pid = pGame->pVisInstance->get_picked_object_zbuf_val();
     if ( pid != -1 )
       DoInteractionWithTopmostZObject(pid & 0xFFFF, PID_ID(pid));
@@ -998,7 +379,7 @@ void OnPressSpace()
 
   
   // software render stuff following
-
+  /*
   static int dword_720660[100]; // 720660
   static int dword_7207F0[100]; // 7207F0
 
@@ -1100,5 +481,384 @@ void OnPressSpace()
     LOBYTE(v1) = DoInteractionWithTopmostZObject(dword_720660[j] & 0xFFFF, v16);
     if ( !(char)v1 )
       break;
+  }*/
+}
+
+
+//----- (0042FC4E) --------------------------------------------------------
+void Keyboard::ProcessInputActions()
+{
+  char v4; // al@9
+  //char v8; // bl@100
+  unsigned __int16 v9; // ax@102
+  int spell_price; // eax@103
+//  char v14; // al@159
+//  unsigned int v15; // eax@168
+  PartyAction partyAction; // [sp-14h] [bp-1Ch]@20
+  InputAction inputAction; // [sp+0h] [bp-8h]@7
+  //int v24; // [sp+4h] [bp-4h]@87
+
+  pGame->pKeyboardInstance->EnterCriticalSection();
+  Keyboard* pKeyboard = pGame->pKeyboardInstance;
+  if (!bAlwaysRun)
+  {
+    if (pKeyboard->IsShiftHeld())
+      pParty->uFlags2 |= PARTY_FLAGS_2_RUNNING;
+    else
+      pParty->uFlags2 &= ~PARTY_FLAGS_2_RUNNING;
+   }
+  else
+  {
+    if (pKeyboard->IsShiftHeld())
+      pParty->uFlags2 &= ~PARTY_FLAGS_2_RUNNING;
+    else
+      pParty->uFlags2 |= PARTY_FLAGS_2_RUNNING;
+  }
+
+  //pParty->uFlags2 |= PARTY_FLAGS_2_RUNNING;
+
+
+    //  WUT? double event trigger
+  /*for ( uint i = 0; i < 30; ++i )
+  {
+    if ( pKeyActionMap->pToggleTypes[i] )
+      v14 = pGame->pKeyboardInstance->WasKeyPressed(pKeyActionMap->pVirtualKeyCodesMapping[i]);
+    else
+      v14 = pGame->pKeyboardInstance->IsKeyBeingHeld(pKeyActionMap->pVirtualKeyCodesMapping[i]);
+    if ( v14 )
+    {
+      if (pCurrentScreen == SCREEN_GAME)
+      {
+        pMessageQueue_50CBD0->AddMessage(UIMSG_Game_Action, 0, 0);
+        continue;
+      }
+      if ( pCurrentScreen == SCREEN_NPC_DIALOGUE || pCurrentScreen == SCREEN_BRANCHLESS_NPC_DIALOG )
+      {
+        v15 = pMessageQueue_50CBD0->uNumMessages;
+        if ( pMessageQueue_50CBD0->uNumMessages )
+        {
+          v15 = 0;
+          if ( pMessageQueue_50CBD0->pMessages[pMessageQueue_50CBD0->uNumMessages].field_8 )
+          {
+            v15 = 1;
+            pMessageQueue_50CBD0->uNumMessages = 0;
+            pMessageQueue_50CBD0->pMessages[v15].eType = UIMSG_Escape;
+            pMessageQueue_50CBD0->pMessages[pMessageQueue_50CBD0->uNumMessages].param = 0;
+            *(&pMessageQueue_50CBD0->uNumMessages + 3 * pMessageQueue_50CBD0->uNumMessages + 3) = 0;
+            ++pMessageQueue_50CBD0->uNumMessages;
+            continue;
+          }
+          pMessageQueue_50CBD0->uNumMessages = 0;
+        }
+        //pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 0, 0);
+      }
+    }
+  }*/
+  if ( !pEventTimer->bPaused )
+  {
+    for ( uint i = 0; i < 30; ++i )
+    {
+      inputAction = (InputAction)i;
+      if ( pKeyActionMap->pToggleTypes[inputAction] )
+        v4 = pKeyboard->WasKeyPressed(pKeyActionMap->pVirtualKeyCodesMapping[inputAction]);
+      else
+        v4 = pKeyboard->IsKeyBeingHeld(pKeyActionMap->pVirtualKeyCodesMapping[inputAction]);
+      if ( v4 )
+      {
+        switch ( inputAction )
+        {
+          case INPUT_MoveForward:
+            if (pCurrentScreen  != SCREEN_GAME)
+              break;
+            if (!pParty->bTurnBasedModeOn)
+            {
+              if ( pParty->uFlags2 & PARTY_FLAGS_2_RUNNING)
+                partyAction = PARTY_RunForward;
+              else
+                partyAction = PARTY_WalkForward;
+              pPartyActionQueue->Add(partyAction);
+              break;
+            }
+            if (pTurnEngine->turn_stage != TE_WAIT && pTurnEngine->turn_stage != TE_ATTACK && pTurnEngine->uActionPointsLeft > 0 )
+            {
+              pTurnEngine->uActionPointsLeft -= 26;
+              if ( pParty->uFlags2 & PARTY_FLAGS_2_RUNNING)
+                partyAction = PARTY_RunForward;
+              else
+                partyAction = PARTY_WalkForward;
+              pPartyActionQueue->Add(partyAction);
+              break;
+            }
+            break;
+          case INPUT_MoveBackwards:
+            if (pCurrentScreen  != SCREEN_GAME)
+              break;
+            if (!pParty->bTurnBasedModeOn)
+            {
+              if ( pParty->uFlags2 & 2 )
+                partyAction = PARTY_RunBackward;
+              else
+                partyAction = PARTY_WalkBackward;
+              pPartyActionQueue->Add(partyAction);
+              break;
+            }
+            if ( pTurnEngine->turn_stage != TE_WAIT && pTurnEngine->turn_stage != TE_ATTACK && pTurnEngine->uActionPointsLeft > 0 )
+            {
+              pTurnEngine->uActionPointsLeft -= 26;
+              if ( pParty->uFlags2 & 2 )
+                partyAction = PARTY_RunBackward;
+              else
+                partyAction = PARTY_WalkBackward;
+              pPartyActionQueue->Add(partyAction);
+              break;
+            }
+            break;
+          case INPUT_StrafeLeft:
+            if (pCurrentScreen  != SCREEN_GAME)
+              break;
+            if (!pParty->bTurnBasedModeOn)
+            {
+              partyAction = PARTY_StrafeLeft;
+              pPartyActionQueue->Add(partyAction);
+              break;
+            }
+            if ( pTurnEngine->turn_stage == TE_WAIT || pTurnEngine->turn_stage == TE_ATTACK || pTurnEngine->uActionPointsLeft <= 0 )
+              break;
+            pTurnEngine->uActionPointsLeft -= 26;
+            partyAction = PARTY_StrafeLeft;
+            pPartyActionQueue->Add(partyAction);
+            break;
+          case INPUT_StrafeRight:
+            if (pCurrentScreen != SCREEN_GAME)
+              break;
+            if (!pParty->bTurnBasedModeOn)
+            {
+              partyAction = PARTY_StrafeRight;
+              pPartyActionQueue->Add(partyAction);
+              break;
+            }
+            if ( pTurnEngine->turn_stage == TE_WAIT || pTurnEngine->turn_stage == TE_ATTACK || pTurnEngine->uActionPointsLeft <= 0 )
+              break;
+            pTurnEngine->uActionPointsLeft -= 26;
+            partyAction = PARTY_StrafeRight;
+            pPartyActionQueue->Add(partyAction);
+            break;
+          case INPUT_TurnLeft:
+            if (pCurrentScreen != SCREEN_GAME)
+              break;
+            if ( GetAsyncKeyState(VK_CONTROL) ) // strafing
+            {
+              if (pParty->bTurnBasedModeOn)
+              {
+                if ( pTurnEngine->turn_stage == TE_WAIT || pTurnEngine->turn_stage == TE_ATTACK || pTurnEngine->uActionPointsLeft <= 0 )
+                  break;
+                pTurnEngine->uActionPointsLeft -= 26;
+              }
+              partyAction = PARTY_StrafeLeft;
+            }
+            else
+            {
+              if ( pParty->uFlags2 & 2 )
+                partyAction = PARTY_FastTurnLeft;
+              else
+                partyAction = PARTY_TurnLeft;
+            }
+            pPartyActionQueue->Add(partyAction);
+            if (uCurrentlyLoadedLevelType == LEVEL_Outdoor && pWeather->bRenderSnow)
+              pWeather->OnPlayerTurn(10);
+            break;
+          case INPUT_TurnRight:
+            if (pCurrentScreen != SCREEN_GAME)
+              break;
+            if ( GetAsyncKeyState(17) )         // strafing
+            {
+              if (pParty->bTurnBasedModeOn)
+              {
+                if ( pTurnEngine->turn_stage == TE_WAIT || pTurnEngine->turn_stage == TE_ATTACK || pTurnEngine->uActionPointsLeft <= 0 )
+                  break;
+                pTurnEngine->uActionPointsLeft -= 26;
+              }
+              partyAction = PARTY_StrafeRight;
+            }
+            else
+            {
+              if ( pParty->uFlags2 & 2 )
+                partyAction = PARTY_FastTurnRight;
+              else
+                partyAction = PARTY_TurnRight;
+            }
+            pPartyActionQueue->Add(partyAction);
+            if (uCurrentlyLoadedLevelType == LEVEL_Outdoor && pWeather->bRenderSnow)
+              pWeather->OnPlayerTurn(-10);
+            break;
+          case INPUT_Jump:
+            if (pCurrentScreen != SCREEN_GAME || pParty->bTurnBasedModeOn)
+              break;
+            partyAction = (PartyAction)12;
+            pPartyActionQueue->Add(partyAction);
+            break;
+          case INPUT_Yell:
+            if (!pCurrentScreen && uActiveCharacter)
+            {
+              pParty->Yell();
+              pPlayers[uActiveCharacter]->PlaySound(SPEECH_Yell, 0);
+            }
+          break;
+          case INPUT_Pass:
+            if ( pCurrentScreen )
+              break;
+            if (pParty->bTurnBasedModeOn && pTurnEngine->turn_stage == TE_MOVEMENT)
+            {
+              pTurnEngine->field_18 |= TE_FLAG_8;
+              break;
+            }
+            if ( uActiveCharacter )
+            {
+              if ( !pPlayers[uActiveCharacter]->uTimeToRecovery )
+              {
+                if ( !pParty->bTurnBasedModeOn )
+                  pPlayers[uActiveCharacter]->SetRecoveryTime((signed __int64)(flt_6BE3A4_debug_recmod1 * (double)pPlayers[uActiveCharacter]->GetAttackRecoveryTime(false) * 2.133333333333333));
+                CastSpellInfoHelpers::_427D48();
+                pTurnEngine->ApplyPlayerAction();
+              }
+            }
+            break;
+          case INPUT_Combat://if press ENTER
+            if (pCurrentScreen == SCREEN_GAME)
+            {
+              if (pParty->bTurnBasedModeOn)
+              {
+                if (pTurnEngine->turn_stage == TE_MOVEMENT || PID_TYPE(pTurnEngine->pQueue[0].uPackedID) == OBJECT_Player)
+                {
+                  pParty->bTurnBasedModeOn = 0;
+                  pTurnEngine->End(true);
+                }
+              }
+              else
+              {
+                pTurnEngine->Start();
+                pParty->bTurnBasedModeOn = true;
+              }
+            }
+            break;
+          case INPUT_CastReady:
+            if (pCurrentScreen != SCREEN_GAME)
+              break;
+            if (pParty->bTurnBasedModeOn && pTurnEngine->turn_stage == TE_MOVEMENT)
+            {
+              pTurnEngine->field_18 |= TE_FLAG_8;
+              break;
+            }
+            if ( !uActiveCharacter )
+              break;
+            v9 = pPlayers[uActiveCharacter]->pActiveSkills[(unsigned __int8)pPlayers[uActiveCharacter]->uQuickSpell / 11 + 12];
+            if ( !pPlayers[uActiveCharacter]->uQuickSpell || bUnderwater
+              || (( !(HIBYTE(v9) & 1)) ? 
+                 ((v9 & 0x80) == 0 ? 
+                 ((v9 & 0x40) == 0 ? spell_price = pSpellDatas[pPlayers[uActiveCharacter]->uQuickSpell].uNormalLevelMana : spell_price = pSpellDatas[pPlayers[uActiveCharacter]->uQuickSpell].uExpertLevelMana) : 
+                 spell_price = pSpellDatas[pPlayers[uActiveCharacter]->uQuickSpell].uMasterLevelMana) : 
+                 spell_price = pSpellDatas[pPlayers[uActiveCharacter]->uQuickSpell].uMagisterLevelMana,
+                 spell_price > pPlayers[uActiveCharacter]->sMana) )
+            {
+              pPartyActionQueue = pPartyActionQueue;
+              pMessageQueue_50CBD0->AddMessage(UIMSG_Attack, 0, 0);
+              break;
+            }
+            else
+              pMessageQueue_50C9E8->AddMessage(UIMSG_CastQuickSpell, 0, 0);
+            break;
+          case INPUT_Attack:
+            if (pCurrentScreen != SCREEN_GAME)
+              break;
+            if (pParty->bTurnBasedModeOn == true && pTurnEngine->turn_stage == TE_MOVEMENT)
+            {
+              pTurnEngine->field_18 |= TE_FLAG_8;
+              break;
+            }
+            pMessageQueue_50CBD0->AddMessage(UIMSG_Attack, 0, 0);
+            break;
+          case INPUT_EventTrigger:
+            if (pCurrentScreen == SCREEN_GAME)
+            {
+              pMessageQueue_50CBD0->AddMessage(UIMSG_Game_Action, 0, 0);
+              break;
+            }
+            if ( pCurrentScreen == SCREEN_NPC_DIALOGUE )
+            {
+              if ( pMessageQueue_50CBD0->uNumMessages )
+              {
+                pMessageQueue_50CBD0->uNumMessages = 0;
+                if ( pMessageQueue_50CBD0->pMessages[0].field_8 )
+                {
+                  pMessageQueue_50CBD0->uNumMessages = 1;
+                  pMessageQueue_50CBD0->pMessages[pMessageQueue_50CBD0->uNumMessages].eType = UIMSG_Escape;
+                  pMessageQueue_50CBD0->pMessages[pMessageQueue_50CBD0->uNumMessages].param = 0;
+                  pMessageQueue_50CBD0->pMessages[pMessageQueue_50CBD0->uNumMessages].field_8 = 0;
+                  ++pMessageQueue_50CBD0->uNumMessages;
+                  break;
+                }
+                break;
+              }
+              pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 0, 0);
+            }
+            break;
+          case INPUT_CharCycle:
+            if ( pCurrentScreen == SCREEN_SPELL_BOOK  )
+              break;
+
+            pMessageQueue_50C9E8->AddMessage(UIMSG_CycleCharacters, 0, 0);
+            break;
+          case INPUT_LookUp:
+            if ( pEventTimer->bPaused )
+              break;
+            partyAction = (PartyAction)7;
+            pPartyActionQueue->Add(partyAction);
+            break;
+          case INPUT_CenterView:
+            if ( pEventTimer->bPaused )
+              break;
+            partyAction = (PartyAction)9;
+            pPartyActionQueue->Add(partyAction);
+            break;
+          case INPUT_LookDown:
+            if ( pEventTimer->bPaused )
+              break;
+            partyAction = (PartyAction)8;
+            pPartyActionQueue->Add(partyAction);
+            break;
+          case INPUT_FlyUp:
+            if ( pCurrentScreen || pEventTimer->bPaused )
+              break;
+            partyAction = (PartyAction)13;
+            pPartyActionQueue->Add(partyAction);
+            break;
+          case INPUT_Land:
+            if ( pCurrentScreen || pEventTimer->bPaused )
+              break;
+            partyAction = (PartyAction)15;
+            pPartyActionQueue->Add(partyAction);
+            break;
+          case INPUT_FlyDown:
+            if ( !pCurrentScreen
+              && !pEventTimer->bPaused )
+            {
+              partyAction = (PartyAction)14;
+              pPartyActionQueue->Add(partyAction);
+            }
+            break;
+          case INPUT_ZoomIn:
+              pMessageQueue_50C9E8->AddMessage(UIMSG_ClickZoomOutBtn, 0, 0);
+            break;
+          case INPUT_ZoomOut:
+              pMessageQueue_50C9E8->AddMessage(UIMSG_ClickZoomInBtn, 0, 0);
+            break;
+          case INPUT_AlwaysRun:
+            bAlwaysRun = bAlwaysRun == 0;
+            break;
+          default:
+            break;
+        }
+      }
+    }
   }
 }

@@ -133,11 +133,16 @@ void PlayHouseSound(unsigned int uHouseID, HouseSoundID sound); // idb
 void  WeaponShopDialog();
 void  AlchemistDialog();
 void  ArmorShopDialog();
+void SimpleHouseDialog();
+void __fastcall OnSelectShopDialogueOption(signed int uMessageParam);
+void PrepareHouse(enum HOUSE_ID house); // idb
+bool EnterHouse(enum HOUSE_ID uHouseID);
 
 
 void InitializaDialogueOptions_Tavern(BuildingType type); // idb
 void InitializaDialogueOptions_Shops(BuildingType type);
 void InitializaDialogueOptions(BuildingType type);
+void InitializeBuildingResidents();
 
 extern int uHouse_ExitPic; // weak
 extern int dword_591080; // weak

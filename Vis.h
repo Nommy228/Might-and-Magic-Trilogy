@@ -108,19 +108,19 @@ public:
   bool IsPointInsideD3DBillboard(struct RenderBillboardD3D *a1, float x, float y);
   int PickClosestActor(int object_id, unsigned int pick_depth, int a4, int a5, int a6);
   void _4C1A02();
-  bool SortVectors_x(RenderVertexSoft *a2, int a3, int a4);
+  void SortVectors_x(RenderVertexSoft *pArray, int start, int end);
   int get_object_zbuf_val(Vis_ObjectInfo *info);
   int get_picked_object_zbuf_val();
-  bool Intersect_Ray_Face(struct RenderVertexSoft *pRayStart, struct RenderVertexSoft *pRayEnd, float *pDepth, RenderVertexSoft *Intersection, BLVFace *pFace, unsigned int pBModelID);
-  bool CheckIntersectBModel(BLVFace *pFace, Vec3_short_ IntersectPoint, unsigned int uModelID);
+  bool Intersect_Ray_Face(struct RenderVertexSoft *pRayStart, struct RenderVertexSoft *pRayEnd, float *pDepth, RenderVertexSoft *Intersection, BLVFace *pFace, signed int pBModelID);
+  bool CheckIntersectBModel(BLVFace *pFace, Vec3_short_ IntersectPoint, signed int sModelID);
   void BLV_CreateIntersectFacesVertexCoordList(int *a, int *b, __int16 *intersect_face_vertex_coords_list_a, __int16 *intersect_face_vertex_coords_list_b, Vec3_short_ *IntersectPoint, BLVFace *pFace);
   void ODM_CreateIntersectFacesVertexCoordList(int *a, int *b, __int16 *intersect_face_vertex_coords_list_a, __int16 *intersect_face_vertex_coords_list_b, Vec3_short_ *IntersectPoint, BLVFace *pFace, unsigned int uModelID);
   void CastPickRay(RenderVertexSoft *pRay, float fMouseX, float fMouseY, float fPickDepth);
   void sort_object_pointers(Vis_ObjectInfo **pPointers, int start, int end);
-  bool SortVerticesByX(struct RenderVertexD3D3 *a2, unsigned int uStart, unsigned int uEnd);
-  bool SortVerticesByY(struct RenderVertexD3D3 *a2, unsigned int uStart, unsigned int uEnd);
-  bool SortByScreenSpaceX(struct RenderVertexSoft *pArray, int sLeft, int sRight);
-  bool SortByScreenSpaceY(struct RenderVertexSoft *pArray, int sLeft, int sRight);
+  void SortVerticesByX(struct RenderVertexD3D3 *pArray, unsigned int uStart, unsigned int uEnd);
+  void SortVerticesByY(struct RenderVertexD3D3 *pArray, unsigned int uStart, unsigned int uEnd);
+  void SortByScreenSpaceX(struct RenderVertexSoft *pArray, int start, int end);
+  void SortByScreenSpaceY(struct RenderVertexSoft *pArray, int start, int end);
 
   //void ( ***vdestructor_ptr)(Vis *, bool);
   Vis_SelectionList default_list;

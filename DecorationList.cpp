@@ -1,3 +1,4 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include "Sprites.h"
 #include "DecorationList.h"
 #include "MM7.h"
@@ -5,6 +6,8 @@
 #include "mm7_data.h"
 #include "Indoor.h"
 #include "ErrorHandling.h"
+#include "stru123.h"
+#include "Level\Decoration.h"
 
 //----- (0045864C) --------------------------------------------------------
 void DecorationList::FromFile(void *data_mm6, void *data_mm7, void *data_mm8)
@@ -46,26 +49,25 @@ bool DecorationList::FromFileTxt(const char *Args)
   FILE *v6; // ST18_4@12
   char *i; // eax@12
   unsigned __int16 v8; // ax@16
-  const char *v9; // ST20_4@16
-  const char *v10; // ST18_4@16
-  __int16 v11; // ax@16
-  const char *v12; // ST14_4@16
-  unsigned __int16 v13; // ax@16
-  const char *v14; // ST10_4@16
-  __int16 v15; // ax@16
-  const char *v16; // ST0C_4@16
-  unsigned __int8 v17; // al@16
-  const char *v18; // ST08_4@16
-  unsigned __int8 v19; // al@16
-  const char *v20; // ST04_4@16
-  unsigned __int8 v21; // al@16
-  const char *v22; // ST00_4@16
+  //const char *v9; // ST20_4@16
+  //const char *v10; // ST18_4@16
+  //__int16 v11; // ax@16
+  //const char *v12; // ST14_4@16
+  //unsigned __int16 v13; // ax@16
+//  const char *v14; // ST10_4@16
+  //__int16 v15; // ax@16
+//  const char *v16; // ST0C_4@16
+//  unsigned __int8 v17; // al@16
+//  const char *v18; // ST08_4@16
+//  unsigned __int8 v19; // al@16
+//  const char *v20; // ST04_4@16
+//  unsigned __int8 v21; // al@16
+//  const char *v22; // ST00_4@16
   unsigned __int8 v23; // zf@16
   char v24; // sf@16
   unsigned __int8 v25; // of@16
   int j; // edi@17
   const char *v27; // esi@18
-  int v28; // eax@19
   int v29; // eax@21
   int v30; // eax@23
   int v31; // eax@25
@@ -119,30 +121,31 @@ bool DecorationList::FromFileTxt(const char *Args)
     {
       strcpy(v2->pDecorations[v2->uNumDecorations].pName, v42.pProperties[1]);
       v8 = pSpriteFrameTable->FastFindSprite(v2->pDecorations[v2->uNumDecorations].pName);
-      v9 = v42.pProperties[2];
+      //v9 = v42.pProperties[2];
       v2->pDecorations[v2->uNumDecorations].uSpriteID = v8;
-      strcpy(v2->pDecorations[v2->uNumDecorations].field_20, v9);
-      v10 = v42.pProperties[3];
+      strcpy(v2->pDecorations[v2->uNumDecorations].field_20, v42.pProperties[2]);
+      //v10 = v42.pProperties[3];
       v2->pDecorations[v2->uNumDecorations].uType = 0;
-      v11 = atoi(v10);
-      v12 = v42.pProperties[4];
-      v2->pDecorations[v2->uNumDecorations].uRadius = v11;
-      v13 = atoi(v12);
-      v14 = v42.pProperties[5];
-      v2->pDecorations[v2->uNumDecorations].uDecorationHeight = v13;
-      v15 = atoi(v14);
-      v16 = v42.pProperties[6];
-      v2->pDecorations[v2->uNumDecorations].uLightRadius = v15;
-      v17 = atoi(v16);
-      v18 = v42.pProperties[7];
-      v2->pDecorations[v2->uNumDecorations].uColoredLightRed = v17;
-      v19 = atoi(v18);
-      v20 = v42.pProperties[8];
-      v2->pDecorations[v2->uNumDecorations].uColoredLightGreen = v19;
-      v21 = atoi(v20);
-      v22 = v42.pProperties[9];
-      v2->pDecorations[v2->uNumDecorations].uColoredLightBlue = v21;
-      v2->pDecorations[v2->uNumDecorations].uSoundID = atoi(v22);
+      //v11 = atoi(v42.pProperties[3]);
+      //v12 = v42.pProperties[4];
+      v2->pDecorations[v2->uNumDecorations].uRadius = atoi(v42.pProperties[3]);
+      //v13 = atoi(v42.pProperties[4]);
+      //v14 = v42.pProperties[5];
+      v2->pDecorations[v2->uNumDecorations].uDecorationHeight = atoi(v42.pProperties[4]);
+      //v15 = atoi(v42.pProperties[5]);
+      //v16 = v42.pProperties[6];
+      v2->pDecorations[v2->uNumDecorations].uLightRadius = atoi(v42.pProperties[5]);
+      //v17 = atoi(v42.pProperties[6]);
+      //v18 = v42.pProperties[7];
+      v2->pDecorations[v2->uNumDecorations].uColoredLightRed = atoi(v42.pProperties[6]);
+      //v19 = atoi(v42.pProperties[7]);
+      //v20 = v42.pProperties[8];
+      v2->pDecorations[v2->uNumDecorations].uColoredLightGreen = atoi(v42.pProperties[7]);
+      //v21 = atoi(v42.pProperties[8]);
+      //v22 = v42.pProperties[9];
+      v2->pDecorations[v2->uNumDecorations].uColoredLightBlue = atoi(v42.pProperties[8]);
+      v2->pDecorations[v2->uNumDecorations].uSoundID = atoi(v42.pProperties[9]);
+      __debugbreak();//Ritor1: need cleaning
       v25 = __OFSUB__(v42.uPropCount, 10);
       v23 = v42.uPropCount == 10;
       v24 = v42.uPropCount - 10 < 0;
@@ -223,10 +226,7 @@ bool DecorationList::FromFileTxt(const char *Args)
             }
           }
           else
-          {
-            v28 = (int)&v2->pDecorations[v2->uNumDecorations].uFlags;
-            *(char *)v28 |= 1u;
-          }
+            v2->pDecorations[v2->uNumDecorations].uFlags |= 1;
         }
       }
       ++v2->uNumDecorations;
@@ -238,44 +238,53 @@ bool DecorationList::FromFileTxt(const char *Args)
 //----- (00458600) --------------------------------------------------------
 void DecorationList::ToFile()
 {
-  DecorationList *v1; // esi@1
   FILE *v2; // eax@1
   FILE *v3; // edi@1
 
-  v1 = this;
   v2 = fopen("data\\ddeclist.bin", "wb");
   v3 = v2;
   if ( !v2 )
     Error("Unable to save ddeclist.bin!");
 
-  fwrite(v1, 4u, 1u, v2);
-  fwrite(v1->pDecorations, 0x54u, v1->uNumDecorations, v3);
+  fwrite(this, 4, 1, v2);
+  fwrite(this->pDecorations, 84, this->uNumDecorations, v3);
   fclose(v3);
 }
 //----- (004488B6) --------------------------------------------------------
 unsigned __int16 DecorationList::GetDecorIdByName(const char *pName)
 {
-  DecorationList *v2; // esi@1
-  signed int uID; // edi@2
-  signed int v4; // ebx@3
-  unsigned __int16 result; // ax@6
-
-  v2 = this;
-  if ( pName && (uID = 1, (signed int)this->uNumDecorations > 1) )
+  if ( pName &&  (signed int)this->uNumDecorations > 1 )
   {
-    v4 = 1;
-    while ( _stricmp(pName, v2->pDecorations[v4].pName) )
+    for ( uint uID = 1; uID < (signed int)this->uNumDecorations; ++uID )
     {
-      ++uID;
-      ++v4;
-      if ( uID >= (signed int)v2->uNumDecorations )
-        return 0;
+      if ( !_stricmp(pName, this->pDecorations[uID].pName) )
+        return uID;
     }
-    result = uID;
   }
-  else
+  return 0;
+}
+
+
+//----- (00450AAA) --------------------------------------------------------
+void RespawnGlobalDecorations()
+{
+  memset(stru_5E4C90_MapPersistVars._decor_events.data(), 0, 125);
+
+  uint decorEventIdx = 0;
+  for (uint i = 0; i < uNumLevelDecorations; ++i)
   {
-    result = 0;
+    LevelDecoration* decor = &pLevelDecorations[i];
+
+    if (!decor->uEventID)
+    {
+      if (decor->IsInteractive())
+      {
+        if (decorEventIdx < 124)
+        {
+          decor->_idx_in_stru123 = decorEventIdx + 75;
+          stru_5E4C90_MapPersistVars._decor_events[decorEventIdx++] = decor->GetGlobalEvent();
+        }
+      }
+    }
   }
-  return result;
 }

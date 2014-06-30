@@ -76,3 +76,5 @@ struct DecorationList
 
 
 extern struct DecorationList *pDecorationList;
+
+void RespawnGlobalDecorations();

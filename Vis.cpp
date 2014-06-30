@@ -1,15 +1,19 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include "Vis.h"
+#include "Sprites.h"
+#include "Lod.h"
 #include "Outdoor.h"
 #include "BSPModel.h"
 #include "Game.h"
 #include "Actor.h"
 #include "Outdoor_stuff.h"
 #include "Viewport.h"
-#include "Math.h"
+#include "OurMath.h"
 #include "Log.h"
 #include "ErrorHandling.h"
 
 #include "mm7_data.h"
+#include "mm7_unsorted_subs.h"
 #include "MM7.h"
 #include "Level/Decoration.h"
 
@@ -28,10 +32,10 @@ Vis_SelectionFilter vis_sprite_filter_4 = {VisObjectType_Any,    OBJECT_Item,   
 //----- (004C1026) --------------------------------------------------------
 Vis_ObjectInfo *Vis::DetermineFacetIntersection(BLVFace *face, unsigned int pid, float pick_depth)
 {
-  char *v4; // eax@4
-  signed int v5; // ecx@4
+//  char *v4; // eax@4
+//  signed int v5; // ecx@4
   RenderVertexSoft pRay[2]; // [sp+20h] [bp-70h]@17
-  int v20; // [sp+84h] [bp-Ch]@10
+//  int v20; // [sp+84h] [bp-Ch]@10
 
   static Vis_SelectionList SelectedPointersList;//stru_F8FE00
   SelectedPointersList.uNumPointers = 0;
@@ -132,8 +136,8 @@ bool Vis::IsPolygonOccludedByBillboard(RenderVertexSoft *vertices, int num_verti
     {
       if (v13 == -1)
         v13 = i;
-      else  if ((unsigned int)pBillboardRenderList[billboard->uParentBillboardID].sZValue < 
-                  pBillboardRenderList[pRenderer->pBillboardRenderListD3D[v13].uParentBillboardID].sZValue)
+      else  if (pBillboardRenderList[billboard->sParentBillboardID].sZValue < 
+                  pBillboardRenderList[pRenderer->pBillboardRenderListD3D[v13].sParentBillboardID].sZValue)
         v13 = i;
     }
   }
@@ -150,7 +154,7 @@ bool Vis::IsPolygonOccludedByBillboard(RenderVertexSoft *vertices, int num_verti
   float max_x = -FLT_MAX;
   //thisb = -3.4028235e38;
   float max_y = -FLT_MAX;
-  for (uint i = 0; i < num_vertices; ++i)
+  for (int i = 0; i < num_vertices; ++i)
   {
     //v9 = a1;
     //do
@@ -196,9 +200,9 @@ void Vis::GetPolygonCenter(RenderVertexD3D3 *pVertices, unsigned int uNumVertice
 //----- (004C1495) --------------------------------------------------------
 void Vis::GetPolygonScreenSpaceCenter(RenderVertexSoft *vertices, int num_vertices, float *out_center_x, float *out_center_y)
 {
-  char *v5; // eax@2
-  signed int v6; // ecx@2
-  float *result; // eax@5
+//  char *v5; // eax@2
+//  signed int v6; // ecx@2
+//  float *result; // eax@5
 
   static RenderVertexSoft static_sub_4C1495_array_F8DDF8[64];
 
@@ -221,81 +225,67 @@ void Vis::PickBillboards_Mouse(float fPickDepth, float fX, float fY, Vis_Selecti
     {
       if (DoesRayIntersectBillboard(fPickDepth, i))
       {
-        RenderBillboard* billboard = &pBillboardRenderList[d3d_billboard->uParentBillboardID];
+        RenderBillboard* billboard = &pBillboardRenderList[d3d_billboard->sParentBillboardID];
 
-        list->AddObject((void *)d3d_billboard->uParentBillboardID, VisObjectType_Sprite, billboard->sZValue);
+        list->AddObject((void *)d3d_billboard->sParentBillboardID, VisObjectType_Sprite, billboard->sZValue);
       }
     }
   }
 }
 
+
 //----- (004C1607) --------------------------------------------------------
-bool Vis::IsPointInsideD3DBillboard(RenderBillboardD3D *a1, float x, float y)
+bool Vis::IsPointInsideD3DBillboard(RenderBillboardD3D *a1, float x, float y) 
 {
-  //RenderBillboardD3D *result; // eax@1
-  double v5; // st7@2
-  float v6; // ecx@2
-  float v7; // ST00_4@3
-  __int16 v8; // fps@6
-  double v9; // st6@6
-  char v10; // c0@6
-  char v11; // c2@6
-  char v12; // c3@6
-  __int16 v13; // fps@7
-  double v14; // st6@7
-  unsigned __int8 v15; // c0@7
-  char v16; // c2@7
-  unsigned __int8 v17; // c3@7
-  __int16 v18; // fps@8
-  double v19; // st6@8
-  char v20; // c0@8
-  char v21; // c2@8
-  char v22; // c3@8
-  __int16 v23; // fps@9
-  double v24; // st6@9
-  unsigned __int8 v25; // c0@9
-  char v26; // c2@9
-  unsigned __int8 v27; // c3@9
-  float v28; // [sp+4h] [bp-8h]@2
-  float v29; // [sp+8h] [bp-4h]@2
-  float a1a; // [sp+14h] [bp+8h]@2
+  /*Not the original implementation. 
+  This function is redone to use Grayface's mouse pick implementation to take only the visible 
+  parts of billboards into account - I don't really have too much of an idea how it actually works*/
+  float drX; // st7@2
+  float drY; // ecx@2
+  float drH; // [sp+4h] [bp-8h]@2
+  float drW; // [sp+14h] [bp+8h]@2
 
-  if ( a1->uParentBillboardID == -1 )
+  if ( a1->sParentBillboardID == -1 )
     return false;
 
-  //result = a1;
-  v5 = a1->pQuads[0].pos.x;
-  a1a = a1->pQuads[3].pos.x;
-  v6 = a1->pQuads[0].pos.y;
-  //result = (RenderBillboardD3D *)LODWORD(result->pQuads[1].pos.y);
-  v29 = v6;
-  v28 = a1->pQuads[1].pos.y;
-  if ( v5 > a1a )
+  drX = a1->pQuads[0].pos.x;
+  drW = a1->pQuads[3].pos.x - drX;
+  drY = a1->pQuads[0].pos.y;
+  drH = a1->pQuads[1].pos.y - drY;
+
+  Sprite* ownerSprite = nullptr;
+  for (int i = 0; i < pSprites_LOD->uNumLoadedSprites; ++i)
   {
-    v7 = v5;
-    //HIWORD(result) = HIWORD(v7);
-    v5 = a1a;
-    a1a = v7;
+    if (pSprites_LOD->pHardwareSprites[i].pTexture == a1->pTexture)
+    {
+      ownerSprite = &pSprites_LOD->pHardwareSprites[i];
+      break;
+    }
   }
-  if ( v6 > (double)v28 )
+
+  int i = ownerSprite->uAreaX + int(ownerSprite->uAreaWidth * (x - drX) / drW);
+  int j = ownerSprite->uAreaY + int(ownerSprite->uAreaHeight * (y - drY) / drH);
+
+
+  LODSprite* spriteHeader = nullptr;
+
+  for (int i = 0; i < MAX_LOD_SPRITES; ++i)
   {
-    //result = (RenderBillboardD3D *)LODWORD(v28);
-    v28 = v6;
-    v29 = v28;
+    if (strcmp(pSprites_LOD->pSpriteHeaders[i].pName, ownerSprite->pName) == 0)
+    {
+      spriteHeader = &pSprites_LOD->pSpriteHeaders[i];
+      break;
+    }
   }
-  v9 = x + 1.0;
-  //UNDEF(v8);
-  //v10 = v9 < v5;
-  //v11 = 0;
-  //v12 = v9 == v5;
-  //BYTE1(result) = HIBYTE(v8);//crash
-  if (v9 >= v5 &&
-      (v14 = x - 1.0, v14<=a1a) &&///*UNDEF(v13),*/ v15 = v14 < a1a, v16 = 0, v17 = v14 == a1a, BYTE1(result) = HIBYTE(v13), v15 | v17)
-      (v19 = y + 1.0, v19>=v29) &&///*UNDEF(v18),*/ v20 = v19 < v29, v21 = 0, v22 = v19 == v29, BYTE1(result) = HIBYTE(v18), v19 >= v29)
-      (v24 = y - 1.0, v24<=v28))///*UNDEF(v23),*/ v25 = v24 < v28, v26 = 0, v27 = v24 == v28, BYTE1(result) = HIBYTE(v23), v25 | v27) )
-    return true;
-  else
+
+  if (j < 0 || j >= spriteHeader->uHeight)
     return false;
+
+  if (spriteHeader->pSpriteLines[j].a1 < 0 || i > spriteHeader->pSpriteLines[j].a2 ||  i < spriteHeader->pSpriteLines[j].a1)
+  {
+    return false;
+  }
+  return *(spriteHeader->pSpriteLines[j].pos + i - spriteHeader->pSpriteLines[j].a1) != 0;
 }
 
 //----- (004C16B4) --------------------------------------------------------
@@ -303,10 +293,10 @@ void Vis::PickIndoorFaces_Mouse(float fDepth, RenderVertexSoft *pRay, Vis_Select
 {
   int v5; // eax@1
   signed int pFaceID; // edi@2
-  int v8; // ecx@7
+//  int v8; // ecx@7
   int v9; // eax@7
   unsigned int *pNumPointers; // eax@7
-  unsigned int v11; // ecx@7
+//  unsigned int v11; // ecx@7
   Vis_ObjectInfo *v12; // edi@7
   RenderVertexSoft a1; // [sp+Ch] [bp-44h]@1
   BLVFace *pFace; // [sp+3Ch] [bp-14h]@7
@@ -364,7 +354,7 @@ void Vis::PickOutdoorFaces_Mouse(float fDepth, RenderVertexSoft *pRay, Vis_Selec
   if (!pOutdoor)
     return;
 
-  for (uint i = 0; i < pOutdoor->uNumBModels; ++i)
+  for (int i = 0; i < pOutdoor->uNumBModels; ++i)
   {
     int reachable;
     if (!IsBModelVisible(i, &reachable))
@@ -373,7 +363,7 @@ void Vis::PickOutdoorFaces_Mouse(float fDepth, RenderVertexSoft *pRay, Vis_Selec
       continue;
 
     BSPModel* bmodel = &pOutdoor->pBModels[i];
-    for (uint j = 0; j < bmodel->uNumFaces; ++j)
+    for (int j = 0; j < bmodel->uNumFaces; ++j)
     {
       ODMFace* face = &bmodel->pFaces[j];
       if (is_part_of_selection(face, filter))
@@ -409,13 +399,7 @@ void Vis::PickOutdoorFaces_Mouse(float fDepth, RenderVertexSoft *pRay, Vis_Selec
 //----- (004C1944) --------------------------------------------------------
 int Vis::PickClosestActor(int object_id, unsigned int pick_depth, int a4, int a5, int a6)
 {
-  //float v6; // ST00_4@3
-  //int result; // eax@4
   Vis_SelectionFilter v8; // [sp+18h] [bp-20h]@3
-  //__int64 v9; // [sp+2Ch] [bp-Ch]@3
-  //Vis *v14; // [sp+34h] [bp-4h]@1
-
-  //v14 = this;
 
   static Vis_SelectionList Vis_static_sub_4C1944_stru_F8BDE8;
   
@@ -427,10 +411,7 @@ int Vis::PickClosestActor(int object_id, unsigned int pick_depth, int a4, int a5
   Vis_static_sub_4C1944_stru_F8BDE8.uNumPointers = 0;
   PickBillboards_Keyboard(pick_depth, &Vis_static_sub_4C1944_stru_F8BDE8, &v8);
   Vis_static_sub_4C1944_stru_F8BDE8.create_object_pointers(Vis_SelectionList::Unique);
-  sort_object_pointers(
-    Vis_static_sub_4C1944_stru_F8BDE8.object_pointers,
-    0,
-    Vis_static_sub_4C1944_stru_F8BDE8.uNumPointers - 1);
+  sort_object_pointers(Vis_static_sub_4C1944_stru_F8BDE8.object_pointers, 0, Vis_static_sub_4C1944_stru_F8BDE8.uNumPointers - 1);
 
   if (!Vis_static_sub_4C1944_stru_F8BDE8.uNumPointers)
     return -1;
@@ -470,61 +451,42 @@ void Vis::_4C1A02()
 }
 
 //----- (004C1ABA) --------------------------------------------------------
-bool Vis::SortVectors_x(RenderVertexSoft *a2, int a3, int a4)
+void Vis::SortVectors_x(RenderVertexSoft *pArray, int start, int end)
 {
-  bool result; // eax@1
-  RenderVertexSoft *v5; // edx@2
-  int v6; // ebx@2
-  int i; // ecx@2
-  int v8; // esi@3
-  int v9; // esi@5
-  RenderVertexSoft *v10; // eax@8
-  RenderVertexSoft v11; // [sp+4h] [bp-6Ch]@8
-  RenderVertexSoft v12; // [sp+34h] [bp-3Ch]@2
-  int v13; // [sp+64h] [bp-Ch]@7
-  Vis *thisa; // [sp+68h] [bp-8h]@1
-  RenderVertexSoft *v15; // [sp+6Ch] [bp-4h]@2
+  int left_sort_index; // ebx@2
+  int right_sort_index; // ecx@2
+  RenderVertexSoft temp_array; // [sp+4h] [bp-6Ch]@8
+  RenderVertexSoft max_array; // [sp+34h] [bp-3Ch]@2
 
-  result = a4 != 0;
-  thisa = this;
-  if ( a4 > a3 )
+  if ( end > start )
   {
-    v5 = a2;
-    v15 = &a2[a4];
-    v6 = a3 - 1;
-    memcpy(&v12, &a2[a4], sizeof(v12));
-    for ( i = a4; ; i = v13 )
+    left_sort_index = start - 1;
+    right_sort_index = end;
+    memcpy(&max_array, &pArray[end], sizeof(max_array));
+    while ( 1 )
     {
-      v8 = (int)&v5[v6].vWorldViewPosition;
       do
       {
-        v8 += 48;
-        ++v6;
+        ++left_sort_index;
       }
-      while ( *(float *)v8 < (double)v12.vWorldViewPosition.x );
-      v9 = (int)&v5[i].vWorldViewPosition;
+      while ( pArray[left_sort_index].vWorldViewPosition.x < (double)max_array.vWorldViewPosition.x );
       do
       {
-        v9 -= 48;
-        --i;
+        --right_sort_index;
       }
-      while ( *(float *)v9 > (double)v12.vWorldViewPosition.x );
-      v13 = i;
-      if ( v6 >= i )
+      while ( pArray[right_sort_index].vWorldViewPosition.x > (double)max_array.vWorldViewPosition.x );
+      if ( left_sort_index >= right_sort_index )
         break;
-      v10 = &v5[i];
-      memcpy(&v11, &a2[v6], sizeof(v11));
-      v5 = a2;
-      memcpy(&a2[v6], v10, sizeof(a2[v6]));
-      memcpy(v10, &v11, 0x30u);
+      memcpy(&temp_array, &pArray[left_sort_index], sizeof(temp_array));
+      memcpy(&pArray[left_sort_index], &pArray[right_sort_index], sizeof(pArray[left_sort_index]));
+      memcpy(&pArray[right_sort_index], &temp_array, sizeof(pArray[right_sort_index]));
     }
-    memcpy(&v11, &v5[v6], sizeof(v11));
-    memcpy(&v5[v6], v15, sizeof(v5[v6]));
-    memcpy(v15, &v11, 0x30u);
-    SortVectors_x(v5, a3, v6 - 1);
-    SortVectors_x(a2, v6 + 1, a4);
+    memcpy(&temp_array, &pArray[left_sort_index], sizeof(temp_array));
+    memcpy(&pArray[left_sort_index], &pArray[end], sizeof(pArray[left_sort_index]));
+    memcpy(&pArray[end], &temp_array, sizeof(pArray[end]));
+    SortVectors_x(pArray, start, left_sort_index - 1);
+    SortVectors_x(pArray, left_sort_index + 1, end);
   }
-  return true;
 }
 
 //----- (004C1BAA) --------------------------------------------------------
@@ -552,7 +514,7 @@ int Vis::get_picked_object_zbuf_val()
 }
 
 //----- (004C1C0C) --------------------------------------------------------
-bool Vis::Intersect_Ray_Face(RenderVertexSoft *pRayStart, RenderVertexSoft *pRayEnd, float *pDepth, RenderVertexSoft *Intersection, BLVFace *pFace, unsigned int pBModelID)
+bool Vis::Intersect_Ray_Face(RenderVertexSoft *pRayStart, RenderVertexSoft *pRayEnd, float *pDepth, RenderVertexSoft *Intersection, BLVFace *pFace, signed int pBModelID)
 {
   float c1; // st5@6
   float c2; // st7@11
@@ -603,12 +565,12 @@ bool Vis::Intersect_Ray_Face(RenderVertexSoft *pRayStart, RenderVertexSoft *pRay
 }
 
 //----- (004C1D2B) --------------------------------------------------------
-bool Vis::CheckIntersectBModel(BLVFace *pFace, Vec3_short_ IntersectPoint, unsigned int uModelID)
+bool Vis::CheckIntersectBModel(BLVFace *pFace, Vec3_short_ IntersectPoint, signed int sModelID)
 {
   int v5; // esi@10
   bool v6; // edi@10
   signed int v10; // ebx@14
-  int v15; // [sp+10h] [bp-Ch]@10
+//  int v15; // [sp+10h] [bp-Ch]@10
   signed int v16; // [sp+18h] [bp-4h]@10
 
   int a = 0, b = 0;
@@ -618,9 +580,9 @@ bool Vis::CheckIntersectBModel(BLVFace *pFace, Vec3_short_ IntersectPoint, unsig
       IntersectPoint.z < pFace->pBounding.z1 || IntersectPoint.z > pFace->pBounding.z2 )
     return false;
 
-  if (uModelID != -1)
+  if (sModelID != -1)
     ODM_CreateIntersectFacesVertexCoordList(&a, &b, intersect_face_vertex_coords_list_a.data(), intersect_face_vertex_coords_list_b.data(),
-                                &IntersectPoint, pFace, uModelID);
+                                &IntersectPoint, pFace, sModelID);
   else
     BLV_CreateIntersectFacesVertexCoordList(&a, &b, intersect_face_vertex_coords_list_a.data(), intersect_face_vertex_coords_list_b.data(),
                                   &IntersectPoint, pFace);
@@ -631,7 +593,7 @@ bool Vis::CheckIntersectBModel(BLVFace *pFace, Vec3_short_ IntersectPoint, unsig
   v6 = intersect_face_vertex_coords_list_b[0] >= b;
   if (v5 <= 0)
     return false;
-  for ( uint i = 0; i < v5; ++i )
+  for ( int i = 0; i < v5; ++i )
   {
     if ( v16 >= 2 )
       break;
@@ -663,7 +625,6 @@ bool Vis::CheckIntersectBModel(BLVFace *pFace, Vec3_short_ IntersectPoint, unsig
   if ( v16 != 1 )
     return false;
 
-  extern bool show_picked_face;
   if ( show_picked_face )
     pFace->uAttributes |= FACE_PICKED;
   return true;
@@ -979,8 +940,8 @@ void Vis_SelectionList::create_object_pointers(PointerCreationType type)
 }
 
 //----- (004C264A) --------------------------------------------------------
-void Vis::sort_object_pointers( Vis_ObjectInfo **pPointers, int start, int end )
-    {
+void Vis::sort_object_pointers( Vis_ObjectInfo **pPointers, int start, int end )//сортировка
+{
   int sort_start; // edx@1
   int forward_sort_index; // esi@2
   signed int backward_sort_index; // ecx@2
@@ -988,7 +949,7 @@ void Vis::sort_object_pointers( Vis_ObjectInfo **pPointers, int start, int end )
   unsigned int more_lz_val; // ebx@4
   unsigned int less_lz_val; // ebx@6
   Vis_ObjectInfo *temp_pointer; // eax@7
-  Vis_ObjectInfo *a3a; // [sp+14h] [bp+Ch]@2
+//  Vis_ObjectInfo *a3a; // [sp+14h] [bp+Ch]@2
 
   sort_start = start;
 
@@ -1000,11 +961,11 @@ void Vis::sort_object_pointers( Vis_ObjectInfo **pPointers, int start, int end )
       backward_sort_index = end;
       do
       {
-        last_z_val = pPointers[end]->sZValue&0xFFFF0000;
+        last_z_val = pPointers[end]->sZValue & 0xFFFF0000;
         do
         {
           ++forward_sort_index;
-          more_lz_val = pPointers[forward_sort_index]->sZValue&0xFFFF0000;
+          more_lz_val = pPointers[forward_sort_index]->sZValue & 0xFFFF0000;
         }
         while ( more_lz_val < last_z_val );
 
@@ -1013,7 +974,7 @@ void Vis::sort_object_pointers( Vis_ObjectInfo **pPointers, int start, int end )
           if ( backward_sort_index < 1 )
             break;
           --backward_sort_index;
-          less_lz_val = pPointers[backward_sort_index]->sZValue&0xFFFF0000;
+          less_lz_val = pPointers[backward_sort_index]->sZValue & 0xFFFF0000;
         }
         while ( less_lz_val > last_z_val );
 
@@ -1039,245 +1000,159 @@ void Vis::sort_object_pointers( Vis_ObjectInfo **pPointers, int start, int end )
 }
 
 //----- (004C26D0) --------------------------------------------------------
-bool Vis::SortVerticesByX(RenderVertexD3D3 *a2, unsigned int uStart, unsigned int uEnd)
+void Vis::SortVerticesByX(RenderVertexD3D3 *pArray, unsigned int uStart, unsigned int uEnd)
 {
-  bool result; // eax@1
-  RenderVertexD3D3 *v5; // edx@2
-  RenderVertexD3D3 *v6; // esi@2
-  void *v7; // edi@2
-  unsigned int v8; // ebx@2
-  RenderVertexD3D3 *v9; // ecx@3
-  RenderVertexD3D3 *v10; // ecx@5
-  RenderVertexD3D3 *v11; // eax@8
-  RenderVertexD3D3 v12; // [sp+4h] [bp-4Ch]@8
-  RenderVertexD3D3 v13; // [sp+24h] [bp-2Ch]@2
-  Vis *thisa; // [sp+44h] [bp-Ch]@1
-  RenderVertexD3D3 *v15; // [sp+48h] [bp-8h]@2
-  unsigned int v16; // [sp+4Ch] [bp-4h]@2
+  unsigned int left_sort_index; // ebx@2
+  RenderVertexD3D3 temp_array; // [sp+4h] [bp-4Ch]@8
+  RenderVertexD3D3 max_array; // [sp+24h] [bp-2Ch]@2
+  unsigned int right_sort_index; // [sp+4Ch] [bp-4h]@2
 
-  result = uEnd;
-  thisa = this;
   if ( (signed int)uEnd > (signed int)uStart )
   {
-    v5 = a2;
-    v6 = &a2[uEnd];
-    v7 = &v13;
-    v15 = &a2[uEnd];
-    v8 = uStart - 1;
-    v16 = uEnd;
+    left_sort_index = uStart - 1;
+    right_sort_index = uEnd;
     while ( 1 )
     {
-      memcpy(v7, v6, 0x20u);
-      v9 = &v5[v8];
+      memcpy(&max_array, &pArray[uEnd], sizeof(max_array));
       do
       {
-        ++v9;
-        ++v8;
+        ++left_sort_index;
       }
-      while ( v9->pos.x < (double)v13.pos.x );
-      v10 = &v5[v16];
+      while ( pArray[left_sort_index].pos.x < (double)max_array.pos.x );
       do
       {
-        --v10;
-        --v16;
+        --right_sort_index;
       }
-      while ( v10->pos.x > (double)v13.pos.x );
-      if ( (signed int)v8 >= (signed int)v16 )
+      while ( pArray[right_sort_index].pos.x > (double)max_array.pos.x );
+      if ( (signed int)left_sort_index >= (signed int)right_sort_index )
         break;
-      v11 = &v5[v16];
-      memcpy(&v12, &a2[v8], sizeof(v12));
-      v5 = a2;
-      memcpy(&a2[v8], v11, sizeof(a2[v8]));
-      v6 = &v12;
-      v7 = v11;
+      memcpy(&temp_array, &pArray[left_sort_index], sizeof(temp_array));
+      memcpy(&pArray[left_sort_index], &pArray[right_sort_index], sizeof(pArray[left_sort_index]));
+      memcpy(&pArray[right_sort_index], &temp_array, sizeof(pArray[right_sort_index]));
     }
-    memcpy(&v12, &v5[v8], sizeof(v12));
-    memcpy(&v5[v8], v15, sizeof(v5[v8]));
-    memcpy(v15, &v12, 0x20u);
-    SortVerticesByX(v5, uStart, v8 - 1);
-    SortVerticesByX(a2, v8 + 1, uEnd);
+    memcpy(&temp_array, &pArray[left_sort_index], sizeof(temp_array));
+    memcpy(&pArray[left_sort_index], &pArray[uEnd], sizeof(pArray[left_sort_index]));
+    memcpy(&pArray[uEnd], &temp_array, sizeof(pArray[uEnd]));
+    SortVerticesByX(pArray, uStart, left_sort_index - 1);
+    SortVerticesByX(pArray, left_sort_index + 1, uEnd);
   }
-  return true;
 }
 
 //----- (004C27AD) --------------------------------------------------------
-bool Vis::SortVerticesByY(RenderVertexD3D3 *a2, unsigned int uStart, unsigned int uEnd)
+void Vis::SortVerticesByY(RenderVertexD3D3 *pArray, unsigned int uStart, unsigned int uEnd)
 {
-  bool result; // eax@1
-  RenderVertexD3D3 *v5; // edx@2
-  RenderVertexD3D3 *v6; // esi@2
-  void *v7; // edi@2
-  unsigned int v8; // ebx@2
-  float *v9; // ecx@3
-  float *v10; // ecx@5
-  RenderVertexD3D3 *v11; // eax@8
-  RenderVertexD3D3 v12; // [sp+4h] [bp-4Ch]@8
-  RenderVertexD3D3 v13; // [sp+24h] [bp-2Ch]@2
-  Vis *thisa; // [sp+44h] [bp-Ch]@1
-  RenderVertexD3D3 *v15; // [sp+48h] [bp-8h]@2
-  unsigned int v16; // [sp+4Ch] [bp-4h]@2
+  unsigned int left_sort_index; // ebx@2
+  RenderVertexD3D3 temp_array; // [sp+4h] [bp-4Ch]@8
+  RenderVertexD3D3 max_array; // [sp+24h] [bp-2Ch]@2
+  unsigned int right_sort_index; // [sp+4Ch] [bp-4h]@2
 
-  result = uEnd;
-  thisa = this;
   if ( (signed int)uEnd > (signed int)uStart )
   {
-    v5 = a2;
-    v6 = &a2[uEnd];
-    v7 = &v13;
-    v15 = &a2[uEnd];
-    v8 = uStart - 1;
-    v16 = uEnd;
+    left_sort_index = uStart - 1;
+    right_sort_index = uEnd;
     while ( 1 )
     {
-      memcpy(v7, v6, 0x20u);
-	  v9 = &v5[v8].pos.y;
+      memcpy(&max_array, &pArray[uEnd], sizeof(max_array));
       do
       {
-        v9+=8;
-        ++v8;
+        ++left_sort_index;
       }
-      while ( *v9 < (double)v13.pos.y );
-      v10 = &v5[v16].pos.y;
+      while ( pArray[left_sort_index].pos.y < (double)max_array.pos.y );
       do
       {
-        v10-=8;
-        --v16;
+        --right_sort_index;
       }
-      while ( *v10 > (double)v13.pos.y );
-      if ( (signed int)v8 >= (signed int)v16 )
+      while ( pArray[right_sort_index].pos.y > (double)max_array.pos.y );
+      if ( (signed int)left_sort_index >= (signed int)right_sort_index )
         break;
-      v11 = &v5[v16];
-      memcpy(&v12, &a2[v8], sizeof(v12));
-      v5 = a2;
-      memcpy(&a2[v8], v11, sizeof(a2[v8]));
-      v6 = &v12;
-      v7 = v11;
+      memcpy(&temp_array, &pArray[left_sort_index], sizeof(temp_array));
+      memcpy(&pArray[left_sort_index], &pArray[right_sort_index], sizeof(pArray[left_sort_index]));
+      memcpy(&pArray[right_sort_index], &temp_array, sizeof(pArray[right_sort_index]));
     }
-    memcpy(&v12, &v5[v8], sizeof(v12));
-    memcpy(&v5[v8], v15, sizeof(v5[v8]));
-    memcpy(v15, &v12, 0x20u);
-    SortVerticesByY(v5, uStart, v8 - 1);
-    SortVerticesByY(a2, v8 + 1, uEnd);
+    memcpy(&temp_array, &pArray[left_sort_index], sizeof(temp_array));
+    memcpy(&pArray[left_sort_index], &pArray[uEnd], sizeof(pArray[left_sort_index]));
+    memcpy(&pArray[uEnd], &temp_array, sizeof(pArray[uEnd]));
+    SortVerticesByY(pArray, uStart, left_sort_index - 1);
+    SortVerticesByY(pArray, left_sort_index + 1, uEnd);
   }
-  return true;
 }
 
 //----- (004C288E) --------------------------------------------------------
-bool Vis::SortByScreenSpaceX(RenderVertexSoft *pArray, int sLeft, int sRight)
+void Vis::SortByScreenSpaceX(RenderVertexSoft *pArray, int start, int end)//сортировка по возрастанию экранных координат х
 {
-  bool result; // eax@1
-  RenderVertexSoft *v5; // edx@2
-  int v6; // ebx@2
-  int i; // ecx@2
-  int v8; // esi@3
-  int v9; // esi@5
-  //RenderVertexSoft *v10; // eax@8
-  const void *v10;
-  RenderVertexSoft v11; // [sp+4h] [bp-6Ch]@8
-  RenderVertexSoft v12; // [sp+34h] [bp-3Ch]@2
-  //float v13; // [sp+4Ch] [bp-24h]@4
-  int v14; // [sp+64h] [bp-Ch]@7
-  //Vis *thisa; // [sp+68h] [bp-8h]@1
-  //void *thisa;
-  //RenderVertexSoft *v16; // [sp+6Ch] [bp-4h]@2
-  const void *v16;
+  int left_sort_index; // ebx@2
+  int right_sort_index; // ecx@2
+  RenderVertexSoft temp_array; // [sp+4h] [bp-6Ch]@8
+  RenderVertexSoft max_array; // [sp+34h] [bp-3Ch]@2
 
-  //thisa = this;
-  if (sRight <= sLeft)
-    return true;
-  v5 = pArray;
-  v16 = &pArray[sRight];
-  v6 = sLeft - 1;
-  memcpy(&v12, &pArray[sRight], sizeof(v12));
-  for ( i = sRight; ; i = v14 )
+  if ( end > start )
   {
-    v8 = (int)&v5[v6].vWorldViewProjX;
-    do
+    left_sort_index = start - 1;
+    right_sort_index = end;
+    memcpy(&max_array, &pArray[end], sizeof(max_array));
+    while ( 1 )
     {
-      v8 += 48;
-      ++v6;
+      do
+      {
+        ++left_sort_index;
+      }
+      while ( pArray[left_sort_index].vWorldViewProjX < (double)max_array.vWorldViewProjX );
+      do
+      {
+        --right_sort_index;
+      }
+      while ( pArray[right_sort_index].vWorldViewProjX > (double)max_array.vWorldViewProjX );
+      if ( left_sort_index >= right_sort_index )
+        break;
+      memcpy(&temp_array, &pArray[left_sort_index], sizeof(temp_array));
+      memcpy(&pArray[left_sort_index], &pArray[right_sort_index], sizeof(pArray[left_sort_index]));
+      memcpy(&pArray[right_sort_index], &temp_array, sizeof(pArray[right_sort_index]));
     }
-    while ( *(float *)v8 < v12.vWorldViewProjX);
-    v9 = (int)&v5[i].vWorldViewProjX;
-    do
-    {
-      v9 -= 48;
-      --i;
-    }
-    while ( *(float *)v9 > v12.vWorldViewProjX);
-    v14 = i;
-    if ( v6 >= i )
-      break;
-    v10 = &v5[i];
-    memcpy(&v11, &pArray[v6], sizeof(v11));
-    v5 = pArray;
-    memcpy(&pArray[v6], v10, sizeof(pArray[v6]));
-    memcpy((void *)v10, &v11, sizeof(0x30u));
+    memcpy(&temp_array, &pArray[left_sort_index], sizeof(temp_array));
+    memcpy(&pArray[left_sort_index], &pArray[end], sizeof(pArray[left_sort_index]));
+    memcpy(&pArray[end], &temp_array, sizeof(pArray[end]));
+    Vis::SortByScreenSpaceX(pArray, start, left_sort_index - 1);
+    Vis::SortByScreenSpaceX(pArray, left_sort_index + 1, end);
   }
-  memcpy(&v11, &v5[v6], sizeof(v11));
-  memcpy(&v5[v6], v16, sizeof(v5[v6]));
-  memcpy((void *)v16, &v11, sizeof(0x30u));
-  SortByScreenSpaceX(v5, sLeft, v6 - 1);
-  SortByScreenSpaceX(pArray, v6 + 1, sRight);
-  return true;
 }
 
 //----- (004C297E) --------------------------------------------------------
-bool Vis::SortByScreenSpaceY(RenderVertexSoft *pArray, int sLeft, int sRight)
+void Vis::SortByScreenSpaceY(RenderVertexSoft *pArray, int start, int end)
 {
-  //bool result; // eax@1
-  RenderVertexSoft *v5; // edx@2
-  int v6; // ebx@2
-  int i; // ecx@2
-  int v8; // esi@3
-  int v9; // esi@5
-  //RenderVertexSoft *v10; // eax@8
-  const void *v10;
-  //char v11; // [sp+4h] [bp-6Ch]@8
-  RenderVertexSoft v11;
-  RenderVertexSoft v12; // [sp+34h] [bp-3Ch]@2
-  //float v13; // [sp+50h] [bp-20h]@4
-  int v14; // [sp+64h] [bp-Ch]@7
-  //Vis *thisa; // [sp+68h] [bp-8h]@1
-  RenderVertexSoft *v16; // [sp+6Ch] [bp-4h]@2
+  int left_sort_index; // ebx@2
+  int right_sort_index; // ecx@2
+  RenderVertexSoft temp_array; // [sp+4h] [bp-6Ch]@8
+  RenderVertexSoft max_array; // [sp+34h] [bp-3Ch]@2
 
-  if (sRight <= sLeft)
-   return true;
-  v5 = pArray;
-  v16 = &pArray[sRight];
-  v6 = sLeft - 1;
-  memcpy(&v12, &pArray[sRight], sizeof(v12));
-  for ( i = sRight; ; i = v14 )
+  if ( end > start )
   {
-    v8 = (int)&v5[v6].vWorldViewProjY;
-    do
+    left_sort_index = start - 1;
+    right_sort_index = end;
+    memcpy(&max_array, &pArray[end], sizeof(max_array));
+    while ( 1 )
     {
-      v8 += 48;
-      ++v6;
+      do
+      {
+        ++left_sort_index;
+      }
+      while ( pArray[left_sort_index].vWorldViewProjY < (double)max_array.vWorldViewProjY );
+      do
+      {
+        --right_sort_index;
+      }
+      while ( pArray[right_sort_index].vWorldViewProjY > (double)max_array.vWorldViewProjY );
+      if ( left_sort_index >= right_sort_index )
+        break;
+      memcpy(&temp_array, &pArray[left_sort_index], sizeof(temp_array));
+      memcpy(&pArray[left_sort_index], &pArray[right_sort_index], sizeof(pArray[left_sort_index]));
+      memcpy(&pArray[right_sort_index], &temp_array, sizeof(pArray[right_sort_index]));
     }
-    while ( *(float *)v8 < v12.vWorldViewProjY);
-    v9 = (int)&v5[v6].vWorldViewProjY;
-    do
-    {
-      v9 -= 48;
-      --i;
-    }
-    while ( *(float *)v9 > v12.vWorldViewProjY);
-    v14 = i;
-    if ( v6 >= i )
-      break;
-    v10 = &v5[i];
-    memcpy(&v11, &pArray[v6], sizeof(0x30));
-    v5 = pArray;
-    memcpy(&pArray[v6], v10, sizeof(pArray[v6]));
-    memcpy((void *)v10, &v11, sizeof(0x30));
+    memcpy(&temp_array, &pArray[left_sort_index], sizeof(temp_array));
+    memcpy(&pArray[left_sort_index], &pArray[end], sizeof(pArray[left_sort_index]));
+    memcpy(&pArray[end], &temp_array, sizeof(pArray[end]));
+    Vis::SortByScreenSpaceY(pArray, start, left_sort_index - 1);
+    Vis::SortByScreenSpaceY(pArray, left_sort_index + 1, end);
   }
-  memcpy(&v11, &v5[v6], sizeof(0x30));
-  memcpy(&v5[v6], v16, sizeof(v5[v6]));
-  memcpy((void *)v16, &v11, sizeof(0x30));
-  SortByScreenSpaceY(v5, sLeft, v6 - 1);
-  SortByScreenSpaceY(pArray, v6 + 1, sRight);
-  return true;
 }
 
 //----- (004C04AF) --------------------------------------------------------
@@ -1371,7 +1246,7 @@ bool Vis::PickMouse(float fDepth, float fMouseX, float fMouseY, Vis_SelectionFil
 //----- (004C06F8) --------------------------------------------------------
 void Vis::PickBillboards_Keyboard(float pick_depth, Vis_SelectionList *list, Vis_SelectionFilter *filter)
 {
-  for (int i = 0; i < pRenderer->uNumBillboardsToDraw; ++i)
+  for (uint i = 0; i < pRenderer->uNumBillboardsToDraw; ++i)
   {
     RenderBillboardD3D* d3d_billboard = &pRenderer->pBillboardRenderListD3D[i];
 
@@ -1379,9 +1254,9 @@ void Vis::PickBillboards_Keyboard(float pick_depth, Vis_SelectionList *list, Vis
     {
       if (DoesRayIntersectBillboard(pick_depth, i))
       {
-        RenderBillboard* billboard = &pBillboardRenderList[d3d_billboard->uParentBillboardID];
+        RenderBillboard* billboard = &pBillboardRenderList[d3d_billboard->sParentBillboardID];
 
-        list->AddObject((void *)d3d_billboard->uParentBillboardID, VisObjectType_Sprite, billboard->sZValue);
+        list->AddObject((void *)d3d_billboard->sParentBillboardID, VisObjectType_Sprite, billboard->sZValue);
       }
     }
   }
@@ -1394,17 +1269,17 @@ bool Vis::is_part_of_selection(void *uD3DBillboardIdx_or_pBLVFace_or_pODMFace, V
 {
   //stru157 *v3; // esi@1
   //int result; // eax@1
-  int v5; // edx@2
+  //int v5; // edx@2
   //int v6; // ecx@2
   //char v7; // zf@3
-  int v8; // esi@5
-  std::string *v9; // ecx@7
-  Actor *v10; // edi@18
+  //int v8; // esi@5
+//  std::string *v9; // ecx@7
+  //Actor *v10; // edi@18
   //const char *v12; // [sp-20h] [bp-2Ch]@7
-  int v13; // [sp-1Ch] [bp-28h]@7
+//  int v13; // [sp-1Ch] [bp-28h]@7
   //std::string v14; // [sp-18h] [bp-24h]@7
   //const char *v15; // [sp-8h] [bp-14h]@7
-  int v16; // [sp-4h] [bp-10h]@7
+//  int v16; // [sp-4h] [bp-10h]@7
 
   switch (filter->object_type)
   {
@@ -1413,21 +1288,21 @@ bool Vis::is_part_of_selection(void *uD3DBillboardIdx_or_pBLVFace_or_pODMFace, V
 
     case VisObjectType_Sprite:
     {
-      v5 = filter->select_flags;
-      int object_idx = PID_ID(pBillboardRenderList[pRenderer->pBillboardRenderListD3D[(int)uD3DBillboardIdx_or_pBLVFace_or_pODMFace].uParentBillboardID].object_pid);
-      int object_type = PID_TYPE(pBillboardRenderList[pRenderer->pBillboardRenderListD3D[(int)uD3DBillboardIdx_or_pBLVFace_or_pODMFace].uParentBillboardID].object_pid);
-      if ( v5 & 2 )
+      //v5 = filter->select_flags;
+      int object_idx = PID_ID(pBillboardRenderList[pRenderer->pBillboardRenderListD3D[(int)uD3DBillboardIdx_or_pBLVFace_or_pODMFace].sParentBillboardID].object_pid);
+      int object_type = PID_TYPE(pBillboardRenderList[pRenderer->pBillboardRenderListD3D[(int)uD3DBillboardIdx_or_pBLVFace_or_pODMFace].sParentBillboardID].object_pid);
+      if ( filter->select_flags & 2 )
       {
         if (object_type == filter->object_id)
           return false;
         return true;
       }
-      if ( v5 & 4 )
+      if ( filter->select_flags & 4 )
       {
-        v8 = filter->object_id;
+        //v8 = filter->object_id;
         if ( object_type != filter->object_id)
           return true;
-        if (v8 != OBJECT_Decoration)
+        if (filter->object_id != OBJECT_Decoration)
         {
           MessageBoxA(nullptr, "Unsupported \"exclusion if no event\" type in CVis::is_part_of_selection", "E:\\WORK\\MSDEV\\MM7\\MM7\\Code\\Vis.cpp:207", 0);
           return true;
@@ -1444,16 +1319,16 @@ bool Vis::is_part_of_selection(void *uD3DBillboardIdx_or_pBLVFace_or_pODMFace, V
           return true;
         }
 
-        v10 = &pActors[object_idx];
-        int result = 1 << LOBYTE(v10->uAIState);
+        //v10 = &pActors[object_idx];
+        int result = 1 << LOBYTE(pActors[object_idx].uAIState);
         if ( result & filter->no_at_ai_state
             || !(result & filter->at_ai_state)
-            || v5 & 8 && (result = MonsterStats::BelongsToSupertype(v10->pMonsterInfo.uID, MONSTER_SUPERTYPE_UNDEAD)) == 0 )
+            || filter->select_flags & 8 && (result = MonsterStats::BelongsToSupertype(pActors[object_idx].pMonsterInfo.uID, MONSTER_SUPERTYPE_UNDEAD)) == 0 )
           return false;
         if ( !(filter->select_flags & 1) )
           return true;
 
-        result = v10->GetActorsRelation(nullptr);
+        result = pActors[object_idx].GetActorsRelation(nullptr);
         if (result == 0)
           return false;
         return true;
@@ -1482,7 +1357,7 @@ bool Vis::is_part_of_selection(void *uD3DBillboardIdx_or_pBLVFace_or_pODMFace, V
 
       if (filter->object_id != OBJECT_BLVDoor)
         return true;
-      if (no_event || face_attrib & filter->no_at_ai_state)
+      if (no_event || face_attrib & filter->no_at_ai_state)//face_attrib = 0x2009408 incorrect
         return false;
       return (face_attrib & filter->at_ai_state) != 0;
     }
@@ -1501,27 +1376,27 @@ bool Vis::DoesRayIntersectBillboard(float fDepth, unsigned int uD3DBillboardIdx)
   //float v7; // ST00_4@7
   //int v8; // eax@10
   //unsigned int v9; // eax@12
-  int v10; // eax@17
-  double v11; // st6@18
-  double v12; // st7@18
-  double v13; // st4@18
-  float v14; // ST0C_4@22
-  float v15; // ST08_4@22
+//  int v10; // eax@17
+//  double v11; // st6@18
+//  double v12; // st7@18
+//  double v13; // st4@18
+//  float v14; // ST0C_4@22
+//  float v15; // ST08_4@22
   //float v16; // ST04_4@23
   //float v17; // ST00_4@24
   //signed int v18; // eax@27
   //unsigned int v19; // eax@29
-  double v20; // st6@32
-  double v21; // st7@32
-  int v22; // eax@32
-  double v23; // st7@36
+//  double v20; // st6@32
+//  double v21; // st7@32
+//  int v22; // eax@32
+//  double v23; // st7@36
   //void *v24; // esi@40
-  float v25; // ST08_4@40
+//  float v25; // ST08_4@40
   //float v26; // ST04_4@41
   //float v27; // ST00_4@42
-  int v28; // eax@45
-  unsigned int v29; // eax@47
-  char result; // al@48
+//  int v28; // eax@45
+//  unsigned int v29; // eax@47
+//  char result; // al@48
   struct RenderVertexSoft pPickingRay[2];
   //int v31; // [sp+20h] [bp-DCh]@5
   struct RenderVertexSoft local_80[2];
@@ -1534,14 +1409,14 @@ bool Vis::DoesRayIntersectBillboard(float fDepth, unsigned int uD3DBillboardIdx)
   float  t2_x;
   float  t2_y;
   float  swap_temp;
-  int v37; // [sp+F0h] [bp-Ch]@5
+//  int v37; // [sp+F0h] [bp-Ch]@5
 
   signed int v40; // [sp+108h] [bp+Ch]@17
 
 
   static Vis_SelectionList Vis_static_stru_F91E10;
   Vis_static_stru_F91E10.uNumPointers = 0;
-  v3 = pRenderer->pBillboardRenderListD3D[uD3DBillboardIdx].uParentBillboardID;
+  v3 = pRenderer->pBillboardRenderListD3D[uD3DBillboardIdx].sParentBillboardID;
   if (v3 == -1)
     return false;
 
@@ -1676,7 +1551,7 @@ void Vis::PickIndoorFaces_Keyboard(float pick_depth, Vis_SelectionList *list, Vi
 //----- (004C0DEA) --------------------------------------------------------
 void Vis::PickOutdoorFaces_Keyboard(float pick_depth, Vis_SelectionList *list, Vis_SelectionFilter *filter)
 {
-  for (uint i = 0; i < pOutdoor->uNumBModels; ++i)
+  for (int i = 0; i < pOutdoor->uNumBModels; ++i)
   {
     int v17;
     if (!IsBModelVisible(i, &v17))
@@ -1685,14 +1560,14 @@ void Vis::PickOutdoorFaces_Keyboard(float pick_depth, Vis_SelectionList *list, V
       continue;
 
     BSPModel* bmodel = &pOutdoor->pBModels[i];
-    for (uint j = 0; j < bmodel->uNumFaces; ++j)
+    for (int j = 0; j < bmodel->uNumFaces; ++j)
     {
-      ODMFace* face = &bmodel->pFaces[j];
+      //ODMFace* face = &bmodel->pFaces[j];
 
-      if (is_part_of_selection(face, filter) )
+      if (is_part_of_selection(&bmodel->pFaces[j], filter) )
       {
         BLVFace blv_face;
-        blv_face.FromODM(face);
+        blv_face.FromODM(&bmodel->pFaces[j]);
 
         int pid = PID(OBJECT_BModel, j | (i << 6));
         if (Vis_ObjectInfo* object_info = DetermineFacetIntersection(&blv_face, pid, pick_depth))

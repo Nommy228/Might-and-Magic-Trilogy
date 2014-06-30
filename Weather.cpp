@@ -1,3 +1,4 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include <stdlib.h>
 
 #include "Weather.h"
@@ -16,182 +17,135 @@ struct Weather *pWeather = new Weather;
 //----- (004C2AA6) --------------------------------------------------------
 int Weather::DrawSnow()
 {
-  unsigned __int16 *v1; // edi@1
-  __int16 *v2; // esi@2
-  int v3; // eax@2
-  signed int v4; // eax@6
-  int v5; // edx@8
-  __int16 *v6; // esi@11
-  __int16 *v7; // eax@11
-  int v8; // ecx@11
-  int v9; // eax@12
-  int v10; // ecx@16
-  int v11; // edx@18
-  Weather *v12; // eax@20
-  __int16 *v13; // esi@20
-  int v14; // eax@21
-  int v15; // eax@21
-  int v16; // edx@23
-  int v17; // eax@24
-  int v18; // edx@26
-  int v19; // ecx@27
-  int v20; // eax@27
-  char v21; // zf@27
-  unsigned int v23; // [sp+Ch] [bp-20h]@1
-  unsigned int v24; // [sp+10h] [bp-1Ch]@1
-  unsigned int v25; // [sp+14h] [bp-18h]@1
-  Weather *v26; // [sp+18h] [bp-14h]@1
-  signed int v27; // [sp+18h] [bp-14h]@20
-  unsigned int v28; // [sp+1Ch] [bp-10h]@1
-  unsigned int v29; // [sp+20h] [bp-Ch]@1
-  __int16 *v30; // [sp+24h] [bp-8h]@2
-  signed int v31; // [sp+28h] [bp-4h]@1
-  signed int v32; // [sp+28h] [bp-4h]@10
 
-  v26 = this;
-  v25 = viewparams->uScreen_BttmR_X;
-  v28 = viewparams->uScreen_topL_Y;
-  v31 = 0;
-  v1 = pRenderer->pTargetSurface;
-  v29 = viewparams->uScreen_topL_X;
-  v23 = viewparams->uScreen_BttmR_Y;
-  v24 = viewparams->uScreen_BttmR_X - viewparams->uScreen_topL_X;
-  do
+//  if (!FORCE_16_BITS)
+  //  __debugbreak(); // function expects 16bit target buffer, will fail otherwise
+  for ( uint i = 0; i < 700; ++i )
   {
-    v2 = &v26->field_0[2 * v31];
-    v30 = &v26->field_0[2 * v31 + 1];
-    *v2 += rand() % 3 + 1;
-    *v30 += rand() % 2 + 1;
-    v3 = *v2;
-    if ( v3 < (signed int)(v25 - 1) )
+    int x = 2 * i;
+    int y = 2 * i + 1;
+    this->Screen_Coord[x] += rand() % 3 + 1;
+    this->Screen_Coord[y] += rand() % 2 + 1;
+    if ( this->Screen_Coord[x] < (signed int)(viewparams->uScreen_BttmR_X - 1) )//467
     {
-      if ( v3 < (signed int)v29 )
-        *v2 = v25 - rand() % 8;
+      if ( this->Screen_Coord[x] < (signed int)viewparams->uScreen_topL_X )//8
+        this->Screen_Coord[x] = viewparams->uScreen_BttmR_X - rand() % 8;
     }
     else
+      this->Screen_Coord[x] = viewparams->uScreen_topL_X + rand() % 8;
+    if ( this->Screen_Coord[y] < (signed int)viewparams->uScreen_topL_Y//8
+      || this->Screen_Coord[y] >= (signed int)viewparams->uScreen_BttmR_Y )//351
     {
-      *v2 = v29 + rand() % 8;
+      this->Screen_Coord[y] = viewparams->uScreen_topL_Y;
+      this->Screen_Coord[x] = viewparams->uScreen_topL_X + (rand() % (signed int)((viewparams->uScreen_BttmR_X - viewparams->uScreen_topL_X) - 2));
     }
-    v4 = *v30;
-    if ( v4 < (signed int)v28 || v4 >= (signed int)v23 )
-    {
-      v5 = rand() % (signed int)(v24 - 2);
-      *v30 = v28;
-      *v2 = v29 + v5;
-    }
-    ++v31;
-    v1[*v2 + 640 * *v30] = 0xFFFFu;
+    //v1[this->Screen_Coord[2 * i] + 640 * this->Screen_Coord[2 * i + 1]] = 0xFFFFu;
+    pRenderer->WritePixel16(this->Screen_Coord[x], this->Screen_Coord[y], 0xFFFF);//snowflake - point(снежинка - точка)
   }
-  while ( v31 < 700 );
-  v32 = 700;
-  do
+
+  for ( uint i = 700; i < 950; ++i )
   {
-    v6 = &v26->field_0[2 * v32];
-    *v6 += rand() % 5 - 3;
-    v7 = &v26->field_0[2 * v32 + 1];
-    v8 = *v6;
-    *v7 += 4;
-    if ( v8 < (signed int)v29 )
+    int x = 2 * i;
+    int y = 2 * i + 1;
+    this->Screen_Coord[x] += rand() % 5 - 3;//x
+    this->Screen_Coord[y] += 4;//y
+    if ( this->Screen_Coord[x] < (signed int)viewparams->uScreen_topL_X )
+      this->Screen_Coord[x] = viewparams->uScreen_BttmR_X - rand() % 4 - 2;
+    if ( this->Screen_Coord[x] >= (signed int)(viewparams->uScreen_BttmR_X - 2) )
+      this->Screen_Coord[x] = rand() % 4 + viewparams->uScreen_topL_X + 2;
+    if ( this->Screen_Coord[y] < (signed int)viewparams->uScreen_topL_Y || this->Screen_Coord[y] >= (signed int)(viewparams->uScreen_BttmR_Y - 1) )
     {
-      LOWORD(v9) = v25 - rand() % 4 - 2;
-LABEL_15:
-      *v6 = v9;
-      v7 = &v26->field_0[2 * v32 + 1];
-      goto LABEL_16;
+      this->Screen_Coord[y] = viewparams->uScreen_topL_Y;
+      this->Screen_Coord[x] = viewparams->uScreen_topL_X + (rand() % (signed int)((viewparams->uScreen_BttmR_X - viewparams->uScreen_topL_X) - 2));
     }
-    if ( v8 >= (signed int)(v25 - 2) )
-    {
-      v9 = rand() % 4 + v29 + 2;
-      goto LABEL_15;
-    }
-LABEL_16:
-    v10 = *v7;
-    if ( v10 < (signed int)v28 || v10 >= (signed int)(v23 - 1) )
-    {
-      v11 = rand() % (signed int)(v24 - 2);
-      v26->field_0[2 * v32 + 1] = v28;
-      v7 = &v26->field_0[2 * v32 + 1];
-      *v6 = v29 + v11;
-    }
-    *(&v1[640 * *v7 + 1] + *v6) = 0xFFFFu;
-    *(&v1[640 * *v7 + 641] + *v6) = 0xFFFFu;
-    v1[*v6 + 640 * (*v7 + 1)] = 0xFFFFu;
-    ++v32;
-    v1[*v6 + 640 * *v7] = 0xFFFFu;
+	pRenderer->WritePixel16(this->Screen_Coord[x],     this->Screen_Coord[y],     0xFFFF);//x, y  квадратная снежинка)
+	pRenderer->WritePixel16(this->Screen_Coord[x] + 1, this->Screen_Coord[y],     0xFFFF);//x + 1, y
+	pRenderer->WritePixel16(this->Screen_Coord[x],     this->Screen_Coord[y] + 1, 0xFFFF);//x , y + 1
+	pRenderer->WritePixel16(this->Screen_Coord[x] + 1, this->Screen_Coord[y] + 1, 0xFFFF);//x + 1, y + 1
+
+    //v1[this->Screen_Coord[2 * i] + 640 * this->Screen_Coord[2 * i + 1]] = 0xFFFFu;
+    //v1[this->Screen_Coord[2 * i] + 640 * this->Screen_Coord[2 * i + 1] + 1] = 0xFFFFu;
+    //v1[this->Screen_Coord[2 * i] + 640 * (this->Screen_Coord[2 * i + 1] + 1)] = 0xFFFFu;
+    //v1[this->Screen_Coord[2 * i] + 640 * this->Screen_Coord[2 * i + 1] + 641] = 0xFFFFu;
   }
-  while ( v32 < 950 );
-  v12 = v26;
-  v27 = 50;
-  v13 = &v12->field_0[1901];
-  do
+
+  for ( uint i = 0; i < 50; i++)
   {
-    v14 = rand();
-    *v13 += 8;
-    *(v13 - 1) += v14 % 11 - 5;
-    v15 = *(v13 - 1);
-    if ( v15 < (signed int)v29 || v15 >= (signed int)(v25 - 5) )
+    this->Screen_Coord[1901 + (i * 2)] += 8;
+    this->Screen_Coord[1901 + ((i * 2) -1)] += rand() % 11 - 5;
+    if ( this->Screen_Coord[1901 + ((i * 2) -1)] < (signed int)viewparams->uScreen_topL_X || this->Screen_Coord[1901 + ((i * 2) -1)] >= (signed int)(viewparams->uScreen_BttmR_X - 5) )
     {
-      v16 = rand() % (signed int)(v24 - 5);
-      *v13 = v28;
-      *(v13 - 1) = v29 + v16;
+      this->Screen_Coord[1901 + (i * 2)] = viewparams->uScreen_topL_Y;
+      this->Screen_Coord[1901 + ((i * 2) -1)] = viewparams->uScreen_topL_X + (rand() % (signed int)((viewparams->uScreen_BttmR_X - viewparams->uScreen_topL_X) - 5));
     }
-    v17 = *v13;
-    if ( v17 < (signed int)v28 || v17 >= (signed int)(v23 - 5) )
+    if ( this->Screen_Coord[1901 + (i * 2)] < (signed int)viewparams->uScreen_topL_Y || this->Screen_Coord[1901 + (i * 2)] >= (signed int)(viewparams->uScreen_BttmR_Y - 5) )
     {
-      v18 = rand() % (signed int)(v24 - 5);
-      *v13 = v28;
-      *(v13 - 1) = v29 + v18;
+      this->Screen_Coord[1901 + (i * 2)] = viewparams->uScreen_topL_Y;
+      this->Screen_Coord[1901 + ((i * 2) -1)] = viewparams->uScreen_topL_X + (rand() % (signed int)((viewparams->uScreen_BttmR_X - viewparams->uScreen_topL_X) - 5));
     }
-    *(&v1[640 * *v13 + 1] + *(v13 - 1)) = 0xFFFFu;
-    *(&v1[640 * *v13 + 641] + *(v13 - 1)) = 0xFFFFu;
-    v1[*(v13 - 1) + 640 * (*v13 + 1)] = 0xFFFFu;
-    v1[*(v13 - 1) + 640 * *v13] = 0xFFFFu;
-    *(&v1[640 * *v13 + 1281] + *(v13 - 1)) = 0xFFFFu;
-    *(&v1[640 * *v13 + 1921] + *(v13 - 1)) = 0xFFFFu;
-    v1[*(v13 - 1) + 640 * (*v13 + 3)] = 0xFFFFu;
-    v1[*(v13 - 1) + 640 * (*v13 + 2)] = 0xFFFFu;
-    *(&v1[640 * *v13 + 3] + *(v13 - 1)) = 0xFFFFu;
-    *(&v1[640 * *v13 + 643] + *(v13 - 1)) = 0xFFFFu;
-    *(&v1[640 * *v13 + 642] + *(v13 - 1)) = 0xFFFFu;
-    *(&v1[640 * *v13 + 2] + *(v13 - 1)) = 0xFFFFu;
-    *(&v1[640 * *v13 + 1283] + *(v13 - 1)) = 0xFFFFu;
-    *(&v1[640 * *v13 + 1923] + *(v13 - 1)) = 0xFFFFu;
-    *(&v1[640 * *v13 + 1922] + *(v13 - 1)) = 0xFFFFu;
-    v19 = *(v13 - 1);
-    v20 = 5 * *v13;
-    v13 += 2;
-    v21 = v27-- == 1;
-    *(&v1[128 * v20 + 1282] + v19) = 0xFFFFu;
+	pRenderer->WritePixel16(this->Screen_Coord[1901 + ((i * 2) -1)], this->Screen_Coord[1901 + (i * 2)], 0xFFFF);//x, y
+	pRenderer->WritePixel16(this->Screen_Coord[1901 + ((i * 2) -1)], this->Screen_Coord[1901 + (i * 2)] + 1, 0xFFFF);//x, y + 1
+	pRenderer->WritePixel16(this->Screen_Coord[1901 + ((i * 2) -1)], this->Screen_Coord[1901 + (i * 2)] + 2, 0xFFFF);//x, y + 2
+	pRenderer->WritePixel16(this->Screen_Coord[1901 + ((i * 2) -1)], this->Screen_Coord[1901 + (i * 2)] + 3, 0xFFFF);//x, y + 3
+
+	pRenderer->WritePixel16(this->Screen_Coord[1901 + ((i * 2) -1)] + 1, this->Screen_Coord[1901 + (i * 2)], 0xFFFF);//x + 1, y
+	pRenderer->WritePixel16(this->Screen_Coord[1901 + ((i * 2) -1)] + 1, this->Screen_Coord[1901 + (i * 2)] + 1, 0xFFFF);//x + 1, y + 1
+	pRenderer->WritePixel16(this->Screen_Coord[1901 + ((i * 2) -1)] + 1, this->Screen_Coord[1901 + (i * 2)] + 2, 0xFFFF);//x + 1, y + 2
+	pRenderer->WritePixel16(this->Screen_Coord[1901 + ((i * 2) -1)] + 1, this->Screen_Coord[1901 + (i * 2)] + 3, 0xFFFF);//x + 1, y + 3
+
+	pRenderer->WritePixel16(this->Screen_Coord[1901 + ((i * 2) -1)] + 2, this->Screen_Coord[1901 + (i * 2)], 0xFFFF);//x + 2, y
+	pRenderer->WritePixel16(this->Screen_Coord[1901 + ((i * 2) -1)] + 2, this->Screen_Coord[1901 + (i * 2)] + 1, 0xFFFF);//x + 2, y + 1
+	pRenderer->WritePixel16(this->Screen_Coord[1901 + ((i * 2) -1)] + 2, this->Screen_Coord[1901 + (i * 2)] + 2, 0xFFFF);//x + 2, y + 2
+	pRenderer->WritePixel16(this->Screen_Coord[1901 + ((i * 2) -1)] + 2, this->Screen_Coord[1901 + (i * 2)] + 3, 0xFFFF);//x + 2, y + 3
+
+	pRenderer->WritePixel16(this->Screen_Coord[1901 + ((i * 2) -1)] + 3, this->Screen_Coord[1901 + (i * 2)], 0xFFFF);//x + 3, y
+	pRenderer->WritePixel16(this->Screen_Coord[1901 + ((i * 2) -1)] + 3, this->Screen_Coord[1901 + (i * 2)] + 1, 0xFFFF);//x + 3, y + 1
+	pRenderer->WritePixel16(this->Screen_Coord[1901 + ((i * 2) -1)] + 3, this->Screen_Coord[1901 + (i * 2)] + 2, 0xFFFF);//x + 3, y + 2
+	pRenderer->WritePixel16(this->Screen_Coord[1901 + ((i * 2) -1)] + 3, this->Screen_Coord[1901 + (i * 2)] + 3, 0xFFFF);//x + 3, y + 3
+
+    //v1[this->Screen_Coord[1901 + ((i * 2) -1)] + 640 * this->Screen_Coord[1901 + (i * 2)]] = 0xFFFFu;//x, y
+    //v1[this->Screen_Coord[1901 + ((i * 2) -1)] + 640 * (this->Screen_Coord[1901 + (i * 2)] + 1)] = 0xFFFFu;//x, y + 1
+    //v1[this->Screen_Coord[1901 + ((i * 2) -1)] + 640 * (this->Screen_Coord[1901 + (i * 2)] + 2)] = 0xFFFFu;//x, y + 2
+    //v1[this->Screen_Coord[1901 + ((i * 2) -1)] + 640 * (this->Screen_Coord[1901 + (i * 2)] + 3)] = 0xFFFFu;//x, y + 3
+
+    //*(&v1[640 * this->Screen_Coord[1901 + (i * 2)] + 1] + this->Screen_Coord[1901 + ((i * 2) -1)]) = 0xFFFFu;//y, x + 1
+    //*(&v1[640 * this->Screen_Coord[1901 + (i * 2)] + 641] + this->Screen_Coord[1901 + ((i * 2) -1)]) = 0xFFFFu;//y + 1, x + 1
+    //*(&v1[640 * this->Screen_Coord[1901 + (i * 2)] + 1281] + this->Screen_Coord[1901 + ((i * 2) -1)]) = 0xFFFFu;//y + 2, x + 1
+    //*(&v1[640 * this->Screen_Coord[1901 + (i * 2)] + 1921] + this->Screen_Coord[1901 + ((i * 2) -1)]) = 0xFFFFu;//y + 3, x + 1
+
+    //*(&v1[640 * this->Screen_Coord[1901 + (i * 2)] + 2] + this->Screen_Coord[1901 + ((i * 2) -1)]) = 0xFFFFu;//y, x + 2
+    //*(&v1[640 * this->Screen_Coord[1901 + (i * 2)] + 642] + this->Screen_Coord[1901 + ((i * 2) -1)]) = 0xFFFFu;//y + 1, x + 2
+    //*(&v1[128 * (5 * this->Screen_Coord[1901 + (i * 2)]) + 1282] + this->Screen_Coord[1901 + ((i * 2) -1)]) = 0xFFFFu;//y + 2, x + 2
+    //*(&v1[640 * this->Screen_Coord[1901 + (i * 2)] + 1922] + this->Screen_Coord[1901 + ((i * 2) -1)]) = 0xFFFFu;//y + 3, x + 2
+
+    //*(&v1[640 * this->Screen_Coord[1901 + (i * 2)] + 3] + this->Screen_Coord[1901 + ((i * 2) -1)]) = 0xFFFFu;//y, x + 3
+    //*(&v1[640 * this->Screen_Coord[1901 + (i * 2)] + 643] + this->Screen_Coord[1901 + ((i * 2) -1)]) = 0xFFFFu;//y + 1, x + 3
+    //*(&v1[640 * this->Screen_Coord[1901 + (i * 2)] + 1283] + this->Screen_Coord[1901 + ((i * 2) -1)]) = 0xFFFFu;//y + 2, x + 3
+    //*(&v1[640 * this->Screen_Coord[1901 + (i * 2)] + 1923] + this->Screen_Coord[1901 + ((i * 2) -1)]) = 0xFFFFu;//y + 3, x + 3
   }
-  while ( !v21 );
   return 0;
 }
 
 //----- (004C2EA0) --------------------------------------------------------
 int Weather::Initialize()
 {
-  Weather *v1; // edi@1
-  signed int v2; // esi@1
   signed int v3; // ebx@1
   signed int v4; // ebp@1
 
-  v1 = this;
-  v2 = 0;
   v3 = pViewport->uScreen_BR_X - pViewport->uScreen_TL_X - 4;
   v4 = pViewport->uScreen_BR_Y - pViewport->uScreen_TL_Y - 4;
-  do
+  for ( uint i = 0; i < 1000; i++ )
   {
-    v1->field_0[2 * v2++] = LOWORD(pViewport->uViewportTL_X) + rand() % v3;
-    *((short *)v1 + 2 * v2 - 1) = LOWORD(pViewport->uViewportTL_Y) + rand() % v4;
+    this->Screen_Coord[2 * i] = LOWORD(pViewport->uViewportTL_X) + rand() % v3;
+    this->Screen_Coord[(2 * (i + 1)) - 1] = LOWORD(pViewport->uViewportTL_Y) + rand() % v4;
   }
-  while ( v2 < 1000 );
   return 0;
 }
 
 //----- (004C2EFA) --------------------------------------------------------
 int Weather::Draw()
 {
-  if (bRenderSnow)
+  if ( bRenderSnow || bSnow )
     DrawSnow();
   return 0;
 }
@@ -199,46 +153,23 @@ int Weather::Draw()
 //----- (004C2F0B) --------------------------------------------------------
 bool Weather::OnPlayerTurn(__int16 a2)
 {
-  int v3; // edx@3
-  signed int v4; // ebx@3
   unsigned int screen_width; // esi@3
-  __int16 *v6; // eax@5
-  signed int v7; // edi@5
-  unsigned int screen_x; // [sp+0h] [bp-Ch]@3
-  unsigned int screen_z_minus_4; // [sp+4h] [bp-8h]@3
-  Weather *v10; // [sp+8h] [bp-4h]@1
 
-  v10 = this;
-  if ( this->bRenderSnow != 1 )
+  if ( this->bRenderSnow != true )
     return 0;
-  HIWORD(v3) = HIWORD(viewparams->uScreen_topL_X);
-  v4 = 0;
   screen_width = viewparams->uScreen_BttmR_X - viewparams->uScreen_topL_X;
-  screen_x = viewparams->uScreen_topL_X;
-  screen_z_minus_4 = viewparams->uScreen_BttmR_X - 4;
 
-  short* _this = this->field_0;
-  while ( 1 )
+  for ( uint i = 0; i < 1000; ++i )
   {
-    v6 = &_this[2 * v4];
-    *v6 += a2;
-    LOWORD(v3) = *v6;
-    v7 = *v6;
-    if ( v7 < (signed int)screen_z_minus_4 )
+    this->Screen_Coord[2 * i] += a2;
+    if ( this->Screen_Coord[2 * i] < (signed int)viewparams->uScreen_BttmR_X - 4 )
     {
-      if ( v7 >= (signed int)screen_x )
-        goto LABEL_10;
-      v3 += screen_width;
+      if ( this->Screen_Coord[2 * i] >= (signed int)viewparams->uScreen_topL_X )
+        continue;
+      this->Screen_Coord[2 * i] += screen_width;
     }
     else
-    {
-      v3 = v3 - screen_width + 4;
-    }
-    *v6 = v3;
-LABEL_10:
-    ++v4;
-    if ( v4 >= 1000 )
-      return 1;
-    //_this = v10;
+      this->Screen_Coord[2 * i] = this->Screen_Coord[2 * i] - screen_width + 4;
   }
+  return 1;
 }

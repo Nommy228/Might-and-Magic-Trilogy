@@ -36,7 +36,7 @@ public:
   {}
 
   void Draw_183808_Lightmaps();
-  bool DrawLightmap(Lightmap *a1, Vec3_float_ *pColorMult, float z_bias);
+  //bool DrawLightmap(Lightmap *a1, Vec3_float_ *pColorMult, float z_bias);
   bool DoDraw_183808_Lightmaps(float a2);
   bool DrawLightmaps(int *indices = nullptr);
   void DrawLightmapsType(int type);

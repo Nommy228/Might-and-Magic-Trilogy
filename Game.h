@@ -2,7 +2,7 @@
 #include "VectorTypes.h"
 
 
-#define GAME_FLAGS_1_01                 0x01
+#define GAME_FLAGS_1_01_lightmap_related                 0x01
 #define GAME_FLAGS_1_DRAW_BLV_DEBUGS    0x08
 #define GAME_FLAGS_2_SATURATE_LIGHTMAPS 0x02
 #define GAME_FLAGS_2_ALTER_GRAVITY      0x08
@@ -16,7 +16,7 @@ enum GAME_STATE
 {
   GAME_STATE_PLAYING = 0,
   GAME_FINISHED = 1,
-  GAME_STATE_2 = 2,
+  GAME_STATE_CHANGE_LOCATION = 2,
   GAME_STATE_LOADING_GAME = 3,
   GAME_STATE_NEWGAME_OUT_GAMEMENU = 4,
   GAME_STATE_5 = 5,
@@ -98,8 +98,8 @@ public:
   void OutlineSelection();
   signed int _44EC23(struct Polygon *a2, int *a3, signed int a4);
   signed int _44ED0A(struct BLVFace *a2, int *a3, signed int a4);
-  bool AlterGamma_BLV(struct BLVFace *pFace, unsigned int *pColor);
-  bool AlterGamma_ODM(struct ODMFace *pFace, unsigned int *pColor);
+  bool AlterGamma_BLV(struct BLVFace *pFace, signed int *pColor);
+  bool AlterGamma_ODM(struct ODMFace *pFace, signed int *pColor);
   bool draw_debug_outlines();
   bool _44EEA7();
   bool _44F07B();
@@ -177,3 +177,9 @@ public:
 
 
 extern Game *pGame;
+
+void sub_42FBDD();
+void CloseWindowBackground();
+void GameUI_MsgProc();
+void back_to_game();
+void GUI_MainMenuMessageProc();

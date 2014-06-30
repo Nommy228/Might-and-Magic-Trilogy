@@ -42,5 +42,5 @@ struct LevelDecoration
 
 extern std::array<LevelDecoration, 3000> pLevelDecorations;
 extern size_t uNumLevelDecorations;
-extern LevelDecoration* activeLevelDecoration;
+extern LevelDecoration* activeLevelDecoration; // 5C3420
 #pragma pack(pop)

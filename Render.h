@@ -8,12 +8,23 @@
 
 #include "VectorTypes.h"
 
+
+#define ErrD3D(hr) \
+  do \
+  {  \
+    extern void ErrHR(HRESULT, const char *, const char *, const char *, int); \
+    ErrHR(hr, "Direct3D", __FUNCTION__, __FILE__, __LINE__); \
+  } while(0)
+
 struct Polygon;
 struct Texture;
 struct RGBTexture;
 struct RenderBillboardTransform_local0;
 struct ODMFace;
 
+
+unsigned __int16 Color16(unsigned __int32 r, unsigned __int32 g, unsigned __int32 b);
+unsigned __int32 Color32(unsigned __int16 color16);
 
 /*  119 */
 #pragma pack(push, 1)
@@ -42,7 +53,7 @@ struct RenderVertexD3D3
 {
   Vec3_float_ pos;
   float rhw;
-  unsigned int diffuse;
+  signed int diffuse;
   unsigned int specular;
   Vec2_float_ texcoord;
 };
@@ -69,7 +80,7 @@ struct RenderBillboard
     };
   };
   int field_14_actor_id;
-  unsigned __int16 uHwSpriteID;
+  signed __int16 HwSpriteID;
   __int16 uPalette;
   __int16 uIndoorSectorID;
   __int16 field_1E;
@@ -79,7 +90,7 @@ struct RenderBillboard
   __int16 uScreenSpaceX;
   __int16 uScreenSpaceY;
   unsigned __int16 dimming_level;
-  unsigned int uTintColor;
+  signed int sTintColor;
   SpriteFrame *pSpriteFrame;
 
    inline float GetFloatZ() const
@@ -187,6 +198,13 @@ struct RenderHWLContainer
 #pragma pack(push, 1)
 struct RenderBillboardD3D
 {
+  inline RenderBillboardD3D():
+    opacity(Transparent),
+    field_90(-1),
+    sParentBillboardID(-1),
+    uNumVertices(4)
+  {}
+
   enum OpacityType: unsigned __int32
   {
     Transparent = 0,
@@ -200,10 +218,10 @@ struct RenderBillboardD3D
   unsigned int uNumVertices;
   RenderVertexD3D3 pQuads[4];
   float z_order;
-  OpacityType uOpacity;
+  OpacityType opacity;
   int field_90;
   int sZValue;
-  unsigned int uParentBillboardID;
+  signed int sParentBillboardID;
 };
 #pragma pack(pop)
 
@@ -222,13 +240,14 @@ struct RenderD3D_aux
 
 /*  183 */
 #pragma pack(push, 1)
-struct RenderD3D
+class RenderD3D
 {
+public:
   RenderD3D();
   
   void GetAvailableDevices(RenderD3D__DevInfo **pOutDevices);
   void Release();
-  bool CreateDevice(unsigned int uDeviceID, int bWindowed, HWND hWnd);
+  bool CreateDevice(unsigned int uDeviceID, int bWindowed, OSWindow *window);
   unsigned int GetDeviceCaps();
   void ClearTarget(unsigned int bClearColor, unsigned int uClearColor, unsigned int bClearDepth, float z_clear);
   void Present(bool bForceBlit);
@@ -269,52 +288,33 @@ struct Render
 
   static Render *Create() {return new Render;}
 
-  bool Initialize(bool bWindowed, OSWindow *window, bool bColoredLights, uint32_t uDetailLevel, bool bTinting);
+  bool Initialize(OSWindow *window, bool bColoredLights, uint32_t uDetailLevel, bool bTinting);
 
 
-  bool IsColorKeySupported(IDirectDraw4 *);
-  void _49EBF1();
   void ClearBlack();
   void PresentBlackScreen();
   void SavePCXScreenshot();
-  void _49F1BC(const char *a1);
-  void PackPCXpicture(unsigned short* picture_data, int wight, int heidth, void *data_buff, int max_buff_size,unsigned int* packed_size);
-  FILE *SavePCXImage(const char *Filename, char *a3, int a4, int a5);
+  void SaveWinnersCertificate(const char *a1);
   void ClearTarget(unsigned int uColor);
-  void Release2();
   void Present();
-  void _49FD3A();
+  void _49FD3A_fullscreen();
   void CreateZBuffer();
   void Release();
-  void CreateSomeTexture();
   bool InitializeFullscreen();
   bool SwitchToWindow();
-  char RasterLine2D(unsigned int uX, unsigned int uY, unsigned int uZ, unsigned int uW, unsigned __int16 uColor);
+  void RasterLine2D(signed int uX, signed int uY, signed int uZ, signed int uW, unsigned __int16 uColor);
   void ClearZBuffer(int a2, int a3);
   void SetRasterClipRect(unsigned int uX, unsigned int uY, unsigned int uZ, unsigned int uW);
-  void ParseTargetPixelFormat();
   bool LockSurface_DDraw4(IDirectDrawSurface4 *pSurface, DDSURFACEDESC2 *pDesc, unsigned int uLockFlags);
-  bool LockSurface_DDraw2(IDirectDrawSurface2 *pSurface, DDSURFACEDESC *pDesc, unsigned int uLockFlags);
-  void CreateDirectDraw();
-  void SetDirectDrawCooperationMode(HWND hWnd, bool bFullscreen);
-  void SetDirectDrawDisplayMode(unsigned int uWidth, unsigned int uHeight, unsigned int uBPP);
-  void CreateFrontBuffer();
-  void CreateBackBuffer();
-  void CreateDirectDrawPrimarySurface();
-  void CreateClipper(HWND a2);
   void GetTargetPixelFormat(DDPIXELFORMAT *pOut);
   void LockRenderSurface(void **pOutSurfacePtr, unsigned int *pOutPixelsPerRow);
   void UnlockBackBuffer();
   void LockFrontBuffer(void **pOutSurface, unsigned int *pOutPixelsPerRow);
   void UnlockFrontBuffer();
   void RestoreFrontBuffer();
-  HRESULT _4A184C();
-  void PresentRect(RECT *a2, RECT *a3);
+  void RestoreBackBuffer();
   void BltToFront(RECT *pDstRect, IDirectDrawSurface *pSrcSurface, RECT *pSrcRect, unsigned int uBltFlags);
   void BltBackToFontFast(int a2, int a3, RECT *a4);
-  unsigned int Billboard_ProbablyAddToListAndSortByZOrder(float z);
-  unsigned int GetBillboardDrawListSize();
-  unsigned int GetParentBillboardID(unsigned int uBillboardID);
   void BeginSceneD3D();
   void DrawBillboards_And_MaybeRenderSpecialEffects_And_EndScene();
   unsigned int GetActorTintColor(float a2, int tint, int a4, int a5, RenderBillboard *a6);
@@ -326,16 +326,14 @@ struct Render
   void DrawIndoorSky(unsigned int uNumVertices, unsigned int uFaceID);
   void MakeParticleBillboardAndPush_BLV(RenderBillboardTransform_local0 *a2, IDirect3DTexture2 *a3, unsigned int uDiffuse, int angle);
   void MakeParticleBillboardAndPush_ODM(RenderBillboardTransform_local0 *a2, IDirect3DTexture2 *a3, unsigned int uDiffuse, int angle);
-  void TransformBillboard(RenderBillboardTransform_local0 *a2, Sprite *pSprite, int dimming_level, RenderBillboard *pBillboard);
   void DrawBillboard_Indoor(RenderBillboardTransform_local0 *pSoftBillboard, Sprite *pSprite, int dimming_level);
-  int MakeParticleBillboardAndPush_BLV_Software(int screenSpaceX, int screenSpaceY, int z, int lightColor, int a6);
   void DrawProjectile(float srcX, float srcY, float a3, float a4, float dstX, float dstY, float a7, float a8, IDirect3DTexture2 *a9);
   void _4A4CC9_AddSomeBillboard(struct stru6_stru1_indoor_sw_billboard *a1, int diffuse);
   bool LoadTexture(const char *pName, unsigned int bMipMaps, IDirectDrawSurface4 **pOutSurface, IDirect3DTexture2 **pOutTexture);
   bool MoveSpriteToDevice(Sprite *pSprite);
   void BeginScene();
   void EndScene();
-  unsigned int _4A52F1(unsigned int this_, float a3);
+  void ScreenFade(unsigned int color, float t);
   void SetTextureClipRect(unsigned int uX, unsigned int uY, unsigned int uZ, unsigned int uW);
   void ResetTextureClipRect();
   void DrawTextureRGB(unsigned int uOutX, unsigned int uOutY, RGBTexture *a4);
@@ -348,12 +346,13 @@ struct Render
   void _4A65CC(unsigned int x, unsigned int y, struct Texture *a4, struct Texture *a5, int a6, int a7, int a8);
   void DrawTransparentRedShade(unsigned int a2, unsigned int a3, struct Texture *a4);
   void DrawTransparentGreenShade(signed int a2, signed int a3, struct Texture *pTexture);
+  void DrawMasked(signed int a2, signed int a3, struct Texture *pTexture, unsigned __int16 mask);
   void GetLeather(unsigned int a2, unsigned int a3, struct Texture *a4, __int16 height);
   void DrawTextPalette(int x, int y, unsigned char* font_pixels, int a5, unsigned int uFontHeight, unsigned __int16 *pPalette, int a8);
   void DrawText(signed int uOutX, signed int uOutY, unsigned __int8 *pFontPixels, unsigned int uCharWidth, unsigned int uCharHeight, unsigned __int16 *pFontPalette, unsigned __int16 uFaceColor, unsigned __int16 uShadowColor);
   void FillRectFast(unsigned int uX, unsigned int uY, unsigned int uWidth, unsigned int uHeight, unsigned int uColor16);
-  int _4A6DF5(unsigned __int16 *pBitmap, unsigned int uBitmapPitch, struct Vec2_int_ *pBitmapXY, unsigned __int16 *pTarget, unsigned int uTargetPitch, Vec4_int_ *a7);
-  void _4A6E7E(unsigned int a2, unsigned int a3, struct Texture *a4);
+  void _4A6DF5(unsigned __int16 *pBitmap, unsigned int uBitmapPitch, struct Vec2_int_ *pBitmapXY, void *pTarget, unsigned int uTargetPitch, Vec4_int_ *a7);
+  void DrawTranslucent(unsigned int a2, unsigned int a3, struct Texture *a4);
   void DrawBuildingsD3D();
   //struct BSPModel *DrawBuildingsSW();
   //int OnOutdoorRedrawSW();
@@ -362,106 +361,160 @@ struct Render
   void PrepareDecorationsRenderList_ODM();
   void DrawSpriteObjects_ODM();
   void TransformBillboardsAndSetPalettesODM();
-  //float DrawBezierTerrain();
+  float DrawBezierTerrain();
   void RenderTerrainD3D();
   void DrawTerrainD3D(int a1, int edx0, int a3, int unk4);
   //void DrawTerrainSW(int a1, int a2, int a3, int a4);
   //void ExecOutdoorDrawSW();
   void ChangeBetweenWinFullscreenModes();
   void DrawBillboardList_BLV();
+  bool AreRenderSurfacesOk();
+  bool IsGammaSupported();
+  void SaveScreenshot(const char *pFilename, unsigned int width, unsigned int height);
+  void PackScreenshot(unsigned int width, unsigned int height, void *out_data, unsigned int data_size, unsigned int *screenshot_size);
+  int _46ภ6ภั_GetActorsInViewport(int pDepth);
+  void BeginLightmaps();
+  void EndLightmaps();  
+  void BeginLightmaps2();
+  void EndLightmaps2();
+  bool DrawLightmap(struct Lightmap *pLightmap, struct Vec3_float_ *pColorMult, float z_bias);
+
+  void BeginDecals();
+  void EndDecals();
+  void DrawDecal(struct Decal *pDecal, float z_bias);
+  
+  void do_draw_debug_line_d3d(const RenderVertexD3D3 *pLineBegin, signed int sDiffuseBegin, const RenderVertexD3D3 *pLineEnd, signed int sDiffuseEnd, float z_stuff);
+  void DrawLines(const RenderVertexD3D3 *vertices, unsigned int num_vertices);
+  void DrawFansTransparent(const RenderVertexD3D3 *vertices, unsigned int num_vertices);
+  void DrawSpecialEffectsQuad(const RenderVertexD3D3 *vertices, IDirect3DTexture2 *texture);
+
+  void am_Blt_Copy(RECT *pSrcRect, POINT *pTargetXY, int a3);
+  void am_Blt_Chroma(RECT *pSrcRect, POINT *pTargetPoint, int a3, int blend_mode);
 
 
-  //unsigned int bUserDirect3D;
-  unsigned int bStartInWindow;
-  unsigned int uDesiredDirect3DDevice;
-  unsigned int uAcquiredDirect3DDevice;
-  int field_10;
-  int field_14;
-  int field_18_locked_pitch;
-  int raster_clip_x;
-  int raster_clip_y;    // clipping rect for raster ops
-  int raster_clip_z;    //    like RasterLine2D for (mini)map
-  int raster_clip_w;
-  __int16 field_2C[65536];
-  __int16 field_2002C[65536];
-  int field_4002C;
-  int field_40030;
-  int *pActiveZBuffer;
-  int *pDefaultZBuffer;
-  int field_4003C;
-  int field_40040;
-  int field_40044;
-  int field_40048;
-  int field_4004C;
-  //HWND hWnd;
-  OSWindow *window;
-  int field_40054;
-  unsigned int bWindowMode;
-  int field_4005C[11];
-  RenderD3D *pRenderD3D;
-  IDirectDraw4 *pDirectDraw4;
-  IDirectDrawSurface4 *pFrontBuffer4;
-  IDirectDrawSurface4 *pBackBuffer4;
-  IDirectDrawSurface4 *pColorKeySurface4;
-  IDirectDraw2 *pDirectDraw2;
-  IDirectDrawSurface2 *pFrontBuffer2;
-  IDirectDrawSurface2 *pBackBuffer2;
-  IDirectDrawSurface2 *pSomeSurface2;
-  DDPIXELFORMAT ddpfPrimareSuface;
-  unsigned int uTargetRBits;
-  unsigned int uTargetGBits;
-  unsigned int uTargetBBits;
-  unsigned int uTargetRMask;
-  unsigned int uTargetGMask;
-  unsigned int uTargetBMask;
-  unsigned int uNumSceneBegins;
-  int *ptr_400E8;
-  unsigned __int16 *pTargetSurface;
-  unsigned int uTargetSurfacePitch;
-  unsigned int uClipY;
-  unsigned int uClipX;
-  unsigned int uClipW;
-  unsigned int uClipZ;
-  unsigned int bClip;
-  unsigned int bColorKeySupported;
-  unsigned int uNumD3DSceneBegins;
-  int field_40110;
-  RenderHWLContainer pD3DBitmaps;
-  RenderHWLContainer pD3DSprites;
-  unsigned int bUseColoredLights;
-  unsigned int bRequiredTextureStagesAvailable;
-  unsigned int bTinting;
-  unsigned int uLevelOfDetail;
-  unsigned int uMaxDeviceTextureDim;
-  unsigned int uMinDeviceTextureDim;
-  int field_10365C;
-  unsigned int bUsingSpecular;
-  uint32_t uFogColor;
-  int field_103668;
-  unsigned int pHDWaterBitmapIDs[7];
-  char field_103688[32];
-  int hd_water_current_frame;
-  int hd_water_tile_id;
-  IDirectDrawSurface4 *pSurface;
-  IDirect3DTexture2 *pTexture;
-  int field_1036B8;
-  int _gpu_memory_used;
-  void ( *pBeforePresentFunction)();
-  int field_1036C4;
-  uint32_t bFogEnabled;
-  int field_1036CC;
-  RenderBillboardD3D pBillboardRenderListD3D[1000];
-  unsigned int uNumBillboardsToDraw;
-  int field_129834;
-  unsigned int uCurrentlyLockedSurfacePitch;
-  unsigned __int16 *pCurrentlyLockedSurfaceDataPtr;
-  unsigned __int16 *pCurrentlyLockedSoftSurface;
+  protected: unsigned int uDesiredDirect3DDevice;
+  protected: int raster_clip_x;
+  protected: int raster_clip_y;    // clipping rect for raster ops
+  protected: int raster_clip_z;    //    like RasterLine2D for (mini)map
+  protected: int raster_clip_w;
+  public: int *pActiveZBuffer;
+  protected: int *pDefaultZBuffer;
+  protected: OSWindow *window;
+  protected: unsigned int bWindowMode;
+  protected: RenderD3D *pRenderD3D;
+  public: IDirectDraw4 *pDirectDraw4;
+  public: IDirectDrawSurface4 *pFrontBuffer4;
+  public: IDirectDrawSurface4 *pBackBuffer4;
+  protected: DDPIXELFORMAT ddpfPrimarySuface;
+  protected: unsigned int uTargetRBits;
+  protected: unsigned int uTargetGBits;
+  protected: unsigned int uTargetBBits;
+  protected: unsigned int uTargetRMask;
+  protected: unsigned int uTargetGMask;
+  protected: unsigned int uTargetBMask;
+  protected: unsigned int uNumSceneBegins;
+  protected: unsigned __int32 *pTargetSurface_unaligned;
+  public: void        *pTargetSurface;
+  public: unsigned int uTargetSurfacePitch;
+  protected: unsigned int uClipY;
+  protected: unsigned int uClipX;
+  protected: unsigned int uClipW;
+  protected: unsigned int uClipZ;
+  protected: unsigned int bClip;
+  protected: unsigned int uNumD3DSceneBegins;
+  protected: int using_software_screen_buffer;
+  protected: RenderHWLContainer pD3DBitmaps;
+  protected: RenderHWLContainer pD3DSprites;
+  public: unsigned int bUseColoredLights;
+  protected: unsigned int bRequiredTextureStagesAvailable;
+  public: unsigned int bTinting;
+  protected: unsigned int uLevelOfDetail;
+  protected: unsigned int uMaxDeviceTextureDim;
+  protected: unsigned int uMinDeviceTextureDim;
+  public: unsigned int bUsingSpecular;
+  public: uint32_t uFogColor;
+  public: unsigned int pHDWaterBitmapIDs[7];
+  public: int hd_water_current_frame;
+  public: int hd_water_tile_id;
+  public: void (*pBeforePresentFunction)();
+  public: uint32_t bFogEnabled;
+  public: RenderBillboardD3D pBillboardRenderListD3D[1000];
+  public: unsigned int uNumBillboardsToDraw;
 
+
+  protected:
+    void DoRenderBillboards_D3D();
+    void SetBillboardBlendOptions(RenderBillboardD3D::OpacityType a1);
+    void DrawBorderTiles(struct Polygon *poly);
+    unsigned short *MakeScreenshot(signed int width, signed int height);
+    bool CheckTextureStages();
+    void ParseTargetPixelFormat();
+    void TransformBillboard(RenderBillboardTransform_local0 *a2, Sprite *pSprite, int dimming_level, RenderBillboard *pBillboard);
+    void CreateDirectDraw();
+    void SetDirectDrawCooperationMode(HWND hWnd, bool bFullscreen);
+    void SetDirectDrawDisplayMode(unsigned int uWidth, unsigned int uHeight, unsigned int uBPP);
+    void CreateFrontBuffer();
+    void CreateBackBuffer();
+    void CreateDirectDrawPrimarySurface();
+    void CreateClipper(HWND a2);
+    void PackPCXpicture(unsigned short* picture_data, int wight, int heidth, void *data_buff, int max_buff_size,unsigned int* packed_size);
+    void SavePCXImage(const char *Filename, unsigned short* picture_data, int width, int height);
+    unsigned int Billboard_ProbablyAddToListAndSortByZOrder(float z);
+    unsigned int GetParentBillboardID(unsigned int uBillboardID);
+    unsigned int GetBillboardDrawListSize();
+
+  public:
+  inline void WritePixel16(int x, int y, unsigned __int16 color)
+  {
+    if (ddpfPrimarySuface.dwRGBBitCount == 32)
+    {
+      auto p = (unsigned __int32 *)pTargetSurface + x + y * uTargetSurfacePitch;
+      *p = Color32(color);
+    }
+    else if (ddpfPrimarySuface.dwRGBBitCount == 16)
+    {
+      auto p = (unsigned __int16 *)pTargetSurface + x + y * uTargetSurfacePitch;
+      *p = color;
+    }
+    else __debugbreak();
+  }
+
+  inline unsigned __int16 ReadPixel16(int x, int y)
+  {
+    if (ddpfPrimarySuface.dwRGBBitCount == 32)
+    {
+      auto p = (unsigned __int32 *)pTargetSurface + x + y * uTargetSurfacePitch;
+      return Color16((*p >> 16) & 255, (*p >> 8) & 255, *p & 255);
+    }
+    else if (ddpfPrimarySuface.dwRGBBitCount == 16)
+    {
+      auto p = (unsigned __int16 *)pTargetSurface + x + y * uTargetSurfacePitch;
+      return *p;
+    }
+    else __debugbreak();
+  }
+
+
+  inline void ToggleTint()          {bTinting = !bTinting;}
+  inline void ToggleColoredLights() {bUseColoredLights = !bUseColoredLights;}
+
+  inline unsigned int GetRenderWidth() {return window->GetWidth();}
+  inline unsigned int GetRenderHeight() {return window->GetHeight();}
+
+  inline void Sub01()
+  {
+    if (pRenderD3D && !bWindowMode)
+      _49FD3A_fullscreen();
+  }
+
+  friend void Present_NoColorKey();
 
   //int windowed_mode_width;
   //int windowed_mode_height;
 };
 #pragma pack(pop)
+
+bool PauseGameDrawing();
 
 extern struct IDirectDrawClipper *pDDrawClipper;
 extern struct Render *pRenderer; // idb
@@ -473,7 +526,7 @@ extern struct pUnkTerrain *Unks;
 #pragma pack(push, 1)
 struct RenderBillboardTransform_local0
 {
-  unsigned __int16 *pTarget;
+  void *pTarget;
   int *pTargetZ;
   int uScreenSpaceX;
   int uScreenSpaceY;
@@ -498,8 +551,8 @@ struct RenderBillboardTransform_local0
   unsigned int uViewportZ;
   unsigned int uViewportW;
   int field_44;
-  int uParentBillboardID;
-  int uTintColor;
+  int sParentBillboardID;
+  int sTintColor;
 };
 #pragma pack(pop)
 
@@ -519,3 +572,7 @@ extern RenderVertexSoft array_50AC10[50];
 extern RenderVertexSoft array_73D150[20];
 
 extern RenderVertexD3D3 d3d_vertex_buffer[50];
+
+
+int ODM_NearClip(unsigned int uVertexID); // idb
+int ODM_FarClip(unsigned int uNumVertices);

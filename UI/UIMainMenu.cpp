@@ -1,9 +1,7 @@
-#ifdef _MSC_VER
 #define _CRT_SECURE_NO_WARNINGS
-#endif
-
 #include "..\Mouse.h"
 #include "..\Keyboard.h"
+#include "..\ErrorHandling.h"
 
 #include "..\GUIWindow.h"
 #include "..\GUIFont.h"
@@ -15,17 +13,21 @@
 #include "..\texts.h"
 
 #include "..\mm7_data.h"
+#include "..\mm7_unsorted_subs.h"
+#include "..\Game.h"
 
 
 //----- (0041B578) --------------------------------------------------------
 void MainMenuUI_LoadFontsAndSomeStuff()
 {
-  pIcons_LOD->SetupPalettes(pRenderer->uTargetRBits, pRenderer->uTargetGBits, pRenderer->uTargetBBits);
-  pPaletteManager->SetColorChannelInfo(pRenderer->uTargetRBits, pRenderer->uTargetGBits, pRenderer->uTargetBBits);
+  //pIcons_LOD->SetupPalettes(pRenderer->uTargetRBits, pRenderer->uTargetGBits, pRenderer->uTargetBBits);
+  pIcons_LOD->SetupPalettes(5, 6, 5);
+  //pPaletteManager->SetColorChannelInfo(pRenderer->uTargetRBits, pRenderer->uTargetGBits, pRenderer->uTargetBBits);
+  pPaletteManager->SetColorChannelInfo(5, 6, 5);
   pPaletteManager->RecalculateAll();
 
-  for (uint i = 0; i < 480; ++i)
-    pSRZBufferLineOffsets[i] = 640 * i;
+  for (uint i = 0; i < window->GetHeight(); ++i)
+    pSRZBufferLineOffsets[i] = window->GetWidth() * i;
 
   pRenderer->ResetTextureClipRect();
 
@@ -102,20 +104,20 @@ void MainMenuUI_Create()
   uTextureID_BUTTMAKE = pIcons_LOD->LoadTexture("BUTTMAKE", TEXTURE_16BIT_PALETTE);
   uTextureID_BUTTMAKE2 = pIcons_LOD->LoadTexture("BUTTMAKE2", TEXTURE_16BIT_PALETTE);
 
-  pPrimaryWindow = GUIWindow::Create(0, 0, 640, 480, WINDOW_MainMenu, 0, 0);
+  pPrimaryWindow = GUIWindow::Create(0, 0, window->GetWidth(), window->GetHeight(), WINDOW_MainMenu, 0, 0);
   pPrimaryWindow->CreateButton(7, 8, 460, 343, 1, 0, UIMSG_MouseLeftClickInGame, 0, 0, "", 0);
 
-  pPrimaryWindow->CreateButton(61, 424, 31, 40, 2, 94, UIMSG_SelectCharacter, 1, '1', "", 0);
-  pPrimaryWindow->CreateButton(177, 424, 31, 40, 2, 94, UIMSG_SelectCharacter, 2, '2', "", 0);
+  pPrimaryWindow->CreateButton(61, 424, 31, 80, 2, 94, UIMSG_SelectCharacter, 1, '1', "", 0);//buttons for portraits
+  pPrimaryWindow->CreateButton(177, 424, 31, 80, 2, 94, UIMSG_SelectCharacter, 2, '2', "", 0);
   pPrimaryWindow->CreateButton(292, 424, 31, 40, 2, 94, UIMSG_SelectCharacter, 3, '3', "", 0);
   pPrimaryWindow->CreateButton(407, 424, 31, 40, 2, 94, UIMSG_SelectCharacter, 4, '4', "", 0);
 
-  pPrimaryWindow->CreateButton(24, 404, 5, 49, 1, 93, UIMSG_0, 1, 0, "", 0);
+  pPrimaryWindow->CreateButton(24, 404, 5, 49, 1, 93, UIMSG_0, 1, 0, "", 0);//buttons for HP
   pPrimaryWindow->CreateButton(139, 404, 5, 49, 1, 93, UIMSG_0, 2, 0, "", 0);
   pPrimaryWindow->CreateButton(255, 404, 5, 49, 1, 93, UIMSG_0, 3, 0, "", 0);
   pPrimaryWindow->CreateButton(370, 404, 5, 49, 1, 93, UIMSG_0, 4, 0, "", 0);
 
-  pPrimaryWindow->CreateButton(97, 404, 5, 49, 1, 93, UIMSG_0, 1, 0, "", 0);
+  pPrimaryWindow->CreateButton(97, 404, 5, 49, 1, 93, UIMSG_0, 1, 0, "", 0);//buttons for SP
   pPrimaryWindow->CreateButton(212, 404, 5, 49, 1, 93, UIMSG_0, 2, 0, "", 0);
   pPrimaryWindow->CreateButton(328, 404, 5, 49, 1, 93, UIMSG_0, 3, 0, "", 0);
   pPrimaryWindow->CreateButton(443, 404, 5, 49, 1, 93, UIMSG_0, 4, 0, "", 0);
@@ -191,6 +193,36 @@ void MainMenuUI_Create()
   LoadPartyBuffIcons();
 }
 
+
+
+
+//----- (00452AF3) --------------------------------------------------------
+void __fastcall fill_pixels_fast(unsigned int a1, unsigned __int16 *pPixels, unsigned int uNumPixels)
+{
+  void *v3; // edi@1
+  unsigned int v4; // eax@1
+  unsigned __int16 *v5; // edi@3
+  unsigned int i; // ecx@3
+
+  __debugbreak(); // Nomad: sub operates on 16 bit pixels, we have 32 bits.
+
+  v3 = pPixels;
+  v4 = a1 | (a1 << 16);
+  if ( (unsigned __int8)pPixels & 2 )           // first 2 pixels
+  {
+    *pPixels = v4;
+    v3 = pPixels + 1;
+    --uNumPixels;
+  }
+  memset32(v3, v4, uNumPixels >> 1);            // 4 pixels at once
+  v5 = (unsigned __int16 *)((char *)v3 + 4 * (uNumPixels >> 1));
+  for ( i = uNumPixels & 1; i; --i )            // leftover pixels
+  {
+    *v5 = v4;
+    ++v5;
+  }
+}
+
 //----- (004979D2) --------------------------------------------------------
 MENU_STATE MainMenuUI_Credits_Loop()
 {
@@ -244,7 +276,7 @@ MENU_STATE MainMenuUI_Credits_Loop()
   cred_texture.uHeight = pFontQuick->GetStringHeight2(pFontCChar, cred_texturet, &credit_window, 0, 1) + 2 * credit_window.uFrameHeight;
   cred_texture.uNumPixels = cred_texture.uWidth * cred_texture.uHeight;
   cred_texture.pPixels = (unsigned __int16 *)malloc(2 * cred_texture.uNumPixels);
-  fill_pixels_fast(TargetColor(0, 0xFFu, 0xFFu), cred_texture.pPixels, cred_texture.uNumPixels);
+  fill_pixels_fast(Color16(0, 0xFFu, 0xFFu), cred_texture.pPixels, cred_texture.uNumPixels);
   cred_texture._allocation_flags = 0;
 
   //дать шрифт и цвета тексту
@@ -252,10 +284,10 @@ MENU_STATE MainMenuUI_Credits_Loop()
   strncpy(pString, cred_texturet, pSize);
   pString[pSize] = 0;
   pFontQuick->_44D2FD_prolly_draw_credits_entry(pFontCChar, 0, credit_window.uFrameHeight, cred_texture.uWidth,
-    cred_texture.uHeight, TargetColor(0x70u, 0x8Fu, 0xFEu), TargetColor(0xECu, 0xE6u, 0x9Cu), pString, cred_texture.pPixels, cred_texture.uWidth);
+    cred_texture.uHeight, Color16(0x70u, 0x8Fu, 0xFEu), Color16(0xECu, 0xE6u, 0x9Cu), pString, cred_texture.pPixels, cred_texture.uWidth);
   free(pString);
 
-  pWindow_MainMenu = GUIWindow::Create(0, 0, 640, 480, WINDOW_MainMenu, 0, cred_texturet);
+  pWindow_MainMenu = GUIWindow::Create(0, 0, window->GetWidth(), window->GetHeight(), WINDOW_MainMenu, 0, cred_texturet);
   pWindow_MainMenu->CreateButton(0, 0, 0, 0, 1, 0, UIMSG_Escape, 0, 27, "", 0);
   pCurrentScreen = SCREEN_CREATORS;
   SetCurrentMenuID(MENU_CREDITSPROC);
@@ -270,7 +302,7 @@ MENU_STATE MainMenuUI_Credits_Loop()
       TranslateMessage(&Msg);
       DispatchMessageA(&Msg);
     }
-    if ( BYTE1(dword_6BE364_game_settings_1) & 1 )
+    if (dword_6BE364_game_settings_1 & GAME_SETTINGS_APP_INACTIVE)
     {
       WaitMessage();
     }
@@ -302,50 +334,3 @@ MENU_STATE MainMenuUI_Credits_Loop()
   cred_texture.Release();
   return MENU_MAIN;     // return MENU_Main
 }
-/*MENU_STATE MainMenuUI_Credits_Loop()//NewTitle
-{
-  MSG Msg;
-  GUIWindow credit_window;
-  RGBTexture mm6title_texture;
-
-  if ( pMessageQueue_50CBD0->uNumMessages )
-    pMessageQueue_50CBD0->uNumMessages = pMessageQueue_50CBD0->pMessages[0].field_8 != 0;
-  ++pIcons_LOD->uTexturePacksCount;
-  if ( !pIcons_LOD->uNumPrevLoadedFiles )
-    pIcons_LOD->uNumPrevLoadedFiles = pIcons_LOD->uNumLoadedFiles;
-
-  //pAudioPlayer->PlayMusicTrack(MUSIC_Credits);
-
-  mm6title_texture.Load("newtitle.pcx", 0);
-  pWindow_MainMenu->CreateButton(0, 0, 0, 0, 1, 0, UIMSG_Escape, 0, 27, "", 0);
-  pCurrentScreen = SCREEN_CREATORS;
-  SetCurrentMenuID(MENU_CREDITSPROC);
-
-  do
-  {
-    while ( PeekMessageA(&Msg, 0, 0, 0, 1) )
-    {
-      if ( Msg.message == 18 )
-        Game_DeinitializeAndTerminate(0);
-      TranslateMessage(&Msg);
-      DispatchMessageA(&Msg);
-    }
-    if ( BYTE1(dword_6BE364_game_settings_1) & 1 )
-    {
-      WaitMessage();
-    }
-    else
-    {
-      pRenderer->BeginScene();
-      pRenderer->DrawTextureRGB(0, 0, &mm6title_texture);
-      pRenderer->EndScene();
-      pRenderer->Present();
-      pCurrentScreen = SCREEN_GAME;
-      GUI_MainMenuMessageProc();
-    }
-  }
-  while ( GetCurrentMenuID() == MENU_CREDITSPROC );
-  //pAudioPlayer->_4AA258(1);
-  mm6title_texture.Release();
-  return MENU_MAIN;     // return MENU_Main
-}*/

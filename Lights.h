@@ -1,5 +1,4 @@
 #pragma once
-#include "OSAPI.h" // messagebox
 
 #include "VectorTypes.h"
 
@@ -72,29 +71,7 @@ struct LightsStack_StationaryLight_
   }
 
   //----- (004AD3C8) --------------------------------------------------------
-  inline bool AddLight(__int16 x, __int16 y, __int16 z, __int16 a5, unsigned char r, unsigned char g, unsigned char b, char uLightType)
-  {
-    unsigned int v9; // eax@1
-    std::string v11; // [sp-18h] [bp-18h]@3
-
-    v9 = this->uNumLightsActive;
-    if ( (signed int)v9 >= 400 )
-    {
-      MessageBoxW(nullptr, L"Too many stationary lights!", L"E:\\WORK\\MSDEV\\MM7\\MM7\\Code\\StationaryLightStack.cpp:45", 0);
-      return false;
-    }
-
-      StationaryLight* pLight = &pLights[uNumLightsActive++];
-      pLight->vPosition.x = x;
-      pLight->vPosition.y = y;
-      pLight->vPosition.z = z;
-      pLight->uRadius = a5;
-      pLight->uLightColorR = (unsigned __int8)r;
-      pLight->uLightColorG = g;
-      pLight->uLightColorB = b;
-      pLight->uLightType = uLightType;
-      return true;
-  }
+  bool AddLight(__int16 x, __int16 y, __int16 z, __int16 a5, unsigned char r, unsigned char g, unsigned char b, char uLightType);
 
 
 

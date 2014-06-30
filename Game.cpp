@@ -1,9 +1,8 @@
-#ifdef _MSC_VER
 #define _CRT_SECURE_NO_WARNINGS
-#endif
-
+#include "Arcomage.h"
+#include "mm7_unsorted_subs.h"
 #include "Vis.h"
-
+#include "Weather.h"
 #include "LightmapBuilder.h"
 #include "DecalBuilder.h"
 #include "ParticleEngine.h"
@@ -18,13 +17,12 @@
 #include "Game.h"
 #include "Party.h"
 #include "Viewport.h"
-#include "Time.h"
+#include "Timer.h"
 #include "Outdoor.h"
 #include "Outdoor_stuff.h"
 #include "Overlays.h"
 #include "AudioPlayer.h"
 #include "LOD.h"
-#include "OSInfo.h"
 #include "GUIWindow.h"
 #include "TurnEngine.h"
 #include "VideoPlayer.h"
@@ -46,11 +44,16 @@
 #include "Level/Decoration.h"
 #include "PaletteManager.h"
 #include "UI\UIHouses.h"
+#include "UI\UIShops.h"
+#include "UI\UIPartyCreation.h"
 #include "SaveLoad.h"
 #include "SpriteObject.h"
 #include "mm7.h"
 #include "Sprites.h"
+#include "Registry.h"
+#include "Chest.h"
 
+#include "UI\UIGame.h"
 
 
 
@@ -76,14 +79,11 @@ void Game::ToggleFlags2(unsigned int uFlag)
 //----- (0044103C) --------------------------------------------------------
 void Game::Draw()
 {
-  //float v2; // ST24_4@11
-  //double v3; // ST28_8@11
   int v4; // edi@26
-  //int v5; // eax@35
 
   uFlags2 &= ~0x02;
   if ( pParty->_497FC5_check_party_perception_against_level() )
-    uFlags2 |= 2u;
+    uFlags2 |= 2;
 
   pGame->pIndoorCameraD3D->sRotationX = pParty->sRotationX;
   pGame->pIndoorCameraD3D->sRotationY = pParty->sRotationY;
@@ -96,14 +96,14 @@ void Game::Draw()
   pIndoorCameraD3D->CreateWorldMatrixAndSomeStuff();
   pIndoorCameraD3D->_4374E8_ProllyBuildFrustrum();
 
-  if ( pVideoPlayer->AnyMovieLoaded() )
+  if ( pMovie )
   {
-    if ( !pRenderer->pRenderD3D )
+    /*if ( !pRenderer->pRenderD3D )
     {
 		pRenderer->BeginSceneD3D();
 		pMouse->DrawCursorToTarget();
 		pRenderer->DrawBillboards_And_MaybeRenderSpecialEffects_And_EndScene();
-	}
+	}*/
   }
   else
   {
@@ -120,11 +120,11 @@ void Game::Draw()
     pParty->sPrevEyelevel = pParty->sEyelevel;
     pRenderer->BeginSceneD3D();
 
-    if ( !pRenderer->pRenderD3D )
-      pMouse->DrawCursorToTarget();
+    //if ( !pRenderer->pRenderD3D )
+      //pMouse->DrawCursorToTarget();
     if ( !PauseGameDrawing() || viewparams->field_48 == 1 )
     {
-      if ( pRenderer->pRenderD3D )
+      //if ( pRenderer->pRenderD3D )
       {
         float v2 = (double)(((signed int)pMiscTimer->uTotalGameTimeElapsed >> 2) & 0x1F) * 0.032258064 * 6.0;
         //v3 = v2 + 6.7553994e15;
@@ -138,7 +138,7 @@ void Game::Draw()
         pOutdoor->Draw();
       else Error("Invalid level type: %u", uCurrentlyLoadedLevelType);
 
-      if (pRenderer->pRenderD3D)
+      //if (pRenderer->pRenderD3D)
       {
         pDecalBuilder->DrawBloodsplats();
         pGame->pLightmapBuilder->DrawLightmapsType(2);
@@ -152,31 +152,29 @@ void Game::Draw()
 
 
   pRenderer->BeginScene();
-  if (pRenderer->pRenderD3D)
+  //if (pRenderer->pRenderD3D)
     pMouse->DrawCursorToTarget();
   if (pOtherOverlayList->bRedraw)
     viewparams->bRedrawGameUI = true;
   v4 = viewparams->bRedrawGameUI;
   GameUI_Footer();
   if (!viewparams->bRedrawGameUI)
-  {
     GameUI_DrawRightPanelItems();
-  }
   else
   {
     GameUI_DrawRightPanelFrames();
     GameUI_Footer_2();
     viewparams->bRedrawGameUI = false;
   }
-  if (!pVideoPlayer->pSmackerMovie)
+  if (!pMovie)//!pVideoPlayer->pSmackerMovie)
   {
-    GameUI_DrawMinimap(488, 16, 625, 133, viewparams->uMinimapZoom, pParty->uFlags & 2);
+    GameUI_DrawMinimap(488, 16, 625, 133, viewparams->uMinimapZoom, true);//redraw = pParty->uFlags & 2);
     if (v4)
     {
-      if ( !PauseGameDrawing() && pRenderer->pRenderD3D) // clear game viewport with transparent color
+      if ( !PauseGameDrawing() /*&& pRenderer->pRenderD3D*/) // clear game viewport with transparent color
         pRenderer->FillRectFast(pViewport->uViewportTL_X, pViewport->uViewportTL_Y, pViewport->uViewportBR_X - pViewport->uViewportTL_X,
                                 pViewport->uViewportBR_Y - pViewport->uViewportTL_Y + 1,
-                                pRenderer->uTargetGMask | pRenderer->uTargetBMask);
+                                0x7FF);
       viewparams->field_48 = 0;
     }
   }
@@ -190,9 +188,9 @@ void Game::Draw()
   GameUI_DrawPortraits(v4);
   GameUI_DrawLifeManaBars();
   GameUI_DrawCharacterSelectionFrame();
-  if ( sub_44100D() )
+  if ( _44100D_should_alter_right_panel() )
     GameUI_DrawRightPanel();
-  if ( !pVideoPlayer->AnyMovieLoaded() )
+  if ( !pMovie )
   {
     pStru6Instance->DrawPlayerBuffAnims();
     pOtherOverlayList->DrawTurnBasedIcon(v4);
@@ -205,6 +203,8 @@ void Game::Draw()
   static uint frames_this_second = 0;
   static uint last_frame_time = GetTickCount();
   static uint framerate_time_elapsed = 0;
+  if ( pCurrentScreen == SCREEN_GAME && uCurrentlyLoadedLevelType == LEVEL_Outdoor)
+    pWeather->Draw();//Ritor1: my include
 
   uint frame_dt = GetTickCount() - last_frame_time;
   last_frame_time = GetTickCount();
@@ -221,23 +221,22 @@ void Game::Draw()
 
   ++frames_this_second;
 
-  extern bool debug_information;
   if ( debug_information )
   {
     if (render_framerate)
     {
       sprintf(pTmpBuf.data(), "FPS: % .4f", framerate);
-      pPrimaryWindow->DrawText(pFontArrus, 494, 0, TargetColor(0, 0, 0), pTmpBuf.data(), 0, 0, 0);
+      pPrimaryWindow->DrawText(pFontArrus, 494, 0, Color16(0, 0, 0), pTmpBuf.data(), 0, 0, 0);
     }
 
     if (uCurrentlyLoadedLevelType == LEVEL_Indoor)
     {
       int sector_id = pIndoor->GetSector(pParty->vPosition.x, pParty->vPosition.y, pParty->vPosition.z);
       sprintf(pTmpBuf.data(), "Party Sector ID:        %u/%u\n", sector_id, pIndoor->uNumSectors);
-      pPrimaryWindow->DrawText(pFontArrus, 16, 16, TargetColor(255, 255, 255), pTmpBuf.data(), 0, 0, 0xFFFFFFFF);
+      pPrimaryWindow->DrawText(pFontArrus, 16, 16, Color16(255, 255, 255), pTmpBuf.data(), 0, 0, -1);
     }
     sprintf(pTmpBuf.data(), "Party Position:         % d % d % d", pParty->vPosition.x, pParty->vPosition.y, pParty->vPosition.z);
-    pPrimaryWindow->DrawText(pFontArrus, 16, 16 + 16, TargetColor(255, 255, 255), pTmpBuf.data(), 0, 0, 0xFFFFFFFF);
+    pPrimaryWindow->DrawText(pFontArrus, 16, 16 + 16, Color16(255, 255, 255), pTmpBuf.data(), 0, 0, -1);
   
     if (uCurrentlyLoadedLevelType == LEVEL_Indoor)
     {
@@ -252,7 +251,7 @@ void Game::Draw()
       int floor_level = ODM_GetFloorLevel(pParty->vPosition.x, pParty->vPosition.y, pParty->vPosition.z, 0, &on_water, &_a6, false);
       sprintf(pTmpBuf.data(), "ODM_GetFloorLevel: %d   on_water: %s    a6 = %d\n", floor_level, on_water ? "true" : "false", _a6);
     }
-    pPrimaryWindow->DrawText(pFontArrus, 16, 16 + 16 + 16, TargetColor(255, 255, 255), pTmpBuf.data(), 0, 0, 0xFFFFFFFF);
+    pPrimaryWindow->DrawText(pFontArrus, 16, 16 + 16 + 16, Color16(255, 255, 255), pTmpBuf.data(), 0, 0, -1);
   }
 
   GUI_UpdateWindows();
@@ -261,9 +260,9 @@ void Game::Draw()
   _unused_5B5924_is_travel_ui_drawn = false;
   if (v4)
     pMouse->bRedraw = true;
-  pMouse->_469EA4();
+  pMouse->ReadCursorWithItem();
   pMouse->DrawCursor();
-  pMouse->_469E1C();
+  pMouse->Activate();
   pRenderer->EndScene();
   pRenderer->Present();
   pParty->uFlags &= ~2;
@@ -278,33 +277,17 @@ void Game::DrawParticles()
 //----- (00463149) --------------------------------------------------------
 void Game::Loop()
 {
-  //signed int v0; // ebp@3
-  //signed int v1; // esi@4
-  //Render *v2; // edi@7
-  //signed int v3; // esi@7
-  signed int pNewNPCsCount; // ecx@58
-  NPCData *pNPC; // eax@59
-  Player *pPlayer; // esi@65
-  //OtherOverlay *pOtherOverlay; // esi@67
-  //signed int v8; // edi@67
-  //int pPlayerNum; // edi@69
-  int *pHealth; // esi@71
-  //signed int v11; // esi@78
-  //int v12; // eax@83
   const char *pLocationName; // [sp-4h] [bp-68h]@74
   bool bLoading; // [sp+10h] [bp-54h]@1
-  //signed int bLoadinga; // [sp+10h] [bp-54h]@19
   signed int v16; // [sp+14h] [bp-50h]@8
-  //int v17[4]; // [sp+18h] [bp-4Ch]@80
   MSG Msg; // [sp+28h] [bp-3Ch]@20
   char Source[64]; // [sp+44h] [bp-20h]@76
 
-  bLoading = uCurrentMenuID == MENU_LoadingProcInMainMenu;
+  bLoading = sCurrentMenuID == MENU_LoadingProcInMainMenu;
   SetCurrentMenuID((MENU_STATE)-1);
   if (bLoading)
   {
     pParty->Reset();
-    dword_6BE340 = 0;
     uGameState = GAME_STATE_PLAYING;
     LoadGame(uLoadGameUI_SelectedSlot);
   }
@@ -333,12 +316,11 @@ void Game::Loop()
     }
     DoPrepareWorld(bLoading, 1);
     pEventTimer->Resume();
-    dword_6BE364_game_settings_1 |= 0x80;
-    dword_6BE340 = 2;
+    dword_6BE364_game_settings_1 |= GAME_SETTINGS_0080_SKIP_USER_INPUT_THIS_FRAME;
     // uGame_if_0_else_ui_id__11_save__else_load__8_drawSpellInfoPopup__22_final_window__26_keymapOptions__2_options__28_videoOptions = 0;
     pCurrentScreen = SCREEN_GAME;
 
-    if ( pRenderer->pRenderD3D )
+    //if ( pRenderer->pRenderD3D )
       pGame->pVisInstance->_4C1A02();
 
     bool game_finished = false;
@@ -351,14 +333,14 @@ void Game::Loop()
         TranslateMessage(&Msg);
         DispatchMessageA(&Msg);
       }
-      if (dword_6BE364_game_settings_1 & 0x0100 )
+      if (dword_6BE364_game_settings_1 & GAME_SETTINGS_APP_INACTIVE)
       {
         WaitMessage();
         continue;
       }
       pGame->_44EEA7();
       GameUI_WritePointedObjectStatusString();
-      ProcessInputActions();
+      Keyboard::ProcessInputActions();
       GameUI_MsgProc();
       if ( pArcomageGame->bGameInProgress )
       {
@@ -382,13 +364,12 @@ void Game::Loop()
       {
         if ( !pEventTimer->bTackGameTime )
           _494035_timed_effects__water_walking_damage__etc();
-        if ( dword_6BE364_game_settings_1 & 1 )
-        {
-          dword_6BE364_game_settings_1 &= 0xFFFFFFFEu;
-        }
+
+        if (dword_6BE364_game_settings_1 & GAME_SETTINGS_0001)
+          dword_6BE364_game_settings_1 &= ~GAME_SETTINGS_0001;
         else
         {
-          UpdateActorAI();
+          Actor::UpdateActorAI();
           UpdateUserInput_and_MapSpecificStuff();
         }
       }
@@ -398,156 +379,132 @@ void Game::Loop()
         viewparams->bRedrawGameUI = true;
       }
       pAudioPlayer->UpdateSounds();
+      if ( (signed int)uGameState == GAME_STATE_PLAYING )
+      {
+        pGame->Draw();
+        continue;
+      }
       if (uGameState == GAME_FINISHED)
-        //goto LABEL_96;
       {
         game_finished = true;
         continue;
       }
-      if (uGameState == GAME_STATE_2)
+      if (uGameState == GAME_STATE_CHANGE_LOCATION)// смена локации
       {
         pAudioPlayer->StopChannels(-1, -1);
         PrepareWorld(0);
         uGameState = GAME_STATE_PLAYING;
         continue;
       }
-      if ( (signed int)uGameState <= GAME_STATE_2 )
-        //goto LABEL_85;
+      if ( (signed int)uGameState <= GAME_STATE_5 || uGameState == GAME_STATE_GAME_QUITTING_TO_MAIN_MENU )//GAME_STATE_NEWGAME_OUT_GAMEMENU, GAME_STATE_LOADING_GAME
       {
-        pGame->Draw();
+        game_finished = true;
         continue;
       }
-      if ( (signed int)uGameState <= GAME_STATE_5 || uGameState == GAME_STATE_GAME_QUITTING_TO_MAIN_MENU )
+      if ( uGameState == GAME_STATE_FINAL_WINDOW )
       {
-//LABEL_96:
-        game_finished = true;
+        pRenderer->BeginScene();
+        GUI_UpdateWindows();
+        pRenderer->EndScene();
+        pRenderer->Present();
         continue;
       }
       if ( uGameState != GAME_STATE_PARTY_DIED )
       {
-        if ( uGameState != GAME_STATE_FINAL_WINDOW )
+        pGame->Draw();
+        continue;
+      }
+      if ( uGameState == GAME_STATE_PARTY_DIED )
+      {
+        pAudioPlayer->StopChannels(-1, -1);
+        memset(&pParty->pHirelings[0], 0, 0x4Cu);
+        memset(&pParty->pHirelings[1], 0, 0x4Cu);
+        for ( int i = 0; i < (signed int)pNPCStats->uNumNewNPCs; ++i )
         {
-//LABEL_85:
-          pGame->Draw();
+          if ( pNPCStats->pNewNPCData[i].field_24 )
+            pNPCStats->pNewNPCData[i].uFlags &= 0xFFFFFF7Fu;
+        }
+        pVideoPlayer->PlayDeathMovie();
+        if ( pMovie )
+          pVideoPlayer->Unload();
+        SaveGame(0, 0);
+        ++pParty->uNumDeaths;
+        for ( uint i = 0; i < 4; ++i )
+          pParty->pPlayers[i].SetVariable(VAR_Award, 85);
+        pParty->days_played_without_rest = 0;
+        pParty->uTimePlayed += 0x276000ui64;
+        LOWORD(pParty->uFlags) &= ~0x204;
+        pParty->SetGold(0);
+        pOtherOverlayList->Reset();
+        memset(pParty->pPartyBuffs.data(), 0, 0x140u);
+
+        if ( pParty->bTurnBasedModeOn == 1 )
+        {
+          pTurnEngine->End(true);
+          pParty->bTurnBasedModeOn = 0;
+        }
+        for( int i = 0; i < 4; ++i)
+        {
+          memset(pParty->pPlayers[i].pConditions.data(), 0, 0xA0u);//(pConditions, 0, 160)
+          memset(pParty->pPlayers[i].pPlayerBuffs.data(), 0, 0x180u);//(pPlayerBuffs[0], 0, 384)
+          pParty->pPlayers[i].sHealth = 1;
+          uActiveCharacter = 1;
+        }
+        if (_449B57_test_bit(pParty->_quest_bits, PARTY_QUEST_FINISHED_EMERALD_ISLE))
+        {
+          pParty->vPosition.x = -17331;            // respawn in harmondale
+          pParty->vPosition.y = 12547;
+          pParty->vPosition.z = 465;
+          pParty->sRotationY = 0;
+          pLocationName = "out02.odm";
         }
         else
         {
-          pRenderer->BeginScene();
-          GUI_UpdateWindows();
-          pRenderer->EndScene();
-          //goto LABEL_89;
-          pRenderer->Present();
+          pParty->vPosition.x = 12552;             // respawn on emerald isle
+          pParty->vPosition.y = 1816;
+          pParty->vPosition.z = 0;
+          pParty->sRotationY = 512;
+          pLocationName = "out01.odm";
         }
-        continue;
-      }
-      pAudioPlayer->StopChannels(-1, -1);//далее в случае смерти группы
-      memset(&pParty->pHirelings[0], 0, 0x4Cu);
-      memset(&pParty->pHirelings[1], 0, 0x4Cu);
-      pNewNPCsCount = 0;
-      if ( (signed int)pNPCStats->uNumNewNPCs > 0 )
-      {
-        pNPC = pNPCStats->pNewNPCData;
-        do
+        strcpy(Source, pLocationName);
+        pParty->uFallStartY = pParty->vPosition.z;
+        pParty->sRotationX = 0;
+        pParty->uFallSpeed = 0;
+        pParty->field_6E4 = 0;
+        pParty->field_6E0 = 0;
+        if ( _stricmp(Source, pCurrentMapName) )
         {
-		  if ( pNPC->field_24 )
-			  pNPC->uFlags &= 0xFFFFFF7Fu;
-          ++pNewNPCsCount;
-          ++pNPC;
+          strcpy(pCurrentMapName, Source);
+          _5B65A8_npcdata_uflags_or_other = pParty->vPosition.x;
+          _5B65AC_npcdata_fame_or_other = pParty->vPosition.y;
+          _5B65B0_npcdata_rep_or_other = pParty->vPosition.z;
+          _5B65B4_npcdata_loword_house_or_other = pParty->sRotationY;
+          _5B65B8_npcdata_hiword_house_or_other = pParty->sRotationX;
+          dword_5B65C0 = 1;
+          PrepareWorld(1);
         }
-        while ( pNewNPCsCount < (signed int)pNPCStats->uNumNewNPCs );
-      }
-      pVideoPlayer->PlayDeathMovie();
-      if ( pVideoPlayer->AnyMovieLoaded() )
-        pVideoPlayer->Unload();
-      SaveGame(0, 0);
-      ++pParty->uNumDeaths;
-      pPlayer = pParty->pPlayers.data();
-      do
-      {
-        pPlayer->SetVariable(VAR_Award, 85);
-        ++pPlayer;
-      }
-      while ( (signed int)pPlayer < (signed int)pParty->pHirelings.data() );
-      pParty->days_played_without_rest = 0;
-      pParty->uTimePlayed += 0x276000ui64;
-      LOWORD(pParty->uFlags) &= ~0x204;
-      pParty->SetGold(0);
-      pOtherOverlayList->Reset();
-      memset(pParty->pPartyBuffs.data(), 0, 0x140u);
+        Actor::InitializeActors();
 
-      if ( pParty->bTurnBasedModeOn == 1 )
-      {
-        pTurnEngine->End(true);
-        pParty->bTurnBasedModeOn = 0;
-      }
-      //pHealth = &pParty->pPlayers[0].sHealth;//193C
-      //do
-	  for(int i=0; i<4; ++i)
-      {
-        memset(pParty->pPlayers[i].pConditions.data(), 0, 0xA0u);//(pConditions, 0, 160)
-        memset(pParty->pPlayers[i].pPlayerBuffs.data(), 0, 0x180u);//(pPlayerBuffs[0], 0, 384)
-        //*pHealth = 1;
-		pParty->pPlayers[i].sHealth=1;
-        //pHealth += 1743; //6CF
-        uActiveCharacter = 1;
-      }
-    //  while ( (signed int)pHealth < (signed int)&pParty->field_871C[567] );
-      if (_449B57_test_bit(pParty->_quest_bits, PARTY_QUEST_FINISHED_EMERALD_ISLE))
-      {
-        pParty->vPosition.x = -17331;            // respawn in harmondale
-        pParty->vPosition.y = 12547;
-        pParty->vPosition.z = 465;
-        pParty->sRotationY = 0;
-        pLocationName = "out02.odm";
-      }
-      else
-      {
-        pParty->vPosition.x = 12552;             // respawn on emerald isle
-        pParty->vPosition.y = 1816;
-        pParty->vPosition.z = 0;
-        pParty->sRotationY = 512;
-        pLocationName = "out01.odm";
-      }
-      strcpy(Source, pLocationName);
-      pParty->uFallStartY = pParty->vPosition.z;
-      pParty->sRotationX = 0;
-      pParty->uFallSpeed = 0;
-      pParty->field_6E4 = 0;
-      pParty->field_6E0 = 0;
-      if ( _stricmp(Source, pCurrentMapName) )
-      {
-        strcpy(pCurrentMapName, Source);
-        _5B65A8_npcdata_uflags_or_other = pParty->vPosition.x;
-        _5B65AC_npcdata_fame_or_other = pParty->vPosition.y;
-        _5B65B0_npcdata_rep_or_other = pParty->vPosition.z;
-        _5B65B4_npcdata_loword_house_or_other = pParty->sRotationY;
-        _5B65B8_npcdata_hiword_house_or_other = pParty->sRotationX;
-        dword_5B65C0 = 1;
-        PrepareWorld(1);
-      }
-      InitializeActors();
+        int num_conscious_players = 0;
+        int conscious_players_ids[4] = {-1, -1, -1, -1};
+        for (int i = 0; i < 4; ++i)
+        {
+          if (pParty->pPlayers[i].CanAct())
+            conscious_players_ids[num_conscious_players++] = i;
+        }
+        if (num_conscious_players)
+        {
+          int idx = conscious_players_ids[rand() % num_conscious_players];
+          Assert(idx >= 0);
+          pParty->pPlayers[idx].PlaySound(SPEECH_99, 0);
+        }
 
-
-      int num_conscious_players = 0;
-      int conscious_players_ids[4] = {-1, -1, -1, -1};
-      for (int v11 = 0; v11 < 4; ++v11)
-      {
-        if (pPlayers[v11 + 1]->CanAct())
-          conscious_players_ids[num_conscious_players++] = v11;
+        ShowStatusBarString(pGlobalTXT_LocalizationStrings[524], 2);// "Once again you've cheated death!.." "Вы снова обхитрили смерть! …"
+        uGameState = GAME_STATE_PLAYING;
       }
-      if (num_conscious_players)
-      {
-        int idx = conscious_players_ids[rand() % num_conscious_players];
-        Assert(idx >= 0);
-        pPlayers[idx + 1]->PlaySound(SPEECH_99, 0);
-      }
-
-      ShowStatusBarString(pGlobalTXT_LocalizationStrings[524], 2u);// "Once again you've cheated death!.." "Вы снова обхитрили смерть! …"
-      uGameState = GAME_STATE_PLAYING;
     }
     while (!game_finished);
 
-    dword_6BE340 = 0;
     pEventTimer->Pause();
     ResetCursor_Palettes_LODs_Level_Audio_SFT_Windows();
     if ( uGameState == GAME_STATE_LOADING_GAME )
@@ -571,14 +528,8 @@ void Game::PrepareBloodsplats()
 {
   for (uint i = 0; i < uNumBloodsplats; ++i)
   {
-    pBloodsplatContainer->AddBloodsplat(
-        pBloodsplats[i].x,
-        pBloodsplats[i].y,
-        pBloodsplats[i].z,
-        pBloodsplats[i].radius,
-        pBloodsplats[i].r,
-        pBloodsplats[i].g,
-        pBloodsplats[i].b);
+    pBloodsplatContainer->AddBloodsplat(pBloodsplats[i].x, pBloodsplats[i].y, pBloodsplats[i].z,
+        pBloodsplats[i].radius, pBloodsplats[i].r, pBloodsplats[i].g, pBloodsplats[i].b);
    }
 }
 
@@ -591,18 +542,11 @@ void Game::PushStationaryLights(int a2)
   for( int i=0; i<uNumStationaryLights; ++i ) 
       {
        pLight=&pStationaryLights[i];
-       pStationaryLightsStack->AddLight(
-           pLight->vPosition.x, 
-           pLight->vPosition.y,
-           pLight->vPosition.z,
-           pLight->flt_18,
-           pLight->vRGBColor.x,
-           pLight->vRGBColor.y,
-           pLight->vRGBColor.z,
-           byte_4E94D0);
+       pStationaryLightsStack->AddLight(pLight->vPosition.x, pLight->vPosition.y, pLight->vPosition.z,
+           pLight->flt_18, pLight->vRGBColor.x, pLight->vRGBColor.y, pLight->vRGBColor.z, _4E94D0_light_type);
       }
 }
-// 4E94D0: using guessed type char byte_4E94D0;
+// 4E94D0: using guessed type char _4E94D0_light_type;
 
 //----- (0044F0FD) --------------------------------------------------------
 void Game::_44F0FD()
@@ -629,11 +573,8 @@ void Game::ToggleFlags(uint uMask)
 //----- (0044F07B) --------------------------------------------------------
 bool Game::_44F07B()
 {
-  if (!pKeyboardInstance->IsKeyBeingHeld(VK_SHIFT) &&
-      !pKeyboardInstance->IsKeyBeingHeld(VK_LSHIFT) &&
-      !pKeyboardInstance->IsKeyBeingHeld(VK_LSHIFT) ||
-
-      (pKeyboardInstance->WasKeyPressed(VK_F11) == 0 &&
+  if (!pKeyboardInstance->IsKeyBeingHeld(VK_SHIFT) && !pKeyboardInstance->IsKeyBeingHeld(VK_LSHIFT) &&
+      !pKeyboardInstance->IsKeyBeingHeld(VK_LSHIFT) || (pKeyboardInstance->WasKeyPressed(VK_F11) == 0 &&
        pKeyboardInstance->WasKeyPressed(VK_F11)))
     return true;
   return false;
@@ -646,21 +587,21 @@ bool Game::_44EEA7()
   //double v2; // st7@2
   float depth; // ST00_4@9
   //bool result; // eax@9
-  unsigned int v5; // eax@14
+  //unsigned int v5; // eax@14
   __int64 v6; // kr00_8@21
-  unsigned int y; // [sp+4h] [bp-24h]@2
-  unsigned int x; // [sp+8h] [bp-20h]@2
+  //unsigned int y; // [sp+4h] [bp-24h]@2
+  //unsigned int x; // [sp+8h] [bp-20h]@2
   Vis_SelectionFilter *v10; // [sp+10h] [bp-18h]@2
   Vis_SelectionFilter *v11; // [sp+14h] [bp-14h]@2
-  POINT a2; // [sp+20h] [bp-8h]@1
+  POINT cursor; // [sp+20h] [bp-8h]@1
 
   //v1 = this;
   ++qword_5C6DF0;
   pParticleEngine->UpdateParticles();
-  pMouseInstance->GetCursorPos(&a2);
+  pMouseInstance->GetCursorPos(&cursor);
 
-  x = a2.y;
-  y = a2.x;
+  //x = cursor.y;
+  //y = cursor.x;
   if ( sub_4637E0_is_there_popup_onscreen() )
   {
     v11 = &vis_face_filter;
@@ -683,7 +624,7 @@ bool Game::_44EEA7()
   }
   //depth = v2;
 
-  PickMouse(depth, y, x, false, v10, v11);
+  PickMouse(depth, cursor.x, cursor.y, false, v10, v11);
   pLightmapBuilder->std__vector_000004_size = 0;
   pLightmapBuilder->std__vector_183808_size = 0;
   pDecalBuilder->std__vector_pDecals_size = 0;
@@ -693,24 +634,21 @@ bool Game::_44EEA7()
 
     if ( uFlags & GAME_FLAGS_1_DRAW_BLV_DEBUGS)
       pStru10Instance->bDoNotDrawPortalFrustum = false;
-    if ( pRenderer->pRenderD3D && uCurrentlyLoadedLevelType == LEVEL_Outdoor)
-    {
-      v5 = GetLevelFogColor();
-      pRenderer->uFogColor = v5 & 0xFFFFFF;
-    }
+    if ( /*pRenderer->pRenderD3D &&*/ uCurrentlyLoadedLevelType == LEVEL_Outdoor)
+      pRenderer->uFogColor = GetLevelFogColor() & 0xFFFFFF;
     if (uFlags & 0x0400)
       uFlags2 |= 0x01;
-    if ( !pRenderer->pRenderD3D && uCurrentlyLoadedLevelType == LEVEL_Outdoor && pMobileLightsStack->uNumLightsActive )
+    /*if ( !pRenderer->pRenderD3D && uCurrentlyLoadedLevelType == LEVEL_Outdoor && pMobileLightsStack->uNumLightsActive )
     {
       uFlags2 |= 0x01;
       field_E10 = qword_5C6DF0;
-    }
+    }*/
     v6 = qword_5C6DF0 - field_E10;
     if ( qword_5C6DF0 - field_E10 == 1 )
       uFlags2 |= v6;
     if (uNumStationaryLights_in_pStationaryLightsStack != pStationaryLightsStack->uNumLightsActive )
     {
-      uFlags2 |= 1u;
+      uFlags2 |= 1;
       uNumStationaryLights_in_pStationaryLightsStack = pStationaryLightsStack->uNumLightsActive;
     }
     _44E904();
@@ -719,7 +657,7 @@ bool Game::_44EEA7()
 
 
 //----- (0044EDE4) --------------------------------------------------------
-bool Game::AlterGamma_BLV(BLVFace *pFace, unsigned int *pColor)
+bool Game::AlterGamma_BLV(BLVFace *pFace, signed int *pColor)
 {
   if (uFlags2 & GAME_FLAGS_2_SATURATE_LIGHTMAPS &&
       pFace->uAttributes & FACE_CAN_SATURATE_COLOR)
@@ -732,7 +670,7 @@ bool Game::AlterGamma_BLV(BLVFace *pFace, unsigned int *pColor)
 }
 
 //----- (0044EE30) --------------------------------------------------------
-bool Game::AlterGamma_ODM(ODMFace *pFace, unsigned int *pColor)
+bool Game::AlterGamma_ODM(ODMFace *pFace, signed int *pColor)
 {
   if (uFlags2 & GAME_FLAGS_2_SATURATE_LIGHTMAPS &&
       pFace->uAttributes & FACE_CAN_SATURATE_COLOR)
@@ -748,16 +686,12 @@ bool Game::AlterGamma_ODM(ODMFace *pFace, unsigned int *pColor)
 //----- (004645FA) --------------------------------------------------------
 void Game::Deinitialize()
 {
-  struct tagRECT Rect; // [sp+0h] [bp-10h]@6
-
-
-  WriteWindowsRegistryInt("startinwindow", pRenderer->bWindowMode);
-  if ( GetWindowRect(window->GetApiHandle(), &Rect) && pRenderer->bWindowMode )
+  WriteWindowsRegistryInt("startinwindow", 1);//pRenderer->bWindowMode);
+  //if (pRenderer->bWindowMode)
   {
-    WriteWindowsRegistryInt("window X", Rect.left);
-    WriteWindowsRegistryInt("window Y", Rect.top);
+    WriteWindowsRegistryInt("window X", window->GetX());
+    WriteWindowsRegistryInt("window Y", window->GetY());
   }
-  window->Delete();
   WriteWindowsRegistryInt("valAlwaysRun", bAlwaysRun);
   pItemsTable->Release();
   pNPCStats->Release();
@@ -816,9 +750,7 @@ int Game::_44EC23(struct Polygon *a2, int *a3, signed int a4)
       v6 = floorf(a3b + 0.5f);
     }
     else
-    {
       v6 = 0;
-    }
     if ( a4 >= v6 )
     {
       a4a = (1.0 - fSaturation) * a2a;
@@ -832,19 +764,13 @@ int Game::_44EC23(struct Polygon *a2, int *a3, signed int a4)
         result = floorf(a4b + 0.5f);
       }
       else
-      {
         result = 0;
-      }
     }
     else
-    {
       result = a4;
-    }
   }
   else
-  {
     result = -1;
-  }
   return result;
 }
 
@@ -859,8 +785,7 @@ Game *Game::Create()
 //----- (00465CF3) --------------------------------------------------------
 void Game::Destroy()
 {
-  if (pGame)
-    delete pGame;
+  delete pGame;
   pGame = nullptr;
 }
 
@@ -895,9 +820,7 @@ signed int Game::_44ED0A(BLVFace *a2, int *a3, signed int a4)
       v6 = floorf(v13 + 0.5f);
     }
     else
-    {
       v6 = 0;
-    }
     if ( a4 >= v6 )
     {
       v14 = (1.0 - fSaturation) * v11;
@@ -910,19 +833,13 @@ signed int Game::_44ED0A(BLVFace *a2, int *a3, signed int a4)
         result = floorf(v15 + 0.5f);
       }
       else
-      {
         result = 0;
-      }
     }
     else
-    {
       result = a4;
-    }
   }
   else
-  {
     result = -1;
-  }
   return result;
 }
 
@@ -964,44 +881,25 @@ Game::Game()
   uFlags2 |= 0x24;
 
   _44F0FD();
-
-  bWinNT4_0 = false;
-  if (pVersion->pVersionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT &&
-      pVersion->pVersionInfo.dwMajorVersion == 4)
-    bWinNT4_0 = true;
 }
 
 //----- (0044E7F3) --------------------------------------------------------
 Game::~Game()
 {
-  if (pGammaController)
-    delete pGammaController;
-  if (pKeyboardInstance)
-    delete pKeyboardInstance;
-  /*if (pCShow)
-    delete pCShow;
-  if (pStru12Instance)
-    delete pStru12Instance;
-  if (pStru11Instance)
-    delete pStru11Instance;*/
-  if (pStru10Instance)
-    delete pStru10Instance;
-  if (pStru9Instance)
-    delete pStru9Instance;
-  if (pIndoorCameraD3D)
-    delete pIndoorCameraD3D;
-  if (pStru6Instance)
-    delete pStru6Instance;
-  if (pVisInstance)
-    delete pVisInstance;
-  if (pLightmapBuilder)
-    delete pLightmapBuilder;
-  if (pMouseInstance)
-    delete pMouseInstance;
-  if (pParticleEngine)
-    delete pParticleEngine;
-  //if (pThreadWardInstance)
-  //  delete pThreadWardInstance;
+  delete pGammaController;
+  delete pKeyboardInstance;
+/*delete pCShow;
+  delete pStru12Instance;
+  delete pStru11Instance;*/
+  delete pStru10Instance;
+  delete pStru9Instance;
+  delete pIndoorCameraD3D;
+  delete pStru6Instance;
+  delete pVisInstance;
+  delete pLightmapBuilder;
+  delete pMouseInstance;
+  delete pParticleEngine;
+//delete pThreadWardInstance;
 }
 
 //----- (0044E904) --------------------------------------------------------
@@ -1062,20 +960,18 @@ void Game::_44E904()
       v7 = 0.0;
   }
   else
-  {
     v7 = 1.0;
-  }
-  if ( pRenderer->pRenderD3D )
+  //if ( pRenderer->pRenderD3D )
     fSaturation = v7;
-  else
-    fSaturation = (1.0 - 0.5) * v7 + 0.5;
+  //else
+  //  fSaturation = (1.0 - 0.5) * v7 + 0.5;
 }
 
 //----- (0044EA17) --------------------------------------------------------
 bool Game::InitializeGammaController()
 {
-  if (pVersion->pVersionInfo.dwPlatformId != VER_PLATFORM_WIN32_NT ||
-      pVersion->pVersionInfo.dwMajorVersion != 4 )
+  //if (pVersion->pVersionInfo.dwPlatformId != VER_PLATFORM_WIN32_NT ||
+      //pVersion->pVersionInfo.dwMajorVersion != 4 )
     pGammaController->InitializeFromSurface(pRenderer->pFrontBuffer4);
 
   bGammaControlInitialized = true;
@@ -1086,8 +982,8 @@ bool Game::InitializeGammaController()
 //----- (0044EA5E) --------------------------------------------------------
 bool Game::PickMouse(float fPickDepth, unsigned int uMouseX, unsigned int uMouseY, bool bOutline, Vis_SelectionFilter *sprite_filter, Vis_SelectionFilter *face_filter)
 {
-  if (pCurrentScreen != SCREEN_GAME|| !pRenderer->pRenderD3D)
-    return false;
+  /*if (pCurrentScreen != SCREEN_GAME|| !pRenderer->pRenderD3D)
+    return false;*/
 
   if (!pVisInstance)
   {
@@ -1113,7 +1009,7 @@ bool Game::PickMouse(float fPickDepth, unsigned int uMouseX, unsigned int uMouse
 //----- (0044EB12) --------------------------------------------------------
 bool Game::PickKeyboard(bool bOutline, Vis_SelectionFilter *sprite_filter, Vis_SelectionFilter *face_filter)
 {
-  if (pCurrentScreen == SCREEN_GAME && pVisInstance && pRenderer->pRenderD3D)
+  if (pCurrentScreen == SCREEN_GAME && pVisInstance /*&& pRenderer->pRenderD3D*/)
   {
     bool r = pVisInstance->PickKeyboard(&pVisInstance->default_list, sprite_filter, face_filter);
 
@@ -1208,15 +1104,15 @@ void  GameUI_MsgProc()
   unsigned __int8 v17; // al@105
   int v18; // eax@106
   float v19; // ST64_4@121
-  unsigned int v20; // ecx@121
+//  unsigned int v20; // ecx@121
   float v21; // ST64_4@126
   float v22; // ST64_4@127
-  unsigned int v23; // ecx@135
+//  unsigned int v23; // ecx@135
   unsigned int v24; // ecx@149
-  unsigned int v25; // ecx@165
-  GUIWindow *pWindow; // eax@204
-  unsigned int v27; // edx@204
-  unsigned int v28; // ecx@204
+//  unsigned int v25; // ecx@165
+//  GUIWindow *pWindow; // eax@204
+//  unsigned int v27; // edx@204
+//  unsigned int v28; // ecx@204
   GUIWindow *pWindow2; // ecx@248
   //int v30; // edx@258
   //const char *v31; // ecx@262
@@ -1231,7 +1127,7 @@ void  GameUI_MsgProc()
   //signed int v40; // eax@365
   char *v41; // eax@380
   int v42; // eax@396
-  POINT *pPoint; // eax@397
+//  POINT *pPoint; // eax@397
   signed int v44; // eax@398
   int v45; // edx@398
   signed int v46; // ecx@398
@@ -1240,7 +1136,7 @@ void  GameUI_MsgProc()
   BLVFace *pBLVFace; // ecx@410
   ODMFace *pODMFace; // ecx@412
   CastSpellInfo *pSpellInfo; // ecx@415
-  void *v52; // eax@424
+//  void *v52; // eax@424
   __int16 v53; // ax@431
   int v54; // eax@432
   int v55; // ecx@432
@@ -1270,7 +1166,7 @@ void  GameUI_MsgProc()
   //int v79; // ecx@550
   //unsigned int v80; // edx@550
   signed int v81; // eax@552
-  POINT *pPoint2; // eax@553
+//  POINT *pPoint2; // eax@553
   signed int v83; // ecx@554
   signed int v84; // ecx@554
   GUIButton *pButton; // eax@578
@@ -1287,10 +1183,10 @@ void  GameUI_MsgProc()
   //const char *v96; // ecx@621
   unsigned int v97; // eax@624
   int v98; // eax@636
-  unsigned __int8 v99; // al@643
-  Player *pPlayer3; // eax@648
-  int v101; // ecx@648
-  int v102; // edx@652
+//  unsigned __int8 v99; // al@643
+//  Player *pPlayer3; // eax@648
+//  int v101; // ecx@648
+//  int v102; // edx@652
   int v103; // eax@671
   Player *pPlayer4; // ecx@718
   int v105; // eax@718
@@ -1299,71 +1195,71 @@ void  GameUI_MsgProc()
   unsigned int v108; // eax@758
   unsigned int v115; // eax@764
   int v116; // eax@776
-  POINT *pPoint3; // eax@777
+//  POINT *pPoint3; // eax@777
   unsigned int v118; // eax@785
   unsigned int v119; // ecx@786
-  unsigned int v120; // [sp-28h] [bp-624h]@86
+//  unsigned int v120; // [sp-28h] [bp-624h]@86
   unsigned int v121; // [sp-28h] [bp-624h]@711
-  unsigned int v122; // [sp-24h] [bp-620h]@86
+//  unsigned int v122; // [sp-24h] [bp-620h]@86
   unsigned int v123; // [sp-24h] [bp-620h]@711
-  unsigned int v124; // [sp-20h] [bp-61Ch]@86
+//  unsigned int v124; // [sp-20h] [bp-61Ch]@86
   unsigned int v125; // [sp-20h] [bp-61Ch]@711
-  unsigned int v126; // [sp-1Ch] [bp-618h]@86
+//  unsigned int v126; // [sp-1Ch] [bp-618h]@86
   int v127; // [sp-1Ch] [bp-618h]@107
   unsigned int v128; // [sp-1Ch] [bp-618h]@711
-  int v129; // [sp-18h] [bp-614h]@86
+//  int v129; // [sp-18h] [bp-614h]@86
   //signed int v130; // [sp-18h] [bp-614h]@107
-  int v131; // [sp-14h] [bp-610h]@86
+//  int v131; // [sp-14h] [bp-610h]@86
   //unsigned int v132; // [sp-14h] [bp-610h]@107
   //unsigned int v133; // [sp-10h] [bp-60Ch]@60
-  unsigned int v134; // [sp-10h] [bp-60Ch]@86
+//  unsigned int v134; // [sp-10h] [bp-60Ch]@86
   //signed int v135; // [sp-10h] [bp-60Ch]@107
-  unsigned int v136; // [sp-10h] [bp-60Ch]@121
+//  unsigned int v136; // [sp-10h] [bp-60Ch]@121
   //unsigned int v137; // [sp-Ch] [bp-608h]@60
-  unsigned int v138; // [sp-Ch] [bp-608h]@86
+//  unsigned int v138; // [sp-Ch] [bp-608h]@86
   //signed int v139; // [sp-Ch] [bp-608h]@107
-  unsigned int v140; // [sp-Ch] [bp-608h]@121
-  enum WindowType pWindowType; // [sp-8h] [bp-604h]@56
+//  unsigned int v140; // [sp-Ch] [bp-608h]@121
+//  enum WindowType pWindowType; // [sp-8h] [bp-604h]@56
   //enum WindowType pWindowType1; // [sp-8h] [bp-604h]@60
-  unsigned __int8 v143; // [sp-8h] [bp-604h]@86
+//  unsigned __int8 v143; // [sp-8h] [bp-604h]@86
   //int v144; // [sp-8h] [bp-604h]@107
-  enum WindowType pWindowType2; // [sp-8h] [bp-604h]@121
+//  enum WindowType pWindowType2; // [sp-8h] [bp-604h]@121
   //const char *v146; // [sp-8h] [bp-604h]@449
   //unsigned int v147; // [sp-8h] [bp-604h]@550
   //int v148; // [sp-4h] [bp-600h]@56
   GUIButton *pButton2; // [sp-4h] [bp-600h]@59
-  const char *v150; // [sp-4h] [bp-600h]@86
+//  const char *v150; // [sp-4h] [bp-600h]@86
   //unsigned int v151; // [sp-4h] [bp-600h]@107
-  int v152; // [sp-4h] [bp-600h]@121
-  int v153; // [sp-4h] [bp-600h]@135
+//  int v152; // [sp-4h] [bp-600h]@121
+//  int v153; // [sp-4h] [bp-600h]@135
   //int v154; // [sp-4h] [bp-600h]@149
-  int v155; // [sp-4h] [bp-600h]@165
-  int v156; // [sp-4h] [bp-600h]@204
+//  int v155; // [sp-4h] [bp-600h]@165
+//  int v156; // [sp-4h] [bp-600h]@204
   //const char *v157; // [sp-4h] [bp-600h]@444
   //unsigned int v158; // [sp-4h] [bp-600h]@449
   //__int16 v159; // [sp-4h] [bp-600h]@550
-  int v160; // [sp-4h] [bp-600h]@599
+//  int v160; // [sp-4h] [bp-600h]@599
   const char *v161; // [sp-4h] [bp-600h]@637
   //int v162; // [sp+0h] [bp-5FCh]@56
   //int v163; // [sp+0h] [bp-5FCh]@59
-  Texture *pTexture; // [sp+0h] [bp-5FCh]@86
+//  Texture *pTexture; // [sp+0h] [bp-5FCh]@86
   //int v165; // [sp+0h] [bp-5FCh]@107
-  int v166; // [sp+0h] [bp-5FCh]@121
-  int v167; // [sp+0h] [bp-5FCh]@135
+//  int v166; // [sp+0h] [bp-5FCh]@121
+//  int v167; // [sp+0h] [bp-5FCh]@135
   //int v168; // [sp+0h] [bp-5FCh]@149
-  int v169; // [sp+0h] [bp-5FCh]@165
-  int v170; // [sp+0h] [bp-5FCh]@204
+//  int v169; // [sp+0h] [bp-5FCh]@165
+//  int v170; // [sp+0h] [bp-5FCh]@204
   //signed int v171; // [sp+0h] [bp-5FCh]@259
   KeyToggleType pKeyToggleType; // [sp+0h] [bp-5FCh]@287
   char *v173; // [sp+0h] [bp-5FCh]@444
   char *v174; // [sp+0h] [bp-5FCh]@449
   //int v175; // [sp+0h] [bp-5FCh]@550
-  int v176; // [sp+0h] [bp-5FCh]@599
+//  int v176; // [sp+0h] [bp-5FCh]@599
   const char *v177; // [sp+0h] [bp-5FCh]@629
   char *v178; // [sp+0h] [bp-5FCh]@637
-  int v179; // [sp+4h] [bp-5F8h]@0
+//  int v179; // [sp+4h] [bp-5F8h]@0
   //signed int _this; // [sp+14h] [bp-5E8h]@22
-  signed int thisa; // [sp+14h] [bp-5E8h]@251
+//  signed int thisa; // [sp+14h] [bp-5E8h]@251
   signed int thisb; // [sp+14h] [bp-5E8h]@272
   Player *pPlayer7; // [sp+14h] [bp-5E8h]@373
   Player *pPlayer8; // [sp+14h] [bp-5E8h]@377
@@ -1374,7 +1270,7 @@ void  GameUI_MsgProc()
   signed int thisi; // [sp+14h] [bp-5E8h]@535
   MapInfo *pMapInfo; // [sp+14h] [bp-5E8h]@604
   Player *pPlayer10; // [sp+14h] [bp-5E8h]@641
-  int thisl; // [sp+14h] [bp-5E8h]@648
+//  int thisl; // [sp+14h] [bp-5E8h]@648
   int uMessageParam; // [sp+18h] [bp-5E4h]@7
   int uAction; // [sp+1Ch] [bp-5E0h]@18
   NPCData *pNPCData4; // [sp+20h] [bp-5DCh]@23
@@ -1383,16 +1279,16 @@ void  GameUI_MsgProc()
   enum UIMessageType uMessage; // [sp+2Ch] [bp-5D0h]@7
   unsigned int v199; // [sp+30h] [bp-5CCh]@7
   char *v200; // [sp+34h] [bp-5C8h]@518
-  POINT v201; // [sp+38h] [bp-5C4h]@553
+//  POINT v201; // [sp+38h] [bp-5C4h]@553
   POINT v202; // [sp+40h] [bp-5BCh]@141
   POINT a2; // [sp+48h] [bp-5B4h]@127
-  POINT v204; // [sp+50h] [bp-5ACh]@777
+//  POINT v204; // [sp+50h] [bp-5ACh]@777
   POINT v205; // [sp+58h] [bp-5A4h]@171
-  POINT v206; // [sp+60h] [bp-59Ch]@553
+//  POINT v206; // [sp+60h] [bp-59Ch]@553
   POINT v207; // [sp+68h] [bp-594h]@155
-  POINT v208; // [sp+70h] [bp-58Ch]@397
-  POINT v209; // [sp+78h] [bp-584h]@777
-  POINT v210; // [sp+80h] [bp-57Ch]@397
+//  POINT v208; // [sp+70h] [bp-58Ch]@397
+//  POINT v209; // [sp+78h] [bp-584h]@777
+//  POINT v210; // [sp+80h] [bp-57Ch]@397
   POINT v211; // [sp+88h] [bp-574h]@704
   //__int64 v212; // [sp+90h] [bp-56Ch]@467
   int v213; // [sp+98h] [bp-564h]@385
@@ -1404,6 +1300,8 @@ void  GameUI_MsgProc()
   char a1[64]; // [sp+1F8h] [bp-404h]@467
   char Str2[128]; // [sp+238h] [bp-3C4h]@527
   Actor actor; // [sp+2B8h] [bp-344h]@4
+  //unsigned short* screenshot;
+  int currHour;
 
   dword_50CDC8 = 0;
   if ( !pEventTimer->bPaused )
@@ -1437,7 +1335,7 @@ void  GameUI_MsgProc()
         case UIMSG_PlayArcomage:
           pVideoPlayer->_4BF5B2();
           pArcomageGame->bGameInProgress = 1;
-          PrepareArcomage();
+          ArcomageGame::PrepareArcomage();
           continue;
         case UIMSG_StartNPCDialogue:
           if ( !uActiveCharacter )
@@ -1578,7 +1476,7 @@ void  GameUI_MsgProc()
           pIcons_LOD->RemoveTexturesPackFromTextureList();
           pGUIWindow_CurrentMenu->Release();
           pCurrentScreen = SCREEN_OPTIONS;
-          pGUIWindow_CurrentMenu = GUIWindow::Create(0, 0, 640, 480, WINDOW_8, 0, 0);
+          pGUIWindow_CurrentMenu = GUIWindow::Create(0, 0, window->GetWidth(), window->GetHeight(), WINDOW_8, 0, 0);
           continue;
         case UIMSG_ArrowUp:
           --pSaveListPosition;
@@ -1670,7 +1568,7 @@ void  GameUI_MsgProc()
           options_menu_skin.uTextureID_ShowDamage     = pIcons_LOD->LoadTexture("option02", TEXTURE_16BIT_PALETTE);
           options_menu_skin.uTextureID_WalkSound      = pIcons_LOD->LoadTexture("option01", TEXTURE_16BIT_PALETTE);
 
-          pGUIWindow_CurrentMenu = GUIWindow::Create(0, 0, 640, 480, WINDOW_Options, 0, 0);
+          pGUIWindow_CurrentMenu = GUIWindow::Create(0, 0, window->GetWidth(), window->GetHeight(), WINDOW_Options, 0, 0);
           pGUIWindow_CurrentMenu->CreateButton(22, 270,
                                                pIcons_LOD->GetTexture(options_menu_skin.uTextureID_TurnSpeed[2])->uTextureWidth,
                                                pIcons_LOD->GetTexture(options_menu_skin.uTextureID_TurnSpeed[2])->uTextureHeight,
@@ -1729,7 +1627,7 @@ void  GameUI_MsgProc()
           uTextureID_Optkb[2] = pIcons_LOD->LoadTexture("resume1", TEXTURE_16BIT_PALETTE);
           uTextureID_Optkb[3] = pIcons_LOD->LoadTexture("optkb_1", TEXTURE_16BIT_PALETTE);
           uTextureID_Optkb[4] = pIcons_LOD->LoadTexture("optkb_2", TEXTURE_16BIT_PALETTE);
-          pGUIWindow_CurrentMenu = GUIWindow::Create(0, 0, 640, 480, WINDOW_KeyMappingOptions, 0, 0);
+          pGUIWindow_CurrentMenu = GUIWindow::Create(0, 0, window->GetWidth(), window->GetHeight(), WINDOW_KeyMappingOptions, 0, 0);
           pGUIWindow_CurrentMenu->CreateButton(0xF1u, 0x12Eu, 0xD6u, 0x28u, 1, 0, UIMSG_Escape, 0, 0, "", 0);
           pGUIWindow_CurrentMenu->CreateButton(19u, 0x12Eu, 0x6Cu, 0x14u, 1, 0, UIMSG_SelectKeyPage1, 0, 0, "", 0);
           pGUIWindow_CurrentMenu->CreateButton(127u, 0x12Eu, 0x6Cu, 0x14u, 1, 0, UIMSG_SelectKeyPage2, 0, 0, "", 0);
@@ -1830,24 +1728,24 @@ void  GameUI_MsgProc()
           not_available_bloodsplats_texture_id = pIcons_LOD->LoadTexture("opvdG-bs", TEXTURE_16BIT_PALETTE);
           not_available_us_colored_lights_texture_id = pIcons_LOD->LoadTexture("opvdG-cl", TEXTURE_16BIT_PALETTE);
           not_available_tinting_texture_id = pIcons_LOD->LoadTexture("opvdG-tn", TEXTURE_16BIT_PALETTE);
-          pGUIWindow_CurrentMenu = GUIWindow::Create(0, 0, 640, 480, WINDOW_VideoOptions, 0, 0);
+          pGUIWindow_CurrentMenu = GUIWindow::Create(0, 0, window->GetWidth(), window->GetHeight(), WINDOW_VideoOptions, 0, 0);
           pGUIWindow_CurrentMenu->CreateButton(0xF1u, 0x12Eu, 0xD6u, 0x28u, 1, 0, UIMSG_Escape, 0, 0, "", 0);
-          if ( pRenderer->pRenderD3D )
+          //if ( pRenderer->pRenderD3D )
           {
             pGUIWindow_CurrentMenu->CreateButton(0x13u, 0x118u, 0xD6u, 0x12u, 1, 0, UIMSG_ToggleBloodsplats, 0, 0, "", 0);
             pGUIWindow_CurrentMenu->CreateButton(0x13u, 0x12Eu, 0xD6u, 0x12u, 1, 0, UIMSG_ToggleColoredLights, 0, 0, "", 0);
             pGUIWindow_CurrentMenu->CreateButton(0x13u, 0x144u, 0xD6u, 0x12u, 1, 0, UIMSG_ToggleTint, 0, 0, "", 0);
           }
-          if ( !pRenderer->bWindowMode )
+          /*if ( !pRenderer->bWindowMode )
           {
             //v0 = 1;
-            if ( GammaController::IsGammaSupported() )
+            if ( pRenderer->IsGammaSupported() )
             {
               pBtn_SliderLeft = pGUIWindow_CurrentMenu->CreateButton(0x15u, 0xA1u, 0x10u, 0x10u, 1, 0, UIMSG_1A9, 4u, 0, "", pIcons_LOD->GetTexture(uTextureID_507C20), 0);
               pBtn_SliderRight = pGUIWindow_CurrentMenu->CreateButton(0xD5u, 0xA1u, 0x10u, 0x10u, 1, 0, UIMSG_1A9, 5u, 0, "", pIcons_LOD->GetTexture(uTextureID_507C24), 0);
               pGUIWindow_CurrentMenu->CreateButton(42, 162, 170, 18, 1, 0, UIMSG_1A9, 0, 0, "", 0);
             }
-          }
+          }*/
           continue;
         case UIMSG_1A9:
 			__debugbreak();
@@ -1891,35 +1789,35 @@ void  GameUI_MsgProc()
           pGame->ToggleFlags2(0x20u);
           continue;
         case UIMSG_ToggleColoredLights:
-          pRenderer->bUseColoredLights = pRenderer->bUseColoredLights == 0;
+          pRenderer->ToggleColoredLights();
           continue;
         case UIMSG_ToggleTint:
-          pRenderer->bTinting = pRenderer->bTinting == 0;
+          pRenderer->ToggleTint();
           continue;
-        case UIMSG_ChangeMusicVolume:
-          if ( uMessageParam == 4 )
+        case UIMSG_ChangeMusicVolume:  //громкость музыки
+          if ( uMessageParam == 4 )//кнопка понижения
           {
             --uMusicVolimeMultiplier;
             if ( (char)uMusicVolimeMultiplier < 1 )
               uMusicVolimeMultiplier = 0;
-            GUIWindow::Create(243, 0xD8u, 0, 0, WINDOW_PressedButton2, (int)pBtn_SliderLeft, (char *)1);
+            GUIWindow::Create(243, 216, 0, 0, WINDOW_PressedButton2, (int)pBtn_SliderLeft, (char *)1);
             if ( uMusicVolimeMultiplier )
-              pAudioPlayer->PlaySound(SOUND_Bell, -1, 0, -1, 0, 0, pSoundVolumeLevels[(char)uMusicVolimeMultiplier] * 64.0f, 0);
-            pAudioPlayer->SetMusicVolume(pSoundVolumeLevels[(char)uMusicVolimeMultiplier] * 64.0f);
+              pAudioPlayer->PlaySound(SOUND_Bell, -1, 0, -1, 0, 0, pSoundVolumeLevels[uMusicVolimeMultiplier] * 64.0f, 0);
+            pAudioPlayer->SetMusicVolume(pSoundVolumeLevels[uMusicVolimeMultiplier] * 64.0f);
             continue;
           }
-          if ( uMessageParam == 5 )
+          if ( uMessageParam == 5 )//кнопка повышения
           {
             ++uMusicVolimeMultiplier;
             if ( (char)uMusicVolimeMultiplier > 9 )
               uMusicVolimeMultiplier = 9;
-            GUIWindow::Create(435, 0xD8u, 0, 0, WINDOW_PressedButton2, (int)pBtn_SliderRight, (char *)1);
+            GUIWindow::Create(435, 216, 0, 0, WINDOW_PressedButton2, (int)pBtn_SliderRight, (char *)1);
             if ( uMusicVolimeMultiplier )
-              pAudioPlayer->PlaySound(SOUND_Bell, -1, 0, -1, 0, 0, pSoundVolumeLevels[(char)uMusicVolimeMultiplier] * 64.0f, 0);
-            pAudioPlayer->SetMusicVolume(pSoundVolumeLevels[(char)uMusicVolimeMultiplier] * 64.0f);
+              pAudioPlayer->PlaySound(SOUND_Bell, -1, 0, -1, 0, 0, pSoundVolumeLevels[uMusicVolimeMultiplier] * 64.0f, 0);
+            pAudioPlayer->SetMusicVolume(pSoundVolumeLevels[uMusicVolimeMultiplier] * 64.0f);
             continue;
           }
-          uMusicVolimeMultiplier = (pMouse->GetCursorPos(&v202)->x - 263) / 17;
+          uMusicVolimeMultiplier = (pMouse->GetCursorPos(&v202)->x - 263) / 17;//для задания громкости мышкой
           if ( (char)uMusicVolimeMultiplier > 9 )
             uMusicVolimeMultiplier = 9;
           if ( uMusicVolimeMultiplier )
@@ -1996,15 +1894,16 @@ void  GameUI_MsgProc()
             uVoicesVolumeMultiplier = 9;
           if ( !uVoicesVolumeMultiplier )
             continue;
-            pAudioPlayer->PlaySound((SoundID)5788, -1, 0, -1, 0, 0, pSoundVolumeLevels[uVoicesVolumeMultiplier] * 128.0f, 0);
-            continue;
+          pAudioPlayer->PlaySound((SoundID)5788, -1, 0, -1, 0, 0, pSoundVolumeLevels[uVoicesVolumeMultiplier] * 128.0f, 0);
+          continue;
         case UIMSG_SetTurnSpeed:
           if ( uMessageParam )
             pParty->sRotationY = uMessageParam * pParty->sRotationY / uMessageParam;
           uTurnSpeed = uMessageParam;
           continue;
+
         case UIMSG_SetGraphicsMode:
-          if ( !bUseLoResSprites )
+          /*if ( !bUseLoResSprites )
           {
             byte_6BE388_graphicsmode = uMessageParam;
             MM7Initialization();
@@ -2024,9 +1923,11 @@ void  GameUI_MsgProc()
             }
             MM7Initialization();
             continue;
-          }
+          }*/
           ModalWindow(pNPCTopics[453].pText, UIMSG_0);
+          __debugbreak(); // Nomad: graphicsmode as it was now removed
           continue;
+
         case UIMSG_GameMenu_ReturnToGame:
           pGUIWindow_CurrentMenu->Release();
           pEventTimer->Resume();
@@ -2041,7 +1942,7 @@ void  GameUI_MsgProc()
             pGUIWindow_CurrentMenu->Release();
           pEventTimer->Pause();
           pAudioPlayer->StopChannels(-1, -1);
-          pGUIWindow_CurrentMenu = GUIWindow::Create(0, 0, 640u, 480u, WINDOW_Book, uMessage, 0);
+          pGUIWindow_CurrentMenu = GUIWindow::Create(0, 0, window->GetWidth(), window->GetHeight(), WINDOW_Book, uMessage, 0);
           pBooksWindow = GUIWindow::Create(493u, 355u, 0, 0, WINDOW_BooksWindow, (int)pBtn_Quests, 0);
           bFlashQuestBook = 0;
           continue;
@@ -2052,7 +1953,7 @@ void  GameUI_MsgProc()
             pGUIWindow_CurrentMenu->Release();
           pEventTimer->Pause();
           pAudioPlayer->StopChannels(-1, -1);
-          pGUIWindow_CurrentMenu = GUIWindow::Create(0, 0, 640u, 480u, WINDOW_Book, uMessage, 0);
+          pGUIWindow_CurrentMenu = GUIWindow::Create(0, 0, window->GetWidth(), window->GetHeight(), WINDOW_Book, uMessage, 0);
           pBooksWindow = GUIWindow::Create(527u, 353u, 0, 0, WINDOW_BooksWindow, (int)pBtn_Autonotes, 0);
           bFlashAutonotesBook = 0;
           continue;
@@ -2065,7 +1966,7 @@ void  GameUI_MsgProc()
           viewparams->sViewCenterX = pParty->vPosition.x;
           viewparams->sViewCenterY = pParty->vPosition.y;
           pAudioPlayer->StopChannels(-1, -1);
-          pGUIWindow_CurrentMenu = GUIWindow::Create(0, 0, 640, 480, WINDOW_Book, uMessage, 0);
+          pGUIWindow_CurrentMenu = GUIWindow::Create(0, 0, window->GetWidth(), window->GetHeight(), WINDOW_Book, uMessage, 0);
           pBooksWindow = GUIWindow::Create(546, 353, 0, 0, WINDOW_BooksWindow, (int)pBtn_Maps, 0);
           continue;
         case UIMSG_OpenCalendar:
@@ -2075,7 +1976,7 @@ void  GameUI_MsgProc()
             pGUIWindow_CurrentMenu->Release();
           pEventTimer->Pause();
           pAudioPlayer->StopChannels(-1, -1);
-          pGUIWindow_CurrentMenu = GUIWindow::Create(0, 0, 640, 480, WINDOW_Book, uMessage, 0);
+          pGUIWindow_CurrentMenu = GUIWindow::Create(0, 0, window->GetWidth(), window->GetHeight(), WINDOW_Book, uMessage, 0);
           pBooksWindow = GUIWindow::Create(570, 354, 0, 0, WINDOW_BooksWindow, (int)pBtn_Calendar, 0);
           continue;
         case UIMSG_OpenHistoryBook:
@@ -2085,7 +1986,7 @@ void  GameUI_MsgProc()
             pGUIWindow_CurrentMenu->Release();
           pEventTimer->Pause();
           pAudioPlayer->StopChannels(-1, -1);
-          pGUIWindow_CurrentMenu = GUIWindow::Create(0, 0, 640, 480, WINDOW_Book, uMessage, 0);
+          pGUIWindow_CurrentMenu = GUIWindow::Create(0, 0, window->GetWidth(), window->GetHeight(), WINDOW_Book, uMessage, 0);
           pBooksWindow = GUIWindow::Create(0x258u, 0x169u, 0, 0, WINDOW_BooksWindow, (int)pBtn_History, 0);
           bFlashHistoryBook = 0;
           continue;
@@ -2109,10 +2010,9 @@ void  GameUI_MsgProc()
               uMessageParam = 1;
               break;
             case SCREEN_HOUSE:
-              if ( !dword_50CDC8 && !dword_5C35C8 )
+              if ( !dword_50CDC8 )
               {
                 CloseWindowBackground();
-                dword_5C35C8 = 0;
                 uMessageParam = 1;
                 break;
               }
@@ -2133,9 +2033,7 @@ void  GameUI_MsgProc()
                   if ( pGUIWindow_Settings )
                   {
                     if ( pCurrentScreen == SCREEN_CHARACTERS )
-                    {
                       pMouse->SetCursorBitmap("MICON2");
-                    }
                     else
                     {
                       pGUIWindow_Settings->Release();
@@ -2182,22 +2080,20 @@ void  GameUI_MsgProc()
                       {
                         LOBYTE(ptr_50C9A4_ItemToEnchant->uAttributes) &= 0xFu;
                         _50C9A8_item_enchantment_timer = 0;
-                        ptr_50C9A4_ItemToEnchant = 0;
+                        ptr_50C9A4_ItemToEnchant = nullptr;
                       }
                       if ( pGUIWindow_Settings )
                       {
-                       if ( pCurrentScreen == SCREEN_CHARACTERS )
-                       {
-                        pMouse->SetCursorBitmap("MICON2");
-                       }
-                       else
-                       {
-                         pGUIWindow_Settings->Release();
-                         pGUIWindow_Settings = 0;
-                         pMouse->SetCursorBitmap("MICON1");
-                         GameUI_Footer_TimeLeft = 0;
-                         _50C9A0_IsEnchantingInProgress = 0;
-                         back_to_game();
+                        if ( pCurrentScreen == SCREEN_CHARACTERS )
+                          pMouse->SetCursorBitmap("MICON2");
+                        else
+                        {
+                          pGUIWindow_Settings->Release();
+                          pGUIWindow_Settings = 0;
+                          pMouse->SetCursorBitmap("MICON1");
+                          GameUI_Footer_TimeLeft = 0;
+                          _50C9A0_IsEnchantingInProgress = 0;
+                          back_to_game();
                         }
                        }
                        if ( (signed int)uActiveCharacter < 1 || (signed int)uActiveCharacter > 4 )
@@ -2219,17 +2115,15 @@ void  GameUI_MsgProc()
                       if ( pGUIWindow_Settings )
                       {
                         if ( pCurrentScreen == SCREEN_CHARACTERS )
-                        {
-                         pMouse->SetCursorBitmap("MICON2");
-                        }
+                          pMouse->SetCursorBitmap("MICON2");
                         else
                         {
-                         pGUIWindow_Settings->Release();
-                         pGUIWindow_Settings = 0;
-                         pMouse->SetCursorBitmap("MICON1");
-                         GameUI_Footer_TimeLeft = 0;
-                         _50C9A0_IsEnchantingInProgress = 0;
-                         back_to_game();
+                          pGUIWindow_Settings->Release();
+                          pGUIWindow_Settings = 0;
+                          pMouse->SetCursorBitmap("MICON1");
+                          GameUI_Footer_TimeLeft = 0;
+                          _50C9A0_IsEnchantingInProgress = 0;
+                          back_to_game();
                         }
                       }
                       if ( (signed int)uActiveCharacter < 1 || (signed int)uActiveCharacter > 4 )
@@ -2277,7 +2171,7 @@ void  GameUI_MsgProc()
                       WriteWindowsRegistryInt("CharVoices", (char)uVoicesVolumeMultiplier);
                       WriteWindowsRegistryInt("WalkSound", bWalkSound);
                       WriteWindowsRegistryInt("ShowDamage", bShowDamage);
-                      WriteWindowsRegistryInt("graphicsmode", (unsigned __int8)byte_6BE388_graphicsmode);
+                      //WriteWindowsRegistryInt("graphicsmode", (unsigned __int8)byte_6BE388_graphicsmode);
                       WriteWindowsRegistryInt("valAlwaysRun", bAlwaysRun);
                       WriteWindowsRegistryInt("FlipOnExit", bFlipOnExit);
                       if ( !uTurnSpeed )
@@ -2308,20 +2202,15 @@ void  GameUI_MsgProc()
                       stru_506E40.Release();
                       break;
                     case SCREEN_VIDEO_OPTIONS:
-                      if ( pRenderer->pRenderD3D )
+                      //if ( pRenderer->pRenderD3D )
                       {
                         WriteWindowsRegistryInt("Colored Lights", pRenderer->bUseColoredLights);
                         WriteWindowsRegistryInt("Tinting", pRenderer->bTinting);
                         WriteWindowsRegistryInt("Bloodsplats", (LOBYTE(pGame->uFlags2) >> 5) & 1);
                       }
-                      if ( pRenderer->bWindowMode )
-                        {
-                          stru_506E40.Release();
-                          break;
-                        }
-                      //v30 = uGammaPos;
-                      //v31 = "GammaPos";
-                      WriteWindowsRegistryInt("GammaPos", uGammaPos);
+                      /*if ( !pRenderer->bWindowMode )
+                        WriteWindowsRegistryInt("GammaPos", uGammaPos);*/
+
                       stru_506E40.Release();
                       break;
 
@@ -2345,8 +2234,7 @@ void  GameUI_MsgProc()
 
                           memset(&uTextureID_Optkb, 0, 0x14u);
                           pIcons_LOD->SyncLoadedFilesCount();
-                          uAction = 0;
-                          do
+                          for ( uAction = 0; uAction < 28; ++uAction )
                           {
                             v33 = pKeyActionMap->GetActionVKey((enum InputAction)uAction);
                             if ( v33 != pPrevVirtualCidesMapping[uAction] )
@@ -2364,13 +2252,11 @@ void  GameUI_MsgProc()
                               }
                             }
                             if ( uAction && uAction != 2 && uAction != 3 && uAction != 1 && uAction != 25 && uAction != 26 )
-                              pKeyToggleType = (KeyToggleType)1;
+                              pKeyToggleType = TOGGLE_OneTimePress;
                             else
-                              pKeyToggleType = (KeyToggleType)0;
+                              pKeyToggleType = TOGGLE_Continuously;
                             pKeyActionMap->SetKeyMapping(uAction, pPrevVirtualCidesMapping[uAction], pKeyToggleType);
-                            ++uAction;
                           }
-                          while ( uAction < 28 );
                           pKeyActionMap->StoreMappings();
                           stru_506E40.Release();
                           break;
@@ -2399,13 +2285,10 @@ void  GameUI_MsgProc()
                       }
                       _506F18_num_minutes_to_sleep = 0;
                       dword_506F14 = 0;
-                      dword_507B94 = 1;
                       if ( pGUIWindow_Settings )
                       {
                         if ( pCurrentScreen == SCREEN_CHARACTERS )
-                        {
                           pMouse->SetCursorBitmap("MICON2");
-                        }
                         else
                         {
                           pGUIWindow_Settings->Release();
@@ -2414,7 +2297,7 @@ void  GameUI_MsgProc()
                           GameUI_Footer_TimeLeft = 0;
                           _50C9A0_IsEnchantingInProgress = 0;
                           back_to_game();
-                         }
+                        }
                       }
                       if ( (signed int)uActiveCharacter < 1 || (signed int)uActiveCharacter > 4 )
                         uActiveCharacter = pParty->GetNextActiveCharacter();
@@ -2436,7 +2319,7 @@ void  GameUI_MsgProc()
                     case SCREEN_HOUSE:
                       if ( uDialogueType )
                         uDialogueType = 0;
-                      if ( uGameState == GAME_STATE_2 )
+                      if ( uGameState == GAME_STATE_CHANGE_LOCATION )
                       {
                         while ( HouseDialogPressCloseBtn() )
                           ;
@@ -2453,9 +2336,7 @@ void  GameUI_MsgProc()
                       if ( pGUIWindow_Settings )
                       {
                         if ( pCurrentScreen == SCREEN_CHARACTERS )
-                        {
                           pMouse->SetCursorBitmap("MICON2");
-                        }
                         else
                         {
                           pGUIWindow_Settings->Release();
@@ -2537,9 +2418,7 @@ void  GameUI_MsgProc()
                       if ( pGUIWindow_Settings )
                       {
                         if ( pCurrentScreen == SCREEN_CHARACTERS )
-                        {
                           pMouse->SetCursorBitmap("MICON2");
-                        }
                         else
                         {
                           pGUIWindow_Settings->Release();
@@ -2565,9 +2444,7 @@ void  GameUI_MsgProc()
                       if ( pGUIWindow_Settings )
                       {
                         if ( pCurrentScreen == SCREEN_CHARACTERS )
-                        {
                           pMouse->SetCursorBitmap("MICON2");
-                        }
                         else
                         {
                           pGUIWindow_Settings->Release();
@@ -2593,9 +2470,7 @@ void  GameUI_MsgProc()
                   if ( pGUIWindow_Settings )
                   {
                     if ( pCurrentScreen == SCREEN_CHARACTERS )
-                    {
                       pMouse->SetCursorBitmap("MICON2");
-                    }
                     else
                     {
                       pGUIWindow_Settings->Release();
@@ -2625,9 +2500,7 @@ void  GameUI_MsgProc()
               if ( pGUIWindow_Settings )
               {
                 if ( pCurrentScreen == SCREEN_CHARACTERS )
-                {
                   pMouse->SetCursorBitmap("MICON2");
-                }
                 else
                 {
                   pGUIWindow_Settings->Release();
@@ -2662,7 +2535,7 @@ void  GameUI_MsgProc()
               if ( !pIcons_LOD->uNumPrevLoadedFiles )
                 pIcons_LOD->uNumPrevLoadedFiles = pIcons_LOD->uNumLoadedFiles;
 
-              pGUIWindow_CurrentMenu = GUIWindow::Create(0, 0, 640, 480, WINDOW_OptionsButtons, 0, 0);
+              pGUIWindow_CurrentMenu = GUIWindow::Create(0, 0, window->GetWidth(), window->GetHeight(), WINDOW_OptionsButtons, 0, 0);
               uTextureID_Options = pIcons_LOD->LoadTexture("options", TEXTURE_16BIT_PALETTE);
               uTextureID_New1 = pIcons_LOD->LoadTexture("new1", TEXTURE_16BIT_PALETTE);
               uTextureID_Load1 = pIcons_LOD->LoadTexture("load1", TEXTURE_16BIT_PALETTE);
@@ -2690,11 +2563,11 @@ void  GameUI_MsgProc()
                              pIcons_LOD->GetTexture(uTextureID_Resume1), 0);
               pGUIWindow_CurrentMenu->_41D08F_set_keyboard_control_group(6, 1, 0, 0);
               viewparams->field_48 = 1;
+
               stru_506E40.Release();
-              uNumSeconds = (unsigned int)MakeScreenshot(155, 117);
-              pRenderer->SavePCXImage("gamma.pcx", (char *)uNumSeconds, 155, 117);
-              free((void *)uNumSeconds);
-              stru_506E40._40E55E("gamma.pcx", 0);
+              pRenderer->SaveScreenshot("gamma.pcx", 155, 117);
+              stru_506E40.LoadPCXFile("gamma.pcx", 0);
+
               continue;
             }
             pGUIWindow_Settings->Release();
@@ -2739,7 +2612,7 @@ void  GameUI_MsgProc()
           PlayHouseSound(uCurrentHouse_Animation, HouseSound_NotEnoughMoney_TrainingSuccessful);
           pVideoPlayer->Unload();
           DialogueEnding();
-          viewparams->bRedrawGameUI = 1;
+          viewparams->bRedrawGameUI = true;
           if ( dword_59117C_teleportx | dword_591178_teleporty | dword_591174_teleportz | dword_591170_teleport_directiony | dword_59116C_teleport_directionx | dword_591168_teleport_speedz )
           {
             if ( dword_59117C_teleportx )
@@ -2772,21 +2645,17 @@ void  GameUI_MsgProc()
               dword_5B65BC = dword_591168_teleport_speedz;
             }
             else
-            {
               v38 = dword_5B65BC;
-            }
             if ( *dword_591164_teleport_map_name != 48 )
             {
               pGameLoadingUI_ProgressBar->uType = (GUIProgressBar::Type)2;
               dword_5B65C0 = _5B65A8_npcdata_uflags_or_other | _5B65AC_npcdata_fame_or_other | _5B65B0_npcdata_rep_or_other | _5B65B4_npcdata_loword_house_or_other | _5B65B8_npcdata_hiword_house_or_other | v38;
               OnMapLeave();
-              sub_44987B(dword_591164_teleport_map_name, MapStartPoint_Party);
+              Transition_StopSound_Autosave(dword_591164_teleport_map_name, MapStartPoint_Party);
             }
           }
           else
-          {
             EventProcessor(dword_5C3418, 0, 1, dword_5C341C);
-          }
           if ( !_stricmp(byte_6BE3B0.data(), "d05.blv") )
             pParty->uTimePlayed += 1474560i64;
           continue;
@@ -2914,14 +2783,14 @@ void  GameUI_MsgProc()
           viewparams->bRedrawGameUI = 1;
           continue;
         case UIMSG_CastSpell_Telekinesis:
-          if ( pRenderer->pRenderD3D )
+          //if ( pRenderer->pRenderD3D )
             LOWORD(v42) = pGame->pVisInstance->get_picked_object_zbuf_val();
-          else
+          /*else
           {
             uNumSeconds = (unsigned int)pMouse->GetCursorPos(&v210);
             pPoint = pMouse->GetCursorPos(&v208);
             v42 = pRenderer->pActiveZBuffer[*(int *)uNumSeconds + pSRZBufferLineOffsets[pPoint->y]];
-          }
+          }*/
           v44 = (unsigned __int16)v42;
           v45 = PID_TYPE(v44);
           uNumSeconds = v44;
@@ -2973,7 +2842,7 @@ void  GameUI_MsgProc()
             if ( uCurrentlyLoadedLevelType != 1 )
             {
               pODMFace = &pOutdoor->pBModels[v44 >> 9].pFaces[v46 & 0x3F];
-              if ( !(pODMFace->uAttributes & 0x02000000) || !pODMFace->sCogTriggeredID )
+              if ( !pODMFace->Clickable() || !pODMFace->sCogTriggeredID )
                 continue;
               v44 = uNumSeconds;
               pSpellInfo = (CastSpellInfo *)pGUIWindow_Settings->ptr_1C;
@@ -2990,7 +2859,7 @@ void  GameUI_MsgProc()
               continue;
             }
             pBLVFace = &pIndoor->pFaces[v46];
-            if ( !(BYTE3(pBLVFace->uAttributes) & 2) )
+            if ( !pBLVFace->Clickable() )
               continue;
             v48 = pIndoor->pFaceExtras[pBLVFace->uFaceExtraID].uEventID == 0;
           }
@@ -3052,8 +2921,8 @@ void  GameUI_MsgProc()
           sub_42FBDD();
           SaveGame(1, 0);
           strcpy(pCurrentMapName, pMapStats->pInfos[uHouse_ExitPic].pFilename);
-          dword_6BE364_game_settings_1 |= 1;
-          uGameState = GAME_STATE_2;
+          dword_6BE364_game_settings_1 |= GAME_SETTINGS_0001;
+          uGameState = GAME_STATE_CHANGE_LOCATION;
           //v53 = p2DEvents_minus1_::30[26 * (unsigned int)ptr_507BC0->ptr_1C];
           v53 = p2DEvents[(unsigned int)window_SpeakInHouse->ptr_1C - 1]._quest_related;
           if ( v53 < 0 )
@@ -3084,12 +2953,12 @@ void  GameUI_MsgProc()
 
         case UIMSG_OnCastTownPortal:
           pAudioPlayer->StopChannels(-1, -1);
-          pGUIWindow_CurrentMenu = GUIWindow::Create(0, 0, 640, 480, WINDOW_Book, WINDOW_TownPortal, (char *)uMessageParam);
+          pGUIWindow_CurrentMenu = GUIWindow::Create(0, 0, window->GetWidth(), window->GetHeight(), WINDOW_Book, WINDOW_TownPortal, (char *)uMessageParam);
         continue;
 
         case UIMSG_OnCastLloydsBeacon:
           pAudioPlayer->StopChannels(-1, -1);
-          pGUIWindow_CurrentMenu = GUIWindow::Create(0, 0, 640, 480, WINDOW_Book, WINDOW_LloydsBeacon, 0);
+          pGUIWindow_CurrentMenu = GUIWindow::Create(0, 0, window->GetWidth(), window->GetHeight(), WINDOW_Book, WINDOW_LloydsBeacon, 0);
         continue;
 
         case UIMSG_LloydsBeacon_FlippingBtn:
@@ -3106,7 +2975,7 @@ void  GameUI_MsgProc()
           {
             if ( !*((int *)&pSavegameThumbnails[10 * uMessageParam].pPixels ) )
               continue;
-            v173 = pMapStats->pInfos[sub_410D99_get_map_index(pPlayer->pInstalledBeacons[uMessageParam].SaveFileID)].pName;
+            v173 = pMapStats->pInfos[pMapStats->sub_410D99_get_map_index(pPlayer->pInstalledBeacons[uMessageParam].SaveFileID)].pName;
             sprintfex(pTmpBuf.data(), pGlobalTXT_LocalizationStrings[474], v173);// "Recall to %s"
             GameUI_SetFooterString(pTmpBuf.data());
             continue;
@@ -3121,7 +2990,7 @@ void  GameUI_MsgProc()
             GameUI_SetFooterString(pTmpBuf.data());
             continue;
           }
-          v174 = pMapStats->pInfos[sub_410D99_get_map_index(*(short *)(uNumSeconds + 26))].pName;
+          v174 = pMapStats->pInfos[pMapStats->sub_410D99_get_map_index(*(short *)(uNumSeconds + 26))].pName;
           sprintf(pTmpBuf.data(), pGlobalTXT_LocalizationStrings[475], (unsigned int)pMapName, v174);// "Set %s over %s"
           GameUI_SetFooterString(pTmpBuf.data());
           continue;
@@ -3152,7 +3021,7 @@ void  GameUI_MsgProc()
           {
             pPlayer9->SetRecoveryTime((signed __int64)(flt_6BE3A4_debug_recmod1 * (double)sRecoveryTime * 2.133333333333333));
           }
-          pAudioPlayer->PlaySound((SoundID)word_4EE088_sound_ids[dword_506338], 0, 0, -1, 0, dword_50633C, 0, 0);
+          pAudioPlayer->PlaySound((SoundID)word_4EE088_sound_ids[lloyds_beacon_spell_id], 0, 0, -1, 0, lloyds_beacon_sound_id, 0, 0);
           if ( bRecallingBeacon )
           {
             if ( _stricmp(pCurrentMapName, (const char *)&pGames_LOD->pSubIndices[pPlayer9->pInstalledBeacons[uMessageParam].SaveFileID]) )
@@ -3160,8 +3029,8 @@ void  GameUI_MsgProc()
               SaveGame(1, 0);
               OnMapLeave();
               strcpy(pCurrentMapName, (const char *)&pGames_LOD->pSubIndices[pPlayer9->pInstalledBeacons[uMessageParam].SaveFileID]);
-              dword_6BE364_game_settings_1 |= 1;
-              uGameState = GAME_STATE_2;
+              dword_6BE364_game_settings_1 |= GAME_SETTINGS_0001;
+              uGameState = GAME_STATE_CHANGE_LOCATION;
               _5B65A8_npcdata_uflags_or_other = pPlayer9->pInstalledBeacons[uMessageParam].PartyPos_X;
               _5B65AC_npcdata_fame_or_other = pPlayer9->pInstalledBeacons[uMessageParam].PartyPos_Y;
               _5B65B0_npcdata_rep_or_other = pPlayer9->pInstalledBeacons[uMessageParam].PartyPos_Z;
@@ -3187,9 +3056,9 @@ void  GameUI_MsgProc()
           else
           {
             sprintf(a1, "data\\lloyd%d%d.pcx", _506348_current_lloyd_playerid + 1, uMessageParam + 1);
-            SaveScreenshot(a1);
+            pRenderer->SaveScreenshot(a1, 92, 68);
             LoadThumbnailLloydTexture(uMessageParam, _506348_current_lloyd_playerid + 1);
-            pPlayer9->pInstalledBeacons[uMessageParam].uBeaconTime = pParty->uTimePlayed + (signed __int64)((double)(qword_506350 << 7) * 0.033333335);
+            pPlayer9->pInstalledBeacons[uMessageParam].uBeaconTime = pParty->uTimePlayed + (signed __int64)((double)(lloyds_beacon_spell_level << 7) * 0.033333335);
             pPlayer9->pInstalledBeacons[uMessageParam].PartyPos_X = pParty->vPosition.x;
             pPlayer9->pInstalledBeacons[uMessageParam].PartyPos_Y = pParty->vPosition.y;
             pPlayer9->pInstalledBeacons[uMessageParam].PartyPos_Z = pParty->vPosition.z;
@@ -3241,8 +3110,8 @@ LABEL_486:
                   {
                     SaveGame(1, 0);
                     OnMapLeave();
-                    dword_6BE364_game_settings_1 |= 1;
-                    uGameState = GAME_STATE_2;
+                    dword_6BE364_game_settings_1 |= GAME_SETTINGS_0001;
+                    uGameState = GAME_STATE_CHANGE_LOCATION;
                     strcpy(pCurrentMapName, pMapStats->pInfos[TownPortalList[uMessageParam].uMapInfoID].pFilename);
                     dword_5B65C0 = 1;
                     _5B65A8_npcdata_uflags_or_other = TownPortalList[uMessageParam].pos.x;
@@ -3251,7 +3120,7 @@ LABEL_486:
                     v66 = TownPortalList[uMessageParam].rot_x;
                     _5B65B4_npcdata_loword_house_or_other = TownPortalList[uMessageParam].rot_y;
                     _5B65B8_npcdata_hiword_house_or_other = v66;
-                    InitializeActors();
+                    Actor::InitializeActors();
                   }
                   v67 = (char*)pGUIWindow_CurrentMenu->Hint;
                   if ( v67 )
@@ -3424,8 +3293,8 @@ LABEL_486:
               if ( (signed int)pNPCData3 < (signed int)pNPCData4 )
               {
                 strcpy(pCurrentMapName, (const char *)&pGames_LOD->pSubIndices[(int)pNPCData3]);
-                dword_6BE364_game_settings_1 |= 1u;
-                uGameState = GAME_STATE_2;
+                dword_6BE364_game_settings_1 |= GAME_SETTINGS_0001;
+                uGameState = GAME_STATE_CHANGE_LOCATION;
                 OnMapLeave();
                 continue;
               }
@@ -3492,16 +3361,16 @@ LABEL_486:
           continue;
         case UIMSG_CastSpell_Monster_Improvement:
         case UIMSG_CastSpell_Shoot_Monster://FireBlow, Lightning, Ice Lightning, Swarm, 
-          if ( pRenderer->pRenderD3D )
+          //if ( pRenderer->pRenderD3D )
           {
             v81 = pGame->pVisInstance->get_picked_object_zbuf_val();
           }
-          else
+          /*else
           {
             uNumSeconds = (unsigned int)pMouse->GetCursorPos(&v206);
             pPoint2 = pMouse->GetCursorPos(&v201);
             v81 = pRenderer->pActiveZBuffer[*(int *)uNumSeconds + pSRZBufferLineOffsets[pPoint2->y]];
-          }
+          }*/
           v83 = v81;
           v44 = (unsigned __int16)v81;
           v84 = v83 >> 16;
@@ -3533,7 +3402,7 @@ LABEL_486:
 			__debugbreak();
           if ( !uActiveCharacter || pCurrentScreen )
             continue;
-          ptr_507BC8 = GUIWindow::Create(0, 0, 640, 480, WINDOW_68, uMessageParam, 0);
+          ptr_507BC8 = GUIWindow::Create(0, 0, window->GetWidth(), window->GetHeight(), WINDOW_68, uMessageParam, 0);
           pCurrentScreen = SCREEN_19;
           pEventTimer->Pause();
           continue;
@@ -3548,7 +3417,7 @@ LABEL_486:
               Actor::StealFrom(uMessageParam);
             continue;
           }
-          if ( pTurnEngine->turn_stage == 1 || pTurnEngine->turn_stage == 3 )
+          if ( pTurnEngine->turn_stage == TE_WAIT || pTurnEngine->turn_stage == TE_MOVEMENT )
             continue;
           if ( !(pTurnEngine->field_18 & TE_HAVE_PENDING_ACTIONS) )
           {
@@ -3564,13 +3433,13 @@ LABEL_486:
             continue;
           if ( pParty->bTurnBasedModeOn != 1 )
           {
-            _42ECB5_PlayerAttacksActor();
+            Player::_42ECB5_PlayerAttacksActor();
             continue;
           }
-          if ( pTurnEngine->turn_stage == 1 || pTurnEngine->turn_stage == 3 )
+          if ( pTurnEngine->turn_stage == TE_WAIT || pTurnEngine->turn_stage == TE_MOVEMENT )
             continue;
           if ( !(pTurnEngine->field_18 & TE_HAVE_PENDING_ACTIONS) )
-            _42ECB5_PlayerAttacksActor();
+            Player::_42ECB5_PlayerAttacksActor();
           continue;
         case UIMSG_ExitRest:
           GUIWindow::Create(pButton_RestUI_Exit->uX, pButton_RestUI_Exit->uY, 0, 0, WINDOW_CloseRestWindowBtn, (int)pButton_RestUI_Exit, pGlobalTXT_LocalizationStrings[81]);// "Exit Rest"
@@ -3673,10 +3542,10 @@ LABEL_486:
           }
           else
           {
-            pParty->pPlayers[3].pConditions[2] = pParty->uTimePlayed;
-            pParty->pPlayers[2].pConditions[2] = pParty->uTimePlayed;
-            pParty->pPlayers[1].pConditions[2] = pParty->uTimePlayed;
-            pParty->pPlayers[0].pConditions[2] = pParty->uTimePlayed;
+            pParty->pPlayers[3].pConditions[Condition_Sleep] = pParty->uTimePlayed;
+            pParty->pPlayers[2].pConditions[Condition_Sleep] = pParty->uTimePlayed;
+            pParty->pPlayers[1].pConditions[Condition_Sleep] = pParty->uTimePlayed;
+            pParty->pPlayers[0].pConditions[Condition_Sleep] = pParty->uTimePlayed;
             v90 = pMapStats->GetMapInfo(pCurrentMapName);
             if ( !v90 )
               v90 = rand() % (signed int)pMapStats->uNumMaps + 1;
@@ -3695,8 +3564,7 @@ LABEL_486:
               if ( pNPCData4 )
               {
                 pPlayerNum = rand() % 4;
-                LODWORD(pParty->pPlayers[pPlayerNum].pConditions[2]) = 0;
-                HIDWORD(pParty->pPlayers[pPlayerNum].pConditions[2]) = 0;
+                pParty->pPlayers[pPlayerNum].pConditions[Condition_Sleep] = 0;
                 v95 = rand();
                 Rest(v95 % 6 + 60);
                 _506F18_num_minutes_to_sleep = 0;
@@ -3786,72 +3654,61 @@ LABEL_486:
             pAudioPlayer->PlaySound((SoundID)203, 0, 0, -1, 0, 0, 0, 0);
             continue;
           }
-          v99 = quick_spell_at_page + 11 * pPlayers[uActiveCharacter]->lastOpenedSpellbookPage;
-          pPlayers[uActiveCharacter]->uQuickSpell = v99;
-          stru_AA1058[uActiveCharacter - 1]._494836(v99, uActiveCharacter);
+          pPlayers[uActiveCharacter]->uQuickSpell = quick_spell_at_page + 11 * pPlayers[uActiveCharacter]->lastOpenedSpellbookPage;
+          AA1058_PartyQuickSpellSound[uActiveCharacter - 1].AddPartySpellSound(pPlayers[uActiveCharacter]->uQuickSpell, uActiveCharacter);
           if ( uActiveCharacter )
             pPlayer10->PlaySound(SPEECH_12, 0);
           byte_506550 = 0;
           continue;
-        case UIMSG_SpellBook_PressTab:
-			//__debugbreak();
+        case UIMSG_SpellBook_PressTab://перелистывание страниц клавишей Tab
+        {
           if ( !uActiveCharacter )
             continue;
-          pPlayer3 = pPlayers[uActiveCharacter];
-          pNPCData4 = 0;
+          int skill_count = 0;
           uAction = 0;
-          v101 = 0;
-          thisl = (int)&pPlayer3->pActiveSkills[12];
-          do
+          for ( uint i = 0; i < 9; i++ )
           {
-            if ( *(short *)thisl )
+            if ( pPlayers[uActiveCharacter]->pActiveSkills[PLAYER_SKILL_FIRE + i] )
             {
-              if ( pPlayer3->lastOpenedSpellbookPage == v101 )
-                uAction = (int)pNPCData4;
-              v102 = (int)pNPCData4;
-              pNPCData4 = (NPCData *)((char *)pNPCData4 + 1);
-              v217[v102] = v101;
+              if ( pPlayers[uActiveCharacter]->lastOpenedSpellbookPage == i )
+                uAction = skill_count;
+              v217[skill_count++] = i;
             }
-            thisl += 2;
-            ++v101;
           }
-          while ( v101 < 9 );
-          if ( !pNPCData4 )
-          {
-            v127 = rand() % 2 + 204;
-            pAudioPlayer->PlaySound((SoundID)v127, 0, 0, -1, 0, 0, 0, 0);
-            continue;
-          }
-          if ( GetAsyncKeyState(16) )
-          {
-            --uAction;
-            if ( uAction < 0 )
-              uAction = (int)((char *)pNPCData4 - 1);
-          }
+          if ( !skill_count )//нет скиллов
+            pAudioPlayer->PlaySound((SoundID)(rand() % 2 + 204), 0, 0, -1, 0, 0, 0, 0);
           else
           {
-            ++uAction;
-            if ( uAction >= (signed int)pNPCData4 )
-              uAction = 0;
+            if ( GetAsyncKeyState(16) )
+            {
+              --uAction;
+              if ( uAction < 0 )
+                uAction = skill_count - 1;
+            }
+            else
+            {
+              ++uAction;
+              if ( uAction >= skill_count )
+                uAction = 0;
+            }
+            OnCloseSpellBookPage();
+            pPlayers[uActiveCharacter]->lastOpenedSpellbookPage = LOBYTE(v217[uAction]);
+            pGUIWindow_CurrentMenu->OpenSpellBook();
+            pAudioPlayer->PlaySound((SoundID)(rand() % 2 + 204), 0, 0, -1, 0, 0, 0, 0);
           }
-          OnCloseSpellBookPage();
-          pPlayers[uActiveCharacter]->lastOpenedSpellbookPage = LOBYTE(v217[uAction]);
-          pGUIWindow_CurrentMenu->OpenSpellBook();
-          v127 = rand() % 2 + 204;
-          pAudioPlayer->PlaySound((SoundID)v127, 0, 0, -1, 0, 0, 0, 0);
           continue;
+        }
         case UIMSG_OpenSpellbookPage:
-          if ( pTurnEngine->turn_stage == 3 || !uActiveCharacter || uMessageParam == pPlayers[uActiveCharacter]->lastOpenedSpellbookPage )
+          if ( pTurnEngine->turn_stage == TE_MOVEMENT || !uActiveCharacter || uMessageParam == pPlayers[uActiveCharacter]->lastOpenedSpellbookPage )
             continue;
           OnCloseSpellBookPage();
           pPlayers[uActiveCharacter]->lastOpenedSpellbookPage = uMessageParam;
           pGUIWindow_CurrentMenu->OpenSpellBook();
-          v127 = rand() % 2 + 204;
-          pAudioPlayer->PlaySound((SoundID)v127, 0, 0, -1, 0, 0, 0, 0);
+          pAudioPlayer->PlaySound((SoundID)(rand() % 2 + 204), 0, 0, -1, 0, 0, 0, 0);
           continue;
         case UIMSG_SelectSpell:
         {
-          if (pTurnEngine->turn_stage == 3)
+          if (pTurnEngine->turn_stage == TE_MOVEMENT)
             continue;
           if (!uActiveCharacter)
             continue;
@@ -3889,19 +3746,19 @@ LABEL_486:
         continue;
 
         case UIMSG_CastSpellFromBook:
-          if ( pTurnEngine->turn_stage != 3 )
+          if ( pTurnEngine->turn_stage != TE_MOVEMENT )
             _42777D_CastSpell_UseWand_ShootArrow(uMessageParam, v199, 0, 0, 0);
         continue;
 
         case UIMSG_SpellScrollUse:
 			__debugbreak();
-          if ( pTurnEngine->turn_stage != 3 )
+          if ( pTurnEngine->turn_stage != TE_MOVEMENT )
             _42777D_CastSpell_UseWand_ShootArrow(uMessageParam, v199, 133, 1, 0);
           continue;
         case UIMSG_SpellBookWindow:
-          if ( pTurnEngine->turn_stage == 3 )
+          if ( pTurnEngine->turn_stage == TE_MOVEMENT )
             continue;
-          if ( bUnderwater == 1 )
+          if ( bUnderwater == true )
           {
             ShowStatusBarString(pGlobalTXT_LocalizationStrings[652], 2);// "You can not do that while you are underwater!"
             pAudioPlayer->PlaySound((SoundID)27, 0, 0, -1, 0, 0, 0, 0);
@@ -3912,26 +3769,24 @@ LABEL_486:
               pMessageQueue_50CBD0->uNumMessages = pMessageQueue_50CBD0->pMessages[0].field_8 != 0;
             if ( uActiveCharacter && !pPlayers[uActiveCharacter]->uTimeToRecovery )
             {
-              if ( !pCurrentScreen )
+              if ( pCurrentScreen == SCREEN_GAME )
               {
-                GUIWindow::Create(0x1DCu, 0x1C2u, 0, 0, WINDOW_PressedButton2, (int)pBtn_CastSpell, 0);
+                GUIWindow::Create(476, 450, 0, 0, WINDOW_PressedButton2, (int)pBtn_CastSpell, 0);
                 pCurrentScreen = SCREEN_SPELL_BOOK;
                 pEventTimer->Pause();
-                pGUIWindow_CurrentMenu = GUIWindow::Create(0, 0, 640, 480, WINDOW_SpellBook, 0, 0);
+                pGUIWindow_CurrentMenu = GUIWindow::Create(0, 0, window->GetWidth(), window->GetHeight(), WINDOW_SpellBook, 0, 0);
                 pAudioPlayer->PlaySound((SoundID)48, 0, 0, -1, 0, 0, 0, 0);
                 viewparams->field_48 = 1;
                 continue;
               }
-              if ( pCurrentScreen != SCREEN_REST
-                && pCurrentScreen != SCREEN_CHARACTERS
-                && (pCurrentScreen <= SCREEN_63
-                 || pCurrentScreen > SCREEN_67) )
+              if ( pCurrentScreen != SCREEN_REST && pCurrentScreen != SCREEN_CHARACTERS
+                && (pCurrentScreen <= SCREEN_63 || pCurrentScreen > SCREEN_67) )
               {
                 pGUIWindow_CurrentMenu->Release();
-                GUIWindow::Create(0x1DCu, 0x1C2u, 0, 0, WINDOW_PressedButton2, (int)pBtn_CastSpell, 0);
+                GUIWindow::Create(476, 450, 0, 0, WINDOW_PressedButton2, (int)pBtn_CastSpell, 0);
                 pCurrentScreen = SCREEN_SPELL_BOOK;
                 pEventTimer->Pause();
-                pGUIWindow_CurrentMenu = GUIWindow::Create(0, 0, 640, 480, WINDOW_SpellBook, 0, 0);
+                pGUIWindow_CurrentMenu = GUIWindow::Create(0, 0, window->GetWidth(), window->GetHeight(), WINDOW_SpellBook, 0, 0);
                 pAudioPlayer->PlaySound((SoundID)48, 0, 0, -1, 0, 0, 0, 0);
                 viewparams->field_48 = 1;
                 continue;
@@ -3952,7 +3807,7 @@ LABEL_486:
           pEventTimer->Pause();
           pAudioPlayer->StopChannels(-1, -1);
           pCurrentScreen = SCREEN_QUICK_REFERENCE;
-          pGUIWindow_CurrentMenu = GUIWindow::Create(0, 0, 640, 480, WINDOW_QuickReference, 5, 0);
+          pGUIWindow_CurrentMenu = GUIWindow::Create(0, 0, window->GetWidth(), window->GetHeight(), WINDOW_QuickReference, 5, 0);
           papredoll_dbrds[2] = pIcons_LOD->LoadTexture("BUTTEXI1", TEXTURE_16BIT_PALETTE);
           pBtn_ExitCancel = pGUIWindow_CurrentMenu->CreateButton(0x187u, 0x13Cu, 0x4Bu, 0x21u, 1, 0, UIMSG_Escape, 0, 0,
                          pGlobalTXT_LocalizationStrings[79],// "Exit"
@@ -3966,11 +3821,11 @@ LABEL_486:
             pCurrentScreen = SCREEN_GAME;
             viewparams->bRedrawGameUI = 1;
           }
+
           stru_506E40.Release();
-          uNumSeconds = (unsigned int)MakeScreenshot(155, 117);
-          pRenderer->SavePCXImage("gamma.pcx", (char *)uNumSeconds, 155, 117);
-          free((void *)uNumSeconds);
-          stru_506E40._40E55E("gamma.pcx", 0);
+          pRenderer->SaveScreenshot("gamma.pcx", 155, 117);
+          stru_506E40.LoadPCXFile("gamma.pcx", 0);
+
           GUIWindow::Create(0x25Au, 0x1C2u, 0, 0, WINDOW_PressedButton, (int)pBtn_GameSettings, 0);
 //LABEL_453:
           /*if ( (signed int)pMessageQueue_50CBD0->uNumMessages >= 40 )
@@ -4143,19 +3998,22 @@ LABEL_486:
           GameUI_SetFooterString(pTmpBuf.data());
           continue;
         case UIMSG_ShowStatus_DateTime:
-          pNPCData4 = (NPCData *)pParty->uCurrentHour;
-          if ( (signed int)pParty->uCurrentHour <= 12 )
+          currHour = pParty->uCurrentHour;
+          uNumSeconds = 1;
+          if (pParty->uCurrentHour > 12 )
           {
-            if ( !pNPCData4 )
-              pNPCData4 = (NPCData *)12;
+            if (pParty->uCurrentHour >= 24)
+              uNumSeconds = 0;
+            currHour = (currHour - 12);
           }
-          else
+          else 
           {
-            pNPCData4 = (NPCData *)((char *)pNPCData4 - 12);
+		  	if (pParty->uCurrentHour < 12) // 12:00 is PM
+	            uNumSeconds = 0;
+            if (pParty->uCurrentHour == 0)
+              currHour = 12;
           }
-          if ( pParty->uCurrentHour < 0xC || (uNumSeconds = 1, pParty->uCurrentHour >= 0x18) )
-            uNumSeconds = 0;
-          sprintf(pTmpBuf.data(), "%d:%02d%s %s %d %s %d", pNPCData4, pParty->uCurrentMinute, aAMPMNames[uNumSeconds], aDayNames[pParty->uDaysPlayed % 7],
+          sprintf(pTmpBuf.data(), "%d:%02d%s %s %d %s %d", currHour, pParty->uCurrentMinute, aAMPMNames[uNumSeconds], aDayNames[pParty->uDaysPlayed % 7],
             7 * pParty->uCurrentMonthWeek + pParty->uDaysPlayed % 7 + 1, aMonthNames[pParty->uCurrentMonth], pParty->uCurrentYear);
           GameUI_SetFooterString(pTmpBuf.data());
           continue;
@@ -4186,19 +4044,19 @@ LABEL_486:
             pPlayers[uActiveCharacter]->OnInventoryLeftClick();
             continue;
           }
-          OnChestLeftClick();
+          Chest::OnChestLeftClick();
           continue;
         case UIMSG_InventoryLeftClick:
           pPlayers[uActiveCharacter]->OnInventoryLeftClick();
           continue;
         case UIMSG_MouseLeftClickInGame:
-          if ( !pRenderer->pRenderD3D )
+          /*if ( !pRenderer->pRenderD3D )
           {
             if ( pMessageQueue_50CBD0->uNumMessages )
             pMessageQueue_50CBD0->uNumMessages = pMessageQueue_50CBD0->pMessages[0].field_8 != 0;
             OnGameViewportClick();
             continue;
-          }
+          }*/
           v115 = pMessageQueue_50CBD0->uNumMessages;
           if ( !pMessageQueue_50CBD0->uNumMessages )
           {
@@ -4247,16 +4105,16 @@ LABEL_486:
           continue;
         case UIMSG_F:
 			__debugbreak();
-          if ( pRenderer->pRenderD3D )
+          //if ( pRenderer->pRenderD3D )
           {
             LOWORD(v116) = pGame->pVisInstance->get_picked_object_zbuf_val();
           }
-          else
+          /*else
           {
             uNumSeconds = (unsigned int)pMouse->GetCursorPos(&v209);
             pPoint3 = pMouse->GetCursorPos(&v204);
             v116 = pRenderer->pActiveZBuffer[*(int *)uNumSeconds + pSRZBufferLineOffsets[pPoint3->y]];
-          }
+          }*/
           pButton2 = (GUIButton *)(unsigned __int16)v116;
           GUIWindow::Create(0, 0, 0, 0, WINDOW_F, (int)pButton2, 0);
           continue;
@@ -4382,8 +4240,8 @@ void  GUI_MainMenuMessageProc()
   Player *pPlayer; // ebx@2
   void *v3; // edi@21
   signed int v4; // eax@29
-  int v5; // ecx@29
-  PLAYER_SKILL_TYPE v6; // edi@37
+//  int v5; // ecx@29
+//  PLAYER_SKILL_TYPE v6; // edi@37
   GUIWindow *pWindow; // eax@56
   GUIButton *pButton; // eax@59
   int v15; // edi@70
@@ -4391,8 +4249,8 @@ void  GUI_MainMenuMessageProc()
   unsigned int v21; // eax@116
   unsigned int v25; // eax@120
   unsigned int v26; // ecx@127
-  SoundID pSoundID; // [sp-2Ch] [bp-3Ch]@36
-  signed int v41; // [sp-10h] [bp-20h]@29
+//  SoundID pSoundID; // [sp-2Ch] [bp-3Ch]@36
+//  signed int v41; // [sp-10h] [bp-20h]@29
   int pParam; // [sp+4h] [bp-Ch]@3
   UIMessageType pUIMessageType; // [sp+8h] [bp-8h]@3
   int pSex; // [sp+Ch] [bp-4h]@3
@@ -4523,12 +4381,14 @@ void  GUI_MainMenuMessageProc()
         case UIMSG_PlayerCreationRemoveUpSkill:
           v4 = pGUIWindow_CurrentMenu->pCurrentPosActiveItem - pGUIWindow_CurrentMenu->pStartingPosActiveItem;
           pGUIWindow_CurrentMenu->pCurrentPosActiveItem = v4 % 7 + pGUIWindow_CurrentMenu->pStartingPosActiveItem + 7 * pParam;
-          pParty->pPlayers[pParam].pActiveSkills[pPlayer[pParam].GetSkillIdxByOrder(2)] = 0;
+          if ( pPlayer[pParam].GetSkillIdxByOrder(2) != 37 )//37 - None(Нет)
+            pParty->pPlayers[pParam].pActiveSkills[pPlayer[pParam].GetSkillIdxByOrder(2)] = 0;
           break;
         case UIMSG_PlayerCreationRemoveDownSkill:
           v4 = pGUIWindow_CurrentMenu->pCurrentPosActiveItem - pGUIWindow_CurrentMenu->pStartingPosActiveItem;
           pGUIWindow_CurrentMenu->pCurrentPosActiveItem = v4 % 7 + pGUIWindow_CurrentMenu->pStartingPosActiveItem + 7 * pParam;
-          pParty->pPlayers[pParam].pActiveSkills[pPlayer[pParam].GetSkillIdxByOrder(3)] = 0;
+          if ( pPlayer[pParam].GetSkillIdxByOrder(3) != 37 )//37 - None(Нет)
+            pParty->pPlayers[pParam].pActiveSkills[pPlayer[pParam].GetSkillIdxByOrder(3)] = 0;
           break;
         case UIMSG_PlayerCreationChangeName:
           pAudioPlayer->PlaySound((SoundID)24, 0, 0, -1, 0, 0, 0, 0);
@@ -4611,24 +4471,25 @@ void  GUI_MainMenuMessageProc()
             ModalWindow_Release();
             break;
           }
-          if ( !(BYTE1(dword_6BE364_game_settings_1) & 0x40) )
+          if ( !(dword_6BE364_game_settings_1 & GAME_SETTINGS_4000))
             break;
           v15 = 1;
           pVideoPlayer->bStopBeforeSchedule = 1;
           viewparams->bRedrawGameUI = 1;
           viewparams->field_48 = 1;
-          if ( !GetCurrentMenuID() || GetCurrentMenuID() == MENU_CREATEPARTY || GetCurrentMenuID() == MENU_NAMEPANELESC )
+          if ( GetCurrentMenuID() == MENU_MAIN || GetCurrentMenuID() == MENU_MMT_MAIN_MENU
+			 || GetCurrentMenuID() == MENU_CREATEPARTY || GetCurrentMenuID() == MENU_NAMEPANELESC )
           {
-            if ( pCurrentScreen == SCREEN_VIDEO )
-              pVideoPlayer->FastForwardToFrame(pVideoPlayer->pResetflag);
-            if (GetCurrentMenuID() == MENU_NAMEPANELESC)
+            //if ( pCurrentScreen == SCREEN_VIDEO )
+              //pVideoPlayer->FastForwardToFrame(pVideoPlayer->pResetflag);			  
+            if (GetCurrentMenuID() == MENU_NAMEPANELESC)  //из панели изменения имени
             {
-              SetCurrentMenuID(MENU_CREATEPARTY);
+              SetCurrentMenuID(MENU_CREATEPARTY);//в окно создания группы
               break;
             }
-            if (GetCurrentMenuID() == MENU_CREDITSPROC)
+            if (GetCurrentMenuID() == MENU_CREDITSPROC)	//из окна Создатели
             {
-              SetCurrentMenuID(MENU_CREDITSCLOSE);
+              SetCurrentMenuID(MENU_CREDITSCLOSE);//в закрытие Создатели
               break;
             }
             pMessageQueue_50CBD0->AddMessage(UIMSG_ChangeGameState, 0, 0);
@@ -4636,8 +4497,8 @@ void  GUI_MainMenuMessageProc()
           }
           if ( GetCurrentMenuID() == MENU_CREDITSPROC && !pCurrentScreen )
           {
-            if ( pCurrentScreen == SCREEN_VIDEO )
-              pVideoPlayer->FastForwardToFrame(pVideoPlayer->pResetflag);
+            //if ( pCurrentScreen == SCREEN_VIDEO )
+              //pVideoPlayer->FastForwardToFrame(pVideoPlayer->pResetflag);
             if (GetCurrentMenuID() == MENU_NAMEPANELESC)
             {
               SetCurrentMenuID(MENU_CREATEPARTY);
@@ -4692,4 +4553,22 @@ void  GUI_MainMenuMessageProc()
     }
     while ( pMessageQueue_50CBD0->uNumMessages );
   }
+}
+
+
+
+//----- (0042FBDD) --------------------------------------------------------
+void  sub_42FBDD()
+{
+  pAudioPlayer->PlaySound(SOUND_Button2, 0, 0, -1, 0, 0, 0, 0);
+  pRenderer->DrawTextureTransparent(pBtn_YES->uX, pBtn_YES->uY, pBtn_YES->pTextures[0]);
+  pRenderer->Present();
+}
+
+//----- (0042FC15) --------------------------------------------------------
+void  CloseWindowBackground()
+{
+  pAudioPlayer->PlaySound(SOUND_Button2, -2, 0, -1, 0, 0, 0, 0);
+  pRenderer->DrawTextureTransparent(pBtn_ExitCancel->uX, pBtn_ExitCancel->uY, pBtn_ExitCancel->pTextures[0]);
+  pRenderer->Present();
 }

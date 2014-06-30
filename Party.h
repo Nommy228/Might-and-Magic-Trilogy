@@ -1,14 +1,13 @@
 #pragma once
 #include "Player.h"
 #include "NPC.h"
-#include "mm7_data.h"
 #include <array>
 
 
 
 #define PARTY_AUTONOTES_BIT__EMERALD_FIRE_FOUNTAIN 2
 
-enum PARTY_QUEST_BITS: uint16
+enum PARTY_QUEST_BITS: uint16_t
 {
   PARTY_QUEST_EMERALD_RED_POTION_ACTIVE = 1,
   PARTY_QUEST_EMERALD_SEASHELL_ACTIVE = 2,
@@ -50,6 +49,7 @@ enum PARTY_QUEST_BITS: uint16
 /*  355 */
 enum PARTY_FLAGS_1: __int32
 {
+  PARTY_FLAGS_1_0002 = 0x0002,
   PARTY_FLAGS_1_WATER_DAMAGE = 0x0004,
   PARTY_FLAGS_1_FALLING = 0x0008,
   PARTY_FLAGS_1_ALERT_RED = 0x0010,
@@ -123,6 +123,10 @@ enum PartyAction: unsigned __int32
 #pragma pack(push, 1)
 struct ActionQueue
 {
+  inline ActionQueue():
+    uNumActions(0)
+  {}
+
   void Add(PartyAction action);
   void Reset();
   PartyAction Next();
@@ -198,6 +202,8 @@ struct Party
   static void TakeFood(unsigned int uNumFood);
   static void GiveFood(unsigned int _this);
 
+  static void Sleep6Hours();
+
   inline bool WizardEyeActive()      {return pPartyBuffs[PARTY_BUFF_WIZARD_EYE].uExpireTime > 0;}
   inline int  WizardEyeSkillLevel()  {return pPartyBuffs[PARTY_BUFF_WIZARD_EYE].uSkill;}
   inline bool TorchlightActive()     {return pPartyBuffs[PARTY_BUFF_TORCHLIGHT].uExpireTime > 0;}
@@ -215,7 +221,7 @@ struct Party
 
   bool IsPartyEvil();
   bool IsPartyGood();
-
+  int _46A89E_immolation_effect(int* affected, int affectedArrSize, int effectRange);
   int field_0;
   unsigned int uPartyHeight;
   unsigned int uDefaultPartyHeight;
@@ -318,7 +324,7 @@ extern Party *pParty; // idb
 
 extern struct ActionQueue *pPartyActionQueue;
 
-inline bool TestPartyQuestBit(PARTY_QUEST_BITS bit)
-{
-  return _449B57_test_bit(pParty->_quest_bits, bit);
-}
+bool TestPartyQuestBit(PARTY_QUEST_BITS bit);
+void __fastcall Rest(unsigned int uHoursToSleep);
+void RestAndHeal(__int64 uNumMinutes); // idb
+int GetTravelTime();

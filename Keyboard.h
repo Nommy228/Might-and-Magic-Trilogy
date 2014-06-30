@@ -51,11 +51,11 @@ struct KeyboardActionMapping
 
   void SetKeyMapping(int uAction, int vKey, KeyToggleType type);
   unsigned int GetActionVKey(enum InputAction eAction);
-  const char *GetVKeyDisplayName(signed int a1);
-  const unsigned __int8 GetActionDefaultVKey(const char *Str);
+  const char *GetVKeyDisplayName(unsigned char a1);
+  const unsigned __int8 TranslateKeyNameToKeyCode(const char *Str);
   void ReadMappings();
   void StoreMappings();
-  bool _459F10(unsigned int a2);
+  bool ProcessTextInput(unsigned int a2);
   void SetWindowInputStatus(int a2);
   void EnterText(int a2, int max_string_len, struct GUIWindow *pWindow);
   void ResetKeys();
@@ -80,9 +80,12 @@ struct KeyboardActionMapping
 class Keyboard
 {
 public:
-  Keyboard();
+  inline Keyboard():
+    bUsingAsynKeyboard(false)
+  {}
   bool WasKeyPressed(int vKey);
-  bool IsKeyBeingHeld(int vKey);
+  static bool IsKeyBeingHeld(int vKey);
+  static void ProcessInputActions();
   bool IsShiftHeld();
   void EnterCriticalSection();
 
@@ -93,5 +96,6 @@ public:
 
 
 
+void OnPressSpace();
 
 extern struct KeyboardActionMapping *pKeyActionMap;

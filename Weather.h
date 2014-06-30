@@ -19,7 +19,7 @@ struct Weather
 
 
 
-  __int16 field_0[2000];
+  __int16 Screen_Coord[2000];
   int bNight;
   int bRenderSnow;
 };

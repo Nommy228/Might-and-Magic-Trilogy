@@ -1,58 +1,4 @@
-#ifdef _MSC_VER
 #define _CRT_SECURE_NO_WARNINGS
-#endif
-
-#include "mm7_data.h"
-#include "Render.h"
-#include "texts.h"
-#include "Party.h"
-
-int __cdecl sub_401022()
-{
-  int result; // eax@1
-  signed int v1; // ecx@1
-  int *v2; // edx@1
-/*
-  result = (int)dword_4F8580;
-  v1 = 60;
-  v2 = &dword_4F8580[1];
-  do
-  {
-    v2[2] = 0;
-    v2[1] = 0;
-    *v2 = 0;
-    v2 += 3;
-    --v1;
-  }
-  while ( v1 );
-  dword_4F8580[0] = 1;
-  return result;
-  */
-
-  for( int i = 0; i < 62; i++ )
-  {
-	  dword_4F8580[i] = 0;
-  }
-  dword_4F8580[0] = 1;
-  return 0;
-}
-
-//----- (00423B4A) --------------------------------------------------------
-void  sub_423B4A()
-{
-  float *v0; // eax@1
-  signed int v1; // ecx@1
-
-  v0 = &array_507D30[0].flt_2C;
-  v1 = 50;
-  do
-  {
-    *v0 = 0.0;
-    v0 += 12;
-    --v1;
-  }
-  while ( v1 );
-}
 
 /*
 GUIProgressBar *__cdecl crt_construct_576E30()
@@ -85,22 +31,12 @@ GUIProgressBar *__cdecl crt_construct_576E30()
 }
 */
 
-void __cdecl crt_init_globals_46BD9F()
+/*void constructors()
 {
-  pPartyActionQueue->uNumActions = 0;
-}
-
-void constructors()
-{
-	sub_401022();
-	sub_423B4A();
-	crt_init_globals_46BD9F();
-
 	//no call to these anywhere
 	uGameUIFontMain_initialize();
 	uGameUIFontShadow_initialize();
-	SetSomeItemsNames();
-}
+}*/
 
 /*
 
@@ -114,7 +50,7 @@ IOStream
 IOStream
 
 .data:004DF00C                 dd offset sub_401022
-added
+achieved by zero initializing dword_4F8580, dword_4F8580[0] = 1; is unused anyway
 
 .data:004DF010                 dd offset sub_408B98
 .data:004DF014                 dd offset sub_409BCC
@@ -146,7 +82,7 @@ X InitializeGameText
 
 .data:004DF050                 dd offset uGameUIFontMain_initialize
 .data:004DF054                 dd offset uGameUIFontShadow_initialize
-added
+X called in SetUserInterface(Neutral)
 
 .data:004DF058                 dd offset crt_construct_507ABC
 .data:004DF05C                 dd offset crt_construct_507A94
@@ -170,7 +106,7 @@ byte
 deleted
 
 .data:004DF084                 dd offset j_sub_423B4A
-added
+byte
 
 .data:004DF088                 dd offset crt_sub_4262DD
 byte
@@ -317,7 +253,7 @@ X KeyboardActionMapping
 byte
 
 .data:004DF184                 dd offset crt_call_global_ctor_45BAA5
-X stru_69BD44 = "effpar03" , need RECHECK
+stru_69BD44 = "effpar03" , need RECHECK
 
 .data:004DF188                 dd offset crt_deconstruct_45DEF7
 .data:004DF18C                 dd offset crt_deconstruct_45DF53
@@ -416,19 +352,15 @@ byte
 
 
 .data:004DF228                 dd offset sub_47A368
-
-
 .data:004DF22C                 dd offset sub_47C778
-
-
 .data:004DF230                 dd offset sub_47CDBE
-
+byte
 
 .data:004DF234                 dd offset sub_47CDDA
 
 
 .data:004DF238                 dd offset sub_47F483
-
+byte
 
 .data:004DF23C                 dd offset sub_47F49F
 
@@ -437,217 +369,120 @@ byte
 
 
 .data:004DF244                 dd offset sub_482A74
-
-
 .data:004DF248                 dd offset sub_485F37
-
-
 .data:004DF24C                 dd offset sub_486A0C
-
-
 .data:004DF250                 dd offset crt_deconstruct_487DF7
-
-
 .data:004DF254                 dd offset sub_488E07
-
-
 .data:004DF258                 dd offset sub_489572
-
-
 .data:004DF25C                 dd offset crt_deconstruct_489B44
-
-
 .data:004DF260                 dd offset crt_deconstruct_489BBA
-
+byte
 
 .data:004DF264                 dd offset crt_construct_489BD6_ptr_080D198
-
+X PaletteManager
 
 .data:004DF268                 dd offset sub_48AAA9
-
-
 .data:004DF26C                 dd offset sub_48C20E
-
+byte
 
 .data:004DF270                 dd offset sub_48C22A
-
-
 .data:004DF274                 dd offset loc_48C234
-
-
 .data:004DF278                 dd offset loc_48C243
-
-
 .data:004DF27C                 dd offset loc_48C252
-
-
 .data:004DF280                 dd offset loc_48C3C0
-
-
 .data:004DF284                 dd offset loc_48C474
-
+Party constructor
 
 .data:004DF288                 dd offset sub_49801C
-
-
 .data:004DF28C                 dd offset sub_498077
-
-
 .data:004DF290                 dd offset sub_498A25
-
-
 .data:004DF294                 dd offset sub_49AFE5
-
-
 .data:004DF298                 dd offset crt_deconstruct_49B36B
-
+byte
 
 .data:004DF29C                 dd offset crt_construct_stru187@AE5BA8
-
-
+X DecalBuilder
 
 .data:004DF2A0                 dd offset crt_construct_ptr_AE5B94
-
+std__string_AE5B94 = "hwsplat04", need RECHECK
 
 .data:004DF2A4                 dd offset sub_49C594
-
-
 .data:004DF2A8                 dd offset sub_49D6C8
-
-
 .data:004DF2AC                 dd offset sub_49D6E4
-
-
 .data:004DF2B0                 dd offset sub_49E71A
-
+byte
 
 .data:004DF2B4                 dd offset sub_49E736
-
+X Render
 
 .data:004DF2B8                 dd offset sub_4A198F
-
+byte
 
 .data:004DF2BC                 dd offset sub_4A19AB
-
+added
 
 .data:004DF2C0                 dd offset sub_4A51AF
-
-
 .data:004DF2C4                 dd offset sub_4A7047
-
-
 .data:004DF2C8                 dd offset sub_4A94EB
-
-
 .data:004DF2CC                 dd offset sub_4A963E
-
+byte
 
 .data:004DF2D0                 dd offset sub_4A965A
-
+X pSoundList
 
 .data:004DF2D4                 dd offset AudioPlayer__AudioPlayer
-
+X
 
 .data:004DF2D8                 dd offset sub_4AC1AD
-
-
 .data:004DF2DC                 dd offset sub_4AC662
-
-
 .data:004DF2E0                 dd offset sub_4ACC1C
-
-
 .data:004DF2E4                 dd offset sub_4AD369
-
-
 .data:004DF2E8                 dd offset crt_deconstruct_4AD44B
-
+byte
 
 .data:004DF2EC                 dd offset crt_construct_4AD467_ptr_F79D68
-
+X OSVersion
 
 .data:004DF2F0                 dd offset crt_deconstruct_4AD4DE
-
+byte
 
 .data:004DF2F4                 dd offset crt_construct_ptr_F7CE30
-
+X Texture
 
 .data:004DF2F8                 dd offset sub_4B142B
-
-
 .data:004DF2FC                 dd offset crt_sub_4BE344
-
+byte
 
 .data:004DF300                 dd offset j_Random__ctor
-
+X
 
 .data:004DF304                 dd offset crt_sub_4BE6B5
-
-
 .data:004DF308                 dd offset crt_sub_4BE6D4
-
+byte
 
 .data:004DF30C                 dd offset crt_j_VideoPlayer__ctor
-
+RECHECK
 
 .data:004DF310                 dd offset sub_4C021E
-
+byte
 
 .data:004DF314                 dd offset sub_4C023A
-
+added
 
 .data:004DF318                 dd offset sub_4C035A
-
-
 .data:004DF31C                 dd offset sub_4C03A3
-
+byte
 
 .data:004DF320                 dd offset sub_4C03BF
-
-
 .data:004DF324                 dd offset sub_4C03F1
-
-
 .data:004DF328                 dd offset sub_4C0423
-
-
 .data:004DF32C                 dd offset sub_4C044B
-
-
 .data:004DF330                 dd offset sub_4C047D
-
+X vis filters
 
 .data:004DF334                 dd offset sub_4C2A6E
-
-
 .data:004DF338                 dd offset sub_4C2A8A
-
-
 .data:004DF33C                 dd offset sub_4C2F7C
-
-
-.data:004DF340                 dd offset unknown_libname_24 ; Microsoft VisualC 2-10/net runtime
-
-
-.data:004DF34C                 dd offset ___onexitinit
-
-
-.data:004DF350                 dd offset ___lconv_init
-
-
-.data:004DF354                 dd offset ___initstdio
-
-
-.data:004DF358                 dd offset ___initmbctable
-
-
-.data:004DF35C                 dd offset sub_4D298A
-
-
-.data:004DF368                 dd offset ___endstdio
-
-
-.data:004DF374                 dd offset sub_4D299B
-
+byte
 
 */

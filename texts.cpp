@@ -1,17 +1,30 @@
-#ifdef _MSC_VER
 #define _CRT_SECURE_NO_WARNINGS
-#endif
-
 #include <string.h>
+
 #include "LOD.h"
 #include "mm7_data.h"
 #include "texts.h"
 
 
+std::vector<char*> Tokenize( char* input, const char separator )
+{
+  std::vector<char*> retVect;
+  retVect.push_back(input);
+  while (*input)
+  {
+    if (*input == separator)
+    {
+        *input = '\0';
+        retVect.push_back(input + 1);
+    }
+    ++input;
+  }
+  return retVect;
+}
 
 
 
-static char *pGlobalTXT_Raw=NULL;
+static char *pGlobalTXT_Raw=nullptr;
 
 std::array<const char *, MAX_LOC_STRINGS> pGlobalTXT_LocalizationStrings;
 
@@ -78,8 +91,7 @@ void InitializeGameText()
 	int temp_str_len; // ecx@5
 	bool string_end; // [sp+14h] [bp-4h]@4
 	//v0 = 0;
-	if (pGlobalTXT_Raw)
-		free(pGlobalTXT_Raw);
+	free(pGlobalTXT_Raw);
 	pGlobalTXT_Raw = (char *)pEvents_LOD->LoadRaw("global.txt", 0);
 
 /*	strtok(pGlobalTXT_Raw, "\r");
@@ -137,6 +149,7 @@ void InitializeGameText()
 		test_string = strtok(NULL, "\r") + 1;  //Carriage Return 0D 13
 		}	
 
+  SetSomeItemsNames();
 	aMonthNames[0] = pGlobalTXT_LocalizationStrings[415];  aMonthNames[1] = pGlobalTXT_LocalizationStrings[416];
 	aMonthNames[2] = pGlobalTXT_LocalizationStrings[417];  aMonthNames[3] = pGlobalTXT_LocalizationStrings[418];
 	aMonthNames[4] = pGlobalTXT_LocalizationStrings[419];  aMonthNames[5] = pGlobalTXT_LocalizationStrings[420];

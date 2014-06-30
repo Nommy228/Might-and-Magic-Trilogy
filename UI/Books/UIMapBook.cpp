@@ -1,7 +1,7 @@
-#ifdef _MSC_VER
 #define _CRT_SECURE_NO_WARNINGS
-#endif
-
+#include "UIMapBook.h"
+#include "..\..\Events.h"
+#include "..\..\mm7_unsorted_subs.h"
 #include "..\..\MM7.h"
 #include "..\..\Render.h"
 #include "..\..\Mouse.h"
@@ -14,7 +14,7 @@
 #include "..\..\Outdoor.h"
 #include "..\..\LOD.h"
 #include "..\..\Viewport.h"
-#include "..\..\Math.h"
+#include "..\..\OurMath.h"
 #include "..\..\texts.h"
 #include "..\..\Level/Decoration.h"
 //
@@ -116,13 +116,13 @@ unsigned int  DrawLloydBeaconsScreen()
   }
   pRenderer->DrawTextureTransparent(pBtn_Book_2->uX, pBtn_Book_2->uY, v19);
   uNumMaxBeacons = 1;
-  if ( HIBYTE(pPlayer->pActiveSkills[14]) & 1 || (pPlayer->pActiveSkills[14] & 0x80u) != 0 )
+  if ( HIBYTE(pPlayer->pActiveSkills[PLAYER_SKILL_WATER]) & 1 || (pPlayer->pActiveSkills[PLAYER_SKILL_WATER] & 0x80u) != 0 )
   {
     uNumMaxBeacons = 5;
   }
   else
   {
-    if ( pPlayer->pActiveSkills[14] & 0x40 )
+    if ( pPlayer->pActiveSkills[PLAYER_SKILL_WATER] & 0x40 )
       uNumMaxBeacons = 3;
   }
   if ( uNumMaxBeacons > 0 )
@@ -140,7 +140,7 @@ unsigned int  DrawLloydBeaconsScreen()
       {
         pRenderer->DrawTextureTransparent(pLloydsBeacons_SomeXs[BeaconID], pLloydsBeacons_SomeYs[BeaconID], pTexture_CurrentBook);
         pRenderer->DrawTextureRGB(pLloydsBeaconsPreviewXs[BeaconID], pLloydsBeaconsPreviewYs[BeaconID], &pSavegameThumbnails[BeaconID]);
-        Str = pMapStats->pInfos[sub_410D99_get_map_index(pPlayer->pInstalledBeacons[BeaconID].SaveFileID)].pName;
+        Str = pMapStats->pInfos[pMapStats->sub_410D99_get_map_index(pPlayer->pInstalledBeacons[BeaconID].SaveFileID)].pName;
         pTextHeight = pSpellFont->CalcTextHeight(Str, &pWindow, 0, 0);
         pWindow.uFrameY += -6 - pTextHeight;
         pWindow.DrawTitleText(pSpellFont, 0, 0, 1, Str, 3);
@@ -271,52 +271,52 @@ void DrawBook_Map_sub( unsigned int tl_x, unsigned int tl_y, unsigned int br_x, 
   int v28; // edx@21
   int v29; // eax@21
   double v30; // st7@23
-  signed __int64 v31; // qax@23
-  unsigned short *v32; // edx@23
+//  signed __int64 v31; // qax@23
+//  unsigned short *v32; // edx@23
   int textr_width; // esi@23
-  signed int v34; // eax@23
-  signed int v35; // ecx@23
-  int v36; // esi@27
-  int v37; // ecx@27
-  int v38; // edx@31
-  unsigned int v39; // eax@33
-  short *v40; // esi@33
-  short *v41; // edi@33
-  unsigned __int8 v42; // cf@33
-  unsigned int v43; // ecx@33
-  short *v44; // edi@33
-  short *v45; // esi@33
-  int v46; // ecx@33
+//  signed int v34; // eax@23
+//  signed int v35; // ecx@23
+//  int v36; // esi@27
+//  int v37; // ecx@27
+//  int v38; // edx@31
+//  unsigned int v39; // eax@33
+//  short *v40; // esi@33
+//  short *v41; // edi@33
+//  unsigned __int8 v42; // cf@33
+//  unsigned int v43; // ecx@33
+//  short *v44; // edi@33
+//  short *v45; // esi@33
+//  int v46; // ecx@33
   signed int v47; // esi@38
   signed int v48; // ecx@38
   int v49; // eax@38
   signed int v50; // edx@55
   unsigned int v51; // ecx@55
-  int result; // eax@72
+//  int result; // eax@72
   int v54; // esi@75
   int v55; // eax@75
-  __int16 v56; // si@85
+//  __int16 v56; // si@85
   double v57; // st7@85
-  int v58; // ebx@85
-  signed __int64 v59; // qax@85
+//  int v58; // ebx@85
+//  signed __int64 v59; // qax@85
   signed int v60; // edi@85
-  signed __int64 v61; // qax@85
+//  signed __int64 v61; // qax@85
   signed int v62; // ebx@85
   signed int v63; // esi@85
   int v64; // eax@87
-  unsigned int v65; // ebx@95
-  unsigned short *v66; // edx@95
-  unsigned __int16 *v67; // esi@96
-  int v68; // edi@98
-  unsigned __int16 v69; // cx@99
-  signed int v73; // [sp-4h] [bp-48068h]@59
-  unsigned __int16 v74; // [sp-4h] [bp-48068h]@79
-  unsigned short map_texture_16[147456]; // [sp+Ch] [bp-48058h]@23
-  int v76; // [sp+4800Ch] [bp-58h]@23
-  unsigned __int16 *v77; // [sp+48010h] [bp-54h]@27
+//  unsigned int v65; // ebx@95
+//  unsigned short *v66; // edx@95
+//  unsigned __int16 *v67; // esi@96
+//  int v68; // edi@98
+//  unsigned __int16 v69; // cx@99
+//  signed int v73; // [sp-4h] [bp-48068h]@59
+//  unsigned __int16 v74; // [sp-4h] [bp-48068h]@79
+  //unsigned short map_texture_16[320 * 460 + 256]; // [sp+Ch] [bp-48058h]@23
+//  int v76; // [sp+4800Ch] [bp-58h]@23
+  //unsigned __int16 *v77; // [sp+48010h] [bp-54h]@27
   unsigned __int16 *pPalette_16; // [sp+48014h] [bp-50h]@23
   int map_tile_X; // [sp+48020h] [bp-44h]@23
-  unsigned __int16* render16_data;
+  //unsigned __int16* render16_data;
   unsigned char* texture8_data;
   unsigned char* curr_line;
   int scale_increment;
@@ -338,8 +338,8 @@ void DrawBook_Map_sub( unsigned int tl_x, unsigned int tl_y, unsigned int br_x, 
   unsigned int v95; // [sp+48058h] [bp-Ch]@16
   int map_tile_Y; // [sp+4805Ch] [bp-8h]@10
   const void *v97; // [sp+48060h] [bp-4h]@16
-  unsigned short *a4a; // [sp+4806Ch] [bp+8h]@85
-  int a5a; // [sp+48070h] [bp+Ch]@86
+//  unsigned short *a4a; // [sp+4806Ch] [bp+8h]@85
+  //int a5a; // [sp+48070h] [bp+Ch]@86
 
   screenCenter_X = (signed int)(tl_x + br_x) / 2;
   screenCenterY = (signed int)(tl_y + br_y) / 2;
@@ -366,7 +366,7 @@ void DrawBook_Map_sub( unsigned int tl_x, unsigned int tl_y, unsigned int br_x, 
   {
     screenWidth = br_x - tl_x + 1;
     screenHeight = br_y - tl_y + 1;
-    render16_data = &pRenderer->pTargetSurface[tl_x + tl_y * pRenderer->uTargetSurfacePitch];
+    //render16_data = &pRenderer->pTargetSurface[tl_x + tl_y * pRenderer->uTargetSurfacePitch];
     texture8_data = pIcons_LOD->pTextures[viewparams->uTextureID_LocationMap].pLevelOfDetail0_prolly_alpha_mask;
     pPalette_16 = pIcons_LOD->pTextures[viewparams->uTextureID_LocationMap].pPalette16;
     scale_increment = (1 << (pIcons_LOD->pTextures[viewparams->uTextureID_LocationMap].uWidthLn2 + 16)) / viewparams->uMapBookMapZoom;
@@ -385,49 +385,51 @@ void DrawBook_Map_sub( unsigned int tl_x, unsigned int tl_y, unsigned int br_x, 
     {
       for( uint i = 0; i < screenHeight; ++i )
       {
-        curr_line=&texture8_data[scaled_posY*textr_width];
-        stepX_r=teal;
+        curr_line = &texture8_data[scaled_posY*textr_width];
+        stepX_r = teal;
         for( uint j = 0; j < screenWidth; ++j )
         {
-          scaled_posX=stepX_r>>16;
-          map_texture_16[i*screenWidth+j]=pPalette_16[*(curr_line+scaled_posX)];
-          stepX_r+=scale_increment;      
+          scaled_posX = stepX_r>>16;
+          //map_texture_16[i*screenWidth+j]=pPalette_16[*(curr_line+scaled_posX)];
+          pRenderer->WritePixel16(tl_x + j, tl_y + i, pPalette_16[*(curr_line+scaled_posX)]);
+          stepX_r += scale_increment;
         }
         stepY_r+=scale_increment;
         scaled_posY=stepY_r>>16;
       }
     }
-    //move visible square to render
+
+    /*//move visible square to render
     for( uint i = 0; i < screenHeight; ++i )
     {
       if ( screenWidth > 0 )
         memcpy((void*)&render16_data[pRenderer->uTargetSurfacePitch * i],(void*)&map_texture_16[i*screenWidth], screenWidth*2);
-    }
+    }*/
   }
   else
   {
-    black = TargetColor(0, 0, 0);
-    teal = TargetColor(0, 0xFFu, 0xFFu);
+    black = Color16(0, 0, 0);
+    teal = Color16(0, 0xFFu, 0xFFu);
     uNumBlueFacesInBLVMinimap = 0;
     if ( pIndoor->pMapOutlines->uNumOutlines )
     {
      for ( uint i = 0; i < pIndoor->pMapOutlines->uNumOutlines; ++i )
       {
-        if ( !(BYTE1(pIndoor->pFaces[pIndoor->pMapOutlines->pOutlines[i].uFace1ID].uAttributes) & 0x20 
-           || (BYTE1(pIndoor->pFaces[pIndoor->pMapOutlines->pOutlines[i].uFace2ID].uAttributes) & 0x20) ))
+        if ( !(pIndoor->pFaces[pIndoor->pMapOutlines->pOutlines[i].uFace1ID].Invisible() 
+           || (pIndoor->pFaces[pIndoor->pMapOutlines->pOutlines[i].uFace2ID].Invisible()) ))
         {
           if ( !(pIndoor->pMapOutlines->pOutlines[i].uFlags & 1) )
           {
-            if ( !(!(pIndoor->pFaces[pIndoor->pMapOutlines->pOutlines[i].uFace1ID].uAttributes & 0x80)
-                && !(pIndoor->pFaces[pIndoor->pMapOutlines->pOutlines[i].uFace2ID].uAttributes & 0x80u) ))
+            if ( !(!(pIndoor->pFaces[pIndoor->pMapOutlines->pOutlines[i].uFace1ID].uAttributes & FACE_UNKNOW4)
+                && !(pIndoor->pFaces[pIndoor->pMapOutlines->pOutlines[i].uFace2ID].uAttributes & FACE_UNKNOW4) ))
             {
               pIndoor->pMapOutlines->pOutlines[i].uFlags = pIndoor->pMapOutlines->pOutlines[i].uFlags | 1;
               pIndoor->_visible_outlines[i >> 3] |= 1 << (7 - i % 8);
             }
           }
           if ( (!(pIndoor->pMapOutlines->pOutlines[i].uFlags & 1) 
-            && !(!(pIndoor->pFaces[pIndoor->pMapOutlines->pOutlines[i].uFace1ID].uAttributes & 0x80)
-            && !(pIndoor->pFaces[pIndoor->pMapOutlines->pOutlines[i].uFace2ID].uAttributes & 0x80u) ))
+            && !(!(pIndoor->pFaces[pIndoor->pMapOutlines->pOutlines[i].uFace1ID].uAttributes & FACE_UNKNOW4)
+            && !(pIndoor->pFaces[pIndoor->pMapOutlines->pOutlines[i].uFace2ID].uAttributes & FACE_UNKNOW4) ))
             || pIndoor->pMapOutlines->pOutlines[i].uFlags & 1)
           {
             v93 = (unsigned __int16 *)(pIndoor->pVertices[pIndoor->pMapOutlines->pOutlines[i].uVertex1ID].x - viewparams->sViewCenterX);
@@ -435,12 +437,12 @@ void DrawBook_Map_sub( unsigned int tl_x, unsigned int tl_y, unsigned int br_x, 
             v20 = pIndoor->pVertices[pIndoor->pMapOutlines->pOutlines[i].uVertex2ID].y - pCenterY;
             v95 = pIndoor->pVertices[pIndoor->pMapOutlines->pOutlines[i].uVertex2ID].x - viewparams->sViewCenterX;
 
-            v88 = (unsigned __int64)((pIndoor->pVertices[pIndoor->pMapOutlines->pOutlines[i].uVertex1ID].x - viewparams->sViewCenterX) * (signed __int64)viewparams->uMapBookMapZoom) >> 16;
-            v87 = (unsigned __int64)((signed int)screenHeight * (signed __int64)viewparams->uMapBookMapZoom) >> 16;
-            v93 = (unsigned __int16 *)((unsigned __int64)((pIndoor->pVertices[pIndoor->pMapOutlines->pOutlines[i].uVertex2ID].x - viewparams->sViewCenterX) * (signed __int64)viewparams->uMapBookMapZoom) >> 16);
-            screenHeight = (unsigned __int64)(v20 * (signed __int64)viewparams->uMapBookMapZoom) >> 16;
+            v88 = fixpoint_mul((pIndoor->pVertices[pIndoor->pMapOutlines->pOutlines[i].uVertex1ID].x - viewparams->sViewCenterX), viewparams->uMapBookMapZoom);
+            v87 = fixpoint_mul(screenHeight, viewparams->uMapBookMapZoom);
+            v93 = (unsigned __int16 *)(fixpoint_mul((pIndoor->pVertices[pIndoor->pMapOutlines->pOutlines[i].uVertex2ID].x - viewparams->sViewCenterX), viewparams->uMapBookMapZoom));
+            screenHeight = fixpoint_mul(v20, viewparams->uMapBookMapZoom);
             pRenderer->RasterLine2D(screenCenter_X + v88, screenCenterY - v87,
-              screenCenter_X + ((unsigned __int64)((pIndoor->pVertices[pIndoor->pMapOutlines->pOutlines[i].uVertex2ID].x - viewparams->sViewCenterX) * (signed __int64)viewparams->uMapBookMapZoom) >> 16), screenCenterY - screenHeight, black);
+              screenCenter_X + (fixpoint_mul((pIndoor->pVertices[pIndoor->pMapOutlines->pOutlines[i].uVertex2ID].x - viewparams->sViewCenterX), viewparams->uMapBookMapZoom)), screenCenterY - screenHeight, black);
           }
         }
       }
@@ -454,32 +456,32 @@ void DrawBook_Map_sub( unsigned int tl_x, unsigned int tl_y, unsigned int br_x, 
         v28 = pIndoor->pVertices[pIndoor->pMapOutlines->pOutlines[pBlueFacesInBLVMinimapIDs[j]].uVertex1ID].y - pCenterY;
         v29 = pIndoor->pVertices[pIndoor->pMapOutlines->pOutlines[pBlueFacesInBLVMinimapIDs[j]].uVertex2ID].y - pCenterY;
 
-        v87 = (unsigned __int64)((signed int)v27 * (signed __int64)viewparams->uMapBookMapZoom) >> 16;
-        v88 = (unsigned __int64)(v28 * (signed __int64)viewparams->uMapBookMapZoom) >> 16;
-        uint i = (unsigned __int64)((v26 - pCenterX) * (signed __int64)viewparams->uMapBookMapZoom) >> 16;
-        v95 = (unsigned __int64)(v29 * (signed __int64)viewparams->uMapBookMapZoom) >> 16;
-        pRenderer->RasterLine2D(screenCenter_X + ((unsigned __int64)((signed int)v27 * (signed __int64)viewparams->uMapBookMapZoom) >> 16),
-          screenCenterY - v88, screenCenter_X + ((unsigned __int64)((v26 - pCenterX) * (signed __int64)viewparams->uMapBookMapZoom) >> 16), screenCenterY - v95, teal);
+        v87 = fixpoint_mul((signed int)v27, viewparams->uMapBookMapZoom);
+        v88 = fixpoint_mul(v28, viewparams->uMapBookMapZoom);
+        uint i = fixpoint_mul((v26 - pCenterX), viewparams->uMapBookMapZoom);
+        v95 = fixpoint_mul(v29, viewparams->uMapBookMapZoom);
+        pRenderer->RasterLine2D(screenCenter_X + (fixpoint_mul((signed int)v27, viewparams->uMapBookMapZoom)),
+          screenCenterY - v88, screenCenter_X + (fixpoint_mul((v26 - pCenterX), viewparams->uMapBookMapZoom)), screenCenterY - v95, teal);
       }
       viewparams->sViewCenterX = pCenterX;
     }
   }
-  v47 = ((unsigned __int64)((pParty->vPosition.x - viewparams->sViewCenterX) * (signed __int64)viewparams->uMapBookMapZoom) >> 16) + screenCenter_X - 3;
-  v97 = (const void *)((unsigned __int64)((pParty->vPosition.y - pCenterY) * (signed __int64)viewparams->uMapBookMapZoom) >> 16);
+  v47 = (fixpoint_mul((pParty->vPosition.x - viewparams->sViewCenterX), viewparams->uMapBookMapZoom)) + screenCenter_X - 3;
+  v97 = (const void *)(fixpoint_mul((pParty->vPosition.y - pCenterY), viewparams->uMapBookMapZoom));
   v48 = 1;
   v49 = screenCenterY - (int)v97 - 3;
   if ( v47 >= (signed int)tl_x )
   {
     if ( v47 > (signed int)br_x )
     {
-      if ( (signed int)(((unsigned __int64)((pParty->vPosition.x - viewparams->sViewCenterX) * (signed __int64)viewparams->uMapBookMapZoom) >> 16) + screenCenter_X - 6) > (signed int)br_x )
+      if ( (signed int)((fixpoint_mul((pParty->vPosition.x - viewparams->sViewCenterX), viewparams->uMapBookMapZoom)) + screenCenter_X - 6) > (signed int)br_x )
         v48 = 0;
       v47 = br_x;
     }
   }
   else
   {
-    if ( (signed int)(((unsigned __int64)((pParty->vPosition.x - viewparams->sViewCenterX) * (signed __int64)viewparams->uMapBookMapZoom) >> 16) + screenCenter_X) < (signed int)tl_x )
+    if ( (signed int)((fixpoint_mul((pParty->vPosition.x - viewparams->sViewCenterX), viewparams->uMapBookMapZoom)) + screenCenter_X) < (signed int)tl_x )
       v48 = 0;
     v47 = tl_x;
   }
@@ -527,22 +529,22 @@ void DrawBook_Map_sub( unsigned int tl_x, unsigned int tl_y, unsigned int br_x, 
       {
         screenHeight = pLevelDecorations[i].vPosition.y - pCenterY;
         v93 = (unsigned __int16 *)(pLevelDecorations[i].vPosition.x - viewparams->sViewCenterX);
-        v54 = ((unsigned __int64)((signed int)v93 * (signed __int64)viewparams->uMapBookMapZoom) >> 16) + screenCenter_X;
-        v97 = (const void *)((unsigned __int64)(screenHeight * (signed __int64)viewparams->uMapBookMapZoom) >> 16);
+        v54 = (fixpoint_mul((signed int)v93, viewparams->uMapBookMapZoom)) + screenCenter_X;
+        v97 = (const void *)(fixpoint_mul(screenHeight, viewparams->uMapBookMapZoom));
         v55 = screenCenterY - (int)v97;
-        if ( v54 >= pRenderer->raster_clip_x && v54 <= pRenderer->raster_clip_z
-          && v55 >= pRenderer->raster_clip_y && v55 <= pRenderer->raster_clip_w )
+        //if ( v54 >= pRenderer->raster_clip_x && v54 <= pRenderer->raster_clip_z
+        //  && v55 >= pRenderer->raster_clip_y && v55 <= pRenderer->raster_clip_w )
         {
           if ( viewparams->uMapBookMapZoom > 512 )
           {
-            pRenderer->RasterLine2D(v54 - 1, v55 - 1, v54 - 1, v55 + 1, TargetColor(0xFFu, 0xFFu, 0xFFu));
-            pRenderer->RasterLine2D(v54,     v55 - 1, v54,     v55 + 1, TargetColor(0xFFu, 0xFFu, 0xFFu));
-            pRenderer->RasterLine2D(v54 + 1, v55 - 1, v54 + 1, v55 + 1, TargetColor(0xFFu, 0xFFu, 0xFFu));
+            pRenderer->RasterLine2D(v54 - 1, v55 - 1, v54 - 1, v55 + 1, Color16(0xFFu, 0xFFu, 0xFFu));
+            pRenderer->RasterLine2D(v54,     v55 - 1, v54,     v55 + 1, Color16(0xFFu, 0xFFu, 0xFFu));
+            pRenderer->RasterLine2D(v54 + 1, v55 - 1, v54 + 1, v55 + 1, Color16(0xFFu, 0xFFu, 0xFFu));
           }
           else
             pRenderer->RasterLine2D(v54, screenCenterY - (int)v97,
-                   ((unsigned __int64)((signed int)v93 * (signed __int64)viewparams->uMapBookMapZoom) >> 16) + screenCenter_X,
-                   screenCenterY - (int)v97, TargetColor(0xFFu, 0xFFu, 0xFFu));
+                   (fixpoint_mul((signed int)v93, viewparams->uMapBookMapZoom)) + screenCenter_X,
+                   screenCenterY - (int)v97, Color16(0xFFu, 0xFFu, 0xFFu));
         }
       }
     }
@@ -551,7 +553,7 @@ void DrawBook_Map_sub( unsigned int tl_x, unsigned int tl_y, unsigned int br_x, 
   {
     screenCenterY = br_x - tl_x + 1;
     v95 = br_y - tl_y + 1;
-    v77 = &pRenderer->pTargetSurface[tl_x + tl_y * pRenderer->uTargetSurfacePitch];
+    //v77 = &pRenderer->pTargetSurface[tl_x + tl_y * pRenderer->uTargetSurfacePitch];
     black = (1 << (pIcons_LOD->pTextures[viewparams->uTextureID_LocationMap].uWidthLn2 + 16)) / viewparams->uMapBookMapZoom;
     v57 = (double)(1 << (16 - pIcons_LOD->pTextures[viewparams->uTextureID_LocationMap].uWidthLn2));
     v60 = (int)((signed __int64)((double)(viewparams->sViewCenterX - (22528 / (viewparams->uMapBookMapZoom / 384)) + 32768) / v57)) << 16;
@@ -560,7 +562,37 @@ void DrawBook_Map_sub( unsigned int tl_x, unsigned int tl_y, unsigned int br_x, 
     v97 = (const void *)((int)((signed __int64)((double)(viewparams->sViewCenterX - (22528 / (viewparams->uMapBookMapZoom / 384)) + 32768) / v57)) << 16);
     v62 = (int)((signed __int64)((double)(32768 - (22528 / (viewparams->uMapBookMapZoom / 384)) - pCenterY) / v57)) << 16;
     v63 = (signed __int16)((signed __int64)((double)(32768 - (22528 / (viewparams->uMapBookMapZoom / 384)) - pCenterY) / v57));
-    a4a = map_texture_16;
+
+
+    for (int y = 0; y < (signed int)v95; ++y)
+    {
+        map_tile_Y = (v63 - 80) / 4;
+        v64 = teal;
+        for (int x = 0; x < screenCenterY; ++x)
+        {
+          map_tile_X = (v64 - 80) / 4;
+          if ( !pOutdoor->IsMapCellFullyRevealed(map_tile_X, map_tile_Y) )
+          {
+            if ( pOutdoor->IsMapCellPartiallyRevealed(map_tile_X, map_tile_Y) )
+            {
+              if ( !((x + screenCenter_X) % 2) )
+                //*a4a = Color16(12, 12, 12);
+                  pRenderer->WritePixel16(tl_x + x, tl_y + y, Color16(12, 12, 12));
+            }
+            else
+              //*a4a = 0;
+                  pRenderer->WritePixel16(tl_x + x, tl_y + y, Color16(0, 0, 0));
+          }
+          v97 = (char *)v97 + black;
+          v64 = (signed int)v97 >> 16;
+        }
+
+      v62 += black;
+      v97 = (const void *)v60;
+      v63 = v62 >> 16;
+      teal = (unsigned int)pPalette_16;
+    }
+    /*a4a = map_texture_16;
     for ( screenCenter_X = 0; screenCenter_X < (signed int)v95; ++screenCenter_X )
     {
       if ( screenCenterY > 0 )
@@ -575,7 +607,7 @@ void DrawBook_Map_sub( unsigned int tl_x, unsigned int tl_y, unsigned int br_x, 
             if ( pOutdoor->_47F097(map_tile_X, map_tile_Y) )
             {
               if ( !((a5a + screenCenter_X) % 2) )
-                *a4a = TargetColor(0xCu, 0xCu, 0xCu);
+                *a4a = Color16(0xCu, 0xCu, 0xCu);
             }
             else
               *a4a = 0;
@@ -591,6 +623,7 @@ void DrawBook_Map_sub( unsigned int tl_x, unsigned int tl_y, unsigned int br_x, 
       v63 = v62 >> 16;
       teal = (unsigned int)pPalette_16;
     }
+
     v66 = map_texture_16;
     if ( (signed int)v95 > 0 )
     {
@@ -611,7 +644,7 @@ void DrawBook_Map_sub( unsigned int tl_x, unsigned int tl_y, unsigned int br_x, 
         }
         v67 = (unsigned __int16 *)((char *)v67 + result);
       }
-    }
+    }*/
   }
 }
 
@@ -645,7 +678,7 @@ const char * GetMapBookHintText()
   result = 0;
   map_tile_X = abs(global_coord_X + 22528) / 512;//In the mapbook only lady Margaret dispays for defoult zoom(В книге карты только Леди Маргарита всплывает при дефолтном зуме)
   map_tile_Y = abs(global_coord_Y - 22528) / 512;
-  if ( pOutdoor->_47F04C(map_tile_X, map_tile_Y) && uCurrentlyLoadedLevelType == LEVEL_Outdoor && (signed int)pOutdoor->uNumBModels > 0 )
+  if ( pOutdoor->IsMapCellFullyRevealed(map_tile_X, map_tile_Y) && uCurrentlyLoadedLevelType == LEVEL_Outdoor && (signed int)pOutdoor->uNumBModels > 0 )
   {
     for(int i = 0; i < pOutdoor->uNumBModels && !result; i++)
     {
@@ -658,7 +691,7 @@ const char * GetMapBookHintText()
           {
             if ( pOutdoor->pBModels[i].pFaces[j].sCogTriggeredID )
             {
-              if ( !(pOutdoor->pBModels[i].pFaces[j].uAttributes & 0x100000) )
+              if ( !(pOutdoor->pBModels[i].pFaces[j].uAttributes & FACE_UNKNOW) )
               {
                 if ( GetEventHintString(pOutdoor->pBModels[i].pFaces[j].sCogTriggeredID) )
                 {

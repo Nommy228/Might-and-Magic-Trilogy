@@ -161,6 +161,7 @@ struct NPCStats
   void Release();
   void InitializeAdditionalNPCs(NPCData *pNPCDataBuff, int npc_uid, int uLocation2D, int uMapId);
   void _476C60();
+  char * sub_495366_MispronounceName(unsigned __int8 firstLetter, unsigned __int8 genderId);
 
   
   NPCData pNPCData[501]; //0 - 94BCh count from 1 
@@ -190,6 +191,9 @@ struct NPCStats
   char *pNPCDistTXT_Raw;
   char *pNPCGreetTXT_Raw;
   char *pNCPGroupTXT_Raw;
+
+  static int dword_AE336C_LastMispronouncedNameFirstLetter;
+  static int dword_AE3370_LastMispronouncedNameResult;
 };
 #pragma pack(pop)
 
@@ -202,3 +206,12 @@ bool PartyHasDragon();
 bool CheckHiredNPCSpeciality(unsigned int uProfession);
 
 int UseNPCSkill(NPCProf profession);
+void __fastcall ClickNPCTopic(signed int uMessageParam);
+const char *ContractSelectText(int pEventCode);
+void NPCHireableDialogPrepare();
+void _4B4224_UpdateNPCTopics(int _this);
+const char *GetProfessionActionText(int a1);
+struct NPCData *__fastcall GetNPCData(signed int npcid);
+struct NPCData * GetNewNPCData(signed int npcid, int* npc_indx);
+int __fastcall GetGreetType(signed int SpeakingNPC_ID);
+int NPC_EventProcessor(int npc_event_id, int entry_line = 0);

@@ -4,8 +4,14 @@
 #pragma pack(push, 1)
 struct Viewport
 {
+  inline Viewport()
+  {
+    field_of_view = 65536 / 2;
+    SetScreen(0, 0, 639, 479);
+  }
+
   void SetScreen(signed int uX, signed int uY, signed int uZ, signed int uW);
-  void _4C02F8(int a2);
+  void SetFOV(int a2);
   void SetViewport(signed int uX, signed int uY, signed int uZ, signed int uW);
 
 
@@ -21,10 +27,11 @@ struct Viewport
   int uScreenHeight;
   int uScreenCenterX;
   int uScreenCenterY;
-  int field_30;
+  int field_of_view;
 };
 #pragma pack(pop)
 
+void OnGameViewportClick();
 
 
 extern struct Viewport *pViewport;

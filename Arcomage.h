@@ -143,6 +143,8 @@ struct ArcomageGame
   static void OnMouseClick(char right_left, bool bDown);
   static void OnMouseMove(int x, int y);
   static void GetCardRect(unsigned int uCardID, RECT *pCardRect);
+  static void PrepareArcomage();
+  static void DoBlt_Copy(unsigned __int16 *pPixels); // idb
 
   static void Loop();
 
@@ -169,8 +171,8 @@ struct ArcomageGame
   RGBTexture pGameBackground;
   RGBTexture pSprites;
   int event_timer_time;
-  int uGameResult;
-  int field_B0;
+  int uGameWinner;
+  int Victory_type;
   char pPlayer1Name[32];
   char pPlayer2Name[32];
   char field_F4;

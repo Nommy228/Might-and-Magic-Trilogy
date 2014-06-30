@@ -1,7 +1,5 @@
-#ifdef _MSC_VER
 #define _CRT_SECURE_NO_WARNINGS
-#endif
-
+#include "..\..\mm7_unsorted_subs.h"
 #include "..\..\MM7.h"
 #include "..\..\Render.h"
 #include "..\..\Mouse.h"

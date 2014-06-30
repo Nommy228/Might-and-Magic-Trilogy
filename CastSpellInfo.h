@@ -17,7 +17,7 @@ struct CastSpellInfo
   //----- (00426987) --------------------------------------------------------
   inline CastSpellInfo()
   {
-    memset(this, 0, sizeof(this));
+    memset(this, 0, sizeof(*this));
   }
 
   struct GUIWindow *GetCastSpellInInventoryWindow();
@@ -32,3 +32,5 @@ struct CastSpellInfo
   int sound_id;
 };
 #pragma pack(pop)
+
+void _42777D_CastSpell_UseWand_ShootArrow(int a1, unsigned int uPlayerID, unsigned int a4, __int16 a5, int a6);

@@ -1,3 +1,4 @@
+#define _CRT_SECURE_NO_WARNINGS
 #pragma once
 #include "Conditions.h"
 #include "Party.h"
@@ -10,12 +11,12 @@ std::array<ConditionProcessor, 18> conditionArray =
   ConditionProcessor(Condition_Fear,      false, false,  0),
   ConditionProcessor(Condition_Drunk,     false, false,  0),
   ConditionProcessor(Condition_Insane,    false, false, 19, ITEM_ARTIFACT_YORUBA, EQUIP_ARMOUR, ITEM_ARTIFACT_CLOAK_OF_THE_SHEEP, EQUIP_CLOAK),
-  ConditionProcessor(Condition_Poison1,    true, false, 21, ITEM_ARTIFACT_YORUBA, EQUIP_ARMOUR, ITEM_ARTIFACT_CLOAK_OF_THE_SHEEP, EQUIP_CLOAK),
-  ConditionProcessor(Condition_Disease1,   true, false, 18, ITEM_ARTIFACT_YORUBA, EQUIP_ARMOUR, ITEM_ARTIFACT_CLOAK_OF_THE_SHEEP, EQUIP_CLOAK),
-  ConditionProcessor(Condition_Poison2,    true, false, 21, ITEM_ARTIFACT_YORUBA, EQUIP_ARMOUR, ITEM_ARTIFACT_CLOAK_OF_THE_SHEEP, EQUIP_CLOAK),
-  ConditionProcessor(Condition_Disease2,   true, false, 18, ITEM_ARTIFACT_YORUBA, EQUIP_ARMOUR, ITEM_ARTIFACT_CLOAK_OF_THE_SHEEP, EQUIP_CLOAK),
-  ConditionProcessor(Condition_Poison3,    true, false, 21, ITEM_ARTIFACT_YORUBA, EQUIP_ARMOUR, ITEM_ARTIFACT_CLOAK_OF_THE_SHEEP, EQUIP_CLOAK),
-  ConditionProcessor(Condition_Disease3,   true, false, 18, ITEM_ARTIFACT_YORUBA, EQUIP_ARMOUR, ITEM_ARTIFACT_CLOAK_OF_THE_SHEEP, EQUIP_CLOAK),
+  ConditionProcessor(Condition_Poison_Weak,    true, false, 21, ITEM_ARTIFACT_YORUBA, EQUIP_ARMOUR, ITEM_ARTIFACT_CLOAK_OF_THE_SHEEP, EQUIP_CLOAK),
+  ConditionProcessor(Condition_Disease_Weak,   true, false, 18, ITEM_ARTIFACT_YORUBA, EQUIP_ARMOUR, ITEM_ARTIFACT_CLOAK_OF_THE_SHEEP, EQUIP_CLOAK),
+  ConditionProcessor(Condition_Poison_Medium,    true, false, 21, ITEM_ARTIFACT_YORUBA, EQUIP_ARMOUR, ITEM_ARTIFACT_CLOAK_OF_THE_SHEEP, EQUIP_CLOAK),
+  ConditionProcessor(Condition_Disease_Medium,   true, false, 18, ITEM_ARTIFACT_YORUBA, EQUIP_ARMOUR, ITEM_ARTIFACT_CLOAK_OF_THE_SHEEP, EQUIP_CLOAK),
+  ConditionProcessor(Condition_Poison_Severe,    true, false, 21, ITEM_ARTIFACT_YORUBA, EQUIP_ARMOUR, ITEM_ARTIFACT_CLOAK_OF_THE_SHEEP, EQUIP_CLOAK),
+  ConditionProcessor(Condition_Disease_Severe,   true, false, 18, ITEM_ARTIFACT_YORUBA, EQUIP_ARMOUR, ITEM_ARTIFACT_CLOAK_OF_THE_SHEEP, EQUIP_CLOAK),
   ConditionProcessor(Condition_Paralyzed, false, false, 20, ITEM_ARTIFACT_YORUBA, EQUIP_ARMOUR, ITEM_ARTIFACT_CLOAK_OF_THE_SHEEP, EQUIP_CLOAK, ITEM_ARTIFACT_GHOULSBANE, EQIUP_ANY),
   ConditionProcessor(Condition_Unconcious,false, false,  0),
   ConditionProcessor(Condition_Dead,       true,  true,  0),
@@ -27,16 +28,14 @@ std::array<ConditionProcessor, 18> conditionArray =
 bool ConditionProcessor::IsPlayerAffected( Player* inPlayer, int condToCheck, int blockable)
 {
   if ( !blockable )
-  {
     return true;
-  }
   ConditionProcessor* thisProc = &conditionArray[condToCheck];
   if (thisProc->m_IsBlockedByProtFromMagic && pParty->pPartyBuffs[PARTY_BUFF_PROTECTION_FROM_MAGIC].uExpireTime > 0)
   {
     if (!(thisProc->m_DoesNeedGmProtFromMagic && pParty->pPartyBuffs[PARTY_BUFF_PROTECTION_FROM_MAGIC].uSkill < 4))
     {
       --pParty->pPartyBuffs[PARTY_BUFF_PROTECTION_FROM_MAGIC].uPower;
-      if ( pParty->pPartyBuffs[PARTY_BUFF_PROTECTION_FROM_MAGIC].uPower < 1u )
+      if ( pParty->pPartyBuffs[PARTY_BUFF_PROTECTION_FROM_MAGIC].uPower < 1 )
         pParty->pPartyBuffs[PARTY_BUFF_PROTECTION_FROM_MAGIC].Reset();
       return false;
     }
@@ -49,24 +48,18 @@ bool ConditionProcessor::IsPlayerAffected( Player* inPlayer, int condToCheck, in
   for (unsigned int i = 0; i < thisProc->m_equipmentPairs.size() / 2; i++)
   {
     if (thisProc->m_equipmentPairs[i * 2].m_ItemId == (ITEM_TYPE)0)
-    {
       return true;
-    }
     ITEM_TYPE itemId = thisProc->m_equipmentPairs[i * 2].m_ItemId;
     ITEM_EQUIP_TYPE slot = thisProc->m_equipmentPairs[i * 2 + 1].m_EquipSlot;
     if (slot == EQIUP_ANY)
     {
       if (inPlayer->WearsItemAnyWhere(itemId))
-      {
         return false;
-      }
     }
     else
     {
       if (inPlayer->WearsItem(itemId, slot))
-      {
         return false;
-      }
     }
   }
   return true;

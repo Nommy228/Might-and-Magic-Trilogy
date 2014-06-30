@@ -1,12 +1,9 @@
-#ifdef _MSC_VER
 #define _CRT_SECURE_NO_WARNINGS
-#endif
-
 #include "mm7_data.h"
 
 #include "GUIWindow.h"
 #include "Party.h"
-
+#include "OSWindow.h"
 
 
 void ErrHR(HRESULT hr, const char *pAPI, const char *pFunction, const char *pFile, int line)
@@ -27,7 +24,7 @@ void ErrHR(HRESULT hr, const char *pAPI, const char *pFunction, const char *pFil
 
 
 
-#include "Math.h"
+#include "OurMath.h"
 struct stru193_math *stru_5C6E00 = new stru193_math;
 
 #include "MapInfo.h"
@@ -43,7 +40,7 @@ struct ViewingParams *viewparams = new ViewingParams;
 stru123 stru_5E4C90_MapPersistVars;
 
 #include "stru298.h"
-stru298 stru_50FE08; // weak
+stru298 AttackerInfo; // weak
 
 #include "Autonotes.h"
 std::array<Autonote, 196> pAutonoteTxt; // weak
@@ -225,8 +222,8 @@ std::array<__int32, 128*3> array_4EBBD0_x =
   0x00000031, 0x00000031, 0x0000002D, 0x00000041
 }};
 
-#include "stru176.h"
-stru176 array_5B5928_timers[100];
+#include "MapsLongTimer.h"
+MapsLongTimer MapsLongTimersList[100];
 
 #include "ObjectList.h"
 struct ObjectList *pObjectList;
@@ -297,23 +294,6 @@ std::array<stat_coord, 26> stat_string_coord = //4E2940
 
 
 
-namespace zlib
-{
-  #include "lib\zlib\zlib.h"
-  int MemUnzip(void *dest, unsigned int *destLen, const void *source, unsigned int sourceLen)
-  {
-    //return uncompress((zlib::Bytef *)dest, (zlib::uLongf *)destLen, (zlib::Bytef *)source, sourceLen);
-    return uncompress((Bytef *)dest, (uLongf *)destLen, (Bytef *)source, sourceLen);
-    return 0;
-  }
-
-  int MemZip(void *dest, unsigned int *destLen, void *source, unsigned int sourceLen)
-  {
-    //return compress((zlib::Bytef *)dest, (zlib::uLongf *)destLen, (zlib::Bytef *)source, sourceLen);
-    return compress((Bytef *)dest, (uLongf *)destLen, (Bytef *)source, sourceLen);
-    return 0;
-  }
-};
 
 #include "stru314.h"
 #include "stru367.h"
@@ -340,16 +320,9 @@ std::array<unsigned int, 2> saveload_dlg_ws = {344, 480};
 int pWindowList_at_506F50_minus1_indexing[1];
 int dword_4C9890[10]; // weak
 int dword_4C9920[16]; // weak
-_UNKNOWN unk_4D8548; // weak
 char byte_4D864C; // weak
 float flt_4D86CC = 1.0f; // weak
-int dword_4D86D8; // weak
-int dword_4DAFCC; // weak
-int (__stdcall *off_4DAFDC)(char); // weak
-char asc_4DB724[777]; // idb
-int dword_4DBD94; // weak
-//int dword_4DF390; // weak
-char Str2[777]; // idb
+int dword_4D86D8 = 0x40000000; // weak
 
 
 
@@ -359,97 +332,6 @@ char Str2[777]; // idb
 
 float flt_4D84E8 = 0.0f;
 
-char aIxf[4]; // idb
-_UNKNOWN unk_4E19FC; // weak
-char aD[777]; // idb
-char asc_4E1AB0[777]; // idb
-char aWb_0[777]; // idb
-char a24bitPcxOnly[777]; // idb
-char Mode[777]; // idb
-char a16bitPcx[777]; // idb
-char aUnableToLoadS[777]; // idb
-char aBitmaps[777]; // idb
-char aIcons[777]; // idb
-char aPending[777]; // idb
-char aCanTFindS[777]; // idb
-
-//std::array<char, 7> aSbwb00; // weak
-char aW[2]; // idb
-char aA[2]; // idb
-char aSD[777]; // idb
-char aSS03d03dS000S0[777]; // idb
-char aLuS[777]; // idb
-char aS_1[777]; // idb
-char aSbSc02d[777]; // idb
-char aSbSs02d[777]; // idb
-char aTabDb[777]; // idb
-char aTabDa[777]; // idb
-char aIbM6D[777]; // idb
-char aIbM6U[777]; // idb
-char aIbM5D[777]; // idb
-char aIbM5U[777]; // idb
-char aPagemask[777]; // idb
-char aBook[777]; // idb
-char aSpell_fnt[777]; // idb
-char aAutonote_fnt[777]; // idb
-char aBook2_fnt[777]; // idb
-char pFontFile[777]; // idb
-char aFontpal[777]; // idb
-char aMapbordr[777]; // idb
-char aLloydDD_pcx[777]; // idb
-char aDataLloydDD_pc[777]; // idb
-char aLb_bordr[777]; // idb
-char aTphell[777]; // idb
-char aTpheaven[777]; // idb
-char aTpisland[777]; // idb
-char aTpwarlock[777]; // idb
-char aTpelf[777]; // idb
-char aTpharmndy[777]; // idb
-char aTownport[777]; // idb
-char aSbquiknot[777]; // idb
-char aTabAn8a[777]; // idb
-char aTabAn8b[777]; // idb
-char aTabAn4a[777]; // idb
-char aTabAn4b[777]; // idb
-char aTabAn5a[777]; // idb
-char aTabAn5b[777]; // idb
-char aTabAn3a[777]; // idb
-char aTabAn3b[777]; // idb
-char aTabAn2a[777]; // idb
-char aTabAn2b[777]; // idb
-char aTabAn1a[777]; // idb
-char aTabAn1b[777]; // idb
-char aDivbar[777]; // idb
-char aSbautnot[777]; // idb
-char aTabwoff[777]; // idb
-char aTabwon[777]; // idb
-char aTabeoff[777]; // idb
-char aTabeon[777]; // idb
-char aTabsoff[777]; // idb
-char aTabson[777]; // idb
-char aTabnoff[777]; // idb
-char aTabnon[777]; // idb
-char aZootOff[777]; // idb
-char aZoomOff[777]; // idb
-char aZootOn[777]; // idb
-char aZoomOn[777]; // idb
-char aSbmap[777]; // idb
-char aMoon_ful[777]; // idb
-char aMoon_2[777]; // idb
-char aMoon_4[777]; // idb
-char aMoon_new[777]; // idb
-char aSbdateTime[777]; // idb
-char aTabAn7a[777]; // idb
-char aTabAn6a[777]; // idb
-char aTabAn7b[777]; // idb
-char aTabAn6b[777]; // idb
-char aSbplayrnot[777]; // idb
-char aPending_0[777]; // idb
-char aUnknown[8]; // weak
-char aS100110S[777]; // idb
-char aS100110D[777]; // idb
-char aS100110DS[777]; // idb
-char aS100110D02dSS[777]; // idb
 int pCurrentScreen = SCREEN_VIDEO; // 004E28F8
 unsigned int uGammaPos;
 std::array<int, 8> BtnTurnCoord = 
@@ -458,7 +340,6 @@ std::array<int, 8> BtnTurnCoord =
 }}; // weak
 std::array<__int16, 4> RightClickPortraitXmin={{0x14, 0x83, 0xF2, 0x165}};
 std::array<__int16, 4> RightClickPortraitXmax={{0x53, 0xC6, 0x138, 0x1A7}};
-void *off_4E2A12; // stat_string_control_button_count
 
 std::array<unsigned int, 4> pHealthBarPos = {{22, 137, 251, 366}};
 std::array<unsigned int, 4> pManaBarPos = {{102, 217, 331, 447}};
@@ -482,17 +363,11 @@ const char *format_4E2D80 = "\f%05d%s\f00000\n";
 const char *format_4E2DE8 = "\f%05d%s\f00000 - ";
 const char *format_4E2E00 = "%s\f%05u\xD\r180%s\n"; // idb
 const char *format_4E2E10 = "%s\f%05u\t110%d\f00000 / %d\n";
-__int16 word_4E3C66[777]; // idb
 int dword_4E455C; // weak
 std::array<int, 6> dword_4E4560;
 std::array<int, 6> dword_4E4578;
 std::array<int, 6> dword_4E4590;
 std::array<int, 6> dword_4E45A8;
-_UNKNOWN dword_4E49D4; // idb
-int dword_4E4A18[777]; // weak
-int dword_4E4A1C[777]; // weak
-int dword_4E4A40[777]; // weak
-int dword_4E4A44[777]; // weak
 std::array<float, 10> flt_4E4A80 =
 {
   0.050000001, 0.1,  0.30000001,  0.5,    0.60000002,
@@ -549,13 +424,11 @@ std::array<const char *, 11> pHouse_ExitPictures=
 	"isecdoor"
 };
 
-int bWinNT4_0; // weak
 std::array<__int16, 11> word_4E8152 = {0, 0, 0, 90, 8, 2, 70, 20, 10, 50, 30};
 
-char byte_4E94D0 = 5; // weak
-char byte_4E94D1 = 9; // weak
+char _4E94D0_light_type = 5; // weak
 char _4E94D2_light_type = 6; // weak
-char byte_4E94D3 = 10; // weak
+char _4E94D3_light_type = 10; // weak
 int dword_4E98BC_bApplicationActive; // weak
 //char *off_4EB080; // idb
 std::array<char*, 465> pTransitionStrings = {"", nullptr};  // 004EB080
@@ -782,11 +655,9 @@ std::array< std::array<char, 37>, 36> byte_4ED970_skill_learn_ability_by_class_t
  3, 0, 2, 0, 0, 1, 0, 4, 0, 2, 0, 0, 4, 4, 4, 4, 0, 0, 0, 4, 0, 4, 1, 2, 0, 3, 2, 1, 0, 0, 0, 0, 4, 0, 0, 3, 3,
  3, 0, 2, 0, 0, 1, 0, 4, 0, 2, 0, 0, 4, 4, 4, 4, 0, 0, 0, 0, 4, 4, 1, 2, 0, 3, 2, 1, 0, 0, 0, 0, 4, 0, 0, 3, 3,
 }};
-_UNKNOWN unk_4EDF40; // weak
 std::array<unsigned int, 2> pHiredNPCsIconsOffsetsX = {489, 559};
 std::array<unsigned int, 2> pHiredNPCsIconsOffsetsY = {152, 152};
-std::array<int, 2> dword_4EE07C; // weak
-_UNKNOWN unk_4EE084; // weak
+std::array<int, 2> Party_Spec_Motion_status_ids = {7, 18}; //dword_4EE07C
 std::array<__int16, 101> word_4EE088_sound_ids =
 {{
       0, 10000, 10010, 10020, 10030, 10040, 10050, 10060, 10070, 10080,
@@ -807,12 +678,7 @@ std::array<short, 28> word_4EE150 =
   47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 60
 }};
 
-int dword_4EED78; // weak
-_UNKNOWN unk_4EED80; // weak
-int dword_4EFA80; // weak
-int dword_4EFA84; // weak
-void *off_4EFDB0; // weak
-int dword_4F031C[777]; // weak
+int ScreenshotFileNumber; // dword_4EFA80
 std::array<const char *, 19> off_4F03B8 =
 {{
   "",         "WEPNTABL", "ARMORY",   "MAGSHELF",
@@ -841,7 +707,6 @@ std::array<unsigned short, 6> pMaxLevelPerTrainingHallType = {5, 15, 25, 25, 200
 std::array<int, 11> price_for_membership={100, 100, 50, 50, 50, 50, 50, 50, 50, 1000, 1000}; // weak
 
 
-std::array<Vec2_int_, 20> pMonsterArenaPlacements;
 std::array<__int16, 32> word_4F0F30 ={{ 4, 7, 10, 11,                                              
 						   4, 7, 10, 11,
 					       4, 7, 10, 11,
@@ -851,43 +716,28 @@ std::array<__int16, 32> word_4F0F30 ={{ 4, 7, 10, 11,
 					       4, 7, 10, 11,
 					       7, 11,
                  7, 11}};
-double dbl_4F2870; // weak
-int dword_4F288C; // weak
-double dbl_4F5372; // weak
-int dword_4F5428[777]; // weak
-int dword_4F542C[777]; // weak
-_UNKNOWN crtunk_4F54B8; // weak
 std::array<int, 500> ai_array_4F5E68;
 std::array<int, 500> ai_array_4F6638_actor_ids;
 std::array<int, 500> ai_near_actors_targets_pid;
 int ai_arrays_size; // weak
 std::array<int, 500> ai_near_actors_distances;
 std::array<unsigned int, 500> ai_near_actors_ids;
-std::array<int, 182> dword_4F8580; // weak
+std::array<int, 182> dword_4F8580 = {}; // weak
 
-
-
-_UNKNOWN unk_4FAA20; // weak
 char byte_4FAA24; // weak
 //HWND dword_4FAA28; // idb
 
-
-
-
-int dword_505890; // weak
 std::array<unsigned int, 480> pSRZBufferLineOffsets;
 int areWeLoadingTexture; // weak
 std::array<char, 777> books_num_items_per_page; // weak
-int dword_506338; // weak
-int dword_50633C; // idb
+int lloyds_beacon_spell_id; // dword_506338
+int lloyds_beacon_sound_id; // dword_50633C
 signed int sRecoveryTime; // idb
 unsigned int uRequiredMana; // idb
 int _506348_current_lloyd_playerid; // weak
-__int64 qword_506350; // weak
+__int64 lloyds_beacon_spell_level; // qword_506350
 char byte_506360; // weak
 int dword_506364; // weak
-//Texture *dword_506404[12]; // weak
-//Texture *dword_50640C[12]; // weak
 unsigned int uExitCancelTextureId;
 int books_page_number; // weak
 int books_primary_item_per_page; // weak
@@ -943,7 +793,6 @@ std::array<const char *, 12> aMonthNames;
 std::array<const char *, 7> aDayNames;
 std::array<const char *, 9> aSpellSchoolNames;
 std::array<const char *, 7> aAttributeNames;
-int dword_507B94; // weak
 unsigned int uActiveCharacter;
 int dword_507BF0_is_there_popup_onscreen; // weak
 int awards_scroll_bar_created; // weak
@@ -954,31 +803,11 @@ bool OpenedTelekinesis;
 std::array<int, 50> dword_50B570; // weak
 std::array<int, 50> dword_50B638; // weak
 stru367 PortalFace;
-/*int PortalFace.field_0; // weak
-int PortalFace.field_38[777]; // idb
-int PortalFace._view_transformed_ys[45];
-int PortalFace.field_128[777];
-int PortalFace._view_transformed_zs[45];
-int PortalFace.field_218[777];
-int PortalFace._view_transformed_xs[45];
-int PortalFace._screen_space_y[777];
-int PortalFace.field_3E4[777];
-int PortalFace.field_2F0[2]; // idb
-int PortalFace._ys[3 + 45];
-int PortalFace._ys2[48]; // idb
-int PortalFace._screen_space_x[777]; // idb
-int PortalFace.field_3D4[777]; // weak
-int PortalFace._xs[777]; // weak
-int dword_50BAE8[777]; // weak
-int PortalFace._xs2[3 + 45]; // weak
-int PortalFace._xs3[48]; // weak*/
 std::array<int, 100> dword_50BC10; // weak
 std::array<int, 100> dword_50BDA0; // weak
-std::array<int, 100> dword_50BF30; // weak
+std::array<int, 100> _50BF30_actors_in_viewport_ids; // weak
 char town_portal_caster_id; // weak
 int some_active_character; // weak
-//_UNKNOWN unk_50C190; // weak
-int dword_50C968; // weak
 std::array<unsigned int, 5> pIconIDs_Turn;
 unsigned int uIconID_TurnStop;
 unsigned int uIconID_TurnHour;
@@ -989,7 +818,6 @@ int dword_50C998_turnbased_icon_1A = 0; // weak
 int uSpriteID_Spell11; // idb
 bool _50C9A0_IsEnchantingInProgress; // weak
 int _50C9A8_item_enchantment_timer = 0; // weak
-int dword_50C9AC; // weak
 int _50C9D0_AfterEnchClickEventId; // weak
 int _50C9D4_AfterEnchClickEventSecondParam; // weak
 int _50C9D8_AfterEnchClickEventTimeout; // weak
@@ -998,14 +826,12 @@ struct NPCData *ptr_50C9E0;
 //int dword_50C9E8; // idb
 //int dword_50C9EC[120]; // weak
 int dword_50CDC8;
-int bProcessorIsNotIntel; // weak
 Vec3_int_ layingitem_vel_50FDFC;
 char pStartingMapName[32]; // idb
 std::array<unsigned __int8, 5> IsPlayerWearingWatersuit;
 std::array<char, 54> party_has_equipment;
-std::array<char, 17> byte_5111F6;
+std::array<char, 17> byte_5111F6_OwnedArtifacts;
 
-std::array<std::array<unsigned __int16, 137>, 117> pOdmMinimap;
 unsigned int uNumBlueFacesInBLVMinimap;
 std::array<unsigned __int16, 50> pBlueFacesInBLVMinimapIDs;
 std::array<int, 14> pTextureIDs_PartyBuffIcons;
@@ -1014,7 +840,6 @@ unsigned int uIconIdx_WaterWalk;
 int dword_576E28; // weak
 int _576E2C_current_minimap_zoom; // weak
 __int64 _5773B8_event_timer; // weak
-int _5773C0_unused; // weak
 
 
 int dword_591084; // weak
@@ -1037,7 +862,6 @@ GUIButton* HouseNPCPortraitsButtonsList[6];//dword_5913F4
 struct Texture *pTexture_591428;
 struct Texture *pTexture_outside; // idb
 struct Texture *pTexture_Dialogue_Background;
-_UNKNOWN unk_597F10; // weak
 std::array<char, 2000> byte_5B0938;
 int EvtTargetObj; // 0x5B5920
 int _unused_5B5924_is_travel_ui_drawn = false; // 005B5924
@@ -1049,20 +873,18 @@ int _5B65B8_npcdata_hiword_house_or_other; // weak
 int dword_5B65BC; // weak
 int dword_5B65C0; // weak
 int dword_5B65C4_cancelEventProcessing; // weak
-int dword_5B65C8_timers_count; // weak
+int MapsLongTimers_count; // dword_5B65C8 счётчик таймеров для колодцев, фаерволов-ловушек
 int npcIdToDismissAfterDialogue; // weak
 signed int dword_5B65D0_dialogue_actor_npc_id; // weak
 int dword_5C3418; // weak
 int dword_5C341C; // weak
-int _5C3420_pDecoration;
 //std::array<char, 777> byte_5C3427; // weak
 std::array<char, 200> GameUI_Footer_TimedString;
 std::array<char, 200> pFooterString;
 unsigned int GameUI_Footer_TimeLeft;
 int bForceDrawFooter; // weak
-int dword_5C35C0; // weak
+int _5C35C0_force_party_death = false; // weak
 int bDialogueUI_InitializeActor_NPC_ID; // weak
-int dword_5C35C8; // weak
 char *p2DEventsTXT_Raw;
 
 int dword_5C35D4; // weak
@@ -1138,48 +960,21 @@ unsigned int uTextureID_x_d;
 unsigned int uTextureID_save_up;
 unsigned int uTextureID_load_up;
 unsigned int uTextureID_loadsave;
-_UNKNOWN _69FBB4_ptr_iterator_end; // weak
-_UNKNOWN unk_6A0758; // weak
 int pSaveListPosition; // weak
 unsigned int uLoadGameUI_SelectedSlot;
 HWND hInsertCDWindow; // idb
 int uCPUSpeed; // weak
 char cMM7GameCDDriveLetter; // idb
-void *ptr_6A0D08;
-int _6A0D0C_txt_lod_loading; // weak
-int _6A0D10_txt_lod_loading__unused; // weak
-MENU_STATE uCurrentMenuID;
+MENU_STATE sCurrentMenuID;
 unsigned int uGameState;
 int uDefaultTravelTime_ByFoot; // weak
 int day_attrib; // weak
 int day_fogrange_1; // weak
 int day_fogrange_2; // weak
 struct TileTable *pTileTable; // idb
-int texmapping_terrain_subdivsize; // weak
-int texmapping_terrain_subdivpow2; // weak
-int texmapping_building_subdivsize; // weak
-int texmapping_building_subdivpow2; // weak
-int mipmapping_building_mm1; // weak
-int mipmapping_building_mm2; // weak
-int mipmapping_building_mm3; // weak
-int mipmapping_terrain_mm1; // weak
-int mipmapping_terrain_mm2; // weak
-int mipmapping_terrain_mm3; // weak
 int outdoor_grid_band_1; // idb
 int outdoor_grid_band_2; // idb
 int outdoor_grid_band_3; // idb
-char outdoor_day_top_r; // weak
-char outdoor_day_top_g; // weak
-char outdoor_day_top_b; // weak
-char outdoor_day_bottom_r; // weak
-char outdoor_day_bottom_g; // weak
-char outdoor_day_bottom_b; // weak
-char outdoor_night_top_r; // weak
-char outdoor_night_top_g; // weak
-char outdoor_night_top_b; // weak
-char outdoor_night_bottom_r; // weak
-char outdoor_night_bottom_g; // weak
-char outdoor_night_bottom_b; // weak
 std::array<char, 777> pDefaultSkyTexture; // idb
 std::array<char, 16> byte_6BE124_cfg_textures_DefaultGroundTexture; // idb
 int _6BE134_odm_main_tile_group; // weak
@@ -1190,32 +985,24 @@ float fBackwardWalkSpeedMultiplier = 1.0f; // weak
 float fTurnSpeedMultiplier = 1.0f; // weak
 float flt_6BE150_look_up_down_dangle = 1.0f; // weak
 //HWND hWnd; // idb
+bool FORCE_16_BITS = false;
 class OSWindow *window = nullptr;
-int dword_6BE340; // weak
 char pCurrentMapName[32]; // idb
 unsigned int uLevelMapStatsID;
-int dword_6BE364_game_settings_1 = 0; // weak
-int dword_6BE368_debug_settings_2 = 0; // weak
-unsigned __int8 bUseLoResSprites = false;
-unsigned __int8 bUseRegistry = true;
+int dword_6BE364_game_settings_1 = 0;
+int dword_6BE368_debug_settings_2 = 0;
 unsigned __int8 bCanLoadFromCD = false;
 int bShowDamage; // idb
 unsigned int bAlwaysRun;
 unsigned int bFlipOnExit;
-int dword_6BE384_2dacceloff; // weak
-char byte_6BE388_graphicsmode; // weak
 unsigned int uTurnSpeed;
-float flt_6BE3A0; // weak
+float flt_6BE3A0 = 0.55000001f; // weak
 float flt_6BE3A4_debug_recmod1;
 float flt_6BE3A8_debug_recmod2;
 float flt_6BE3AC_debug_recmod1_x_1_6;
 std::array<char, 20> byte_6BE3B0; // idb
 char bUnderwater = false; // weak
 char bNoNPCHiring = false; // weak
-int _702AC0_unused = 0; // weak
-int _702AC4_unused = 0; // weak
-char _702ACC_unused = 0; // weak
-int bDebugResouces; // weak
 unsigned int bNoVideo = false;
 bool bNoIntro = false;
 bool bNoLogo = false;
@@ -1224,40 +1011,28 @@ bool bNoSound = false;
 std::array<int, 100> dword_720020_zvalues;
 std::array<int, 299> dword_7201B0_zvalues;
 int uTextureID_720980; // weak
-int _720984_unused; // weak
-char _72098C_unused; // weak
 std::array<__int16, 104> word_7209A0_intercepts_ys_plus_ys;
 std::array<__int16, 104> word_720A70_intercepts_xs_plus_xs;
 std::array<__int16, 104> word_720B40_intercepts_zs;
 std::array<__int16, 102> word_720C10_intercepts_xs;
-int dword_720CDC;
 std::array<__int16, 777> word_720CE0_ys; // idb
 std::array<__int16, 777> word_720DB0_xs; // idb
 std::array<int, 20> dword_720E80;
 std::array<int, 20> dword_720ED0;
-std::array<int, 20> dword_720F20;
-std::array<__int16, 777> word_720F70; // idb
-std::array<__int16, 777> word_721040; // idb
-std::array<int, 777> dword_721110; // idb
-std::array<int, 777> dword_721160; // idb
+std::array<int, 20> ceiling_height_level;
+std::array<__int16, 104> odm_floor_face_vert_coord_Y; // word_720F70
+std::array<__int16, 104> odm_floor_face_vert_coord_X; // word_721040
+std::array<int, 20> current_Face_id; // dword_721110
+std::array<int, 20> current_BModel_id; // dword_721160
 std::array<int, 20> odm_floor_level; // idb
 int blv_prev_party_x; // weak
 int blv_prev_party_z; // weak
 int blv_prev_party_y; // weak
-char *dword_721660; // idb
-char *dword_721664; // idb
 std::array<NPCTopic, 789> pNPCTopics;
-char *dword_722F10; // idb
 std::array<const char *, 513> pQuestTable;
-_UNKNOWN unk_723714; // weak
 char *dword_723718_autonote_related; // idb
-int dword_72371C[777]; // weak
 std::array<const char *, 82> pScrolls;
-int dword_723E80_award_related[777]; // weak
-int dword_723E84[777]; // weak
 int dword_7241C8; // weak
-struct unk_F7B60C stru_73C834; // struct @ MM7.exe::0073C834
-
 std::array<const char *, 59> aNPCProfessionNames;
 char *pAwardsTXT_Raw;
 char *pScrollsTXT_Raw;
@@ -1269,33 +1044,10 @@ std::array<const char *, 7> pMerchantsIdentifyPhrases;
 char *pTransitionsTXT_Raw;
 char *pAutonoteTXT_Raw;
 char *pQuestsTXT_Raw;
- unsigned int    uNumTerrainNormals;
- struct Vec3_float_ *pTerrainNormals;
- std::array<unsigned short, 128 * 128 * 2>  pTerrainNormalIndices;
- std::array<unsigned int, 128 * 128 * 2>    pTerrainSomeOtherData;
-struct unk_F7B60C stru_76D578; // struct @ MM7.exe::0076D578
-struct unk_F7B60C stru_76D590; // struct @ MM7.exe::0076D590
-struct unk_F7B60C stru_76D5A8; // struct @ MM7.exe::0076D5A8
-char byte_76D5C0; // weak
-std::array<int, 128> terrain_76D5C8;
-std::array<int, 128> terrain_76D7C8;
-std::array<int, 128> terrain_76D9C8;
-std::array<int, 128> terrain_76DBC8;
-std::array<int, 128> terrain_76DDC8;
-std::array<int, 128> terrain_76DFC8;
-std::array<int, 128> terrain_76E1C8;
-std::array<int, 128> terrain_76E3C8;
-
-_UNKNOWN unk_801A00; // weak
-_UNKNOWN unk_801A0C; // weak
-char byte_80AA10; // weak
-int dword_80AA14; // weak
-int dword_80AA18; // weak
-int dword_80AA1C; // weak
-int dword_80AA20; // weak
-unsigned int uNumElementsIn80AA28;
-std::array<struct Polygon *, 2000> ptr_80AA28;
-_UNKNOWN unk_80D190; // weak
+unsigned int    uNumTerrainNormals;
+struct Vec3_float_ *pTerrainNormals;
+std::array<unsigned short, 128 * 128 * 2>  pTerrainNormalIndices;
+std::array<unsigned int, 128 * 128 * 2>    pTerrainSomeOtherData;
 int dword_A74C88; // weak
 unsigned int uPlayerCreationUI_SkySliderPos;
 int uPlayerCreationUI_ArrowAnim;
@@ -1305,15 +1057,12 @@ struct Texture *pTexture_PlayerFaceMask;
 struct Texture *pTexture_PlayerFaceEradicated;
 struct Texture *pTexture_PlayerFaceDead;
 std::array< std::array<struct Texture *, 56>, 4> pTextures_PlayerFaces;
-NZIArray<struct Player *, 5> pPlayers;
-__int64 qword_A750D8; // weak
+__int64 _A750D8_player_speech_timer; // qword_A750D8
 enum PlayerSpeech PlayerSpeechID;
 int uSpeakingCharacter; // weak
 std::array<const char *, 36> pClassNames;
 std::array<const char *, 19> aCharacterConditionNames;
 std::array<const char *, 38> pSkillNames;
-int dword_AE336C; // weak
-int dword_AE3370; // weak
 char byte_AE5B91; // weak
 std::array<int, 32> dword_F1B430; // weak
 //int dword_F8B144; // nexindex [-1] to the following
@@ -1325,25 +1074,17 @@ __int16 bountyHunting_monster_id_for_hunting; // word_F8B1A0
 const char *bountyHunting_text; // word_F8B1A4
 int contract_approved; // weak
 int dword_F8B1AC_award_bit_number; // idb
-int dword_F8B1B0; // weak
+int dword_F8B1B0_MasteryBeingTaught; // weak
 int gold_transaction_amount; // F8B1B4
 std::array<char *, 4> pShopOptions;
-_UNKNOWN unk_F8B1C8; // weak
 int dword_F8B1D8; // weak
-int dword_F8B1DC; // weak
 int dword_F8B1E0; // weak
 int dword_F8B1E4; // weak
 const char *current_npc_text; // idb
 char dialogue_show_profession_details = false; // F8B1EC
 std::array<char, 777> byte_F8B1EF; // weak
 std::array<char, 4> byte_F8B1F0;
-int dword_F8B1F4; // weak
 
-
-//_UNKNOWN unk_F8BA50; // weak
-char byte_F8BC0C; // weak
 int bGameoverLoop = 0; // weak
 std::array<__int16, 104> intersect_face_vertex_coords_list_a; // word_F8BC48
 std::array<__int16, 104> intersect_face_vertex_coords_list_b; // word_F8BD18
-int dword_F93F20; // weak
-int dword_F93F70; // weak

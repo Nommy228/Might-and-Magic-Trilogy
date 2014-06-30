@@ -1,9 +1,9 @@
-#ifdef _MSC_VER
 #define _CRT_SECURE_NO_WARNINGS
-#endif
-
+#include "UIPartyCreation.h"
+#include "..\mm7_unsorted_subs.h"
 #include "..\Mouse.h"
 #include "..\Keyboard.h"
+#include "..\ErrorHandling.h"
 
 #include "..\Game.h"
 #include "..\GUIWindow.h"
@@ -12,7 +12,7 @@
 #include "..\AudioPlayer.h"
 #include "..\Render.h"
 #include "..\LOD.h"
-#include "..\Time.h"
+#include "..\Timer.h"
 #include "..\IconFrameTable.h"
 #include "..\texts.h"
 
@@ -88,7 +88,7 @@ void PlayerCreationUI_Draw()
   PLAYER_SKILL_TYPE pSkillId; // edi@72
   size_t pLenText; // eax@72
   signed int v104; // ecx@72
-  int pTextY; // ST08_4@81
+//  int pTextY; // ST08_4@81
   signed int pBonusNum; // edi@82
   const char *uRaceName; // [sp+0h] [bp-170h]@39
   char pText[200]; // [sp+10h] [bp-160h]@14
@@ -105,7 +105,7 @@ void PlayerCreationUI_Draw()
   pRenderer->DrawTextureRGB(0, 0, &pTexture_PCX);
   uPlayerCreationUI_SkySliderPos = (GetTickCount() % 12800) / 20;
   pRenderer->DrawTextureIndexed(uPlayerCreationUI_SkySliderPos, 2, pTexture_MAKESKY);
-  pRenderer->DrawTextureIndexed(uPlayerCreationUI_SkySliderPos - 640, 2, pTexture_MAKESKY);
+  pRenderer->DrawTextureIndexed(uPlayerCreationUI_SkySliderPos - window->GetWidth(), 2, pTexture_MAKESKY);
   pRenderer->DrawTextureTransparent(0, 0, pTexture_MAKETOP);
 
   uPlayerCreationUI_SelectedCharacter = (pGUIWindow_CurrentMenu->pCurrentPosActiveItem - pGUIWindow_CurrentMenu->pStartingPosActiveItem) / 7;
@@ -119,7 +119,7 @@ void PlayerCreationUI_Draw()
       Error("Invalid selected character");
   }
 
-  pTextCenter = pFontCChar->AlignText_Center(640, pGlobalTXT_LocalizationStrings[51]);
+  pTextCenter = pFontCChar->AlignText_Center(window->GetWidth(), pGlobalTXT_LocalizationStrings[51]);
   pGUIWindow_CurrentMenu->DrawText(pFontCChar, pTextCenter + 1, 0, 0, pGlobalTXT_LocalizationStrings[51], 0, 0, 0);//Ñ Î Ç Ä À Ò Ü  Î Ò Ð ß Ä
   pRenderer->DrawTextureTransparent(17, 35, pPlayerPortraits[pParty->pPlayers[0].uCurrentFace]);
   pRenderer->DrawTextureTransparent(176, 35, pPlayerPortraits[pParty->pPlayers[1].uCurrentFace]);
@@ -193,7 +193,7 @@ void PlayerCreationUI_Draw()
     pGUIWindow_CurrentMenu->DrawTextInRect(pFontCreate, pIntervalX + 72, pIntervalY + 12, 0, pTmpBuf.data(), 130, 0);//Race Name
 
     pTextCenter = pFontCreate->AlignText_Center(150, pText);
-    pGUIWindow_CurrentMenu->DrawText(pFontCreate, pTextCenter + uX - 24, 291, TargetColor(0xD1, 0xBB, 0x61), pText, 0, 0, 0); // Skills
+    pGUIWindow_CurrentMenu->DrawText(pFontCreate, pTextCenter + uX - 24, 291, Color16(0xD1, 0xBB, 0x61), pText, 0, 0, 0); // Skills
 
     uStatLevel = pParty->pPlayers[i].GetActualMight();
     sprintf(pTmpBuf.data(), "%s\r%03d%d", pGlobalTXT_LocalizationStrings[144], pX_Numbers, uStatLevel);// "Might"
@@ -234,27 +234,27 @@ void PlayerCreationUI_Draw()
     pSkillsType = pParty->pPlayers[i].GetSkillIdxByOrder(0);
     pTextCenter = pFontCreate->AlignText_Center(150, pSkillNames[pSkillsType]);
     sprintf(pTmpBuf.data(), "\t%03u%s", pTextCenter, pSkillNames[pSkillsType]);
-    pGUIWindow_CurrentMenu->DrawText(pFontCreate, uX - 24, 311, TargetColor(0xFF, 0xFF, 0xFF), pTmpBuf.data(), 0, 0, 0);
+    pGUIWindow_CurrentMenu->DrawText(pFontCreate, uX - 24, 311, Color16(0xFF, 0xFF, 0xFF), pTmpBuf.data(), 0, 0, 0);
 
     pSkillsType = pParty->pPlayers[i].GetSkillIdxByOrder(1);
     pTextCenter = pFontCreate->AlignText_Center(150, pSkillNames[pSkillsType]);
     sprintf(pTmpBuf.data(), "\t%03u%s", pTextCenter, pSkillNames[pSkillsType]);
-    pGUIWindow_CurrentMenu->DrawText(pFontCreate, uX - 24, pIntervalY + 311, TargetColor(0xFF, 0xFF, 0xFF), pTmpBuf.data(), 0, 0, 0);
+    pGUIWindow_CurrentMenu->DrawText(pFontCreate, uX - 24, pIntervalY + 311, Color16(0xFF, 0xFF, 0xFF), pTmpBuf.data(), 0, 0, 0);
 
     pSkillsType = pParty->pPlayers[i].GetSkillIdxByOrder(2);
     pTextCenter = pFontCreate->AlignText_Center(150, pSkillNames[pSkillsType]);
     sprintf(pTmpBuf.data(), "\t%03u%s", pTextCenter, pSkillNames[pSkillsType]);
-    pColorText = TargetColor(0, 0xFF, 0);
+    pColorText = Color16(0, 0xFF, 0);
     if ( (signed int)pSkillsType >= 37 )
-      pColorText = TargetColor(0, 0xF7, 0xF7);
+      pColorText = Color16(0, 0xF7, 0xF7);
     pGUIWindow_CurrentMenu->DrawText(pFontCreate, uX - 24, 2 * pIntervalY + 311, pColorText, pTmpBuf.data(), 0, 0, 0);
 
     pSkillsType = pParty->pPlayers[i].GetSkillIdxByOrder(3);
     pTextCenter = pFontCreate->AlignText_Center(150, pSkillNames[pSkillsType]);
     sprintf(pTmpBuf.data(), "\t%03u%s", pTextCenter, pSkillNames[pSkillsType]);
-    pColorText = TargetColor(0, 0xFF, 0);
+    pColorText = Color16(0, 0xFF, 0);
     if ( (signed int)pSkillsType >= 37 )
-      pColorText = TargetColor(0, 0xF7, 0xF7);
+      pColorText = Color16(0, 0xF7, 0xF7);
     pGUIWindow_CurrentMenu->DrawText(pFontCreate, uX - 24, 3 * pIntervalY + 311, pColorText, pTmpBuf.data(), 0, 0, 0);
 
     pIntervalX += 159;
@@ -268,64 +268,64 @@ void PlayerCreationUI_Draw()
 
   uClassType = pParty->pPlayers[uPlayerCreationUI_SelectedCharacter].classType;
   pTextCenter = pFontCreate->AlignText_Center(193, pText);
-  pGUIWindow_CurrentMenu->DrawText(pFontCreate, pTextCenter + 324, 395, TargetColor(0xD1, 0xBB, 0x61), pText, 0, 0, 0);//Classes
+  pGUIWindow_CurrentMenu->DrawText(pFontCreate, pTextCenter + 324, 395, Color16(0xD1, 0xBB, 0x61), pText, 0, 0, 0);//Classes
 
-  pColorText = TargetColor(0, 0xF7, 0xF7);
+  pColorText = Color16(0, 0xF7, 0xF7);
   if ( uClassType )
-    pColorText = TargetColor(0xFF, 0xFF, 0xFF);
+    pColorText = Color16(0xFF, 0xFF, 0xFF);
   pTextCenter = pFontCreate->AlignText_Center(65, pClassNames[0]);
   pGUIWindow_CurrentMenu->DrawText(pFontCreate, pTextCenter + 323, 417, pColorText, pClassNames[0], 0, 0, 0);
 
-  pColorText = TargetColor(0, 0xF7, 0xF7);
+  pColorText = Color16(0, 0xF7, 0xF7);
   if ( uClassType != PLAYER_CLASS_PALADIN )
-    pColorText = TargetColor(0xFF, 0xFF, 0xFF);
+    pColorText = Color16(0xFF, 0xFF, 0xFF);
   pTextCenter = pFontCreate->AlignText_Center(65, pClassNames[12]);
   pGUIWindow_CurrentMenu->DrawText(pFontCreate, pTextCenter + 323, pIntervalY + 417, pColorText, pClassNames[12], 0, 0, 0);
 
-  pColorText = TargetColor(0, 0xF7, 0xF7);
+  pColorText = Color16(0, 0xF7, 0xF7);
   if ( uClassType != PLAYER_CLASS_DRUID )
-    pColorText = TargetColor(0xFF, 0xFF, 0xFF);
+    pColorText = Color16(0xFF, 0xFF, 0xFF);
   pTextCenter = pFontCreate->AlignText_Center(65, pClassNames[20]);
   pGUIWindow_CurrentMenu->DrawText(pFontCreate, pTextCenter + 323, 2 * pIntervalY + 417, pColorText, pClassNames[20], 0, 0, 0);
 
-  pColorText = TargetColor(0, 0xF7, 0xF7);
+  pColorText = Color16(0, 0xF7, 0xF7);
   if ( uClassType != PLAYER_CLASS_CLERIC )
-    pColorText = TargetColor(0xFF, 0xFF, 0xFF);
+    pColorText = Color16(0xFF, 0xFF, 0xFF);
   pTextCenter = pFontCreate->AlignText_Center(65, pClassNames[24]);
   pGUIWindow_CurrentMenu->DrawText(pFontCreate, pTextCenter + 388, 417, pColorText, pClassNames[24], 0, 0, 0);
 
-  pColorText = TargetColor(0, 0xF7, 0xF7);
+  pColorText = Color16(0, 0xF7, 0xF7);
   if ( uClassType != PLAYER_CLASS_DRUID)
-    pColorText = TargetColor(0xFF, 0xFF, 0xFF);
+    pColorText = Color16(0xFF, 0xFF, 0xFF);
   pTextCenter = pFontCreate->AlignText_Center(65, pClassNames[28]);
   pGUIWindow_CurrentMenu->DrawText(pFontCreate, pTextCenter + 388, pIntervalY + 417, pColorText, pClassNames[28], 0, 0, 0);
 
-  pColorText = TargetColor(0, 0xF7, 0xF7);
+  pColorText = Color16(0, 0xF7, 0xF7);
   if ( uClassType != PLAYER_CLASS_SORCERER )
-    pColorText = TargetColor(0xFF, 0xFF, 0xFF);
+    pColorText = Color16(0xFF, 0xFF, 0xFF);
   pTextCenter = pFontCreate->AlignText_Center(65, pClassNames[32]);
   pGUIWindow_CurrentMenu->DrawText(pFontCreate, pTextCenter + 388, 2 * pIntervalY + 417, pColorText, pClassNames[32], 0, 0, 0);
 
-  pColorText = TargetColor(0, 0xF7, 0xF7);
+  pColorText = Color16(0, 0xF7, 0xF7);
   if ( uClassType != PLAYER_CLASS_ARCHER )
-    pColorText = TargetColor(0xFF, 0xFF, 0xFF);
+    pColorText = Color16(0xFF, 0xFF, 0xFF);
   pTextCenter = pFontCreate->AlignText_Center(65, pClassNames[16]);
   pGUIWindow_CurrentMenu->DrawText(pFontCreate, pTextCenter + 453, 417, pColorText, pClassNames[16], 0, 0, 0);
 
-  pColorText = TargetColor(0, 0xF7, 0xF7);
+  pColorText = Color16(0, 0xF7, 0xF7);
   if ( uClassType != PLAYER_CLASS_MONK )
-    pColorText = TargetColor(0xFF, 0xFF, 0xFF);
+    pColorText = Color16(0xFF, 0xFF, 0xFF);
   pTextCenter = pFontCreate->AlignText_Center(65, pClassNames[8]);
   pGUIWindow_CurrentMenu->DrawText(pFontCreate, pTextCenter + 453, pIntervalY + 417, pColorText, pClassNames[8], 0, 0, 0);
 
-  pColorText = TargetColor(0, 0xF7, 0xF7);
+  pColorText = Color16(0, 0xF7, 0xF7);
   if ( uClassType != PLAYER_CLASS_THEIF )
-    pColorText = TargetColor(0xFF, 0xFF, 0xFF);
+    pColorText = Color16(0xFF, 0xFF, 0xFF);
   pTextCenter = pFontCreate->AlignText_Center(65, pClassNames[4]);
   pGUIWindow_CurrentMenu->DrawText(pFontCreate, pTextCenter + 453, 2 * pIntervalY + 417, pColorText, pClassNames[4], 0, 0, 0);
 
   pTextCenter = pFontCreate->AlignText_Center(236, pGlobalTXT_LocalizationStrings[20]); // "Available Skills"
-  pGUIWindow_CurrentMenu->DrawText(pFontCreate, pTextCenter + 37, 395, TargetColor(0xD1, 0xBB, 0x61), pGlobalTXT_LocalizationStrings[20], 0, 0, 0);
+  pGUIWindow_CurrentMenu->DrawText(pFontCreate, pTextCenter + 37, 395, Color16(0xD1, 0xBB, 0x61), pGlobalTXT_LocalizationStrings[20], 0, 0, 0);
   for (uint i = 0; i < 9; ++i)
   {
     pSkillId = pParty->pPlayers[uPlayerCreationUI_SelectedCharacter].GetSkillIdxByOrder(i + 4);
@@ -351,19 +351,19 @@ void PlayerCreationUI_Draw()
     pCorrective = -10;//-5
     if ( (signed int)pLenText < 8 )//if ( (signed int)v124 > 2 )
       pCorrective = 0;
-    pColorText = TargetColor(0, 0xF7, 0xF7);
+    pColorText = Color16(0, 0xF7, 0xF7);
     if ( !pParty->pPlayers[uPlayerCreationUI_SelectedCharacter].pActiveSkills[pSkillId] )
-      pColorText = TargetColor(0xFF, 0xFF, 0xFF);
+      pColorText = Color16(0xFF, 0xFF, 0xFF);
     pTextCenter = pFontCreate->AlignText_Center(100, pText);
     pGUIWindow_CurrentMenu->DrawText(pFontCreate, 100 * (i / 3) + pTextCenter + pCorrective + 17, pIntervalY * (i % 3) + 417, pColorText, pText, 0, 0, 0);
   }
 
   pTextCenter = pFontCreate->AlignText_Center(0x5C, pGlobalTXT_LocalizationStrings[30]);// "Bonus"
-  pGUIWindow_CurrentMenu->DrawText(pFontCreate, pTextCenter + 533, 394, TargetColor(0xD1, 0xBB, 0x61), pGlobalTXT_LocalizationStrings[30], 0, 0, 0);
+  pGUIWindow_CurrentMenu->DrawText(pFontCreate, pTextCenter + 533, 394, Color16(0xD1, 0xBB, 0x61), pGlobalTXT_LocalizationStrings[30], 0, 0, 0);
   pBonusNum = PlayerCreation_GetUnspentAttributePointCount();
   sprintf(pTmpBuf.data(), "%d", pBonusNum);
   pTextCenter = pFontCreate->AlignText_Center(84, pTmpBuf.data());
-  pGUIWindow_CurrentMenu->DrawText(pFontCreate, pTextCenter + 530, 410, TargetColor(0xFF, 0xFF, 0xFF), pTmpBuf.data(), 0, 0, 0);
+  pGUIWindow_CurrentMenu->DrawText(pFontCreate, pTextCenter + 530, 410, Color16(0xFF, 0xFF, 0xFF), pTmpBuf.data(), 0, 0, 0);
   if ( GameUI_Footer_TimeLeft > GetTickCount() )
   {
     message_window.Hint = pGlobalTXT_LocalizationStrings[412];// "Create Party cannot be completed unless you have assigned all characters 2 extra skills and have spent all of your bonus points."
@@ -430,7 +430,7 @@ void  PlayerCreationUI_Initialize()
     pTextures_arrowr[uControlParam] = pIcons_LOD->LoadTexturePtr(pTmpBuf.data(), TEXTURE_16BIT_PALETTE);
   }
   while ( ++uControlParam < 20 );
-  pGUIWindow_CurrentMenu = GUIWindow::Create(0, 0, 640, 480, WINDOW_MainMenu, 0, 0);
+  pGUIWindow_CurrentMenu = GUIWindow::Create(0, 0, window->GetWidth(), window->GetHeight(), WINDOW_MainMenu, 0, 0);
   uControlParam = 0;
   uX = 8;
   do
@@ -439,7 +439,7 @@ void  PlayerCreationUI_Initialize()
     uX += 158;
     ++uControlParam;
   }
-  while ( (signed int)uX < 640 );
+  while ( (signed int)uX < window->GetWidth() );
 
   pCreationUI_BtnPressLeft[0]   = pGUIWindow_CurrentMenu->CreateButton( 10,  32, 11, 13, 1, 0, UIMSG_PlayerCreation_FacePrev,  0, 0, "", pTexture_presleft, 0);
   pCreationUI_BtnPressLeft[1]   = pGUIWindow_CurrentMenu->CreateButton(169,  32, 11, 13, 1, 0, UIMSG_PlayerCreation_FacePrev,  1, 0, "", pTexture_presleft, 0);
@@ -469,7 +469,7 @@ void  PlayerCreationUI_Initialize()
     uX += 158;
     ++uControlParam;
   }
-  while ( (signed int)uX < 640 );
+  while ( (signed int)uX < window->GetWidth() );
 
   pGUIWindow_CurrentMenu->CreateButton(  5, 21, 153, 365, 1, 0, UIMSG_PlayerCreation_SelectAttribute, 0, '1', "", 0);
   pGUIWindow_CurrentMenu->CreateButton(163, 21, 153, 365, 1, 0, UIMSG_PlayerCreation_SelectAttribute, 1, '2', "", 0);
@@ -539,7 +539,7 @@ bool PlayerCreationUI_Loop()
   //int pControlParam; // esi@12
   signed int v8; // edi@30
   int v9; // edx@31
-  char *v10; // ebx@37
+//  char *v10; // ebx@37
   ItemGen item; // [sp+Ch] [bp-74h]@37
   char v20[32]; // [sp+30h] [bp-50h]@29
   MSG Msg; // [sp+50h] [bp-30h]@17
@@ -583,10 +583,8 @@ bool PlayerCreationUI_Loop()
       TranslateMessage(&Msg);
       DispatchMessageA(&Msg);
     }
-    if ( BYTE1(dword_6BE364_game_settings_1) & 1 )
-    {
+    if (dword_6BE364_game_settings_1 & GAME_SETTINGS_APP_INACTIVE)
       WaitMessage();
-    }
     else
     {
       PlayerCreationUI_Draw();

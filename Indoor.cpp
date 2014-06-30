@@ -1,7 +1,7 @@
-#ifdef _MSC_VER
 #define _CRT_SECURE_NO_WARNINGS
-#endif
-
+#include "ErrorHandling.h"
+#include "ZlibWrapper.h"
+#include "mm7_unsorted_subs.h"
 #include "LightmapBuilder.h"
 #include "DecalBuilder.h"
 #include "stru9.h"
@@ -14,9 +14,9 @@
 #include "Events.h"
 #include "Game.h"
 #include "Viewport.h"
-#include "Time.h"
+#include "Timer.h"
 #include "Party.h"
-#include "Math.h"
+#include "OurMath.h"
 #include "LOD.h"
 #include "DecorationList.h"
 #include "ObjectList.h"
@@ -41,7 +41,7 @@
 #include "texts.h"
 #include "GUIWindow.h"
 #include "Level/Decoration.h"
-
+#include "Overlays.h"
 
 
 
@@ -96,18 +96,9 @@ std::array<const char *, 11> _4E6BDC_loc_names=
 //----- (0043F39E) --------------------------------------------------------
 void __fastcall PrepareDrawLists_BLV()
 {
-  //int *v1; // ecx@1
-  //double v2; // ST30_8@3
-  //double v3; // ST30_8@6
-  //double v4; // ST28_8@6
   int v5; // eax@4
-  //int v6; // eax@7
   unsigned int v7; // ebx@8
   BLVSector *v8; // esi@8
-  //unsigned __int16 *v9; // edi@8
-  //int i; // [sp+18h] [bp-8h]@7
-  //unsigned __int8 v11; // [sp+1Ch] [bp-4h]@3
-  //signed int v12; // [sp+1Ch] [bp-4h]@8
 
   pBLVRenderParams->Reset();
   pMobileLightsStack->uNumLightsActive = 0;
@@ -123,7 +114,7 @@ void __fastcall PrepareDrawLists_BLV()
     v5 = 800;
     if (pParty->TorchlightActive())
       v5 *= pParty->pPartyBuffs[PARTY_BUFF_TORCHLIGHT].uPower;
-    //LOBYTE(v1) = byte_4E94D0;
+    //LOBYTE(v1) = _4E94D0_light_type;
     //v4 = pParty->flt_TorchlightColorR + 6.7553994e15;
     //v3 = pParty->flt_TorchlightColorG + 6.7553994e15;
     pMobileLightsStack->AddLight(pGame->pIndoorCameraD3D->vPartyPos.x,
@@ -134,65 +125,43 @@ void __fastcall PrepareDrawLists_BLV()
                                  floorf(pParty->flt_TorchlightColorR + 0.5f),
                                  floorf(pParty->flt_TorchlightColorG + 0.5f),
                                  floorf(pParty->flt_TorchlightColorB + 0.5f),
-                                 byte_4E94D0);
+                                 _4E94D0_light_type);
   }
   PrepareBspRenderList_BLV();
   PrepareItemsRenderList_BLV();
   PrepareActorRenderList_BLV();
 
-  //v6 = 0;
   for (uint i = 0; i < pBspRenderer->uNumVisibleNotEmptySectors; ++i)
   {
     v7 = pBspRenderer->pVisibleSectorIDs_toDrawDecorsActorsEtcFrom[i];
-    //v12 = 0;
     v8 = &pIndoor->pSectors[pBspRenderer->pVisibleSectorIDs_toDrawDecorsActorsEtcFrom[i]];
-    //v9 = v8->pDecorationIDs;
 
     for (uint j = 0; j < v8->uNumDecorations; ++j)
-    //if ( v8->uNumDecorations > 0 )
-    {
-    //  do
       PrepareDecorationsRenderList_BLV(v8->pDecorationIDs[j], v7);
-    //  while ( v12 < v8->uNumDecorations );
-    }
-    //v6 = i + 1;
   }
   FindBillboardsLightLevels_BLV();
   pGame->PrepareBloodsplats();
 }
 
-
-
 //----- (004407D9) --------------------------------------------------------
 void BLVRenderParams::Reset()
 {
-  //IndoorLocation_drawstru *v2; // ebx@1
-  //int v4; // ST08_4@1
-  //int v5; // ST04_4@1
-  //int v6; // ST00_4@1
   int v7; // eax@1
-  int v8; // ST08_4@2
-  int v9; // ST04_4@2
-  int v10; // ST00_4@2
-  //unsigned int v11; // edi@4
-  //unsigned int v12; // ecx@4
-  //int v13; // edx@4
-  //signed int v14; // ecx@4
-  //unsigned int v15; // edx@4
-  //unsigned int v16; // eax@4
-  double v17; // st7@5
-  int v18; // eax@5
-  double v19; // st7@5
-  int v20; // eax@5
-  double v21; // st7@5
-  int v22; // eax@5
-  unsigned int v23; // edx@5
-  unsigned int v24; // ecx@5
-  int v25; // eax@5
-  int v26; // eax@5
-  signed int v27; // eax@6
-  //int result; // eax@6
-  int v29; // [sp+24h] [bp+8h]@5
+//  int v8; // ST08_4@2
+//  int v9; // ST04_4@2
+//  int v10; // ST00_4@2
+//  double v17; // st7@5
+//  int v18; // eax@5
+//  double v19; // st7@5
+//  int v20; // eax@5
+//  double v21; // st7@5
+//  int v22; // eax@5
+//  unsigned int v23; // edx@5
+//  unsigned int v24; // ecx@5
+//  int v25; // eax@5
+//  int v26; // eax@5
+//  signed int v27; // eax@6
+//  int v29; // [sp+24h] [bp+8h]@5
 
   this->field_0_timer_ = pEventTimer->uTotalGameTimeElapsed;
 
@@ -227,7 +196,7 @@ void BLVRenderParams::Reset()
     this->vPartyPos.y = pParty->vPosition.y;*/
     this->uPartySectorID = pIndoor->GetSector(pParty->vPosition.x, pParty->vPosition.y, pParty->vPosition.z);
   }
-  if ( pRenderer->pRenderD3D )
+  //if ( pRenderer->pRenderD3D )
   {
     //this->sCosineY = stru_5C6E00->Cos(pGame->pIndoorCameraD3D->sRotationY);
     //this->sSineY = stru_5C6E00->Sin(pGame->pIndoorCameraD3D->sRotationY);
@@ -237,7 +206,7 @@ void BLVRenderParams::Reset()
     //this->fSineY = sin((3.141592653589793 + 3.141592653589793) * (double)pGame->pIndoorCameraD3D->sRotationY * 0.00048828125);
     //this->fCosineNegX = cos((3.141592653589793 + 3.141592653589793) * (double)-pGame->pIndoorCameraD3D->sRotationX * 0.00048828125);
     //this->fSineNegX = sin((3.141592653589793 + 3.141592653589793) * (double)-pGame->pIndoorCameraD3D->sRotationX * 0.00048828125);
-    this->field_64 = pViewport->field_30;
+    this->field_64 = pViewport->field_of_view;
     
     this->uViewportX = pViewport->uScreen_TL_X;
     this->uViewportY = pViewport->uScreen_TL_Y;
@@ -249,10 +218,10 @@ void BLVRenderParams::Reset()
     this->uViewportCenterX = (uViewportZ + uViewportX) / 2;
     this->uViewportCenterY = (uViewportY + uViewportW) / 2;
   }
-  else
+  /*else
   {
     __debugbreak(); // no sw
-    /*this->sCosineY = stru_5C6E00->Cos(-this->sPartyRotY);
+    this->sCosineY = stru_5C6E00->Cos(-this->sPartyRotY);
     this->sSineY = stru_5C6E00->Sin(-this->sPartyRotY);
     this->sCosineNegX = stru_5C6E00->Cos(-this->sPartyRotX);
     this->sSineNegX = stru_5C6E00->Sin(-this->sPartyRotX);
@@ -275,8 +244,8 @@ void BLVRenderParams::Reset()
     v29 = v25;
     v26 = this->field_64;
     this->uViewportCenterX = (signed int)(v24 + v23) >> 1;
-    this->uViewportCenterY = this->uViewportW - ((unsigned __int64)(v26 * (signed __int64)v29) >> 16);*/
-  }
+    this->uViewportCenterY = this->uViewportW - ((unsigned __int64)(v26 * (signed __int64)v29) >> 16);
+  }*/
   //v27 = (unsigned int)(signed __int64)((double)this->uViewportWidth * 0.5
   //                                             / tan((double)(v2->fov_deg >> 1) * 0.01745329)
   //                                             + 0.5) << 16;
@@ -284,8 +253,8 @@ void BLVRenderParams::Reset()
   this->fov_rad_fixpoint = fixpoint_from_int(_calc_fov(uViewportWidth, 65), 0);
   this->fov_rad_inv_fixpoint = 0x100000000i64 / this->fov_rad_fixpoint;
   this->pRenderTarget = pRenderer->pTargetSurface;
-  this->uTargetWidth = 640;
-  this->uTargetHeight = 480;
+  this->uTargetWidth = window->GetWidth();
+  this->uTargetHeight = window->GetHeight();
   this->pTargetZBuffer = pRenderer->pActiveZBuffer;
   this->field_8C = 0;
   this->field_84 = 0;
@@ -298,21 +267,17 @@ void BLVRenderParams::Reset()
 //----- (00440B44) --------------------------------------------------------
 void IndoorLocation::ExecDraw(bool bD3D)
 {
-  int v2; // eax@3
-  //IndoorCameraD3D_Vec4 *v3; // edx@4
-  //unsigned int v5; // ecx@9
-  //RenderVertexSoft *v6; // [sp-4h] [bp-8h]@4
-
   if (bD3D)
   {
     pIndoor->GetSector(pParty->vPosition.x, pParty->vPosition.y, pParty->vPosition.z);
     for (uint i = 0; i < pBspRenderer->num_faces; ++i)
     {
-      //v2 = pBspRenderer->faces[i].uNodeID;
       if (pBspRenderer->nodes[pBspRenderer->faces[i].uNodeID].viewing_portal_id == -1)
         IndoorLocation::ExecDraw_d3d(pBspRenderer->faces[i].uFaceID, nullptr, 4, nullptr);
       else
-        IndoorLocation::ExecDraw_d3d(pBspRenderer->faces[i].uFaceID, pBspRenderer->nodes[pBspRenderer->faces[i].uNodeID].std__vector_0007AC, 4, pBspRenderer->nodes[pBspRenderer->faces[i].uNodeID].pPortalBounding);
+        IndoorLocation::ExecDraw_d3d(pBspRenderer->faces[i].uFaceID,
+                pBspRenderer->nodes[pBspRenderer->faces[i].uNodeID].std__vector_0007AC, 4,
+                pBspRenderer->nodes[pBspRenderer->faces[i].uNodeID].pPortalBounding);
     }
   }
   else for (uint j = 0; j < pBspRenderer->num_faces; ++j )
@@ -376,16 +341,13 @@ void __fastcall sub_440BED(IndoorLocation_drawstru *_this)
 }
 */
 
-
-
-
 //----- (00441BD4) --------------------------------------------------------
 void IndoorLocation::Draw()
 {
   //int v0; // eax@1
   //IndoorLocation_drawstru _this; // [sp+0h] [bp-4Ch]@5
-  int v2; // [sp+44h] [bp-8h]@5
-  int v3; // [sp+48h] [bp-4h]@5
+//  int v2; // [sp+44h] [bp-8h]@5
+//  int v3; // [sp+48h] [bp-4h]@5
 
   /*_this.uFlags = 0;
   if (viewparams->draw_sw_outlines)
@@ -415,12 +377,12 @@ void IndoorLocation::Draw()
   _this.pTargetZ = pRenderer->pActiveZBuffer;*/
 
   //sub_440BED(&_this); -- inlined
-  {
+  //{
     PrepareDrawLists_BLV();
     if (pBLVRenderParams->uPartySectorID)
-      IndoorLocation::ExecDraw(pRenderer->pRenderD3D != 0);
+      IndoorLocation::ExecDraw(true/*pRenderer->pRenderD3D != 0*/);
     pRenderer->DrawBillboardList_BLV();
-  }
+  //}
 
   pParty->uFlags &= ~2;
   pGame->DrawParticles();
@@ -464,10 +426,10 @@ void BLVFace::FromODM(ODMFace *face)
 void IndoorLocation::ExecDraw_d3d(unsigned int uFaceID, IndoorCameraD3D_Vec4 *pVertices, unsigned int uNumVertices, RenderVertexSoft *pPortalBounding)
 {
   //unsigned int v4; // esi@1
-  char *v5; // eax@4
-  signed int v6; // ecx@4
-  char *v7; // eax@8
-  signed int v8; // ecx@8
+//  char *v5; // eax@4
+//  signed int v6; // ecx@4
+//  char *v7; // eax@8
+//  signed int v8; // ecx@8
   //BLVFace *v9; // esi@13
   //IndoorCameraD3D *v10; // edi@16
   //int v11; // ebx@17
@@ -482,7 +444,7 @@ void IndoorLocation::ExecDraw_d3d(unsigned int uFaceID, IndoorCameraD3D_Vec4 *pV
   //double v20; // st5@27
   //char v21; // dl@27
   //unsigned int v22; // eax@44
-  unsigned int v23; // eax@35
+//  unsigned int v23; // eax@35
   //DWORD v24; // eax@37
   //int v25; // eax@38
   //char *v26; // edi@38
@@ -513,7 +475,7 @@ void IndoorLocation::ExecDraw_d3d(unsigned int uFaceID, IndoorCameraD3D_Vec4 *pV
     return;
   
   ++pBLVRenderParams->uNumFacesRenderedThisFrame;
-  pFace->uAttributes |= 0x80u;
+  pFace->uAttributes |= 0x80;
 
   if (!pFace->GetTexture())
     return;
@@ -554,10 +516,10 @@ void IndoorLocation::ExecDraw_d3d(unsigned int uFaceID, IndoorCameraD3D_Vec4 *pV
           stru_F7B60C.face_plane.dist = pFace->pFacePlane.dist;
         }
 
-        if (stru_F8AD28.uNumLightsApplied > 0 && !(pFace->uAttributes & FACE_INDOOR_SKY))
+        if (stru_F8AD28.uNumLightsApplied > 0 && !pFace->Indoor_sky())
           pGame->pLightmapBuilder->ApplyLights(&stru_F8AD28, &stru_F7B60C, uNumVerticesa, array_507D30, pVertices, 0);
 
-        if (pDecalBuilder->uNumDecals > 0)
+        if (pDecalBuilder->uNumDecals > 0)//отрисовка пятен крови
           pDecalBuilder->ApplyDecals(a4a, 1, &stru_F7B60C, uNumVerticesa, array_507D30, pVertices, 0, pFace->uSectorID);
 
         if (pFace->Fluid())
@@ -578,7 +540,7 @@ void IndoorLocation::ExecDraw_d3d(unsigned int uFaceID, IndoorCameraD3D_Vec4 *pV
             v27 = pBitmaps_LOD->pHardwareTextures[pFace->uBitmapID];
           }
         }
-        else if (pFace->uAttributes & 0x4000)
+        else if (pFace->uAttributes & FACE_TEXTURE_FRAME)
           v27 = pBitmaps_LOD->pHardwareTextures[pTextureFrameTable->GetFrameTexture(pFace->uBitmapID, pBLVRenderParams->field_0_timer_)];
         else
         {
@@ -586,7 +548,7 @@ void IndoorLocation::ExecDraw_d3d(unsigned int uFaceID, IndoorCameraD3D_Vec4 *pV
           v27 = pBitmaps_LOD->pHardwareTextures[pFace->uBitmapID];
         }
 
-        if (pFace->uAttributes & FACE_INDOOR_SKY)
+        if (pFace->Indoor_sky())
           pRenderer->DrawIndoorSky(uNumVerticesa, uFaceID);
         else
           pRenderer->DrawIndoorPolygon(uNumVerticesa, pFace, v27, pFace->GetTexture(), PID(OBJECT_BModel, uFaceID), v17, 0);
@@ -605,21 +567,17 @@ unsigned int __fastcall sub_4B0E07(unsigned int uFaceID)
   stru_F8AD28.pDeltaUV[1] = pIndoor->pFaceExtras[pIndoor->pFaces[uFaceID].uFaceExtraID].sTextureDeltaV;
   result = GetTickCount() >> 3;
   if ( pIndoor->pFaces[uFaceID].uAttributes & 4 )
-  {
     stru_F8AD28.pDeltaUV[1] -= result & pBitmaps_LOD->GetTexture(pIndoor->pFaces[uFaceID].uBitmapID)->uHeightMinus1;
-  }
   else
   {
     if ( pIndoor->pFaces[uFaceID].uAttributes & 0x20 )
       stru_F8AD28.pDeltaUV[1] += result & pBitmaps_LOD->GetTexture(pIndoor->pFaces[uFaceID].uBitmapID)->uHeightMinus1;
   }
-  if ( BYTE1(pIndoor->pFaces[uFaceID].uAttributes) & 8 )
-  {
+  if ( pIndoor->pFaces[uFaceID].uAttributes & 0x800 )
     stru_F8AD28.pDeltaUV[0] -= result & pBitmaps_LOD->GetTexture(pIndoor->pFaces[uFaceID].uBitmapID)->uWidthMinus1;
-  }
   else
   {
-    if ( pIndoor->pFaces[uFaceID].uAttributes & 0x40 )
+    if ( pIndoor->pFaces[uFaceID].uAttributes & FACE_DONT_CACHE_TEXTURE )
       stru_F8AD28.pDeltaUV[0] += result & pBitmaps_LOD->GetTexture(pIndoor->pFaces[uFaceID].uBitmapID)->uWidthMinus1;
   }
   return result;
@@ -633,21 +591,21 @@ void BspRenderer::AddFaceToRenderList_d3d(unsigned int node_id, unsigned int uFa
   //BLVFace *v5; // eax@1
   //int v6; // ecx@2
   unsigned __int16 pTransitionSector; // ax@11
-  Vec3_short_ *v8; // esi@15
+//  Vec3_short_ *v8; // esi@15
   int v9; // edx@15
   //signed int v10; // eax@18
   //signed int v11; // edi@19
   //signed int v12; // ecx@19
   //signed int v13; // esi@19
-  signed int v14; // edx@20
-  int v15; // edx@24
+//  signed int v14; // edx@20
+//  int v15; // edx@24
   //int v16; // esi@29
   //BLVFace *v17; // edi@34
   //unsigned __int16 v18; // ax@34
-  char *v19; // eax@38
-  signed int v20; // ecx@38
-  char *v21; // eax@42
-  signed int v22; // ecx@42
+//  char *v19; // eax@38
+//  signed int v20; // ecx@38
+//  char *v21; // eax@42
+//  signed int v22; // ecx@42
   //signed int v23; // edx@45
   //char *v24; // ecx@46
   //int v25; // eax@47
@@ -795,203 +753,12 @@ void BspRenderer::AddFaceToRenderList_d3d(unsigned int node_id, unsigned int uFa
   }
 }
 
-
-//----- (004AFB86) --------------------------------------------------------
-void BspRenderer::AddFaceToRenderList_sw(unsigned int node_id, unsigned int uFaceID)
-{
-  BspRenderer *v3; // ebx@1
-  BLVFace *v4; // eax@1
-  char *v5; // ecx@2
-  unsigned __int16 v6; // ax@11
-  int v7; // ecx@13
-  Vec3_short_ *v8; // esi@16
-  int v9; // edx@16
-  signed int v10; // eax@19
-  signed int v11; // edi@20
-  signed int v12; // ecx@20
-  signed int v13; // esi@20
-  int v14; // edx@21
-  int v15; // edx@25
-  unsigned __int16 v16; // ax@35
-  signed int v17; // eax@37
-  int v18; // eax@38
-  signed int v19; // [sp+Ch] [bp-14h]@19
-  char *v20; // [sp+14h] [bp-Ch]@2
-  BLVFace *v21; // [sp+18h] [bp-8h]@1
-  signed int v22; // [sp+1Ch] [bp-4h]@20
-  signed int v23; // [sp+28h] [bp+8h]@20
-
-  v3 = this;
-  v4 = &pIndoor->pFaces[uFaceID];
-  v21 = v4;
-  if (v4->Portal())
-  {
-    v5 = (char *)this + 2252 * node_id;
-    v20 = v5;
-    if ( uFaceID == *((short *)v5 + 2982) )
-      return;
-    if (!node_id
-      && pGame->pIndoorCameraD3D->vPartyPos.x >= v4->pBounding.x1 - 16
-      && pGame->pIndoorCameraD3D->vPartyPos.x <= v4->pBounding.x2 + 16
-      && pGame->pIndoorCameraD3D->vPartyPos.y >= v4->pBounding.y1 - 16
-      && pGame->pIndoorCameraD3D->vPartyPos.y <= v4->pBounding.y2 + 16
-      && pGame->pIndoorCameraD3D->vPartyPos.z >= v4->pBounding.z1 - 16
-      && pGame->pIndoorCameraD3D->vPartyPos.z <= v4->pBounding.z2 + 16 )
-    {
-      if ( abs(v4->pFacePlane_old.dist + pGame->pIndoorCameraD3D->vPartyPos.x * v4->pFacePlane_old.vNormal.x
-                                       + pGame->pIndoorCameraD3D->vPartyPos.y * v4->pFacePlane_old.vNormal.y
-                                       + pGame->pIndoorCameraD3D->vPartyPos.z * v4->pFacePlane_old.vNormal.z) <= 589824 )
-      {
-        v6 = v21->uSectorID;
-        if ( v3->nodes[0].uSectorID == v6 )
-          v6 = v21->uBackSectorID;
-        v3->nodes[v3->num_nodes].uSectorID = v6;
-        v3->nodes[v3->num_nodes].uFaceID = uFaceID;
-        v3->nodes[v3->num_nodes].uViewportX = LOWORD(pBLVRenderParams->uViewportX);
-        v3->nodes[v3->num_nodes].uViewportZ = LOWORD(pBLVRenderParams->uViewportZ);
-        v3->nodes[v3->num_nodes].uViewportY = LOWORD(pBLVRenderParams->uViewportY);
-        v3->nodes[v3->num_nodes].uViewportW = LOWORD(pBLVRenderParams->uViewportW);
-        v3->nodes[v3->num_nodes++].PortalScreenData.GetViewportData(
-          SLOWORD(pBLVRenderParams->uViewportX),
-          pBLVRenderParams->uViewportY,
-          SLOWORD(pBLVRenderParams->uViewportZ),
-          pBLVRenderParams->uViewportW);
-        v7 = v3->num_nodes - 1;
-        goto LABEL_14;
-      }
-      v4 = v21;
-      v5 = v20;
-    }
-    v8 = &pIndoor->pVertices[*v4->pVertexIDs];
-    v9 = v4->pFacePlane_old.vNormal.x * (v8->x - pGame->pIndoorCameraD3D->vPartyPos.x)
-       + v4->pFacePlane_old.vNormal.y * (v8->y - pGame->pIndoorCameraD3D->vPartyPos.y)
-       + v4->pFacePlane_old.vNormal.z * (v8->z - pGame->pIndoorCameraD3D->vPartyPos.z);
-    if ( *((short *)v5 + 2004) != v4->uSectorID )
-      v9 = -v9;
-    if ( v9 < 0 )
-    {
-      v10 = GetPortalScreenCoord(uFaceID);
-      v19 = v10;
-      if ( v10 )
-      {
-        v11 = PortalFace._screen_space_x[0];
-        v12 = PortalFace._screen_space_y[0];
-        v23 = PortalFace._screen_space_x[0];
-        v13 = 1;
-        v22 = PortalFace._screen_space_y[0];
-        if ( v10 > 1 )
-        {
-          do
-          {
-            v14 = PortalFace._screen_space_x[v13];
-            if ( v14 < v23 )
-              v23 = PortalFace._screen_space_x[v13];
-            if ( v14 > v11 )
-              v11 = PortalFace._screen_space_x[v13];
-            v15 = PortalFace._screen_space_y[v13];
-            if ( v15 < v22 )
-              v22 = PortalFace._screen_space_y[v13];
-            if ( v15 > v12 )
-              v12 = PortalFace._screen_space_y[v13];
-            v10 = v19;
-            ++v13;
-          }
-          while ( v13 < v19 );
-        }
-        if ( v11 >= *((short *)v20 + 2005)
-          && v23 <= *((short *)v20 + 2007)
-          && v12 >= *((short *)v20 + 2006)
-          && v22 <= *((short *)v20 + 2008)
-          && PortalFrustrum(v10, &v3->nodes[v3->num_nodes].PortalScreenData, (BspRenderer_PortalViewportData *)(v20 + 4020), uFaceID) )
-        {
-          v16 = v21->uSectorID;
-          if ( *((short *)v20 + 2004) == v16 )
-            v16 = v21->uBackSectorID;
-          v3->nodes[v3->num_nodes].uSectorID = v16;
-          v3->nodes[v3->num_nodes].uFaceID = uFaceID;
-          v3->nodes[v3->num_nodes].uViewportX = LOWORD(pBLVRenderParams->uViewportX);
-          v3->nodes[v3->num_nodes].uViewportZ = LOWORD(pBLVRenderParams->uViewportZ);
-          v3->nodes[v3->num_nodes].uViewportY = LOWORD(pBLVRenderParams->uViewportY);
-          v3->nodes[v3->num_nodes].uViewportW = LOWORD(pBLVRenderParams->uViewportW);
-          v17 = v3->num_nodes;
-          if ( v17 < 150 )
-          {
-            v18 = v17 + 1;
-            v3->num_nodes = v18;
-            v7 = v18 - 1;
-LABEL_14:
-            AddBspNodeToRenderList(v7);
-            return;
-          }
-        }
-      }
-    }
-  }
-  else
-  {
-    if (num_faces < 1000)
-    {
-      faces[num_faces].uFaceID = uFaceID;
-      faces[num_faces++].uNodeID = node_id;
-    }
-  }
-}
-
-//----- (004B0967) --------------------------------------------------------
-void BspRenderer::DrawFaceOutlines()
-{
-  signed int i; // edi@1
-  int v1; // esi@2
-  unsigned int v2; // ecx@4
-  int v3; // eax@4
-  int v4; // eax@6
-  unsigned __int16 *v5; // edx@6
-  int v6; // ecx@7
-  int v7; // esi@8
-
-  for ( i = 0; i < (signed int)pBspRenderer->num_faces; ++i )
-  {
-    v1 = pBspRenderer->faces[i].uFaceID;
-    if ( v1 >= 0 )
-    {
-      if ( v1 < (signed int)pIndoor->uNumFaces )
-      {
-        v2 = pBspRenderer->faces[i].uFaceID;
-        pBLVRenderParams->field_7C = &pBspRenderer->nodes[pBspRenderer->faces[i].uNodeID].PortalScreenData;
-        v3 = GetPortalScreenCoord(v2);
-        if ( v3 )
-        {
-          if ( PortalFrustrum(v3, &stru_F8A590, pBLVRenderParams->field_7C, v1) )
-          {
-            v4 = stru_F8A590._viewport_space_y;
-            v5 = pBLVRenderParams->pRenderTarget;
-            if ( stru_F8A590._viewport_space_y <= stru_F8A590._viewport_space_w )
-            {
-              v6 = 640 * stru_F8A590._viewport_space_y;
-              do
-              {
-                v5[v6 + stru_F8A590.viewport_left_side[v4]] = -1;
-                v7 = v6 + stru_F8A590.viewport_right_side[v4];
-                v6 += 640;
-                v5[v7] = -1;
-                ++v4;
-              }
-              while ( v4 <= stru_F8A590._viewport_space_w );
-            }
-          }
-        }
-      }
-    }
-  }
-}
-
-
 //----- (004AE5BA) --------------------------------------------------------
 Texture *BLVFace::GetTexture()
 {
   unsigned int v1; // ecx@2
 
-  if ( uAttributes & 0x4000 )
+  if ( uAttributes & FACE_TEXTURE_FRAME )
     v1 = pTextureFrameTable->GetFrameTexture(this->uBitmapID, pBLVRenderParams->field_0_timer_);
   else
     v1 = uBitmapID;
@@ -1002,46 +769,46 @@ Texture *BLVFace::GetTexture()
 //----- (00498B15) --------------------------------------------------------
 void IndoorLocation::Release()
 {
-  IndoorLocation *v1; // esi@1
-  char *v2; // ebp@1
-  void *v3; // ST00_4@1
+  //IndoorLocation *v1; // esi@1
+  //char *v2; // ebp@1
+  //void *v3; // ST00_4@1
 
-  v1 = this;
-  v2 = (char *)&this->ptr_0002B4_doors_ddata;
+  //v1 = this;
+  //v2 = (char *)&this->ptr_0002B4_doors_ddata;
   free(this->ptr_0002B4_doors_ddata);
-  *(int *)v2 = 0;
-  free(v1->ptr_0002B0_sector_rdata);
-  v1->ptr_0002B0_sector_rdata = 0;
-  free(v1->ptr_0002B8_sector_lrdata);
-  v1->ptr_0002B8_sector_lrdata = 0;
-  free(v1->pLFaces);
-  v1->pLFaces = 0;
-  free(v1->pSpawnPoints);
-  v3 = v1->pVertices;
-  v1->pSpawnPoints = 0;
-  v1->uNumSectors = 0;
-  v1->uNumFaces = 0;
-  v1->uNumVertices = 0;
-  v1->uNumNodes = 0;
-  v1->uNumDoors = 0;
-  v1->uNumLights = 0;
-  free(v3);
-  free(v1->pFaces);
-  free(v1->pFaceExtras);
-  free(v1->pSectors);
-  free(v1->pLights);
-  free(v1->pDoors);
-  free(v1->pNodes);
-  free(v1->pMapOutlines);
-  v1->pVertices = 0;
-  v1->pFaces = 0;
-  v1->pFaceExtras = 0;
-  v1->pSectors = 0;
-  v1->pLights = 0;
-  v1->pDoors = 0;
-  v1->pNodes = 0;
-  v1->pMapOutlines = 0;
-  v1->bLoaded = 0;
+  this->ptr_0002B4_doors_ddata = 0;
+  free(this->ptr_0002B0_sector_rdata);
+  this->ptr_0002B0_sector_rdata = 0;
+  free(this->ptr_0002B8_sector_lrdata);
+  this->ptr_0002B8_sector_lrdata = 0;
+  free(this->pLFaces);
+  this->pLFaces = 0;
+  free(this->pSpawnPoints);
+  //v3 = this->pVertices;
+  this->pSpawnPoints = 0;
+  this->uNumSectors = 0;
+  this->uNumFaces = 0;
+  this->uNumVertices = 0;
+  this->uNumNodes = 0;
+  this->uNumDoors = 0;
+  this->uNumLights = 0;
+  free(this->pVertices);
+  free(this->pFaces);
+  free(this->pFaceExtras);
+  free(this->pSectors);
+  free(this->pLights);
+  free(this->pDoors);
+  free(this->pNodes);
+  free(this->pMapOutlines);
+  this->pVertices = 0;
+  this->pFaces = 0;
+  this->pFaceExtras = 0;
+  this->pSectors = 0;
+  this->pLights = 0;
+  this->pDoors = 0;
+  this->pNodes = 0;
+  this->pMapOutlines = 0;
+  this->bLoaded = 0;
 }
 
 //----- (00498C45) --------------------------------------------------------
@@ -1068,26 +835,20 @@ bool IndoorLocation::Alloc()
     return true;
   }
   else
-  {
     return false;
-  }
 }
-
-
 
 //----- (00444810) --------------------------------------------------------
 unsigned int IndoorLocation::GetLocationIndex(const char *Str1)
 {
-  const char *v1; // edi@1
-  signed int v2; // esi@1
+//  const char *v1; // edi@1
+//  signed int v2; // esi@1
 
   for (uint i = 0; i < 11; ++i)
     if (!_stricmp(Str1, _4E6BDC_loc_names[i]))
       return i + 1;
   return 0;
 }
-
-
 
 //----- (004488F7) --------------------------------------------------------
 void IndoorLocation::ToggleLight(signed int sLightID, unsigned int bToggle)
@@ -1097,11 +858,10 @@ void IndoorLocation::ToggleLight(signed int sLightID, unsigned int bToggle)
     if ( bToggle )
       pIndoor->pLights[sLightID].uAtributes &= 0xFFFFFFF7u;
     else
-      pIndoor->pLights[sLightID].uAtributes |= 8u;
-    pParty->uFlags |= 2u;
+      pIndoor->pLights[sLightID].uAtributes |= 8;
+    pParty->uFlags |= 2;
   }
 }
-
 
 //----- (00498E0A) --------------------------------------------------------
 bool IndoorLocation::Load(char *pFilename, int a3, size_t _i, char *pDest)
@@ -1200,7 +960,7 @@ bool IndoorLocation::Load(char *pFilename, int a3, size_t _i, char *pDest)
 //  BLVFaceExtra *v160; // ecx@149
   //BLVFaceExtra *v161; // ecx@149
   //signed int v162; // ebx@154
-  //unsigned int v163; // ebx@157
+  //unsigned int outz; // ebx@157
   //unsigned int v164; // ebx@157
   //unsigned int v165; // edx@158
   //char *v166; // ecx@158
@@ -1241,37 +1001,37 @@ bool IndoorLocation::Load(char *pFilename, int a3, size_t _i, char *pDest)
   //const char *v201; // [sp-8h] [bp-670h]@4
   //int v202; // [sp-4h] [bp-66Ch]@4
   char v203[875]; // [sp+Ch] [bp-65Ch]@130
-  char FileName[260]; // [sp+378h] [bp-2F0h]@1
+//  char FileName[260]; // [sp+378h] [bp-2F0h]@1
   //char DstBuf; // [sp+47Ch] [bp-1ECh]@4
-  __int32 Offset; // [sp+480h] [bp-1E8h]@4
-  __int32 v207; // [sp+48Ch] [bp-1DCh]@4
-  __int32 v208; // [sp+498h] [bp-1D0h]@4
-  __int32 v209; // [sp+4A4h] [bp-1C4h]@4
-  __int32 v210; // [sp+4B0h] [bp-1B8h]@4
-  __int32 v211; // [sp+4BCh] [bp-1ACh]@15
-  __int32 v212; // [sp+4C8h] [bp-1A0h]@15
-  __int32 v213; // [sp+4D4h] [bp-194h]@25
-  __int32 v214; // [sp+4E0h] [bp-188h]@25
-  __int32 v215; // [sp+4ECh] [bp-17Ch]@32
-  __int32 v216; // [sp+4F8h] [bp-170h]@32
-  __int32 v217; // [sp+504h] [bp-164h]@40
-  __int32 v218; // [sp+510h] [bp-158h]@40
-  __int32 v219; // [sp+51Ch] [bp-14Ch]@43
-  __int32 v220; // [sp+528h] [bp-140h]@43
-  __int32 v221; // [sp+534h] [bp-134h]@52
-  __int32 v222; // [sp+540h] [bp-128h]@52
-  __int32 v223; // [sp+54Ch] [bp-11Ch]@52
-  __int32 v224; // [sp+558h] [bp-110h]@52
-  __int32 v225; // [sp+564h] [bp-104h]@52
-  __int32 v226; // [sp+570h] [bp-F8h]@52
-  __int32 v227; // [sp+57Ch] [bp-ECh]@52
-  __int32 v228; // [sp+588h] [bp-E0h]@52
-  __int32 v229; // [sp+594h] [bp-D4h]@52
-  __int32 v230; // [sp+5A0h] [bp-C8h]@52
-  __int32 v231; // [sp+5ACh] [bp-BCh]@52
-  __int32 v232; // [sp+5B8h] [bp-B0h]@52
-  __int32 v233; // [sp+5C4h] [bp-A4h]@52
-  __int32 v234; // [sp+5D0h] [bp-98h]@52
+//  __int32 Offset; // [sp+480h] [bp-1E8h]@4
+//  __int32 v207; // [sp+48Ch] [bp-1DCh]@4
+//  __int32 v208; // [sp+498h] [bp-1D0h]@4
+//  __int32 v209; // [sp+4A4h] [bp-1C4h]@4
+//  __int32 v210; // [sp+4B0h] [bp-1B8h]@4
+//  __int32 v211; // [sp+4BCh] [bp-1ACh]@15
+//  __int32 v212; // [sp+4C8h] [bp-1A0h]@15
+//  __int32 v213; // [sp+4D4h] [bp-194h]@25
+//  __int32 v214; // [sp+4E0h] [bp-188h]@25
+//  __int32 v215; // [sp+4ECh] [bp-17Ch]@32
+//  __int32 v216; // [sp+4F8h] [bp-170h]@32
+//  __int32 v217; // [sp+504h] [bp-164h]@40
+//  __int32 v218; // [sp+510h] [bp-158h]@40
+//  __int32 v219; // [sp+51Ch] [bp-14Ch]@43
+//  __int32 v220; // [sp+528h] [bp-140h]@43
+//  __int32 v221; // [sp+534h] [bp-134h]@52
+//  __int32 v222; // [sp+540h] [bp-128h]@52
+//  __int32 v223; // [sp+54Ch] [bp-11Ch]@52
+//  __int32 v224; // [sp+558h] [bp-110h]@52
+//  __int32 v225; // [sp+564h] [bp-104h]@52
+//  __int32 v226; // [sp+570h] [bp-F8h]@52
+//  __int32 v227; // [sp+57Ch] [bp-ECh]@52
+//  __int32 v228; // [sp+588h] [bp-E0h]@52
+//  __int32 v229; // [sp+594h] [bp-D4h]@52
+//  __int32 v230; // [sp+5A0h] [bp-C8h]@52
+//  __int32 v231; // [sp+5ACh] [bp-BCh]@52
+//  __int32 v232; // [sp+5B8h] [bp-B0h]@52
+//  __int32 v233; // [sp+5C4h] [bp-A4h]@52
+//  __int32 v234; // [sp+5D0h] [bp-98h]@52
   //char pName[40]; // [sp+5FCh] [bp-6Ch]@42
   //size_t pSource; // [sp+624h] [bp-44h]@67
   //char Dst[12]; // [sp+628h] [bp-40h]@9
@@ -1284,16 +1044,16 @@ bool IndoorLocation::Load(char *pFilename, int a3, size_t _i, char *pDest)
   //BLVSector *v244; // [sp+65Ch] [bp-Ch]@72
   //int v245; // [sp+660h] [bp-8h]@72
   //BLVFace *Src; // [sp+664h] [bp-4h]@73
-  signed int Argsa; // [sp+670h] [bp+8h]@4
-  signed int Argsb; // [sp+670h] [bp+8h]@7
-  signed int Argsc; // [sp+670h] [bp+8h]@15
-  signed int Argsd; // [sp+670h] [bp+8h]@18
-  int Argse; // [sp+670h] [bp+8h]@25
-  int Argsf; // [sp+670h] [bp+8h]@28
-  int Argsg; // [sp+670h] [bp+8h]@32
-  int Argsh; // [sp+670h] [bp+8h]@35
-  signed int Argsi; // [sp+670h] [bp+8h]@40
-  signed int Argsj; // [sp+670h] [bp+8h]@45
+//  signed int Argsa; // [sp+670h] [bp+8h]@4
+//  signed int Argsb; // [sp+670h] [bp+8h]@7
+//  signed int Argsc; // [sp+670h] [bp+8h]@15
+//  signed int Argsd; // [sp+670h] [bp+8h]@18
+//  int Argse; // [sp+670h] [bp+8h]@25
+//  int Argsf; // [sp+670h] [bp+8h]@28
+//  int Argsg; // [sp+670h] [bp+8h]@32
+//  int Argsh; // [sp+670h] [bp+8h]@35
+//  signed int Argsi; // [sp+670h] [bp+8h]@40
+//  signed int Argsj; // [sp+670h] [bp+8h]@45
   //int Argsk; // [sp+670h] [bp+8h]@143
   //void *Argsl; // [sp+670h] [bp+8h]@155
   //signed int Argsm; // [sp+670h] [bp+8h]@161
@@ -1752,7 +1512,7 @@ LABEL_50:
   header.pMagic[3] = 'i';
   header.uCompressedSize = 0;
   header.uDecompressedSize = 0;
-  fread(&header, sizeof(ODMHeader), 1u, File);
+  fread(&header, sizeof(ODMHeader), 1, File);
   if (header.uVersion != 91969 ||
       header.pMagic[0] != 'm'  ||
       header.pMagic[1] != 'v'  ||
@@ -1875,7 +1635,7 @@ LABEL_50:
     strncpy(pTexName, pData, 10);
     pData += 10;
 
-    if (pFace->uAttributes & 0x4000)
+    if (pFace->uAttributes & FACE_TEXTURE_FRAME)
     {
       pFace->uBitmapID = pTextureFrameTable->FindTextureByName(pTexName);
       if (pFace->uBitmapID)
@@ -1883,7 +1643,7 @@ LABEL_50:
       else
       {
         pFace->uBitmapID = pBitmaps_LOD->LoadTexture(pTexName);
-        pFace->uAttributes &= ~0x4000;
+        pFace->uAttributes &= ~FACE_TEXTURE_FRAME;
       }
     }
     else
@@ -1892,7 +1652,7 @@ LABEL_50:
 
   pGameLoadingUI_ProgressBar->Progress();
 
-  memcpy(&uNumFaceExtras, pData, 4u);
+  memcpy(&uNumFaceExtras, pData, 4);
   memcpy(pFaceExtras, pData += 4, uNumFaceExtras * sizeof(BLVFaceExtra));
   pData += uNumFaceExtras * sizeof(BLVFaceExtra);
 
@@ -2086,8 +1846,8 @@ LABEL_50:
 
   void *pRawDLV = nullptr;
   strcpy(&pFilename[strlen(pFilename) - 4], ".dlv");
-  File = pNew_LOD->FindContainer(pFilename, 1);
-  fread(&header, 0x10u, 1u, File);//(FILE *)v245);
+  File = pNew_LOD->FindContainer(pFilename, 1);//error on D28.dlv
+  fread(&header, 0x10u, 1, File);//(FILE *)v245);
   bool _v244 = false;
   if (header.uVersion != 91969 ||
       header.pMagic[0] != 'm'  ||
@@ -2138,8 +1898,8 @@ LABEL_50:
     }
   }
 
-  if (dword_6BE364_game_settings_1 & 0x2000 )
-    _i = 29030400;
+  if (dword_6BE364_game_settings_1 & GAME_SETTINGS_2000 )
+    _i = 0x1BAF800;
   bool _a = false;
   if ( a3 - dlv.uLastRepawnDay >= _i && _stricmp(pCurrentMapName, "d29.dlv") )
     _a = true;
@@ -2161,7 +1921,7 @@ LABEL_132:
     //v201 = pFilename;
     *(int *)pDest = 1;
     File = pGames_LOD->FindContainer(pFilename, 0);
-    fread(&header, 0x10u, 1u, File);
+    fread(&header, 0x10u, 1, File);
     uint v155 = header.uCompressedSize;
     uint Count = header.uDecompressedSize;
     BLVFace* Src = (BLVFace *)malloc(header.uDecompressedSize);
@@ -2169,21 +1929,17 @@ LABEL_132:
     if ( v155 <= Count )
     {
       if ( v155 == Count )
-      {
-        fread(Src, 1u, Count, File);
-      }
+        fread(Src, 1, Count, File);
       else
       {
         void* _uSourceLen = malloc(v155);
-        fread(_uSourceLen, v155, 1u, File);
+        fread(_uSourceLen, v155, 1, File);
         zlib::MemUnzip(Src, &Count, _uSourceLen, v155);
         free(_uSourceLen);
       }
     }
     else
-    {
-    MessageBoxW(nullptr, L"Can't load file!", L"E:\\WORK\\MSDEV\\MM7\\MM7\\Code\\Polydata.cpp:1195", 0);
-    }
+      MessageBoxW(nullptr, L"Can't load file!", L"E:\\WORK\\MSDEV\\MM7\\MM7\\Code\\Polydata.cpp:1195", 0);
     pData = ((char *)Src + 40);
     //v154 = 875;
     goto LABEL_140;
@@ -2235,7 +1991,7 @@ LABEL_140:
   pGameLoadingUI_ProgressBar->Progress();
 
   memcpy(&uNumActors, pData, 4);
-  memcpy(pActors.data(), pData + 4, uNumActors * sizeof(Actor));
+  memcpy(&pActors, pData + 4, uNumActors * sizeof(Actor));
   pData += 4 + uNumActors * sizeof(Actor);
 
   pGameLoadingUI_ProgressBar->Progress();
@@ -2247,19 +2003,17 @@ LABEL_140:
 
   pGameLoadingUI_ProgressBar->Progress();
 
-  for (uint i = 0; i < uNumSpriteObjects; ++i)
+  for ( uint i = 0; i < uNumSpriteObjects; ++i )
   {
-    SpriteObject* pItem = &pSpriteObjects[i];
- 
-    if (pItem->stru_24.uItemID && !(pItem->uAttributes & 0x0100))
+    if (pSpriteObjects[i].stru_24.uItemID && !(pSpriteObjects[i].uAttributes & 0x0100))
     {
-      pItem->uType = pItemsTable->pItems[pItem->stru_24.uItemID - 1].uSpriteID;
+      pSpriteObjects[i].uType = pItemsTable->pItems[pSpriteObjects[i].stru_24.uItemID].uSpriteID;
 
-      uint uObjectID = 0;
-      for (uint j = 0; j < pObjectList->uNumObjects; ++j)
-        if (pItem->uType == pObjectList->pObjects[j].uObjectID)
+      //uint uObjectID = 0;
+      for ( uint j = 0; j < pObjectList->uNumObjects; ++j )
+        if ( pSpriteObjects[i].uType == pObjectList->pObjects[j].uObjectID )
         {
-          pItem->uObjectDescID = j;
+          pSpriteObjects[i].uObjectDescID = j;
           break;
         }
     }
@@ -2444,15 +2198,15 @@ int IndoorLocation::GetSector(int sX, int sY, int sZ)
   //Vec3_short_ *v30; // edx@26
   //int v31; // edx@26
   //signed int v32; // edi@27
-  signed __int64 v33; // qtt@27
+//  signed __int64 v33; // qtt@27
   //Vec3_short_ *v34; // edx@27
   //int v35; // edx@32
   int v37; // edi@38
   int pSectorID; // ebx@40
   int v39; // eax@41
-  BLVFace *pFace; // esi@42
-  PolygonType pPolygonType; // dl@42
-  int v42; // edx@43
+//  BLVFace *pFace; // esi@42
+//  PolygonType pPolygonType; // dl@42
+//  int v42; // edx@43
   int v43[50]; // [sp+Ch] [bp-108h]@1
   //int v44; // [sp+D4h] [bp-40h]@9
   //int v45; // [sp+D8h] [bp-3Ch]@14
@@ -2466,8 +2220,8 @@ int IndoorLocation::GetSector(int sX, int sY, int sZ)
   int v53; // [sp+F8h] [bp-1Ch]@10
   int v54; // [sp+FCh] [bp-18h]@16
   int v55; // [sp+100h] [bp-14h]@1
-  int v56; // [sp+104h] [bp-10h]@1
-  int v57; // [sp+108h] [bp-Ch]@16
+//  int v56; // [sp+104h] [bp-10h]@1
+//  int v57; // [sp+108h] [bp-Ch]@16
   //Vec3_short_ *v58; // [sp+10Ch] [bp-8h]@20
   int v59; // [sp+110h] [bp-4h]@16
 
@@ -2580,7 +2334,6 @@ int IndoorLocation::GetSector(int sX, int sY, int sZ)
   v4 = v43[0];
   if ( v55 == 1 )
     return this->pFaces[v4].uSectorID;
-  v37 = 0;
   if ( !v55 )
     return 0;
   pSectorID = 0;
@@ -2588,38 +2341,25 @@ int IndoorLocation::GetSector(int sX, int sY, int sZ)
   if ( v55 > 0 )
   {
     v39 = sY;
-    while ( 1 )
+    for ( v37 = 0; v37 < v55; ++v37 )
     {
-      pFace = &this->pFaces[v43[v37]];
-      //pPolygonType = pFace->uPolygonType;
-      if ( pFace->uPolygonType == POLYGON_Floor )
+      if ( this->pFaces[v43[v37]].uPolygonType == POLYGON_Floor )
+        v39 = sZ - this->pVertices[*this->pFaces[v43[v37]].pVertexIDs].z;
+      if ( this->pFaces[v43[v37]].uPolygonType == POLYGON_InBetweenFloorAndWall )
       {
-        v42 = this->pVertices[*pFace->pVertexIDs].z;
-        v39 = sZ - v42;
-        //goto LABEL_47;
+        v39 = sZ - ((fixpoint_mul(this->pFaces[v43[v37]].zCalc1, (sX << 16))
+                   + fixpoint_mul(this->pFaces[v43[v37]].zCalc2, (sY << 16))
+                   + this->pFaces[v43[v37]].zCalc3
+                   + 0x8000) >> 16);
       }
-      if ( pFace->uPolygonType == POLYGON_InBetweenFloorAndWall )
-      {
-        //v51 = pFace->zCalc1;
-        v57 = (unsigned __int64)(pFace->zCalc1 * (signed __int64)(sX << 16)) >> 16;
-        //v56 = sY << 16;
-        //v51 = pFace->zCalc2;
-        v56 = (unsigned __int64)(pFace->zCalc2 * (signed __int64)(sY << 16)) >> 16;
-        v42 = (v56 + pFace->zCalc3 + v57 + 32768) >> 16;
-        v39 = sZ - v42;
-      }
-//LABEL_47:
       if ( v39 >= 0 )
       {
         if ( v39 < v53 )
         {
-          pSectorID = pFace->uSectorID;
+          pSectorID = this->pFaces[v43[v37]].uSectorID;
           v53 = v39;
         }
       }
-      ++v37;
-      if ( v37 >= v55 )
-        return pSectorID;
     }
   }
   return pSectorID;
@@ -2628,75 +2368,82 @@ int IndoorLocation::GetSector(int sX, int sY, int sZ)
 
 
 //----- (00498A41) --------------------------------------------------------
-char BLVFace::_get_normals(Vec3_int_ *a2, Vec3_int_ *a3)
+void BLVFace::_get_normals(Vec3_int_ *a2, Vec3_int_ *a3)
 {
-  BLVFace *v3; // ebx@1
-  int v4; // eax@1
-  signed __int64 v5; // qax@2
-  double v6; // st7@8
   Vec3_float_ a1; // [sp+Ch] [bp-Ch]@8
 
-  v3 = this;
-  LOBYTE(v4) = this->uPolygonType;
-  if ( (char)v4 == POLYGON_VerticalWall )
+  if ( this->uPolygonType == POLYGON_VerticalWall )
   {
     a2->x = -this->pFacePlane_old.vNormal.y;
-    LODWORD(v5) = this->pFacePlane_old.vNormal.x;
-LABEL_9:
-    a2->y = v5;
-    v4 = 0;
+    a2->y = this->pFacePlane_old.vNormal.x;
     a2->z = 0;
+
+    a3->x = 0;
     a3->y = 0;
     a3->z = 0xFFFF0000u;
-LABEL_11:
-    a3->x = v4;
+
     goto LABEL_12;
   }
-  if ( (char)v4 == POLYGON_Floor || (char)v4 == POLYGON_Ceiling )
+  if ( this->uPolygonType == POLYGON_Floor || this->uPolygonType == POLYGON_Ceiling )
   {
-LABEL_10:
-    v4 = 0;
     a2->x = 0x10000u;
-    a2->z = 0;
     a2->y = 0;
+    a2->z = 0;
+
+    a3->x = 0;
     a3->y = 0xFFFF0000u;
     a3->z = 0;
-    goto LABEL_11;
+
+    goto LABEL_12;
   }
-  if ( (char)v4 == POLYGON_InBetweenFloorAndWall || (char)v4 == POLYGON_InBetweenCeilingAndWall )
+  if ( this->uPolygonType == POLYGON_InBetweenFloorAndWall || this->uPolygonType == POLYGON_InBetweenCeilingAndWall )
   {
     if ( abs(this->pFacePlane_old.vNormal.z) < 46441 )
     {
-      a1.x = (double)-v3->pFacePlane_old.vNormal.y;
-      a1.y = (double)v3->pFacePlane_old.vNormal.x;
+      a1.x = (double)-this->pFacePlane_old.vNormal.y;
+      a1.y = (double)this->pFacePlane_old.vNormal.x;
       a1.z = 0.0;
       a1.Normalize();
-      v6 = a1.y * 65536.0;
+
       a2->x = (signed __int64)(a1.x * 65536.0);
-      v5 = (signed __int64)v6;
-      goto LABEL_9;
+      a2->y = (signed __int64)(a1.y * 65536.0);
+      a2->z = 0;
+
+      a3->y = 0;
+      a3->z = 0xFFFF0000u;
+      a3->x = 0;
+
+      goto LABEL_12;
     }
-    goto LABEL_10;
+    a2->x = 0x10000u;
+    a2->y = 0;
+    a2->z = 0;
+
+    a3->x = 0;
+    a3->y = 0xFFFF0000u;
+    a3->z = 0;
+
+    goto LABEL_12;
   }
 LABEL_12:
-  if ( BYTE2(v3->uAttributes) & 0x80 )
+  if ( this->uAttributes & 0x800000 )
   {
     a2->x = -a2->x;
     a2->y = -a2->y;
     a2->z = -a2->z;
   }
-  if ( BYTE3(v3->uAttributes) & 1 )
+  if ( this->uAttributes & 0x1000000 )
   {
     a3->x = -a3->x;
     a3->y = -a3->y;
     a3->z = -a3->z;
   }
-  return v4;
+  return;
 }
 
 //----- (0044C23B) --------------------------------------------------------
 bool BLVFaceExtra::HasEventint()
-	{
+{
    signed int event_index; // eax@1
   _evt_raw* start_evt;
   _evt_raw* end_evt;
@@ -2718,46 +2465,22 @@ bool BLVFaceExtra::HasEventint()
     return true;
 }
 
-
-
-
 //----- (0046F228) --------------------------------------------------------
 void  BLV_UpdateDoors()
 {
-  //int v0; // ebx@1
-  //int v1; // edi@1
-  //BLVDoor *v2; // esi@3
-  //unsigned __int16 v3; // ax@3
-  //unsigned int v4; // ecx@5
-  //int v5; // eax@8
-  //int v6; // ecx@8
-  //int v7; // eax@12
-  //int v8; // eax@16
-  //unsigned __int8 v9; // zf@18
-  //char v10; // sf@18
-  //unsigned __int8 v11; // of@18
-  //int v12; // edi@19
-  //int v13; // ecx@19
-  //__int16 v14; // ax@19
-  BLVFace *v15; // ebx@24
-  //unsigned __int16 *v16; // ecx@24
+  BLVFace *face; // ebx@24
   Vec3_short_ *v17; // esi@24
   int v18; // eax@24
   int v19; // edx@24
   signed int v20; // eax@24
-  //Vec3_short_ *v21; // ecx@24
-  //double v22; // st7@24
-  //double v23; // st6@24
   int v24; // esi@25
   int v25; // eax@25
-  //BLVDoor *v26; // edi@25
   signed __int64 v27; // qtt@27
   BLVFaceExtra *v28; // esi@32
-  int v29; // ecx@34
-  int v30; // edx@34
-  unsigned __int64 v31; // qax@34
+//  int v29; // ecx@34
+//  int v30; // edx@34
+//  unsigned __int64 v31; // qax@34
   int v32; // eax@34
-  //unsigned __int16 *v33; // eax@35
   Vec3_short_ *v34; // eax@35
   int v35; // ecx@35
   int v36; // edx@35
@@ -2765,381 +2488,186 @@ void  BLV_UpdateDoors()
   signed int v38; // edx@35
   int v39; // eax@35
   int v40; // edx@35
-  //unsigned __int8 v41; // cf@35
-  //unsigned __int16 *v42; // edi@36
   Vec3_short_ *v43; // edi@36
-  //int v44; // ecx@36
-  //int v45; // edi@36
-  //int v46; // ecx@36
-  //__int16 *v47; // edx@44
-  //int v48; // ecx@44
-  unsigned int v49; // ecx@46
-  unsigned __int16 v50; // ax@48
-  unsigned int v51; // eax@51
-  unsigned __int16 v52; // ax@54
-  int v53; // ecx@57
-  //int v54; // edx@57
-  unsigned __int64 v55; // qax@57
-  int v56; // ecx@58
+//  unsigned int v49; // ecx@46
+//  unsigned __int16 v50; // ax@48
+//  unsigned int v51; // eax@51
+//  unsigned __int16 v52; // ax@54
+//  int v56; // ecx@58
   int v57; // eax@58
-  //int v58; // eax@59
-  //SoundID v59; // [sp-24h] [bp-88h]@12
-  //signed int v60; // [sp-20h] [bp-84h]@12
-  //unsigned int v61; // [sp-1Ch] [bp-80h]@12
-  //signed int v62; // [sp-18h] [bp-7Ch]@12
-  //signed int v63; // [sp-14h] [bp-78h]@12
-  //int v64; // [sp-10h] [bp-74h]@12
-  //unsigned int v65; // [sp-Ch] [bp-70h]@12
-  //int v66; // [sp-8h] [bp-6Ch]@12
   Vec3_int_ v67;
-  //int v67; // [sp+8h] [bp-5Ch]@31
-  //int v68; // [sp+Ch] [bp-58h]@34
-  //int v69; // [sp+10h] [bp-54h]@34
   Vec3_int_ v70;
-  //int v70; // [sp+14h] [bp-50h]@31
-  //int v71; // [sp+18h] [bp-4Ch]@34
-  //int v72; // [sp+1Ch] [bp-48h]@34
   int v73; // [sp+20h] [bp-44h]@24
-  //__int16 v74; // [sp+24h] [bp-40h]@24
   int v75; // [sp+28h] [bp-3Ch]@36
   int v76; // [sp+2Ch] [bp-38h]@36
   int v77; // [sp+30h] [bp-34h]@36
-  //int v78; // [sp+34h] [bp-30h]@36
-  //int v79; // [sp+38h] [bp-2Ch]@19
-  //unsigned int v80; // [sp+3Ch] [bp-28h]@2
-  //int v81; // [sp+40h] [bp-24h]@1
   int v82; // [sp+44h] [bp-20h]@35
   int v83; // [sp+48h] [bp-1Ch]@34
   int v84; // [sp+4Ch] [bp-18h]@34
-  int v85; // [sp+50h] [bp-14h]@19
+//  int v85; // [sp+50h] [bp-14h]@19
   SoundID eDoorSoundID; // [sp+54h] [bp-10h]@1
-  //BLVDoor *v87; // [sp+58h] [bp-Ch]@3
   int v88; // [sp+5Ch] [bp-8h]@18
   int v89; // [sp+60h] [bp-4h]@6
 
-  //v0 = 0;
-  //v1 = 0;
   eDoorSoundID = (SoundID)pDoorSoundIDsByLocationID[dword_6BE13C_uCurrentlyLoadedLocationID];
-  //v81 = 0;
-  //if ( pIndoor->uNumDoors > 0 )
   for (uint i = 0; i < pIndoor->uNumDoors; ++i)
   {
     BLVDoor* door = &pIndoor->pDoors[i];
-    //v80 = 0;
-    //do
-    //{
-      //v2 = &pIndoor->pDoors[v80 / 0x50];
-      //v87 = &pIndoor->pDoors[v80 / 0x50];
-      //v3 = door->uState;
-      if (door->uState == BLVDoor::Closed || door->uState == BLVDoor::Open)
+    if (door->uState == BLVDoor::Closed || door->uState == BLVDoor::Open)
+    {
+      door->uAttributes &= 0xFFFFFFFDu;
+      continue;
+    }
+    door->uTimeSinceTriggered += pEventTimer->uTimeElapsed;
+    if (door->uState == BLVDoor::Opening)
+    {
+      v89 = (signed int)(door->uTimeSinceTriggered * door->uCloseSpeed) / 128;
+      if ( v89 >= door->uMoveLength )
       {
-        door->uAttributes &= 0xFFFFFFFDu;
-        goto LABEL_62;
+        v89 = door->uMoveLength;
+        door->uState = BLVDoor::Open;
+        if ( !(door->uAttributes & 6) && door->uNumVertices != 0)
+          pAudioPlayer->PlaySound((SoundID)((int)eDoorSoundID + 1), PID(OBJECT_BLVDoor,i), 0, -1, 0, 0, 0, 0);
+        goto LABEL_18;
       }
-      door->uTimeSinceTriggered += pEventTimer->uTimeElapsed;
-      //v4 = door->uTimeSinceTriggered;
-      if (door->uState == BLVDoor::Opening)
+    }
+    else
+    {
+      signed int v5 = (signed int)(door->uTimeSinceTriggered * door->uOpenSpeed) / 128;
+      if ( v5 >= door->uMoveLength)
       {
-        v89 = (signed int)(door->uTimeSinceTriggered * door->uCloseSpeed) / 128;
-        if ( v89 >= door->uMoveLength )
-        {
-          v89 = door->uMoveLength;
-          door->uState = BLVDoor::Open;
-LABEL_10:
-          if ( !(door->uAttributes & 6) && door->uNumVertices != 0)
-          {
-            //v66 = 0;
-            //v65 = 0;
-            //v64 = 0;
-            //v7 = PID(OBJECT_BLVDoor,i);
-            //v63 = 0;
-            //v62 = -1;
-            //LOBYTE(v7) = PID(OBJECT_BLVDoor,i);
-            //v61 = 0;
-            //v60 = PID(OBJECT_BLVDoor,i);
-            //v59 = (SoundID)((int)eDoorSoundID + 1);
-//LABEL_17:
-            pAudioPlayer->PlaySound((SoundID)((int)eDoorSoundID + 1), PID(OBJECT_BLVDoor,i), 0, -1, 0, 0, 0, 0);
-            //goto LABEL_18;
-          }
-          goto LABEL_18;
-        }
+        v89 = 0;
+        door->uState = BLVDoor::Closed;
+        if ( !(door->uAttributes & 6) && door->uNumVertices != 0)
+          pAudioPlayer->PlaySound((SoundID)((int)eDoorSoundID + 1), PID(OBJECT_BLVDoor,i), 0, -1, 0, 0, 0, 0);
+        goto LABEL_18;
       }
+      v89 = door->uMoveLength - v5;
+    }
+    if ( !(door->uAttributes & 6) && door->uNumVertices)
+      pAudioPlayer->PlaySound(eDoorSoundID, PID(OBJECT_BLVDoor,i), 1, -1, 0, 0, 0, 0);
+LABEL_18:
+    for (uint j = 0; j < door->uNumVertices; ++j)
+    {
+      pIndoor->pVertices[door->pVertexIDs[j]].x = fixpoint_mul(door->vDirection.x, v89) + door->pXOffsets[j];
+      pIndoor->pVertices[door->pVertexIDs[j]].y = fixpoint_mul(door->vDirection.y, v89) + door->pYOffsets[j];
+      pIndoor->pVertices[door->pVertexIDs[j]].z = fixpoint_mul(door->vDirection.z, v89) + door->pZOffsets[j];
+    }
+    for ( v88 = 0; v88 < door->uNumFaces; ++v88 )
+    {
+      face = &pIndoor->pFaces[door->pFaceIDs[v88]];
+      v17 = &pIndoor->pVertices[face->pVertexIDs[0]];
+      v18 = face->pFacePlane_old.vNormal.y;
+      v73 = *(int *)&v17->x;
+      v19 = face->pFacePlane_old.vNormal.z;
+      v20 = -(v19 * (int)v17->z + (signed __int16)v73 * face->pFacePlane_old.vNormal.x + SHIWORD(v73) * v18);
+      face->pFacePlane_old.dist = v20;
+      face->pFacePlane.dist = -((double)v17->z * face->pFacePlane.vNormal.z
+                             + (double)v17->y * face->pFacePlane.vNormal.y
+                             + (double)v17->x * face->pFacePlane.vNormal.x);
+      if ( v19 )
+      {
+        v24 = abs(v20 >> 15);
+        v25 = abs(face->pFacePlane_old.vNormal.z);
+        if ( v24 > v25 )
+          Error("Door Error\ndoor id: %i\nfacet no: %i\n\nOverflow dividing facet->d [%i] by facet->nz [%i]",
+            door->uDoorID, door->pFaceIDs[v88], face->pFacePlane_old.dist, face->pFacePlane_old.vNormal.z);
+        LODWORD(v27) = face->pFacePlane_old.dist << 16;
+        HIDWORD(v27) = face->pFacePlane_old.dist >> 16;
+        face->zCalc3 = -v27 / face->pFacePlane_old.vNormal.z;
+      }
+      //if ( face->uAttributes & FACE_TEXTURE_FLOW || pRenderer->pRenderD3D )
+        face->_get_normals(&v70, &v67);
+      v28 = &pIndoor->pFaceExtras[face->uFaceExtraID];
+      /*if ( !pRenderer->pRenderD3D )
+      {
+        if ( !(face->uAttributes & FACE_TEXTURE_FLOW) )
+          continue;
+        v83 = (unsigned __int64)(door->vDirection.x * (signed __int64)v70.x) >> 16;
+        v85 = (unsigned __int64)(door->vDirection.y * (signed __int64)v70.y) >> 16;
+        v84 = (unsigned __int64)(door->vDirection.z * (signed __int64)v70.z) >> 16;
+        v29 = v89;
+        v28->sTextureDeltaU = -((v83 + v85 + v84) * (signed __int64)v89) >> 16;
+        v85 = (unsigned __int64)(door->vDirection.x * (signed __int64)v67.x) >> 16;
+        v83 = (unsigned __int64)(door->vDirection.y * (signed __int64)v67.y) >> 16;
+        v84 = (unsigned __int64)(door->vDirection.z * (signed __int64)v67.z) >> 16;
+        v31 = (v85 + v83 + v84) * (signed __int64)v29;
+        v32 = v31 >> 16;
+        v57 = -v32;
+        v28->sTextureDeltaV = v57;
+        v28->sTextureDeltaU += door->pDeltaUs[v88];
+        v28->sTextureDeltaV = v57 + door->pDeltaVs[v88];
+        continue;
+      }*/
+      v28->sTextureDeltaU = 0;
+      v28->sTextureDeltaV = 0;
+      v34 = &pIndoor->pVertices[face->pVertexIDs[0]];
+      v35 = v34->z;
+      v36 = v34->y;
+      v82 = v34->x;
+      v37 = v70.x * v82 + v70.y * v36 + v70.z * v35;
+      v38 = v67.x * v82 + v67.y * v36 + v67.z * v35;
+      v39 = v37 >> 16;
+      *face->pVertexUIDs = v39;
+      v40 = v38 >> 16;
+      *face->pVertexVIDs = v40;
+      v84 = v39;
+      v82 = v40;
+      for (uint j = 1; j < face->uNumVertices; ++j)
+      {
+        v43 = &pIndoor->pVertices[face->pVertexIDs[j]];
+        v76 = ((__int64)v70.z * v43->z + (__int64)v70.x * v43->x + (__int64)v70.y * v43->y) >> 16;
+        v77 = ((__int64)v67.x * v43->x + (__int64)v67.y * v43->y + (__int64)v43->z * v67.z) >> 16;
+        if ( v76 < v39 )
+          v39 = v76;
+        if ( v77 < v40 )
+          v40 = v77;
+        if ( v76 > v84 )
+          v84 = v76;
+        if ( v77 > v82 )
+          v82 = v77;
+        face->pVertexUIDs[j] = v76;
+        face->pVertexVIDs[j] = v77;
+      }
+      if ( face->uAttributes & FACE_UNKNOW3 )
+        v28->sTextureDeltaU -= v39;
       else
       {
-        signed int v5 = (signed int)(door->uTimeSinceTriggered * door->uOpenSpeed) / 128;
-        //v6 = door->uMoveLength;
-        if ( v5 >= door->uMoveLength)
+        if ( SBYTE1(face->uAttributes) < 0 )
         {
-          v89 = 0;
-          door->uState = BLVDoor::Closed;
-          goto LABEL_10;
+          if ( face->uBitmapID != -1 )
+            v28->sTextureDeltaU -= v84 + pBitmaps_LOD->pTextures[face->uBitmapID].uTextureWidth;
         }
-        v89 = door->uMoveLength - v5;
       }
-      if ( !(door->uAttributes & 6) && door->uNumVertices)
+      if ( face->uAttributes & 8 )
+        v28->sTextureDeltaV -= v40;
+      else
       {
-        //v66 = 0;
-        //v65 = 0;
-        //v64 = 0;
-        //v8 = PID(OBJECT_BLVDoor,i);
-        //v63 = 0;
-        //v62 = -1;
-        //LOBYTE(v8) = 8 * v1 | 1;
-        //v61 = 1;
-        //v60 = PID(OBJECT_BLVDoor,i);
-        //v59 = eDoorSoundID;
-        pAudioPlayer->PlaySound(eDoorSoundID, PID(OBJECT_BLVDoor,i), 1, -1, 0, 0, 0, 0);
-        //goto LABEL_18;
-      }
-LABEL_18:
-      //v11 = __OFSUB__(v2->uNumVertices, 0);
-      //v9 = v2->uNumVertices == 0;
-      //v10 = (signed __int16)(v2->uNumVertices - 0) < 0;
-      //v88 = 0;
-      //if (door->uNumVertices > 0)
-      for (uint j = 0; j < door->uNumVertices; ++j)
-      {
-        //do
-        //{
-          //v12 = v88;
-          //v13 = door->pVertexIDs[v88];
-          //v85 = v89;
-          //v79 = door->vDirection.x;
-          //v85 = (unsigned __int64)(v79 * (signed __int64)v89) >> 16;
-          //v13 *= 6;
-          pIndoor->pVertices[door->pVertexIDs[j]].x = ((unsigned int)(door->vDirection.x * v89) >> 16) + door->pXOffsets[j];
-          //v85 = v89;
-          //v79 = door->vDirection.y;
-          //v85 = (unsigned __int64)(v79 * (signed __int64)v89) >> 16;
-          pIndoor->pVertices[door->pVertexIDs[j]].y = ((unsigned int)(door->vDirection.y * v89) >> 16) + door->pYOffsets[j];
-          //v85 = v89;
-          //v79 = door->vDirection.z;
-          //v85 = (unsigned __int64)(v79 * (signed __int64)v89) >> 16;
-          //v14 = ((unsigned int)(door->vDirection.z * v89) >> 16) + door->pZOffsets[j];
-          pIndoor->pVertices[door->pVertexIDs[j]].z = ((unsigned int)(door->vDirection.z * v89) >> 16) + door->pZOffsets[j];
-          //++v88;
-        //}
-        //while ( v88 < door->uNumVertices );
-        //v1 = v81;
-      }
-      //v11 = __OFSUB__(v2->uNumFaces, 0);
-      //v9 = v2->uNumFaces == 0;
-      //v10 = (signed __int16)(v2->uNumFaces - 0) < 0;
-      v88 = 0;
-      if (door->uNumFaces > 0)
-      {
-        while ( 1 )
+        if ( face->uAttributes & FACE_UNKNOW7 )
         {
-          v15 = &pIndoor->pFaces[door->pFaceIDs[v88]];
-          //v16 = v15->pVertexIDs;
-          v17 = &pIndoor->pVertices[v15->pVertexIDs[0]];
-          v18 = v15->pFacePlane_old.vNormal.y;
-          v73 = *(int *)&v17->x;
-          //v74 = v17->z;
-          v19 = v15->pFacePlane_old.vNormal.z;
-          v20 = -(v19 * (int)v17->z + (signed __int16)v73 * v15->pFacePlane_old.vNormal.x + SHIWORD(v73) * v18);
-          v15->pFacePlane_old.dist = v20;
-          //v21 = &pIndoor->pVertices[v15->pVertexIDs[0]];
-          //v79 = v21->x;
-          //v22 = (double)v21->x;
-          //v23 = (double)v21->y;
-          //v79 = v21->z;
-          v15->pFacePlane.dist = -((double)v17->z * v15->pFacePlane.vNormal.z
-                                 + (double)v17->y * v15->pFacePlane.vNormal.y
-                                 + (double)v17->x * v15->pFacePlane.vNormal.x);
-          if ( v19 )
-          {
-            v24 = abs(v20 >> 15);
-            v25 = abs(v15->pFacePlane_old.vNormal.z);
-            //v26 = v87;
-            if ( v24 > v25 )
-              Error("Door Error\ndoor id: %i\nfacet no: %i\n\nOverflow dividing facet->d [%i] by facet->nz [%i]",
-                door->uDoorID,
-                door->pFaceIDs[v88],
-                v15->pFacePlane_old.dist,
-                v15->pFacePlane_old.vNormal.z);
-            //v79 = v15->pFacePlane_old.vNormal.z;
-            //v85 = v15->pFacePlane_old.dist;
-            LODWORD(v27) = v15->pFacePlane_old.dist << 16;
-            HIDWORD(v27) = v15->pFacePlane_old.dist >> 16;
-            //v85 = v27 / v15->pFacePlane_old.vNormal.z;
-            v15->zCalc3 = -v27 / v15->pFacePlane_old.vNormal.z;
-          }
-          /*else
-          {
-            v26 = v87;
-          }*/
-          if ( BYTE2(v15->uAttributes) & 4 || pRenderer->pRenderD3D )
-            v15->_get_normals(&v70, &v67);
-          v28 = &pIndoor->pFaceExtras[v15->uFaceExtraID];
-          if ( !pRenderer->pRenderD3D )
-          {
-            if ( !(BYTE2(v15->uAttributes) & 4) )
-              goto LABEL_59;
-            //v79 = door->vDirection.x;
-            v83 = (unsigned __int64)(door->vDirection.x * (signed __int64)v70.x) >> 16;
-            //v85 = v71;
-            //v79 = door->vDirection.y;
-            v85 = (unsigned __int64)(door->vDirection.y * (signed __int64)v70.y) >> 16;
-            //v84 = v72;
-            //v79 = door->vDirection.z;
-            v84 = (unsigned __int64)(door->vDirection.z * (signed __int64)v70.z) >> 16;
-            //v79 = v83 + v85 + v84;
-            v29 = v89;
-            //v83 = (unsigned __int64)(v79 * (signed __int64)v89) >> 16;
-            v28->sTextureDeltaU = -((v83 + v85 + v84) * (signed __int64)v89) >> 16;
-            //v79 = door->vDirection.x;
-            v85 = (unsigned __int64)(door->vDirection.x * (signed __int64)v67.x) >> 16;
-            //v83 = v68;
-            //v79 = door->vDirection.y;
-            v83 = (unsigned __int64)(door->vDirection.y * (signed __int64)v67.y) >> 16;
-            //v84 = v69;
-            //v79 = door->vDirection.z;
-            v84 = (unsigned __int64)(door->vDirection.z * (signed __int64)v67.z) >> 16;
-            //v30 = v83 + v84;
-            //v79 = v85 + v30;
-            v31 = (v85 + v83 + v84) * (signed __int64)v29;
-            //v83 = v31 >> 16;
-            v32 = v31 >> 16;
-            goto LABEL_58;
-          }
-          v28->sTextureDeltaU = 0;
-          v28->sTextureDeltaV = 0;
-          //v33 = v15->pVertexIDs;
-          //v85 = 1;
-          v34 = &pIndoor->pVertices[v15->pVertexIDs[0]];
-          v35 = v34->z;
-          v36 = v34->y;
-          v82 = v34->x;
-          //v79 = v36;
-          v37 = v70.x * v82 + v70.y * v36 + v70.z * v35;
-          v38 = v67.x * v82 + v67.y * v36 + v67.z * v35;
-          v39 = v37 >> 16;
-          *v15->pVertexUIDs = v39;
-          v40 = v38 >> 16;
-          *v15->pVertexVIDs = v40;
-          //v41 = v15->uNumVertices < 1u;
-          //v9 = v15->uNumVertices == 1;
-          //v83 = v40;
-          v84 = v39;
-          v82 = v40;
-          //if (v15->uNumVertices > 1)
-          for (uint j = 1; j < v15->uNumVertices; ++j)
-          {
-            //do
-            //{
-              //v42 = v15->pVertexIDs;
-              //v75 = 2 * v85;
-              v43 = &pIndoor->pVertices[v15->pVertexIDs[j]];
-              //v79 = v43->z;
-              //v44 = v43->y;
-              //v45 = v43->x;
-              //v78 = v43->y;
-              v76 = ((__int64)v70.z * v43->z + (__int64)v70.x * v43->x + (__int64)v70.y * v43->y) >> 16;
-              //v46 = (v67 * v45 + v68 * v44 + v79 * v69) >> 16;
-              v77 = ((__int64)v67.x * v43->x + (__int64)v67.y * v43->y + (__int64)v43->z * v67.z) >> 16;
-              if ( v76 < v39 )
-                v39 = v76;
-              if ( v77 < v40 )
-                v40 = v77;
-              if ( v76 > v84 )
-                v84 = v76;
-              if ( v77 > v82 )
-                v82 = v77;
-              //v40 = v83;
-              //v47 = v15->pVertexUIDs;
-              //v48 = v75;
-              //++v85;
-              v15->pVertexUIDs[j] = v76;
-              v15->pVertexVIDs[j] = v77;
-            //}
-            //while ( v85 < v15->uNumVertices );
-            //v26 = v87;
-          }
-          v49 = v15->uAttributes;
-          if ( BYTE1(v49) & 0x10 )
-            goto LABEL_50;
-          if ( SBYTE1(v49) < 0 )
-          {
-            v50 = v15->uBitmapID;
-            if ( v50 != -1 )
-              break;
-          }
-LABEL_51:
-          v51 = v15->uAttributes;
-          if ( v51 & 8 )
-          {
-            v28->sTextureDeltaV -= v40;
-          }
-          else
-          {
-            if ( v51 & 0x20000 )
-            {
-              v52 = v15->uBitmapID;
-              if ( v52 != -1 )
-                v28->sTextureDeltaV -= v82 + pBitmaps_LOD->GetTexture(v52)->uTextureHeight;
-            }
-          }
-          if ( BYTE2(v15->uAttributes) & 4 )
-          {
-            //v75 = door->vDirection.x;
-            v84 = (unsigned __int64)(door->vDirection.x * (signed __int64)v70.x) >> 16;
-            //v82 = v71;
-            //v75 = door->vDirection.y;
-            v82 = (unsigned __int64)(door->vDirection.y * (signed __int64)v70.y) >> 16;
-            //v83 = v72;
-            //v75 = door->vDirection.z;
-            v83 = (unsigned __int64)(door->vDirection.z * (signed __int64)v70.z) >> 16;
-            v75 = v84 + v82 + v83;
-            v53 = v89;
-            v82 = (unsigned __int64)(v75 * (signed __int64)v89) >> 16;
-            v28->sTextureDeltaU = -v82;
-            //v75 = door->vDirection.x;
-            v84 = (unsigned __int64)(door->vDirection.x * (signed __int64)v67.x) >> 16;
-            //v82 = v68;
-            //v75 = door->vDirection.y;
-            v82 = (unsigned __int64)(door->vDirection.y * (signed __int64)v67.y) >> 16;
-            //v83 = v69;
-            //v75 = door->vDirection.z;
-            v83 = (unsigned __int64)(door->vDirection.z * (signed __int64)v67.z) >> 16;
-            //v54 = v82 + v83;
-            v75 = v84 + v82 + v83;
-            v55 = v75 * (signed __int64)v53;
-            //v82 = v55 >> 16;
-            v32 = v55 >> 16;
-LABEL_58:
-            v56 = v88;
-            v57 = -v32;
-            v28->sTextureDeltaV = v57;
-            v28->sTextureDeltaU += door->pDeltaUs[v56];
-            v28->sTextureDeltaV = v57 + door->pDeltaVs[v56];
-          }
-LABEL_59:
-          //v58 = door->uNumFaces;
-          ++v88;
-          if ( v88 >= door->uNumFaces)
-          {
-            //v1 = v81;
-            //v0 = 0;
-            goto LABEL_62;
-          }
-          //v2 = v87;
+          if ( face->uBitmapID != -1 )
+            v28->sTextureDeltaV -= v82 + pBitmaps_LOD->GetTexture(face->uBitmapID)->uTextureHeight;
         }
-        LOWORD(v39) = v84;
-        if (v15->uBitmapID != -1)
-          LOWORD(v39) += pBitmaps_LOD->pTextures[v15->uBitmapID].uTextureWidth;
-LABEL_50:
-        v28->sTextureDeltaU -= v39;
-        goto LABEL_51;
       }
-LABEL_62:
-      ;
-      //v80 += 80;
-      //++v1;
-      //v81 = v1;
-    //}
-    //while ( v1 < pIndoor->uNumDoors );
+      if ( face->uAttributes & FACE_TEXTURE_FLOW )
+      {
+        v84 = fixpoint_mul(door->vDirection.x, v70.x);
+        v82 = fixpoint_mul(door->vDirection.y, v70.y);
+        v83 = fixpoint_mul(door->vDirection.z, v70.z);
+        v75 = v84 + v82 + v83;
+        v82 = fixpoint_mul(v75, v89);
+        v28->sTextureDeltaU = -v82;
+        v84 = fixpoint_mul(door->vDirection.x, v67.x);
+        v82 = fixpoint_mul(door->vDirection.y, v67.y);
+        v83 = fixpoint_mul(door->vDirection.z, v67.z);
+        v75 = v84 + v82 + v83;
+        v32 = fixpoint_mul(v75, v89);
+        v57 = -v32;
+        v28->sTextureDeltaV = v57;
+        v28->sTextureDeltaU += door->pDeltaUs[v88];
+        v28->sTextureDeltaV = v57 + door->pDeltaVs[v88];
+      }
+    }
   }
 }
 // 6BE13C: using guessed type int dword_6BE13C_uCurrentlyLoadedLocationID;
@@ -3147,33 +2675,26 @@ LABEL_62:
 //----- (0046F90C) --------------------------------------------------------
 void  UpdateActors_BLV()
 {
-  Actor *v0; // esi@2
-  unsigned __int16 v1; // ax@2
   int v2; // edi@6
   int v3; // eax@6
   int v4; // eax@8
   __int16 v5; // ax@11
   signed int v6; // ebx@14
-  unsigned __int8 v7; // zf@14
-  unsigned __int8 v8; // sf@14
-  signed __int16 v9; // ax@17
+//  signed __int16 v9; // ax@17
   signed __int64 v10; // qax@18
-  unsigned __int16 v11; // ax@21
-  int v12; // eax@29
-  unsigned __int64 v13; // qax@29
-  int v14; // eax@30
-  unsigned __int64 v15; // qax@30
-  int v16; // ecx@33
-  BLVFace *v17; // edx@33
-  int v18; // ecx@33
-  BLVFace *v19; // eax@34
-  int v20; // ecx@46
-  //int v21; // eax@46
+//  int v12; // eax@29
+//  unsigned __int64 v13; // qax@29
+//  int v14; // eax@30
+//  unsigned __int64 v15; // qax@30
+//  BLVFace *v17; // edx@33
+//  int v18; // ecx@33
+//  BLVFace *v19; // eax@34
+//  int v20; // ecx@46
   int v22; // edi@46
-  int v23; // eax@48
+//  int v23; // eax@48
   unsigned int v24; // eax@51
-  int v25; // eax@52
-  int v26; // ebx@54
+//  int v25; // eax@52
+//  int v26; // ebx@54
   int v27; // ST08_4@54
   int v28; // edi@54
   int v29; // eax@54
@@ -3181,27 +2702,21 @@ void  UpdateActors_BLV()
   int v31; // ebx@62
   int v32; // eax@62
   int v33; // eax@64
-  unsigned int v34; // ecx@64
-  int v35; // ecx@64
-  signed int v36; // edx@85
+//  unsigned int v34; // ecx@64
+//  int v35; // ecx@64
   signed int v37; // ebx@85
-  BLVFace *v38; // edi@89
-  int v39; // ecx@90
-  int v40; // ebx@90
-  PolygonType v41; // al@94
-  int v42; // eax@96
-  __int16 v43; // dx@96
+//  int v39; // ecx@90
+//  int v40; // ebx@90
+//  PolygonType v41; // al@94
+//  int v42; // eax@96
+//  __int16 v43; // dx@96
   int v44; // ecx@96
   int v45; // edi@101
-  //int v46; // edi@101
-  //int v47; // eax@101
-  //unsigned __int64 v48; // qax@101
-  unsigned __int8 v49; // zf@103
-  unsigned __int8 v50; // sf@103
-  unsigned __int8 v51; // of@103
+//  unsigned __int8 v49; // zf@103
+//  unsigned __int8 v50; // sf@103
   AIDirection v52; // [sp+0h] [bp-60h]@75
   AIDirection v53; // [sp+1Ch] [bp-44h]@116
-  int v54; // [sp+38h] [bp-28h]@53
+//  int v54; // [sp+38h] [bp-28h]@53
   unsigned int uSectorID; // [sp+3Ch] [bp-24h]@6
   int v56; // [sp+40h] [bp-20h]@6
   unsigned int _this; // [sp+44h] [bp-1Ch]@51
@@ -3210,718 +2725,570 @@ void  UpdateActors_BLV()
   unsigned int uFaceID; // [sp+50h] [bp-10h]@6
   int v61; // [sp+54h] [bp-Ch]@14
   int v62; // [sp+58h] [bp-8h]@6
-  unsigned int v63; // [sp+5Ch] [bp-4h]@1
+  unsigned int actor_id; // [sp+5Ch] [bp-4h]@1
 
-  v63 = 0;
-  if ( (signed int)uNumActors > 0 )
+  for ( actor_id = 0; actor_id < uNumActors; actor_id++ )
   {
-    while ( 1 )
+    if ( pActors[actor_id].uAIState == Removed || pActors[actor_id].uAIState == Disabled
+      || pActors[actor_id].uAIState == Summoned || !pActors[actor_id].uMovementSpeed )
+      continue;
+    uSectorID = pActors[actor_id].uSectorID;
+    v2 = collide_against_floor(pActors[actor_id].vPosition.x, pActors[actor_id].vPosition.y, pActors[actor_id].vPosition.z, &uSectorID, &uFaceID);
+    pActors[actor_id].uSectorID = uSectorID;
+    v3 = pActors[actor_id].pMonsterInfo.uFlying;
+    v56 = v2;
+    v62 = v3;
+    if ( !pActors[actor_id].CanAct() )
+      v62 = 0;
+    v4 = pActors[actor_id].vPosition.z;
+    v59 = 0;
+    if ( pActors[actor_id].vPosition.z > v2 + 1 )
+      v59 = 1;
+    if ( v2 <= -30000 )
     {
-      v0 = &pActors[v63];
-      v1 = v0->uAIState;
-      if ( v1 == 11 || v1 == 19 || v1 == 17 || !v0->uMovementSpeed )
-        goto LABEL_123;
-      uSectorID = v0->uSectorID;
-      v2 = collide_against_floor(v0->vPosition.x, v0->vPosition.y, v0->vPosition.z, &uSectorID, &uFaceID);
-      v0->uSectorID = uSectorID;
-      v3 = v0->pMonsterInfo.uFlying;
-      v56 = v2;
-      v62 = v3;
-      if ( !v0->CanAct() )
-        v62 = 0;
-      v4 = v0->vPosition.z;
-      v59 = 0;
-      if ( v4 > v2 + 1 )
-        v59 = 1;
-      if ( v2 <= -30000 )
-      {
-        v5 = pIndoor->GetSector(v0->vPosition.x, v0->vPosition.y, v4);
-        v0->uSectorID = v5;
-        if ( !v5
-          || (v56 = BLV_GetFloorLevel(v0->vPosition.x, v0->vPosition.y, v0->vPosition.z, v5, &uFaceID), v56 == -30000) )
-          goto LABEL_123;
-      }
-      if ( v0->uCurrentActionAnimation == ANIM_Walking)
-      {
-        v6 = v0->uMovementSpeed;
-        v7 = HIDWORD(v0->pActorBuffs[ACTOR_BUFF_SLOWED].uExpireTime) == 0;
-        v8 = SHIDWORD(v0->pActorBuffs[ACTOR_BUFF_SLOWED].uExpireTime) < 0;
-        v61 = v0->uMovementSpeed;
-        if ( !v8 && (!(v8 | v7) || LODWORD(v0->pActorBuffs[ACTOR_BUFF_SLOWED].uExpireTime)) )
-        {
-          v9 = v0->pActorBuffs[ACTOR_BUFF_SLOWED].uPower;
-          if ( v9 )
-            LODWORD(v10) = v6 / (unsigned __int16)v9;
-          else
-            v10 = (signed __int64)((double)v61 * 0.5);
-          v6 = v10;
-          v61 = v10;
-        }
-        v11 = v0->uAIState;
-        if ( v11 == 6 || v11 == 7 )
-        {
-          v6 *= 2;
-          v61 = v6;
-        }
-        if ( pParty->bTurnBasedModeOn == 1 && pTurnEngine->turn_stage == 1 )
-          v6 = (signed __int64)((double)v61 * flt_6BE3AC_debug_recmod1_x_1_6);
-        if ( v6 > 1000 )
-          v6 = 1000;
-        v12 = stru_5C6E00->Cos(v0->uYawAngle);
-        uSectorID = v12;
-        v13 = v12 * (signed __int64)v6;
-        v61 = v13 >> 16;
-        v0->vVelocity.x = WORD1(v13);
-        uSectorID = stru_5C6E00->Sin(v0->uYawAngle);
-        v61 = (unsigned __int64)(uSectorID * (signed __int64)v6) >> 16;
-        v7 = v62 == 0;
-        v0->vVelocity.y = (unsigned int)(uSectorID * v6) >> 16;
-        if ( !v7 )
-        {
-          v14 = stru_5C6E00->Sin(v0->uPitchAngle);
-          uSectorID = v14;
-          v15 = v14 * (signed __int64)v6;
-          v61 = v15 >> 16;
-          v0->vVelocity.z = WORD1(v15);
-        }
-      }
-      else
-      {
-        v61 = v0->vVelocity.x;
-        uSectorID = 55000;
-        v61 = (unsigned __int64)(55000i64 * v61) >> 16;
-        v0->vVelocity.x = v61;
-        v61 = v0->vVelocity.y;
-        v61 = (unsigned __int64)(uSectorID * (signed __int64)v61) >> 16;
-        v7 = v62 == 0;
-        v0->vVelocity.y = v61;
-        if ( !v7 )
-        {
-          uSectorID = 55000;
-          v61 = v0->vVelocity.z;
-          v61 = (unsigned __int64)(55000i64 * v61) >> 16;
-          v0->vVelocity.z = v61;
-        }
-      }
-      v16 = v0->vPosition.z;
-      v17 = pIndoor->pFaces;
-      v51 = __OFSUB__(v16, v56);
-      v8 = v16 - v56 < 0;
-      v18 = uFaceID;
-      if ( v8 ^ v51 )
-      {
-        v0->vPosition.z = v56 + 1;
-        v19 = &v17[v18];
-        if ( v19->uPolygonType == 3 )
-        {
-          if ( v0->vVelocity.z < 0 )
-            v0->vVelocity.z = 0;
-        }
-        else
-        {
-          if ( v19->pFacePlane_old.vNormal.z < 45000 )
-            v0->vVelocity.z -= LOWORD(pEventTimer->uTimeElapsed) * GetGravityStrength();
-        }
-      }
-      else
-      {
-        if ( v59 && !v62 )
-          v0->vVelocity.z += -8 * LOWORD(pEventTimer->uTimeElapsed) * GetGravityStrength();
-      }
-      if ( v0->vVelocity.x * v0->vVelocity.x + v0->vVelocity.y * v0->vVelocity.y + v0->vVelocity.z * v0->vVelocity.z >= 400 )
-        break;
-      v0->vVelocity.z = 0;
-      v0->vVelocity.y = 0;
-      v0->vVelocity.x = 0;
-      if ( BYTE2(v17[v18].uAttributes) & 0x40 )
-      {
-        if (v0->uAIState == Dead)
-          v0->uAIState = Removed;
-      }
-LABEL_123:
-      ++v63;
-      if ( (signed int)v63 >= (signed int)uNumActors )
-        return;
+      v5 = pIndoor->GetSector(pActors[actor_id].vPosition.x, pActors[actor_id].vPosition.y, v4);
+      pActors[actor_id].uSectorID = v5;
+      v56 = BLV_GetFloorLevel(pActors[actor_id].vPosition.x, pActors[actor_id].vPosition.y, pActors[actor_id].vPosition.z, v5, &uFaceID);
+      if ( !v5 || v56 == -30000 )
+        continue;
     }
-    v20 = v0->uActorRadius;
-    stru_721530.field_84 = -1;
-    stru_721530.field_70 = 0;
-    uSectorID = 0;
-    stru_721530.field_0 = 1;
-    stru_721530.field_8_radius = v20;
-    stru_721530.prolly_normal_d = v20;
-    stru_721530.height = v0->uActorHeight;
-    v22 = 0;
-    while ( 1 )
+    if ( pActors[actor_id].uCurrentActionAnimation == ANIM_Walking)//монстр двигается
     {
-      stru_721530.position.x = v0->vPosition.x;
-      stru_721530.normal.x = stru_721530.position.x;
-      stru_721530.position.y = v0->vPosition.y;
-      stru_721530.normal.y = stru_721530.position.y;
-      v23 = v0->vPosition.z;
-      stru_721530.normal.z = v23 + v20 + 1;
-      stru_721530.position.z = v23 - v20 + stru_721530.height - 1;
-      if ( stru_721530.position.z < stru_721530.normal.z )
-        stru_721530.position.z = v23 + v20 + 1;
-      stru_721530.velocity.x = v0->vVelocity.x;
-      stru_721530.velocity.y = v0->vVelocity.y;
-      stru_721530.velocity.z = v0->vVelocity.z;
-      stru_721530.uSectorID = v0->uSectorID;
-      if ( !stru_721530._47050A(v22) )
+      v6 = pActors[actor_id].uMovementSpeed;
+      if ( pActors[actor_id].pActorBuffs[ACTOR_BUFF_SLOWED].uExpireTime > 0 )
       {
-        v58 = v22;
-        v24 = 8 * v63;
-        LOBYTE(v24) = PID(OBJECT_Actor,v63);
-        v61 = v22;
-        _this = v24;
-        do
-        {
-          _46E44E_collide_against_faces_and_portals(1u);
-          _46E0B2_collide_against_decorations();
-          _46EF01_collision_chech_player(0);
-          _46ED8A_collide_against_sprite_objects(_this);
-          v25 = 0;
-          v56 = 0;
-          if ( ai_arrays_size > v22 )
-          {
-            do
-            {
-              v54 = ai_near_actors_ids[v25];
-              if ( v54 != v63 )
-              {
-                v26 = v54;
-                v27 = abs(pActors[v54].vPosition.z - v0->vPosition.z);
-                v28 = abs(pActors[v26].vPosition.y - v0->vPosition.y);
-                v29 = abs(pActors[v26].vPosition.x - v0->vPosition.x);
-                if ( int_get_vector_length(v29, v28, v27) >= v0->uActorRadius + (signed int)pActors[v26].uActorRadius
-                  && Actor::_46DF1A_collide_against_actor(v54, 40) )
-                  ++v58;
-                v22 = 0;
-              }
-              v25 = v56++ + 1;
-            }
-            while ( v56 < ai_arrays_size );
-          }
-          if ( _46F04E_collide_against_portals() )
-            break;
-          ++v61;
-        }
-        while ( v61 < 100 );
-        v56 = v58 > 1;
-        if ( stru_721530.field_7C >= stru_721530.field_6C )
-        {
-          v30 = stru_721530.normal2.x;
-          v31 = stru_721530.normal2.y;
-          v32 = stru_721530.normal2.z - stru_721530.prolly_normal_d - 1;
-        }
+        if ( pActors[actor_id].pActorBuffs[ACTOR_BUFF_SLOWED].uPower )
+          LODWORD(v10) = pActors[actor_id].uMovementSpeed / (unsigned __int16)pActors[actor_id].pActorBuffs[ACTOR_BUFF_SLOWED].uPower;
         else
+          v10 = (signed __int64)((double)pActors[actor_id].uMovementSpeed * 0.5);
+        v6 = v10;
+      }
+      if ( pActors[actor_id].uAIState == Pursuing || pActors[actor_id].uAIState == Fleeing )
+        v6 *= 2;
+      if ( pParty->bTurnBasedModeOn == true && pTurnEngine->turn_stage == TE_WAIT )
+        v6 = (signed __int64)((double)v6 * flt_6BE3AC_debug_recmod1_x_1_6);
+      if ( v6 > 1000 )
+        v6 = 1000;
+      pActors[actor_id].vVelocity.x = fixpoint_mul(stru_5C6E00->Cos(pActors[actor_id].uYawAngle), v6);
+      pActors[actor_id].vVelocity.y = fixpoint_mul(stru_5C6E00->Sin(pActors[actor_id].uYawAngle), v6);
+      if ( v62 )
+        pActors[actor_id].vVelocity.z = fixpoint_mul(stru_5C6E00->Sin(pActors[actor_id].uPitchAngle), v6);
+    }
+    else//actor is not moving(актор не двигается)
+    {
+      pActors[actor_id].vVelocity.x = fixpoint_mul(55000, pActors[actor_id].vVelocity.x);
+      pActors[actor_id].vVelocity.y = fixpoint_mul(55000, pActors[actor_id].vVelocity.y);
+      if ( v62 )
+        pActors[actor_id].vVelocity.z = fixpoint_mul(55000, pActors[actor_id].vVelocity.z);
+    }
+    if ( pActors[actor_id].vPosition.z <= v56 )
+    {
+      pActors[actor_id].vPosition.z = v56 + 1;
+      if ( pIndoor->pFaces[uFaceID].uPolygonType == 3 )
+      {
+        if ( pActors[actor_id].vVelocity.z < 0 )
+          pActors[actor_id].vVelocity.z = 0;
+      }
+      else
+      {
+        if ( pIndoor->pFaces[uFaceID].pFacePlane_old.vNormal.z < 45000 )
+          pActors[actor_id].vVelocity.z -= LOWORD(pEventTimer->uTimeElapsed) * GetGravityStrength();
+      }
+    }
+    else
+    {
+      if ( v59 && !v62 )
+        pActors[actor_id].vVelocity.z += -8 * LOWORD(pEventTimer->uTimeElapsed) * GetGravityStrength();
+    }
+    if ( pActors[actor_id].vVelocity.x * pActors[actor_id].vVelocity.x
+       + pActors[actor_id].vVelocity.y * pActors[actor_id].vVelocity.y
+       + pActors[actor_id].vVelocity.z * pActors[actor_id].vVelocity.z >= 400 )
+    {
+      stru_721530.field_84 = -1;
+      stru_721530.field_70 = 0;
+      stru_721530.field_0 = 1;
+      stru_721530.field_8_radius = pActors[actor_id].uActorRadius;
+      stru_721530.prolly_normal_d = pActors[actor_id].uActorRadius;
+      stru_721530.height = pActors[actor_id].uActorHeight;
+      v22 = 0;
+      for ( uSectorID = 0; uSectorID < 100; uSectorID++ )
+      {
+        stru_721530.position.x = pActors[actor_id].vPosition.x;
+        stru_721530.normal.x = stru_721530.position.x;
+        stru_721530.position.y = pActors[actor_id].vPosition.y;
+        stru_721530.normal.y = stru_721530.position.y;
+        stru_721530.normal.z = pActors[actor_id].vPosition.z + pActors[actor_id].uActorRadius + 1;
+        stru_721530.position.z = pActors[actor_id].vPosition.z - pActors[actor_id].uActorRadius + stru_721530.height - 1;
+        if ( stru_721530.position.z < stru_721530.normal.z )
+        stru_721530.position.z = pActors[actor_id].vPosition.z + pActors[actor_id].uActorRadius + 1;
+        stru_721530.velocity.x = pActors[actor_id].vVelocity.x;
+        stru_721530.velocity.y = pActors[actor_id].vVelocity.y;
+        stru_721530.velocity.z = pActors[actor_id].vVelocity.z;
+        stru_721530.uSectorID = pActors[actor_id].uSectorID;
+        if ( !stru_721530._47050A(v22) )
         {
-          v30 = v0->vPosition.x + fixpoint_mul(stru_721530.field_7C, stru_721530.direction.x);
-          v31 = v0->vPosition.y + fixpoint_mul(stru_721530.field_7C, stru_721530.direction.y);
-          v32 = v0->vPosition.z + fixpoint_mul(stru_721530.field_7C, stru_721530.direction.z);
-        }
-        v33 = collide_against_floor(v30, v31, v32, &stru_721530.uSectorID, &uFaceID);
-        v34 = pIndoor->pFaces[uFaceID].uAttributes;
-        v35 = v34 & 0x400000;
-        if (v35 && v0->uAIState == Dead)
-        {
-          v0->uAIState = Removed;
-          goto LABEL_120;
-        }
-        if ( v59 != v22 || v62 != v22 || v35 == v22 )
-        {
-          if ( v33 == -30000 )
-            goto LABEL_120;
-          if ( v0->uCurrentActionAnimation != 1 || v33 >= v0->vPosition.z - 100 || v59 != v22 || v62 != v22 )
+          v58 = 0;
+          v24 = 8 * actor_id;
+          LOBYTE(v24) = PID(OBJECT_Actor,actor_id);
+          for ( v61 = 0; v61 < 100; ++v61 )
           {
-            if ( stru_721530.field_7C >= stru_721530.field_6C )
+            _46E44E_collide_against_faces_and_portals(1);
+            _46E0B2_collide_against_decorations();
+            _46EF01_collision_chech_player(0);
+            _46ED8A_collide_against_sprite_objects(v24);
+            for ( uint j = 0; j < ai_arrays_size; j++ )
             {
-              v0->vPosition.x = LOWORD(stru_721530.normal2.x);
-              v0->vPosition.y = LOWORD(stru_721530.normal2.y);
-              v0->vPosition.z = LOWORD(stru_721530.normal2.z) - LOWORD(stru_721530.prolly_normal_d) - 1;
-              v0->uSectorID = LOWORD(stru_721530.uSectorID);
+              if ( ai_near_actors_ids[j] != actor_id )
+              {
+                v27 = abs(pActors[ai_near_actors_ids[j]].vPosition.z - pActors[actor_id].vPosition.z);
+                v28 = abs(pActors[ai_near_actors_ids[j]].vPosition.y - pActors[actor_id].vPosition.y);
+                v29 = abs(pActors[ai_near_actors_ids[j]].vPosition.x - pActors[actor_id].vPosition.x);
+                if ( int_get_vector_length(v29, v28, v27) >= pActors[actor_id].uActorRadius + (signed int)pActors[ai_near_actors_ids[j]].uActorRadius
+                  && Actor::_46DF1A_collide_against_actor(ai_near_actors_ids[j], 40) )
+                  ++v58;
+              }
+            }
+            if ( _46F04E_collide_against_portals() )
+              break;
+          }
+          v56 = v58 > 1;
+          if ( stru_721530.field_7C >= stru_721530.field_6C )
+          {
+            v30 = stru_721530.normal2.x;
+            v31 = stru_721530.normal2.y;
+            v32 = stru_721530.normal2.z - stru_721530.prolly_normal_d - 1;
+          }
+          else
+          {
+            v30 = pActors[actor_id].vPosition.x + fixpoint_mul(stru_721530.field_7C, stru_721530.direction.x);
+            v31 = pActors[actor_id].vPosition.y + fixpoint_mul(stru_721530.field_7C, stru_721530.direction.y);
+            v32 = pActors[actor_id].vPosition.z + fixpoint_mul(stru_721530.field_7C, stru_721530.direction.z);
+          }
+          v33 = collide_against_floor(v30, v31, v32, &stru_721530.uSectorID, &uFaceID);
+          if (pIndoor->pFaces[uFaceID].uAttributes & FACE_INDOOR_SKY && pActors[actor_id].uAIState == Dead)
+          {
+            pActors[actor_id].uAIState = Removed;
+            continue;
+          }
+          if ( v59 || v62 || !(pIndoor->pFaces[uFaceID].uAttributes & FACE_INDOOR_SKY) )
+          {
+            if ( v33 == -30000 )
+              continue;
+            if ( pActors[actor_id].uCurrentActionAnimation != 1 || v33 >= pActors[actor_id].vPosition.z - 100 || v59 || v62 )
+            {
+              if ( stru_721530.field_7C >= stru_721530.field_6C )
+              {
+                pActors[actor_id].vPosition.x = LOWORD(stru_721530.normal2.x);
+                pActors[actor_id].vPosition.y = LOWORD(stru_721530.normal2.y);
+                pActors[actor_id].vPosition.z = LOWORD(stru_721530.normal2.z) - LOWORD(stru_721530.prolly_normal_d) - 1;
+                pActors[actor_id].uSectorID = LOWORD(stru_721530.uSectorID);
+                goto LABEL_123;
+              }
+              pActors[actor_id].vPosition.x += fixpoint_mul(stru_721530.field_7C, stru_721530.direction.x);
+              pActors[actor_id].vPosition.y += fixpoint_mul(stru_721530.field_7C, stru_721530.direction.y);
+              pActors[actor_id].vPosition.z += fixpoint_mul(stru_721530.field_7C, stru_721530.direction.z);
+              pActors[actor_id].uSectorID = LOWORD(stru_721530.uSectorID);
+              stru_721530.field_70 += stru_721530.field_7C;
+              v37 = PID_ID(stru_721530.uFaceID);
+              if ( PID_TYPE(stru_721530.uFaceID) == OBJECT_Actor)
+              {
+                if ( pParty->bTurnBasedModeOn == 1 && (pTurnEngine->turn_stage == TE_ATTACK || pTurnEngine->turn_stage == TE_MOVEMENT) )
+                {
+                  pActors[actor_id].vVelocity.x = fixpoint_mul(58500, pActors[actor_id].vVelocity.x);
+                  pActors[actor_id].vVelocity.y = fixpoint_mul(58500, pActors[actor_id].vVelocity.y);
+                  pActors[actor_id].vVelocity.z = fixpoint_mul(58500, pActors[actor_id].vVelocity.z);
+                  v22 = 0;
+                  continue;
+                }
+                if ( pActors[actor_id].pMonsterInfo.uHostilityType )
+                {
+                  if ( !v56 )
+                  {
+                    Actor::AI_Flee(actor_id, stru_721530.uFaceID, v22, (AIDirection *)v22);
+                    pActors[actor_id].vVelocity.x = fixpoint_mul(58500, pActors[actor_id].vVelocity.x);
+                    pActors[actor_id].vVelocity.y = fixpoint_mul(58500, pActors[actor_id].vVelocity.y);
+                    pActors[actor_id].vVelocity.z = fixpoint_mul(58500, pActors[actor_id].vVelocity.z);
+                    v22 = 0;
+                    continue;
+                  }
+                }
+                else
+                {
+                  if ( !v56 )
+                  {
+                    if ( !pActors[v37].pMonsterInfo.uHostilityType )
+                    {
+                      Actor::AI_FaceObject(actor_id, stru_721530.uFaceID, v22, (AIDirection *)v22);
+                      pActors[actor_id].vVelocity.x = fixpoint_mul(58500, pActors[actor_id].vVelocity.x);
+                      pActors[actor_id].vVelocity.y = fixpoint_mul(58500, pActors[actor_id].vVelocity.y);
+                      pActors[actor_id].vVelocity.z = fixpoint_mul(58500, pActors[actor_id].vVelocity.z);
+                      v22 = 0;
+                      continue;
+                    }
+                    Actor::AI_Flee(actor_id, stru_721530.uFaceID, v22, (AIDirection *)v22);
+                    pActors[actor_id].vVelocity.x = fixpoint_mul(58500, pActors[actor_id].vVelocity.x);
+                    pActors[actor_id].vVelocity.y = fixpoint_mul(58500, pActors[actor_id].vVelocity.y);
+                    pActors[actor_id].vVelocity.z = fixpoint_mul(58500, pActors[actor_id].vVelocity.z);
+                    v22 = 0;
+                    continue;
+                  }
+                }
+                Actor::AI_StandOrBored(actor_id, 4, v22, &v53);
+                pActors[actor_id].vVelocity.x = fixpoint_mul(58500, pActors[actor_id].vVelocity.x);
+                pActors[actor_id].vVelocity.y = fixpoint_mul(58500, pActors[actor_id].vVelocity.y);
+                pActors[actor_id].vVelocity.z = fixpoint_mul(58500, pActors[actor_id].vVelocity.z);
+                v22 = 0;
+                continue;
+              }
+              if ( PID_TYPE(stru_721530.uFaceID) == OBJECT_Player)
+              {
+                if ( pActors[actor_id].GetActorsRelation(0) )
+                {
+                  //v51 = __OFSUB__(HIDWORD(pParty->pPartyBuffs[PARTY_BUFF_INVISIBILITY].uExpireTime), v22);
+                  //v49 = HIDWORD(pParty->pPartyBuffs[PARTY_BUFF_INVISIBILITY].uExpireTime) == v22;
+                  //v50 = HIDWORD(pParty->pPartyBuffs[PARTY_BUFF_INVISIBILITY].uExpireTime) - v22 < 0;
+                  pActors[actor_id].vVelocity.y = v22;
+                  pActors[actor_id].vVelocity.x = v22;
+                  if ( pParty->pPartyBuffs[PARTY_BUFF_INVISIBILITY].uExpireTime > v22 )
+                    pParty->pPartyBuffs[PARTY_BUFF_INVISIBILITY].Reset();
+                  viewparams->bRedrawGameUI = 1;
+                  pActors[actor_id].vVelocity.x = fixpoint_mul(58500, pActors[actor_id].vVelocity.x);
+                  pActors[actor_id].vVelocity.y = fixpoint_mul(58500, pActors[actor_id].vVelocity.y);
+                  pActors[actor_id].vVelocity.z = fixpoint_mul(58500, pActors[actor_id].vVelocity.z);
+                  v22 = 0;
+                  continue;
+                }
+                Actor::AI_FaceObject(actor_id, stru_721530.uFaceID, v22, (AIDirection *)v22);
+                pActors[actor_id].vVelocity.x = fixpoint_mul(58500, pActors[actor_id].vVelocity.x);
+                pActors[actor_id].vVelocity.y = fixpoint_mul(58500, pActors[actor_id].vVelocity.y);
+                pActors[actor_id].vVelocity.z = fixpoint_mul(58500, pActors[actor_id].vVelocity.z);
+                v22 = 0;
+                continue;
+              }
+              if ( PID_TYPE(stru_721530.uFaceID) == OBJECT_Decoration)
+              {
+                _this = integer_sqrt(pActors[actor_id].vVelocity.x * pActors[actor_id].vVelocity.x + pActors[actor_id].vVelocity.y * pActors[actor_id].vVelocity.y);
+                v45 = stru_5C6E00->Atan2(pActors[actor_id].vPosition.x - pLevelDecorations[v37].vPosition.x,
+                        pActors[actor_id].vPosition.y - pLevelDecorations[v37].vPosition.y);
+                pActors[actor_id].vVelocity.x = fixpoint_mul(stru_5C6E00->Cos(v45), _this);
+                pActors[actor_id].vVelocity.y = fixpoint_mul(stru_5C6E00->Sin(v45), _this);
+                pActors[actor_id].vVelocity.x = fixpoint_mul(58500, pActors[actor_id].vVelocity.x);
+                pActors[actor_id].vVelocity.y = fixpoint_mul(58500, pActors[actor_id].vVelocity.y);
+                pActors[actor_id].vVelocity.z = fixpoint_mul(58500, pActors[actor_id].vVelocity.z);
+                v22 = 0;
+                continue;
+              }
+              if ( PID_TYPE(stru_721530.uFaceID) == OBJECT_BModel)
+              {
+                stru_721530.field_84 = stru_721530.uFaceID >> 3;
+                if ( pIndoor->pFaces[v37].uPolygonType == 3 )
+                {
+                  pActors[actor_id].vVelocity.z = 0;
+                  pActors[actor_id].vPosition.z = pIndoor->pVertices[*pIndoor->pFaces[v37].pVertexIDs].z + 1;
+                  if ( pActors[actor_id].vVelocity.x * pActors[actor_id].vVelocity.x
+                     + pActors[actor_id].vVelocity.y * pActors[actor_id].vVelocity.y < 400 )
+                  {
+                    pActors[actor_id].vVelocity.y = 0;
+                    pActors[actor_id].vVelocity.x = 0;
+                    pActors[actor_id].vVelocity.x = fixpoint_mul(58500, pActors[actor_id].vVelocity.x);
+                    pActors[actor_id].vVelocity.y = fixpoint_mul(58500, pActors[actor_id].vVelocity.y);
+                    pActors[actor_id].vVelocity.z = fixpoint_mul(58500, pActors[actor_id].vVelocity.z);
+                    v22 = 0;
+                    continue;
+                  }
+                }
+                else
+                {
+                  v61 = abs(pIndoor->pFaces[v37].pFacePlane_old.vNormal.x * pActors[actor_id].vVelocity.x + pIndoor->pFaces[v37].pFacePlane_old.vNormal.y
+                                                                            * pActors[actor_id].vVelocity.y
+                                                                            + pIndoor->pFaces[v37].pFacePlane_old.vNormal.z
+                                                                            * pActors[actor_id].vVelocity.z) >> 16;
+                  if ( (stru_721530.speed >> 3) > v61 )
+                    v61 = stru_721530.speed >> 3;
+                  pActors[actor_id].vVelocity.x += fixpoint_mul(v61, pIndoor->pFaces[v37].pFacePlane_old.vNormal.x);
+                  pActors[actor_id].vVelocity.y += fixpoint_mul(v61, pIndoor->pFaces[v37].pFacePlane_old.vNormal.y);
+                  pActors[actor_id].vVelocity.z += fixpoint_mul(v61, pIndoor->pFaces[v37].pFacePlane_old.vNormal.z);
+                  if ( pIndoor->pFaces[v37].uPolygonType != 4 && pIndoor->pFaces[v37].uPolygonType != 3 )
+                  {
+                    v44 = stru_721530.prolly_normal_d
+                        - ((pIndoor->pFaces[v37].pFacePlane_old.dist
+                          + pIndoor->pFaces[v37].pFacePlane_old.vNormal.z * pActors[actor_id].vPosition.z
+                          + pIndoor->pFaces[v37].pFacePlane_old.vNormal.y * pActors[actor_id].vPosition.y
+                          + pIndoor->pFaces[v37].pFacePlane_old.vNormal.x * pActors[actor_id].vPosition.x) >> 16);
+                    if ( v44 > 0 )
+                    {
+                      pActors[actor_id].vPosition.x += fixpoint_mul(v44, pIndoor->pFaces[v37].pFacePlane_old.vNormal.x);
+                      pActors[actor_id].vPosition.y += fixpoint_mul(v44, pIndoor->pFaces[v37].pFacePlane_old.vNormal.y);
+                      pActors[actor_id].vPosition.z += fixpoint_mul(v44, pIndoor->pFaces[v37].pFacePlane_old.vNormal.z);
+                    }
+                    pActors[actor_id].uYawAngle = stru_5C6E00->Atan2(pActors[actor_id].vVelocity.x, pActors[actor_id].vVelocity.y);
+                  }
+                }
+                if ( pIndoor->pFaces[v37].uAttributes & 0x8000000 )
+                  EventProcessor(pIndoor->pFaceExtras[ pIndoor->pFaces[v37].uFaceExtraID].uEventID, 0, 1);
+              }
+              pActors[actor_id].vVelocity.x = fixpoint_mul(58500, pActors[actor_id].vVelocity.x);
+              pActors[actor_id].vVelocity.y = fixpoint_mul(58500, pActors[actor_id].vVelocity.y);
+              pActors[actor_id].vVelocity.z = fixpoint_mul(58500, pActors[actor_id].vVelocity.z);
+              v22 = 0;
+              continue;
+            }
+            if ( pActors[actor_id].vPosition.x & 1 )
+              pActors[actor_id].uYawAngle += 100;
+            else
+              pActors[actor_id].uYawAngle -= 100;
+          }
+          else
+          {
+            if ( pParty->bTurnBasedModeOn == 1 && (pTurnEngine->turn_stage == TE_ATTACK || pTurnEngine->turn_stage == TE_MOVEMENT) )
+              goto LABEL_123;
+            if ( !pActors[actor_id].pMonsterInfo.uHostilityType || v56 != v22 )
+            {
+              Actor::AI_StandOrBored(actor_id, 4, v22, &v52);
               goto LABEL_123;
             }
-            //v58 = (unsigned __int64)(stru_721530.field_7C * (signed __int64)stru_721530.direction.x) >> 16;
-            v0->vPosition.x += fixpoint_mul(stru_721530.field_7C, stru_721530.direction.x);
-            //v58 = (unsigned __int64)(stru_721530.field_7C * (signed __int64)stru_721530.direction.y) >> 16;
-            v0->vPosition.y += fixpoint_mul(stru_721530.field_7C, stru_721530.direction.y);
-            //v58 = (unsigned __int64)(stru_721530.field_7C * (signed __int64)stru_721530.direction.z) >> 16;
-            v36 = stru_721530.uFaceID;
-            v0->vPosition.z += fixpoint_mul(stru_721530.field_7C, stru_721530.direction.z);
-            v0->uSectorID = LOWORD(stru_721530.uSectorID);
-            stru_721530.field_70 += stru_721530.field_7C;
-            v37 = PID_ID(v36);
-            if ( PID_TYPE(v36) != OBJECT_Actor)
-            {
-              if ( PID_TYPE(v36) != OBJECT_Player)
-              {
-                if ( PID_TYPE(v36) == OBJECT_Decoration)
-                {
-                  _this = integer_sqrt(v0->vVelocity.x * v0->vVelocity.x + v0->vVelocity.y * v0->vVelocity.y);
-                  v45 = stru_5C6E00->Atan2(
-                          v0->vPosition.x - pLevelDecorations[v37].vPosition.x,
-                          v0->vPosition.y - pLevelDecorations[v37].vPosition.y);
-                  v0->vVelocity.x = fixpoint_mul(stru_5C6E00->Cos(v45), _this);
-                  v0->vVelocity.y = fixpoint_mul(stru_5C6E00->Sin(v45), _this);
-                  goto LABEL_119;
-                }
-                if ( PID_TYPE(v36) == OBJECT_BModel)
-                {
-                  stru_721530.field_84 = v36 >> 3;
-                  v38 = &pIndoor->pFaces[v37];
-                  if ( v38->uPolygonType == 3 )
-                  {
-                    v39 = v0->vVelocity.x;
-                    v40 = v0->vVelocity.y * v0->vVelocity.y;
-                    v0->vVelocity.z = 0;
-                    v0->vPosition.z = pIndoor->pVertices[*v38->pVertexIDs].z + 1;
-                    if ( v39 * v39 + v40 < 400 )
-                    {
-                      v0->vVelocity.y = 0;
-                      v0->vVelocity.x = 0;
-                      goto LABEL_119;
-                    }
-                  }
-                  else
-                  {
-                    v61 = abs(v38->pFacePlane_old.vNormal.x * v0->vVelocity.x + v38->pFacePlane_old.vNormal.y
-                                                                              * v0->vVelocity.y
-                                                                              + v38->pFacePlane_old.vNormal.z
-                                                                              * v0->vVelocity.z) >> 16;
-                    if ( (stru_721530.speed >> 3) > v61 )
-                      v61 = stru_721530.speed >> 3;
-
-                    v0->vVelocity.x += fixpoint_mul(v61, v38->pFacePlane_old.vNormal.x);
-                    v0->vVelocity.y += fixpoint_mul(v61, v38->pFacePlane_old.vNormal.y);
-                    v0->vVelocity.z += fixpoint_mul(v61, v38->pFacePlane_old.vNormal.z);
-                    v41 = v38->uPolygonType;
-                    if ( v41 != 4 && v41 != 3 )
-                    {
-                      v42 = v38->pFacePlane_old.vNormal.x;
-                      v43 = v0->vPosition.z;
-                      v44 = stru_721530.prolly_normal_d
-                          - ((v38->pFacePlane_old.dist
-                            + v38->pFacePlane_old.vNormal.z * v0->vPosition.z
-                            + v38->pFacePlane_old.vNormal.y * v0->vPosition.y
-                            + v42 * v0->vPosition.x) >> 16);
-                      if ( v44 > 0 )
-                      {
-                        v0->vPosition.x += (unsigned int)(v44 * v42) >> 16;
-                        v0->vPosition.y += (unsigned int)(v44 * v38->pFacePlane_old.vNormal.y) >> 16;
-                        v0->vPosition.z = v43 + ((unsigned int)(v44 * v38->pFacePlane_old.vNormal.z) >> 16);
-                      }
-                      v0->uYawAngle = stru_5C6E00->Atan2(v0->vVelocity.x, v0->vVelocity.y);
-                    }
-                  }
-                  if ( BYTE3(v38->uAttributes) & 8 )
-                    EventProcessor(pIndoor->pFaceExtras[v38->uFaceExtraID].uEventID, 0, 1);
-                }
-LABEL_119:
-                v0->vVelocity.x = fixpoint_mul(58500, v0->vVelocity.x);
-                v0->vVelocity.y = fixpoint_mul(58500, v0->vVelocity.y);
-                v0->vVelocity.z = fixpoint_mul(58500, v0->vVelocity.z);
-                v22 = 0;
-                goto LABEL_120;
-              }
-              if ( v0->GetActorsRelation(0) )
-              {
-                v51 = __OFSUB__(HIDWORD(pParty->pPartyBuffs[PARTY_BUFF_INVISIBILITY].uExpireTime), v22);
-                v49 = HIDWORD(pParty->pPartyBuffs[PARTY_BUFF_INVISIBILITY].uExpireTime) == v22;
-                v50 = HIDWORD(pParty->pPartyBuffs[PARTY_BUFF_INVISIBILITY].uExpireTime) - v22 < 0;
-                v0->vVelocity.y = v22;
-                v0->vVelocity.x = v22;
-                if ( !(v50 ^ v51)
-                  && (!((unsigned __int8)(v50 ^ v51) | v49) || LODWORD(pParty->pPartyBuffs[PARTY_BUFF_INVISIBILITY].uExpireTime) > v22) )
-                  pParty->pPartyBuffs[PARTY_BUFF_INVISIBILITY].Reset();
-                viewparams->bRedrawGameUI = 1;
-                goto LABEL_119;
-              }
-              v36 = stru_721530.uFaceID;
-LABEL_118:
-              Actor::AI_FaceObject(v63, v36, v22, (AIDirection *)v22);
-              goto LABEL_119;
-            }
-            if ( pParty->bTurnBasedModeOn == 1 && (pTurnEngine->turn_stage == 2 || pTurnEngine->turn_stage == 3) )
-              goto LABEL_119;
-            if ( v0->pMonsterInfo.uHostilityType )
-            {
-              if ( v56 == v22 )
-                goto LABEL_114;
-            }
-            else
-            {
-              if ( v56 == v22 )
-              {
-                if ( !pActors[v37].pMonsterInfo.uHostilityType )
-                  goto LABEL_118;
-LABEL_114:
-                Actor::AI_Flee(v63, v36, v22, (AIDirection *)v22);
-                goto LABEL_119;
-              }
-            }
-            Actor::AI_StandOrBored(v63, 4, v22, &v53);
-            goto LABEL_119;
-          }
-          if ( v0->vPosition.x & 1 )
-            v0->uYawAngle += 100;
-          else
-            v0->uYawAngle -= 100;
-        }
-        else
-        {
-          if ( pParty->bTurnBasedModeOn == 1 && (pTurnEngine->turn_stage == 2 || pTurnEngine->turn_stage == 3) )
-            goto LABEL_123;
-          if ( !v0->pMonsterInfo.uHostilityType || v56 != v22 )
-          {
-            Actor::AI_StandOrBored(v63, 4, v22, &v52);
-            goto LABEL_123;
           }
         }
       }
-LABEL_120:
-      ++uSectorID;
-      if ( uSectorID >= 100 )
-        goto LABEL_123;
-      v20 = stru_721530.prolly_normal_d;
     }
+    else
+    {
+      pActors[actor_id].vVelocity.z = 0;
+      pActors[actor_id].vVelocity.y = 0;
+      pActors[actor_id].vVelocity.x = 0;
+      if ( pIndoor->pFaces[uFaceID].uAttributes & FACE_INDOOR_SKY )
+      {
+        if (pActors[actor_id].uAIState == Dead)
+          pActors[actor_id].uAIState = Removed;
+      }
+    }
+LABEL_123:
+    ;
   }
 }
-// 46DF1A: using guessed type int __fastcall 46DF1A_collide_against_actor(int, int);
-// 4F75D8: using guessed type int ai_arrays_size;
-
-
-
-
 
 
 //----- (00460A78) --------------------------------------------------------
-void  PrepareToLoadBLV(unsigned int bLoading)
+void PrepareToLoadBLV(unsigned int bLoading)
 {
-  unsigned int v1; // ebx@1
-  unsigned int v2; // eax@8
-  MapInfo *v3; // edi@9
+  unsigned int respawn; // ebx@1
+  unsigned int map_id; // eax@8
+  MapInfo *map_info; // edi@9
   int v4; // eax@11
-  int v5; // eax@12
-  int v6; // eax@13
-  int v7; // esi@27
-  SpawnPointMM7 *v8; // edx@28
-  //char v9; // bl@33
-  //int v10; // eax@34
-  //char *v11; // ecx@37
-  //int v12; // edi@44
-  //unsigned int v13; // edi@48
-  char *v14; // esi@49
-  __int16 v15; // ax@50
-  int v16; // ecx@52
-  DecorationDesc *v17; // eax@54
-  int v18; // ecx@55
-  //int *v19; // edi@58
-  //unsigned char v20; // dl@58
-  int v21; // eax@64
-  char v22; // cl@64
-  //signed int v23; // ebx@67
-  //char *v24; // esi@68
-  //int v25; // eax@70
-  //char *v26; // esi@78
-  //int v27; // eax@79
+//  char *v14; // esi@49
+  DecorationDesc *decoration; // eax@54
+//  char v22; // cl@64
   char v28; // zf@81
-  __int16 v29; // ax@85
+//  __int16 v29; // ax@85
   signed int v30; // edi@94
-  int v31; // esi@94
-  //char Args; // [sp+350h] [bp-C4h]@16
   int v34[4]; // [sp+3E8h] [bp-2Ch]@96
   int v35; // [sp+3F8h] [bp-1Ch]@1
-  //char b[4]; // [sp+3FCh] [bp-18h]@58
-  MapInfo *v37; // [sp+400h] [bp-14h]@1
   int v38; // [sp+404h] [bp-10h]@1
-  unsigned int v39; // [sp+408h] [bp-Ch]@8
   int pDest; // [sp+40Ch] [bp-8h]@1
-  //int i; // [sp+410h] [bp-4h]@27
 
-  v37 = (MapInfo *)bLoading;
-  v1 = 0;
-  v35 = 0;
+  respawn = 0;
   pGameLoadingUI_ProgressBar->Reset(0x20u);
-  bUnderwater = 0;
-  bNoNPCHiring = 0;
-  v38 = 0;
+  bUnderwater = false;
+  bNoNPCHiring = false;
   pDest = 1;
   uCurrentlyLoadedLevelType = LEVEL_Indoor;
   pGame->uFlags2 &= 0xFFFFFFF7u;
   if ( Is_out15odm_underwater() )
   {
-    bUnderwater = 1;
-    pGame->uFlags2 |= 8u;
+    bUnderwater = true;
+    pGame->uFlags2 |= 8;
   }
   if ( !_stricmp(pCurrentMapName, "out15.odm") || !_stricmp(pCurrentMapName, "d23.blv") )
-    bNoNPCHiring = 1;
+    bNoNPCHiring = true;
   pPaletteManager->pPalette_tintColor[0] = 0;
   pPaletteManager->pPalette_tintColor[1] = 0;
   pPaletteManager->pPalette_tintColor[2] = 0;
   pPaletteManager->RecalculateAll();
-  if ( qword_A750D8 )
-    qword_A750D8 = 0i64;
-  v2 = pMapStats->GetMapInfo(pCurrentMapName);
-  v39 = v2;
-  if ( v2 )
+  if ( _A750D8_player_speech_timer )
+    _A750D8_player_speech_timer = 0i64;
+  map_id = pMapStats->GetMapInfo(pCurrentMapName);
+  if ( map_id )
   {
-    v3 = &pMapStats->pInfos[v2];
-    v1 = v3->uRespawnIntervalDays;
+    map_info = &pMapStats->pInfos[map_id];
+    respawn = pMapStats->pInfos[map_id].uRespawnIntervalDays;
     v38 = GetAlertStatus();
   }
   else
-  {
-    v3 = v37;
-  }
-  dword_6BE13C_uCurrentlyLoadedLocationID = v39;
-  free(ptr_6A0D08);
-  ptr_6A0D08 = 0;
-  _6A0D0C_txt_lod_loading = 0;
-  TryLoadLevelFromLOD();
+    map_info = (MapInfo *)bLoading;
+  dword_6BE13C_uCurrentlyLoadedLocationID = map_id;
+
   pStationaryLightsStack->uNumLightsActive = 0;
-  v4 = pIndoor->Load(pCurrentMapName,
-         (unsigned int)(signed __int64)((double)pParty->uTimePlayed * 0.234375) / 60 / 60 / 24 + 1,
-         v1,
-         (char *)&pDest)
-     - 1;
+  v4 = pIndoor->Load(pCurrentMapName, (unsigned int)(signed __int64)((double)pParty->uTimePlayed * 0.234375) / 60 / 60 / 24 + 1, respawn, (char *)&pDest) - 1;
   if ( !v4 )
     Error("Unable to open %s", pCurrentMapName);
 
-  v5 = v4 - 1;
-  if ( !v5 )
+  if ( v4 == 1 )
     Error("File %s is not a BLV File", pCurrentMapName);
 
-  v6 = v5 - 1;
-  if ( !v6 )
+  if ( v4 == 2 )
     Error("Attempt to open new level before clearing old");
-  if ( v6 == 1 )
+  if ( v4 == 3 )
     Error("Out of memory loading indoor level");
-  if ( !(dword_6BE364_game_settings_1 & 0x2000) )
+  if ( !(dword_6BE364_game_settings_1 & GAME_SETTINGS_2000) )
   {
-    InitializeActors();
-    InitializeSpriteObjects();
+    Actor::InitializeActors();
+    SpriteObject::InitializeSpriteObjects();
   }
-  BYTE1(dword_6BE364_game_settings_1) &= 0xDFu;
-  if ( !v39 )
+  dword_6BE364_game_settings_1 &= ~GAME_SETTINGS_2000;
+  if ( !map_id )
     pDest = 0;
   if ( pDest == 1 )
   {
-    v7 = 0;
-    for (uint i = 0; i < pIndoor->uNumSpawnPoints; ++v7 )
+    for (uint i = 0; i < pIndoor->uNumSpawnPoints; ++i )
     {
-      v8 = &pIndoor->pSpawnPoints[v7];
-      if ( pIndoor->pSpawnPoints[v7].uKind == 3 )
-        SpawnEncounter(v3, v8, 0, 0, 0);
+      if ( pIndoor->pSpawnPoints[i].uKind == 3 )
+        SpawnEncounter(map_info, &pIndoor->pSpawnPoints[i], 0, 0, 0);
       else
-        v3->SpawnRandomTreasure(v8);
-      ++i;
+        map_info->SpawnRandomTreasure(&pIndoor->pSpawnPoints[i]);
     }
     RespawnGlobalDecorations();
   }
 
-  pSoundList->LoadSound(pDoorSoundIDsByLocationID[v39], 0);
-  pSoundList->LoadSound(pDoorSoundIDsByLocationID[v39] + 1, 0);
+  pSoundList->LoadSound(pDoorSoundIDsByLocationID[map_id], 0);
+  pSoundList->LoadSound(pDoorSoundIDsByLocationID[map_id] + 1, 0);
 
   for (uint i = 0; i < pIndoor->uNumDoors; ++i)
   {
-    BLVDoor* pDoor = &pIndoor->pDoors[i];
-
-    if (pDoor->uAttributes & 0x01)
+    if (pIndoor->pDoors[i].uAttributes & 0x01)
     {
-      pDoor->uState = BLVDoor::Opening;
-      pDoor->uTimeSinceTriggered = 15360;
-      pDoor->uAttributes = 2;
+      pIndoor->pDoors[i].uState = BLVDoor::Opening;
+      pIndoor->pDoors[i].uTimeSinceTriggered = 15360;
+      pIndoor->pDoors[i].uAttributes = 2;
     }
 
-    if (pDoor->uState == BLVDoor::Closed)
+    if (pIndoor->pDoors[i].uState == BLVDoor::Closed)
     {
-      pDoor->uState = BLVDoor::Closing;
-      pDoor->uTimeSinceTriggered = 15360;
-      pDoor->uAttributes = 2;
+      pIndoor->pDoors[i].uState = BLVDoor::Closing;
+      pIndoor->pDoors[i].uTimeSinceTriggered = 15360;
+      pIndoor->pDoors[i].uAttributes = 2;
     }
-    else if (pDoor->uState == BLVDoor::Open)
+    else if (pIndoor->pDoors[i].uState == BLVDoor::Open)
     {
-      pDoor->uState = BLVDoor::Opening;
-      pDoor->uTimeSinceTriggered = 15360;
-      pDoor->uAttributes = 2;
+      pIndoor->pDoors[i].uState = BLVDoor::Opening;
+      pIndoor->pDoors[i].uTimeSinceTriggered = 15360;
+      pIndoor->pDoors[i].uAttributes = 2;
     }
   }
-
-/*
-  i = 0;
-  v9 = 2;
-  if ( pIndoor->uNumDoors > 0 )
-  {
-    v10 = 0;
-    while ( 1 )
-    {
-      if ( pIndoor->pDoors[v10].uAttributes & 1 )
-      {
-        pIndoor->pDoors[v10].uState = 1;
-        pIndoor->pDoors[v10].uTimeSinceTriggered = 15360;
-        pIndoor->pDoors[v10].uAttributes = 2;
-      }
-      v11 = (char *)&pIndoor->pDoors[v10].uState;
-      if ( !*(short *)v11 )
-        break;
-      if ( *(short *)v11 == 2 )
-      {
-        *(short *)v11 = 1;
-        goto LABEL_41;
-      }
-LABEL_42:
-      ++i;
-      ++v10;
-      if ( i >= pIndoor->uNumDoors )
-        goto LABEL_43;
-    }
-    *(short *)v11 = 3;
-LABEL_41:
-    pIndoor->pDoors[v10].uTimeSinceTriggered = 15360;
-    pIndoor->pDoors[v10].uAttributes = 2;
-    goto LABEL_42;
-  }
-LABEL_43:
-*/
 
   for (uint i = 0; i < pIndoor->uNumFaces; ++i)
   {
-    BLVFace* pFace = &pIndoor->pFaces[i];
-    if (!pFace->uBitmapID != -1)
-      pBitmaps_LOD->pTextures[pFace->uBitmapID].palette_id2 = pPaletteManager->LoadPalette(pBitmaps_LOD->pTextures[pFace->uBitmapID].palette_id1);
- }
-  
+    if (pIndoor->pFaces[i].uBitmapID != -1)
+      pBitmaps_LOD->pTextures[pIndoor->pFaces[i].uBitmapID].palette_id2 = pPaletteManager->LoadPalette(pBitmaps_LOD->pTextures[pIndoor->pFaces[i].uBitmapID].palette_id1);
+  }
+
   pGameLoadingUI_ProgressBar->Progress();
-  
+
+  v35 = 0;
   for (uint i = 0; i < uNumLevelDecorations; ++i)
   {
-    LevelDecoration* pDecortaion = &pLevelDecorations[i];
-    
-    pDecorationList->InitializeDecorationSprite(pDecortaion->uDecorationDescID);
+    pDecorationList->InitializeDecorationSprite(pLevelDecorations[i].uDecorationDescID);
 
-    v15 = pDecorationList->pDecorations[pDecortaion->uDecorationDescID].uSoundID;
-    if (v15 && _6807E0_num_decorations_with_sounds_6807B8 < 9)
+    if (pDecorationList->pDecorations[pLevelDecorations[i].uDecorationDescID].uSoundID && _6807E0_num_decorations_with_sounds_6807B8 < 9)
     {
-        pSoundList->LoadSound(v15, 0);
-        v16 = _6807E0_num_decorations_with_sounds_6807B8++;
-        _6807B8_level_decorations_ids[v16] = i;
+        pSoundList->LoadSound(pDecorationList->pDecorations[pLevelDecorations[i].uDecorationDescID].uSoundID, 0);
+        _6807B8_level_decorations_ids[_6807E0_num_decorations_with_sounds_6807B8++] = i;
     }
 
-    if (!(pDecortaion->uFlags & LEVEL_DECORATION_INVISIBLE))
+    if (!(pLevelDecorations[i].uFlags & LEVEL_DECORATION_INVISIBLE))
     {
-      v17 = &pDecorationList->pDecorations[pDecortaion->uDecorationDescID];
-      if (!v17->DontDraw())
-        {
-          v18 = v17->uLightRadius;
-          if ( v18 )
-          {
-            unsigned char r = 255,
-                          g = 255,
-                          b = 255;
-            if (pRenderer->pRenderD3D && pRenderer->bUseColoredLights)
-            {
-              r = v17->uColoredLightRed;
-              g = v17->uColoredLightGreen;
-              b = v17->uColoredLightBlue;
-            }
-            pStationaryLightsStack->AddLight(pDecortaion->vPosition.x,
-                                             pDecortaion->vPosition.y,
-                                             pDecortaion->vPosition.z + v17->uDecorationHeight,
-              v18,
-              r,
-              g,
-              b,
-              byte_4E94D0);
-          }
-        }
-      }
-
-      if (!pDecortaion->uEventID)
+      decoration = &pDecorationList->pDecorations[pLevelDecorations[i].uDecorationDescID];
+      if (!decoration->DontDraw())
       {
-        if (pDecortaion->IsInteractive())
+        if ( decoration->uLightRadius )
         {
-          if ( v35 < 124 )
+          unsigned char r = 255,
+                        g = 255,
+                        b = 255;
+          if (/*pRenderer->pRenderD3D*/true && pRenderer->bUseColoredLights)
           {
-            v21 = v35 + 1;
-            pDecortaion->_idx_in_stru123 = v35 + 75;
-            v22 = stru_5E4C90_MapPersistVars._decor_events[v21 + 74 - 75];
-            v35 = v21;
-            if ( !v22 )
-              pDecortaion->uFlags |= LEVEL_DECORATION_INVISIBLE;
+            r = decoration->uColoredLightRed;
+            g = decoration->uColoredLightGreen;
+            b = decoration->uColoredLightBlue;
           }
+          pStationaryLightsStack->AddLight(pLevelDecorations[i].vPosition.x,
+                                           pLevelDecorations[i].vPosition.y,
+                                           pLevelDecorations[i].vPosition.z + decoration->uDecorationHeight, decoration->uLightRadius, r, g, b, _4E94D0_light_type);
         }
       }
+    }
+
+    if (!pLevelDecorations[i].uEventID)
+    {
+      if (pLevelDecorations[i].IsInteractive())
+      {
+        if ( v35 < 124 )
+        {
+          pLevelDecorations[i]._idx_in_stru123 = v35 + 75;
+          if ( !stru_5E4C90_MapPersistVars._decor_events[v35] )
+            pLevelDecorations[i].uFlags |= LEVEL_DECORATION_INVISIBLE;
+          v35++;
+        }
+      }
+    }
   }
 
   pGameLoadingUI_ProgressBar->Progress();
 
   for (uint i = 0; i < uNumSpriteObjects; ++i)
   {
-    SpriteObject* p = &pSpriteObjects[i];
-    if (p->uObjectDescID)
+    if (pSpriteObjects[i].uObjectDescID)
     {
-      int uItemID = p->stru_24.uItemID;
-      if (uItemID)
+      if ( pSpriteObjects[i].stru_24.uItemID )
       {
-        if (uItemID != 220 && pItemsTable->pItems[uItemID].uEquipType == EQUIP_POTION &&
-            !p->stru_24.uEnchantmentType)
-          p->stru_24.uEnchantmentType = rand() % 15 + 5;
-        pItemsTable->SetSpecialBonus(&p->stru_24);
+        if ( pSpriteObjects[i].stru_24.uItemID != 220 && pItemsTable->pItems[ pSpriteObjects[i].stru_24.uItemID].uEquipType == EQUIP_POTION &&
+            !pSpriteObjects[i].stru_24.uEnchantmentType)
+          pSpriteObjects[i].stru_24.uEnchantmentType = rand() % 15 + 5;
+        pItemsTable->SetSpecialBonus(&pSpriteObjects[i].stru_24);
       }
     }
   }
 
   // INDOOR initialize actors
+  v38 = 0;
   for (uint i = 0; i < uNumActors; ++i)
-  //if ( (signed int)uNumActors > (signed int)v13 )
   {
-    Actor *pActor = &pActors[i];
-    //v26 = (char *)&pActors[0].uAttributes;
-    //do
-    //{
-      //v27 = *(int *)v26;
-      if (pActor->uAttributes & 0x100000)
+    if (pActors[i].uAttributes & 0x100000)
+    {
+      if ( !map_id )
       {
-        if ( !v39 )
-        {
-          pActor->pMonsterInfo.field_3E = 19;
-          pActor->uAttributes |= 0x10000;
-          continue;
-        }
-        v28 = v38 == 0;
+        pActors[i].pMonsterInfo.field_3E = 19;
+        pActors[i].uAttributes |= 0x10000;
+        continue;
       }
-      else
-      {
-        v28 = v38 == 1;
-      }
+      v28 = v38 == 0;
+    }
+    else
+      v28 = v38 == 1;
 
-      if ( !v28 )
+    if ( !v28 )
+    {
+      pActors[i].PrepareSprites(0);
+      pActors[i].pMonsterInfo.uHostilityType = MonsterInfo::Hostility_Friendly;
+      if ( pActors[i].pMonsterInfo.field_3E != 11 && pActors[i].pMonsterInfo.field_3E != 19 && (!pActors[i].sCurrentHP || !pActors[i].pMonsterInfo.uHP) )
       {
-        pActor->PrepareSprites(0);
-        v29 = pActor->pMonsterInfo.field_3E;
-        pActor->pMonsterInfo.uHostilityType = MonsterInfo::Hostility_Friendly;
-        if ( v29 != 11 && v29 != 19 && (!pActor->sCurrentHP || !pActor->pMonsterInfo.uHP) )
-        {
-          pActor->pMonsterInfo.field_3E = 5;
-          pActor->UpdateAnimation();
-        }
+        pActors[i].pMonsterInfo.field_3E = 5;
+        pActors[i].UpdateAnimation();
       }
-      else
-      {
-          pActor->pMonsterInfo.field_3E = 19;
-          pActor->uAttributes |= 0x10000;
-      }
-    //}
-    //while ( i < (signed int)uNumActors );
+    }
+    else
+    {
+      pActors[i].pMonsterInfo.field_3E = 19;
+      pActors[i].uAttributes |= 0x10000;
+    }
   }
 
   pGameLoadingUI_ProgressBar->Progress();
 
+  //Party to start position
   Actor this_;
   this_.pMonsterInfo.uID = 45;
   this_.PrepareSprites(0);
-  if ( !v37 )
+  if ( !bLoading )
   {
     pParty->sRotationX = 0;
     pParty->sRotationY = 0;
@@ -3934,24 +3301,21 @@ LABEL_43:
   }
   viewparams->_443365();
   PlayLevelMusic();
-  if ( !v37 )
+  if ( !bLoading )
   {
     v30 = 0;
-    v31 = 1;
-    do
+    for ( uint pl_id = 1; pl_id <= 4; ++pl_id )
     {
-      if ( pPlayers[v31]->CanAct() )
-        v34[v30++] = v31;
-      ++v31;
+      if ( pPlayers[pl_id]->CanAct() )
+        v34[v30++] = pl_id;
     }
-    while ( v31 <= 4 );
     if ( v30 )
     {
       if ( pDest )
       {
-        qword_A750D8 = 256i64;
+        _A750D8_player_speech_timer = 256i64;
         PlayerSpeechID = SPEECH_46;
-        uSpeakingCharacter = LOWORD(v34[rand() % v30]);
+        uSpeakingCharacter = v34[rand() % v30];
       }
     }
   }
@@ -3970,20 +3334,20 @@ int BLV_GetFloorLevel(int x, int y, int z, unsigned int uSectorID, unsigned int 
   //int v22; // ecx@29
   signed int v28; // eax@45
   int v29; // ebx@47
-  int v30; // edx@49
+//  int v30; // edx@49
   //int v31; // ST10_4@49
   //signed int v32; // edx@49
-  signed __int64 v33; // qtt@49
+//  signed __int64 v33; // qtt@49
   //signed int v34; // eax@54
   //signed int v35; // esi@56
   //int result; // eax@57
   int v38; // edx@62
   //int v44; // [sp+20h] [bp-20h]@10
   bool v47; // [sp+24h] [bp-1Ch]@43
-  bool v48; // [sp+28h] [bp-18h]@10
+  bool current_vertices_Y; // [sp+28h] [bp-18h]@10
   bool v49; // [sp+28h] [bp-18h]@41
-  bool v50; // [sp+2Ch] [bp-14h]@12
-  signed int v53; // [sp+30h] [bp-10h]@10
+  bool next_vertices_Y; // [sp+2Ch] [bp-14h]@12
+  signed int number_hits; // [sp+30h] [bp-10h]@10
   signed int v54; // [sp+30h] [bp-10h]@41
   signed int v55; // [sp+34h] [bp-Ch]@1
 
@@ -3992,15 +3356,15 @@ int BLV_GetFloorLevel(int x, int y, int z, unsigned int uSectorID, unsigned int 
   static int blv_floor_id[50]; // 00721200
   static int blv_floor_level[50]; // 007212C8
 
-  static __int16 word_721390_ys[104]; // idb
-  static __int16 word_721460_xs[104]; // idb
+  static __int16 blv_floor_face_vert_coord_Y[104]; // word_721390_ys
+  static __int16 blv_floor_face_vert_coord_X[104]; // word_721460_xs
 
   BLVSector* pSector = &pIndoor->pSectors[uSectorID];
   v55 = 0;
   for (uint i = 0; i < pSector->uNumFloors; ++i)
   {
     BLVFace* pFloor = &pIndoor->pFaces[pSector->pFloors[i]];
-    if (pFloor->Clickable())
+    if (pFloor->Ethereal())
       continue;
 
     assert(pFloor->uNumVertices);
@@ -4009,66 +3373,61 @@ int BLV_GetFloorLevel(int x, int y, int z, unsigned int uSectorID, unsigned int 
     {
       for (uint j = 0; j < pFloor->uNumVertices; ++j)
       {
-        word_721460_xs[2 * j] =     pFloor->pXInterceptDisplacements[j] + pIndoor->pVertices[pFloor->pVertexIDs[j]].x;
-        word_721460_xs[2 * j + 1] = pFloor->pXInterceptDisplacements[j] + pIndoor->pVertices[pFloor->pVertexIDs[j + 1]].x;
-        word_721390_ys[2 * j] =     pFloor->pYInterceptDisplacements[j] + pIndoor->pVertices[pFloor->pVertexIDs[j]].y;
-        word_721390_ys[2 * j + 1] = pFloor->pYInterceptDisplacements[j] + pIndoor->pVertices[pFloor->pVertexIDs[j + 1]].y;
+        blv_floor_face_vert_coord_X[2 * j] =     pFloor->pXInterceptDisplacements[j] + pIndoor->pVertices[pFloor->pVertexIDs[j]].x;
+        blv_floor_face_vert_coord_X[2 * j + 1] = pFloor->pXInterceptDisplacements[j] + pIndoor->pVertices[pFloor->pVertexIDs[j + 1]].x;
+        blv_floor_face_vert_coord_Y[2 * j] =     pFloor->pYInterceptDisplacements[j] + pIndoor->pVertices[pFloor->pVertexIDs[j]].y;
+        blv_floor_face_vert_coord_Y[2 * j + 1] = pFloor->pYInterceptDisplacements[j] + pIndoor->pVertices[pFloor->pVertexIDs[j + 1]].y;
       }
-      word_721460_xs[2 * pFloor->uNumVertices] = word_721460_xs[0];
-      word_721390_ys[2 * pFloor->uNumVertices] = word_721390_ys[0];
+      blv_floor_face_vert_coord_X[2 * pFloor->uNumVertices] = blv_floor_face_vert_coord_X[0];
+      blv_floor_face_vert_coord_Y[2 * pFloor->uNumVertices] = blv_floor_face_vert_coord_Y[0];
 
-      v50 = word_721390_ys[0] >= y;
-      v53 = 0;
+      next_vertices_Y = blv_floor_face_vert_coord_Y[0] >= y;
+      number_hits = 0;
 
       for (uint j = 0; j < 2 * pFloor->uNumVertices; ++j)
       {
-        if (v53 >= 2)
+        if (number_hits >= 2)
           break;
 
-        v48 = v50;
-        v50 = word_721390_ys[j + 1] >= y;
+        current_vertices_Y = next_vertices_Y;
+        next_vertices_Y = blv_floor_face_vert_coord_Y[j + 1] >= y;
 
-          v13 = i;
-          if (v48 == v50)
-            continue;
+        v13 = i;
+        if (current_vertices_Y == next_vertices_Y)
+          continue;
 
-            v14 = word_721460_xs[j + 1] >= x ? 0 : 2;
-            v15 = v14 | (word_721460_xs[j] < x);
+        v14 = blv_floor_face_vert_coord_X[j + 1] >= x ? 0 : 2;
+        v15 = v14 | (blv_floor_face_vert_coord_X[j] < x);
 
-          if (v15 == 3)
-            continue;
-          else if (!v15)
-            ++v53;
-          else
-          {
-            long long a_div_b = fixpoint_div(y - word_721390_ys[j], word_721390_ys[j + 1] - word_721390_ys[j]);
-            long long res = fixpoint_mul((signed int)word_721460_xs[j + 1] - (signed int)word_721460_xs[j], a_div_b);
+        if (v15 == 3)
+          continue;
+        else if (!v15)
+          ++number_hits;
+        else
+        {
+          long long a_div_b = fixpoint_div(y - blv_floor_face_vert_coord_Y[j], blv_floor_face_vert_coord_Y[j + 1] - blv_floor_face_vert_coord_Y[j]);
+          long long res = fixpoint_mul((signed int)blv_floor_face_vert_coord_X[j + 1] - (signed int)blv_floor_face_vert_coord_X[j], a_div_b);
 
-            if (res + word_721460_xs[j] >= x)
-                ++v53;
+            if (res + blv_floor_face_vert_coord_X[j] >= x)
+                ++number_hits;
           }
       }
 
 
-        if ( v53 == 1 )
+        if ( number_hits == 1 )
         {
           if ( v55 >= 50 )
             break;
           if ( pFloor->uPolygonType == POLYGON_Floor || pFloor->uPolygonType == POLYGON_Ceiling )
-          {
             v21 = pIndoor->pVertices[pFloor->pVertexIDs[0]].z;
-          }
           else
-          {
             v21 = fixpoint_mul(pFloor->zCalc1, x) + fixpoint_mul(pFloor->zCalc2, y) + (short)(pFloor->zCalc3 >> 16);
-          }
           blv_floor_level[v55] = v21;
           blv_floor_id[v55] = pSector->pFloors[i];
           v55++;
         }
     }
   }
-
 
   if ( pSector->field_0 & 8 )
   {
@@ -4086,35 +3445,35 @@ int BLV_GetFloorLevel(int x, int y, int z, unsigned int uSectorID, unsigned int 
       {
         for (uint j = 0; j < portal->uNumVertices; ++j)
         {
-          word_721460_xs[2 * j] =     portal->pXInterceptDisplacements[j] + pIndoor->pVertices[portal->pVertexIDs[j]].x;
-          word_721460_xs[2 * j + 1] = portal->pXInterceptDisplacements[j + 1] + pIndoor->pVertices[portal->pVertexIDs[j + 1]].x;
-          word_721390_ys[2 * j] =     portal->pYInterceptDisplacements[j] + pIndoor->pVertices[portal->pVertexIDs[j]].y;
-          word_721390_ys[2 * j + 1] = portal->pYInterceptDisplacements[j + 1] + pIndoor->pVertices[portal->pVertexIDs[j + 1]].y;
+          blv_floor_face_vert_coord_X[2 * j] =     portal->pXInterceptDisplacements[j] + pIndoor->pVertices[portal->pVertexIDs[j]].x;
+          blv_floor_face_vert_coord_X[2 * j + 1] = portal->pXInterceptDisplacements[j + 1] + pIndoor->pVertices[portal->pVertexIDs[j + 1]].x;
+          blv_floor_face_vert_coord_Y[2 * j] =     portal->pYInterceptDisplacements[j] + pIndoor->pVertices[portal->pVertexIDs[j]].y;
+          blv_floor_face_vert_coord_Y[2 * j + 1] = portal->pYInterceptDisplacements[j + 1] + pIndoor->pVertices[portal->pVertexIDs[j + 1]].y;
         }
-        word_721460_xs[2 * portal->uNumVertices] = word_721460_xs[0];
-        word_721390_ys[2 * portal->uNumVertices] = word_721390_ys[0];
+        blv_floor_face_vert_coord_X[2 * portal->uNumVertices] = blv_floor_face_vert_coord_X[0];
+        blv_floor_face_vert_coord_Y[2 * portal->uNumVertices] = blv_floor_face_vert_coord_Y[0];
         v54 = 0;
-        v47 = word_721390_ys[0] >= y;
+        v47 = blv_floor_face_vert_coord_Y[0] >= y;
 
           for (uint j = 0; j < 2 * portal->uNumVertices; ++j)
           {
             v49 = v47;
             if ( v54 >= 2 )
               break;
-            v47 = word_721390_ys[j + 1] >= y;
+            v47 = blv_floor_face_vert_coord_Y[j + 1] >= y;
             if ( v49 != v47 )
             {
-              v28 = word_721460_xs[j + 1] >= x ? 0 : 2;
-              v29 = v28 | (word_721460_xs[j] < x);
+              v28 = blv_floor_face_vert_coord_X[j + 1] >= x ? 0 : 2;
+              v29 = v28 | (blv_floor_face_vert_coord_X[j] < x);
               if ( v29 != 3 )
               {
                 if ( !v29 )
                   ++v54;
                 else
                 {
-                  long long a_div_b = fixpoint_div(y - word_721390_ys[j], word_721390_ys[j + 1] - word_721390_ys[j]);
-                  long long res = fixpoint_mul(word_721460_xs[j + 1] - word_721460_xs[j], a_div_b);
-                  if (res + word_721460_xs[j] >= x)
+                  long long a_div_b = fixpoint_div(y - blv_floor_face_vert_coord_Y[j], blv_floor_face_vert_coord_Y[j + 1] - blv_floor_face_vert_coord_Y[j]);
+                  long long res = fixpoint_mul(blv_floor_face_vert_coord_X[j + 1] - blv_floor_face_vert_coord_X[j], a_div_b);
+                  if (res + blv_floor_face_vert_coord_X[j] >= x)
                     ++v54;
                 }
               }
@@ -4134,6 +3493,8 @@ int BLV_GetFloorLevel(int x, int y, int z, unsigned int uSectorID, unsigned int 
   if ( v55 == 1 )
   {
     *pFaceID = blv_floor_id[0];
+	if ( blv_floor_level[0] <= -29000 )
+		__debugbreak();
     return blv_floor_level[0];
   }
   if ( !v55 )
@@ -4168,306 +3529,45 @@ int BLV_GetFloorLevel(int x, int y, int z, unsigned int uSectorID, unsigned int 
         if ( v38 > result && v38 <= z + 5 )
         {
           result = blv_floor_level[i];
+	if ( blv_floor_level[i] <= -29000 )
+		__debugbreak();
           *pFaceID = blv_floor_id[i];
         }
       }
       else if ( v38 < result )
       {
         result = blv_floor_level[i];
+	if ( blv_floor_level[i] <= -29000 )
+		__debugbreak();
         *pFaceID = blv_floor_id[i];
       }
   }
 
   return result;
 }
-//----- (004016FA) --------------------------------------------------------
-int  MakeActorAIList_BLV()
-{
-  Actor *v0; // esi@2
-  int v1; // eax@4
-  int v2; // ebx@4
-  unsigned int v3; // ecx@4
-  int v4; // edx@5
-  int v5; // edx@7
-  unsigned int v6; // edx@9
-  unsigned int v7; // ST24_4@10
-  int v8; // eax@10
-  int v9; // edi@10
-  int v10; // ebx@14
-  char v11; // zf@16
-  int v12; // eax@22
-  int v13; // edx@24
-  int v14; // ecx@25
-  int v15; // ebx@26
-  unsigned int *v16; // ecx@27
-  unsigned int v17; // esi@27
-  int v18; // ecx@31
-  signed int v19; // edi@31
-  Actor *v20; // esi@32
-  bool v21; // eax@33
-  int v22; // eax@34
-  signed int v23; // ebx@36
-  Actor *v24; // esi@37
-  signed int v25; // eax@40
-  int v26; // eax@43
-  int v27; // ebx@45
-  int j; // edi@45
-  unsigned int v29; // eax@46
-  int v30; // eax@48
-  int v31; // ecx@51
-  int v32; // eax@51
-  signed int v33; // eax@53
-  __int64 v34; // qax@55
-  char *v35; // ecx@56
-  int v37; // [sp+Ch] [bp-18h]@1
-  int v38; // [sp+10h] [bp-14h]@4
-  int v39; // [sp+14h] [bp-10h]@4
-  int v40; // [sp+18h] [bp-Ch]@10
-  int v41; // [sp+18h] [bp-Ch]@29
-  int i; // [sp+18h] [bp-Ch]@31
-  signed int v43; // [sp+1Ch] [bp-8h]@1
-  signed int v44; // [sp+1Ch] [bp-8h]@25
-  int v45; // [sp+20h] [bp-4h]@1
-
-//  __debugbreak(); // refactor for blv ai
-  pParty->uFlags &= 0xFFFFFFCFu;
-  v37 = pIndoor->GetSector(pParty->vPosition.x, pParty->vPosition.y, pParty->vPosition.z);
-  v45 = 0;
-  v43 = 0;
-  if ( (signed int)uNumActors > 0 )
-  {
-    v0 = pActors.data();//[0].uAttributes;
-    do
-    {
-      BYTE1(v0->uAttributes) &= 0xFBu;
-      if ( ! v0->CanAct() )
-        goto LABEL_60;
-	  v39 = abs(pParty->vPosition.z - v0->vPosition.z);
-	  v38 = abs(pParty->vPosition.y - v0->vPosition.y);
-	  v1 = abs(pParty->vPosition.x - v0->vPosition.x);
-      v2 = v38;
-      v3 = v39;
-      if ( v1 < v38 )
-      {
-        v4 = v1;
-        v1 = v38;
-        v2 = v4;
-      }
-      if ( v1 < v39 )
-      {
-        v5 = v1;
-        v1 = v39;
-        v3 = v5;
-      }
-      if ( v2 < (signed int)v3 )
-      {
-        v6 = v3;
-        v3 = v2;
-        v2 = v6;
-      }
-      v7 = ((unsigned int)(11 * v2) >> 5) + (v3 >> 2) + v1;
-      v8 = v0->uActorRadius;
-      v9 = v7 - v8;
-      v40 = v7 - v8;
-      if ( v40 < 0 )
-      {
-        v9 = 0;
-        v40 = 0;
-      }
-      if ( v9 < 10240 )
-      {
-        v10 = v0->uAttributes & 0xFEFFFFFF;
-        v0->uAttributes = v10;
-        if ( v10 & 0x80000 || v0->GetActorsRelation(0) )
-        {
-          v11 = (pParty->uFlags & 0x10) == 0;
-          v0->uAttributes = v10 | 0x1000000;
-          if ( v11 && (double)v40 < 307.2 )
-            pParty->uFlags |= 0x10u;
-          if ( !(pParty->uFlags & 0x20) && v9 < 5120 )
-            pParty->uFlags |= 0x20u;
-        }
-        v12 = v45++;
-        ai_near_actors_distances[v12] = v9;
-        ai_near_actors_ids[v12] = v43;
-      }
-      else
-      {
-LABEL_60:
-        BYTE1(v0->uAttributes) &= 0xBFu;
-      }
-      ++v43;
-      ++v0;
-    }
-    while ( v43 < (signed int)uNumActors );
-  }
-  v13 = 0;
-  if ( v45 > 0 )
-  {
-    v14 = 1;
-    v44 = 1;
-    do
-    {
-      while ( 1 )
-      {
-        v41 = v14;
-        if ( v14 >= v45 )
-          break;
-        v15 = ai_near_actors_distances[v13];
-        if ( v15 > ai_near_actors_distances[v14] )
-        {
-          v16 = &ai_near_actors_ids[v14];
-          v17 = ai_near_actors_ids[v13];
-          ai_near_actors_ids[v13] = *v16;
-          *v16 = v17;
-          v14 = v41;
-          ai_near_actors_distances[v13] = ai_near_actors_distances[v41];
-          ai_near_actors_distances[v41] = v15;
-        }
-        ++v14;
-      }
-      ++v13;
-      v14 = v44 + 1;
-      v44 = v14;
-    }
-    while ( v14 - 1 < v45 );
-  }
-  v18 = 0;
-  v19 = 0;
-  for ( i = 0; v18 < v45; i = v18 )
-  {
-    v20 = &pActors[ai_near_actors_ids[v18]];
-    if ( v20->uAttributes & 0x8000
-      || (v21 = sub_4070EF_prolly_detect_player(PID(OBJECT_Actor,ai_near_actors_ids[v18]), 4u), v18 = i, v21) )
-    {
-      v22 = ai_near_actors_ids[v18];
-      v20->uAttributes |= 0x8000u;
-      ai_array_4F6638_actor_ids[v19] = v22;
-      ai_array_4F5E68[v19++] = ai_near_actors_distances[v18];
-      if ( v19 >= 30 )
-        break;
-    }
-    ++v18;
-  }
-  v23 = 0;
-  ai_arrays_size = v19;
-  if ( (signed int)uNumActors > 0 )
-  {
-    v24 = pActors.data();//[0].uAttributes;
-    do
-    {
-      if ( v24->CanAct() && v24->uSectorID == v37 )
-      {
-        v25 = 0;
-        if ( v19 <= 0 )
-        {
-LABEL_43:
-          v26 = ai_arrays_size;
-          BYTE1(v24->uAttributes) |= 0x40u;
-          ++ai_arrays_size;
-          ai_array_4F6638_actor_ids[v26] = v23;
-        }
-        else
-        {
-          while ( ai_array_4F6638_actor_ids[v25] != v23 )
-          {
-            ++v25;
-            if ( v25 >= v19 )
-              goto LABEL_43;
-          }
-        }
-      }
-      ++v23;
-      ++v24;
-    }
-    while ( v23 < (signed int)uNumActors );
-  }
-  v27 = ai_arrays_size;
-  for ( j = 0; j < v45; ++j )
-  {
-    v29 = ai_near_actors_ids[j];
-    if ( pActors[v29].uAttributes & 0xC000 && pActors[v29].CanAct() )
-    {
-      v30 = 0;
-      if ( v27 <= 0 )
-      {
-LABEL_51:
-        v31 = ai_arrays_size;
-        v32 = ai_near_actors_ids[j];
-        ++ai_arrays_size;
-        ai_array_4F6638_actor_ids[v31] = v32;
-      }
-      else
-      {
-        while ( ai_array_4F6638_actor_ids[v30] != ai_near_actors_ids[j] )
-        {
-          ++v30;
-          if ( v30 >= v27 )
-            goto LABEL_51;
-        }
-      }
-    }
-  }
-  v33 = ai_arrays_size;
-  if ( ai_arrays_size > 30 )
-  {
-    v33 = 30;
-    ai_arrays_size = 30;
-  }
-  memcpy(ai_near_actors_ids.data(), ai_array_4F6638_actor_ids.data(), 4 * v33);
-  memcpy(ai_near_actors_distances.data(), ai_array_4F5E68.data(), 4 * ai_arrays_size);
-  v34 = (unsigned int)ai_arrays_size;
-  if ( ai_arrays_size > 0 )
-  {
-    do
-    {
-      v35 = (char *)&pActors[ai_near_actors_ids[HIDWORD(v34)]].uAttributes;
-      v35[1] |= 4u;
-      ++HIDWORD(v34);
-    }
-    while ( SHIDWORD(v34) < (signed int)v34 );
-  }
-  return v34;
-}
 //----- (0043FDED) --------------------------------------------------------
 void PrepareActorRenderList_BLV()
 {
-  RenderBillboard *v0; // esi@0
-  unsigned __int16 v3; // ax@3
+//  unsigned __int16 v3; // ax@3
   unsigned int v4; // eax@5
-  unsigned __int16 v5; // cx@5
   int v6; // esi@5
-  unsigned int v7; // eax@7
+//  unsigned int v7; // eax@7
   int v8; // eax@10
   SpriteFrame *v9; // eax@16
-  SpriteFrame *v10; // ebx@18
-  //int *v11; // eax@18
   int v12; // ecx@28
-  //IndoorCameraD3D **v14; // eax@36
-  double v15; // st7@36
-  float v16; // eax@36
-  //double v17; // ST30_8@36
   signed __int64 v18; // qtt@36
-  int v19; // ST5C_4@36
-  signed __int64 v20; // qtt@37
-  int v21; // ST5C_4@37
-  signed __int16 v22; // cx@39
-  int v23; // ST50_4@40
-  signed int v24; // ecx@40
+//  int v19; // ST5C_4@36
+//  signed __int64 v20; // qtt@37
+//  int v21; // ST5C_4@37
+//  signed __int16 v22; // cx@39
+//  int v23; // ST50_4@40
+//  signed int v24; // ecx@40
   int v25; // edx@44
   __int16 v26; // ax@44
-  //MonsterDesc *v27; // edx@44
-  //int v28; // ecx@44
-  unsigned __int8 v29; // zf@44
-  unsigned __int8 v30; // sf@44
-  unsigned int v31; // [sp-8h] [bp-5Ch]@15
-  int v32; // [sp+1Ch] [bp-38h]@5
-  int a3; // [sp+20h] [bp-34h]@5
-  int a2; // [sp+24h] [bp-30h]@5
-  int a1a; // [sp+28h] [bp-2Ch]@5
-  __int16 a5; // [sp+2Ch] [bp-28h]@5
+//  unsigned __int8 v30; // sf@44
+//  int a3; // [sp+20h] [bp-34h]@5
   int a5a; // [sp+2Ch] [bp-28h]@36
-  int a5b; // [sp+2Ch] [bp-28h]@40
+//  int a5b; // [sp+2Ch] [bp-28h]@40
   __int16 v41; // [sp+3Ch] [bp-18h]@18
   int a6; // [sp+40h] [bp-14h]@34
   int v43; // [sp+44h] [bp-10h]@34
@@ -4477,200 +3577,130 @@ void PrepareActorRenderList_BLV()
 
   for (uint i = 0; i < uNumActors; ++i)
   {
-    Actor* p = &pActors[i];
-
-    if (p->uAIState == Removed ||
-        p->uAIState == Disabled)
+    if (pActors[i].uAIState == Removed || pActors[i].uAIState == Disabled)
       continue;
 
-    a5 = p->uSectorID;
-    a2 = p->vPosition.y;
-    a1a = p->vPosition.x;
-    a3 = p->vPosition.z;
-    v4 = stru_5C6E00->Atan2(a1a - pGame->pIndoorCameraD3D->vPartyPos.x, a2 - pGame->pIndoorCameraD3D->vPartyPos.y);
-    LOWORD(v0) = p->uYawAngle;
-    v5 = p->uCurrentActionAnimation;
-    v6 = ((signed int)((char *)v0 + ((signed int)stru_5C6E00->uIntegerPi >> 3) - v4 + stru_5C6E00->uIntegerPi) >> 8) & 7;
-    v32 = v6;
+    v4 = stru_5C6E00->Atan2(pActors[i].vPosition.x - pGame->pIndoorCameraD3D->vPartyPos.x, pActors[i].vPosition.y - pGame->pIndoorCameraD3D->vPartyPos.y);
+    v6 = ((signed int)(pActors[i].uYawAngle + ((signed int)stru_5C6E00->uIntegerPi >> 3) - v4 + stru_5C6E00->uIntegerPi) >> 8) & 7;
+    v8 = pActors[i].uCurrentActionTime;
     if ( pParty->bTurnBasedModeOn )
     {
-      if ( v5 == 1 )
-      {
-        v7 = pMiscTimer->uTotalGameTimeElapsed;
-        goto LABEL_10;
-      }
+      if ( pActors[i].uCurrentActionAnimation == 1 )
+        v8 = i * 32 + pMiscTimer->uTotalGameTimeElapsed;
     }
     else
     {
-      if ( v5 == 1 )
-      {
-        v7 = pBLVRenderParams->field_0_timer_;
-LABEL_10:
-        v8 = i * 32 + v7;
-        goto LABEL_12;
-      }
+      if ( pActors[i].uCurrentActionAnimation == 1 )
+        v8 = i * 32 + pBLVRenderParams->field_0_timer_;
     }
-    v8 = p->uCurrentActionTime;
-LABEL_12:
-    if (p->pActorBuffs[ACTOR_BUFF_STONED].uExpireTime > 0i64 || p->pActorBuffs[ACTOR_BUFF_PARALYZED].uExpireTime > 0i64 )
+    if (pActors[i].pActorBuffs[ACTOR_BUFF_STONED].uExpireTime > 0 || pActors[i].pActorBuffs[ACTOR_BUFF_PARALYZED].uExpireTime > 0 )
       v8 = 0;
-    v31 = p->pSpriteIDs[v5];
-    if (p->uAIState == Resurrected)
-      v9 = pSpriteFrameTable->GetFrameBy_x(v31, v8);
+
+    if (pActors[i].uAIState == Resurrected)
+      v9 = pSpriteFrameTable->GetFrameBy_x(pActors[i].pSpriteIDs[pActors[i].uCurrentActionAnimation], v8);
     else
-      v9 = pSpriteFrameTable->GetFrame(v31, v8);
+      v9 = pSpriteFrameTable->GetFrame(pActors[i].pSpriteIDs[pActors[i].uCurrentActionAnimation], v8);
+
     v41 = 0;
-    v10 = v9;
-    //v11 = (int *)v9->uFlags;
     if (v9->uFlags & 2)
       v41 = 2;
     if (v9->uFlags & 0x40000)
       v41 |= 0x40u;
     if (v9->uFlags & 0x20000)
       LOBYTE(v41) = v41 | 0x80;
-    v0 = (RenderBillboard *)(256 << v6);
-    if ( (unsigned int)v0 & v9->uFlags)
-      v41 |= 4u;
-    if ( v10->uGlowRadius )
+    if ( (256 << v6) & v9->uFlags)
+      v41 |= 4;
+    if ( v9->uGlowRadius )
     {
-      //LOBYTE(v11) = byte_4E94D3;
-      pMobileLightsStack->AddLight(
-        a1a,
-        a2,
-        a3,
-        a5,
-        v10->uGlowRadius,
-        0xFFu,
-        0xFFu,
-        0xFFu,
-        byte_4E94D3);
+      //LOBYTE(v11) = _4E94D3_light_type;
+      pMobileLightsStack->AddLight(pActors[i].vPosition.x, pActors[i].vPosition.y, pActors[i].vPosition.z, pActors[i].uSectorID, v9->uGlowRadius, 0xFFu, 0xFFu, 0xFFu, _4E94D3_light_type);
     }
-    v12 = 0;
-    if ( pBspRenderer->uNumVisibleNotEmptySectors <= 0 )
-      continue;
-    while (pBspRenderer->pVisibleSectorIDs_toDrawDecorsActorsEtcFrom[v12] != p->uSectorID)
+    for ( v12 = 0; v12 < pBspRenderer->uNumVisibleNotEmptySectors; ++v12 )
     {
-      ++v12;
-      if ( v12 >= pBspRenderer->uNumVisibleNotEmptySectors )
-        goto _continue;
-    }
-    if ( !pGame->pIndoorCameraD3D->ApplyViewTransform_TrueIfStillVisible_BLV(a1a, a2, a3, &x, &y, &z, 1)
-      || (v0 = (RenderBillboard *)abs(x), (signed int)v0 < abs(y)) )
-      continue;
-    pGame->pIndoorCameraD3D->Project(x, y, z, &v43, &a6);
-    v0 = &pBillboardRenderList[uNumBillboardsToDraw];
-    if (uNumBillboardsToDraw >= 500)
-      break;
-    ++uNumBillboardsToDraw;
-    ++uNumSpritesDrawnThisFrame;
-    p->uAttributes |= 8u;
-    v29 = pRenderer->pRenderD3D == 0;
-    v0->uHwSpriteID = v10->pHwSpriteIDs[v32];
-    v0->uPalette = v10->uPaletteIndex;
-    v0->uIndoorSectorID = a5;
-    if ( v29 )
-    {
-      LODWORD(v20) = pBLVRenderParams->fov_rad_fixpoint << 16;
-      HIDWORD(v20) = pBLVRenderParams->fov_rad_fixpoint >> 16;
-      v21 = v20 / x;
-      v0->_screenspace_x_scaler_packedfloat = (unsigned __int64)(v10->scale * v20 / x) >> 16;
-      a5a = (unsigned __int64)(v10->scale * (signed __int64)v21) >> 16;
-    }
-    else
-    {
-      //v14 = &pGame->pIndoorCameraD3D;
-      v0->fov_x = pGame->pIndoorCameraD3D->fov_x;
-      v15 = pGame->pIndoorCameraD3D->fov_y;
-      v16 = v0->fov_x;
-      v0->fov_y = v15;
-      //v17 = v16 + 6.7553994e15;
-      LODWORD(v18) = 0;
-      HIDWORD(v18) = floorf(v16 + 0.5f);
-      v19 = v18 / x;
-      v0->_screenspace_x_scaler_packedfloat = (unsigned __int64)(v10->scale * v18 / x) >> 16;
-      a5a = (unsigned __int64)(v10->scale * (signed __int64)v19) >> 16;
-    }
-    v0->_screenspace_y_scaler_packedfloat = a5a;
-    if ( (signed __int64)p->pActorBuffs[ACTOR_BUFF_SHRINK].uExpireTime <= 0 )
-    {
-      if ( (signed __int64)p->pActorBuffs[ACTOR_BUFF_MASS_DISTORTION].uExpireTime > 0 )
+      if ( pBspRenderer->pVisibleSectorIDs_toDrawDecorsActorsEtcFrom[v12] == pActors[i].uSectorID )
       {
-        a5b = (unsigned __int64)(pGame->pStru6Instance->_4A806F(p) * (signed __int64)v0->_screenspace_y_scaler_packedfloat) >> 16;
-        goto LABEL_43;
+        if ( !pGame->pIndoorCameraD3D->ApplyViewTransform_TrueIfStillVisible_BLV(pActors[i].vPosition.x, pActors[i].vPosition.y, pActors[i].vPosition.z, &x, &y, &z, 1)
+          || abs(x) < abs(y) )
+          continue;
+        pGame->pIndoorCameraD3D->Project(x, y, z, &v43, &a6);
+        if (uNumBillboardsToDraw >= 500)
+          break;
+        ++uNumBillboardsToDraw;
+        ++uNumSpritesDrawnThisFrame;
+        pActors[i].uAttributes |= 8;
+        pBillboardRenderList[uNumBillboardsToDraw - 1].HwSpriteID = v9->pHwSpriteIDs[v6];
+        pBillboardRenderList[uNumBillboardsToDraw - 1].uPalette = v9->uPaletteIndex;
+        pBillboardRenderList[uNumBillboardsToDraw - 1].uIndoorSectorID = pActors[i].uSectorID;
+        /*if ( !pRenderer->pRenderD3D )
+        {
+          LODWORD(v20) = pBLVRenderParams->fov_rad_fixpoint << 16;
+          HIDWORD(v20) = pBLVRenderParams->fov_rad_fixpoint >> 16;
+          v0->_screenspace_x_scaler_packedfloat = fixpoint_mul(v10->scale, v20 / x);
+          a5a = fixpoint_mul(v10->scale, v20 / x);
+        }
+        else
+        {*/
+          pBillboardRenderList[uNumBillboardsToDraw - 1].fov_x = pGame->pIndoorCameraD3D->fov_x;
+          pBillboardRenderList[uNumBillboardsToDraw - 1].fov_y = pGame->pIndoorCameraD3D->fov_y;
+          LODWORD(v18) = 0;
+          HIDWORD(v18) = floorf(pBillboardRenderList[uNumBillboardsToDraw - 1].fov_x + 0.5f);
+          pBillboardRenderList[uNumBillboardsToDraw - 1]._screenspace_x_scaler_packedfloat = fixpoint_mul(v9->scale, v18 / x);
+          a5a = fixpoint_mul(v9->scale, v18 / x);
+        //}
+        pBillboardRenderList[uNumBillboardsToDraw - 1]._screenspace_y_scaler_packedfloat = a5a;
+        if ( pActors[i].pActorBuffs[ACTOR_BUFF_SHRINK].uExpireTime <= 0 )
+        {
+          if ( pActors[i].pActorBuffs[ACTOR_BUFF_MASS_DISTORTION].uExpireTime > 0 )
+            pBillboardRenderList[uNumBillboardsToDraw - 1]._screenspace_y_scaler_packedfloat = fixpoint_mul(pGame->pStru6Instance->_4A806F(&pActors[i]),
+                       pBillboardRenderList[uNumBillboardsToDraw - 1]._screenspace_y_scaler_packedfloat);
+        }
+        else
+        {
+          if ( pActors[i].pActorBuffs[ACTOR_BUFF_SHRINK].uPower > 0 )
+            pBillboardRenderList[uNumBillboardsToDraw - 1]._screenspace_x_scaler_packedfloat = fixpoint_mul(65536 / pActors[i].pActorBuffs[ACTOR_BUFF_SHRINK].uPower, pBillboardRenderList[uNumBillboardsToDraw - 1]._screenspace_x_scaler_packedfloat);
+        }
+        HIWORD(v25) = HIWORD(x);
+        pBillboardRenderList[uNumBillboardsToDraw - 1].world_x = pActors[i].vPosition.x;
+        pBillboardRenderList[uNumBillboardsToDraw - 1].world_y = pActors[i].vPosition.y;
+        pBillboardRenderList[uNumBillboardsToDraw - 1].world_z = pActors[i].vPosition.z;
+        pBillboardRenderList[uNumBillboardsToDraw - 1].uScreenSpaceX = v43;
+        pBillboardRenderList[uNumBillboardsToDraw - 1].uScreenSpaceY = a6;
+        LOWORD(v25) = 0;
+        LOBYTE(v26) = v41;
+
+        //v0->sZValue = v25 + (PID(OBJECT_Actor,i));
+        pBillboardRenderList[uNumBillboardsToDraw - 1].actual_z = HIWORD(x);
+        pBillboardRenderList[uNumBillboardsToDraw - 1].object_pid = PID(OBJECT_Actor,i);
+
+        //v29 = HIDWORD(p->pActorBuffs[ACTOR_BUFF_STONED].uExpireTime) == 0;
+        //v30 = HIDWORD(p->pActorBuffs[ACTOR_BUFF_STONED].uExpireTime) < 0;
+        pBillboardRenderList[uNumBillboardsToDraw - 1].field_1E = v41;
+        pBillboardRenderList[uNumBillboardsToDraw - 1].pSpriteFrame = v9;
+        pBillboardRenderList[uNumBillboardsToDraw - 1].sTintColor = pMonsterList->pMonsters[pActors[i].pMonsterInfo.uID - 1].sTintColor;
+        if ( pActors[i].pActorBuffs[ACTOR_BUFF_STONED].uExpireTime > 0 )
+        {
+          HIBYTE(v26) = HIBYTE(v41) | 1;
+          pBillboardRenderList[uNumBillboardsToDraw - 1].field_1E = v26;
+        }
       }
     }
-    else
-    {
-      v22 = p->pActorBuffs[ACTOR_BUFF_SHRINK].uPower;
-      if ( v22 )
-      {
-        v23 = (unsigned __int64)(65536 / (unsigned __int16)v22 * (signed __int64)v0->_screenspace_x_scaler_packedfloat) >> 16;
-        v24 = p->pActorBuffs[ACTOR_BUFF_SHRINK].uPower;
-        v0->_screenspace_x_scaler_packedfloat = v23;
-        a5b = (unsigned __int64)(65536 / v24 * (signed __int64)v0->_screenspace_y_scaler_packedfloat) >> 16;
-LABEL_43:
-        v0->_screenspace_y_scaler_packedfloat = a5b;
-        goto LABEL_44;
-      }
-    }
-LABEL_44:
-    HIWORD(v25) = HIWORD(x);
-    v0->world_x = a1a;
-    v0->world_y = a2;
-    v0->world_z = a3;
-    v0->uScreenSpaceX = v43;
-    v0->uScreenSpaceY = a6;
-    LOWORD(v25) = 0;
-    LOBYTE(v26) = v41;
-
-    //v0->sZValue = v25 + (PID(OBJECT_Actor,i));
-    v0->actual_z = HIWORD(x);
-    v0->object_pid = PID(OBJECT_Actor,i);
-
-    v29 = HIDWORD(p->pActorBuffs[ACTOR_BUFF_STONED].uExpireTime) == 0;
-    v30 = HIDWORD(p->pActorBuffs[ACTOR_BUFF_STONED].uExpireTime) < 0;
-    v0->field_1E = v41;
-    v0->pSpriteFrame = v10;
-    v0->uTintColor = pMonsterList->pMonsters[p->pMonsterInfo.uID - 1].uTintColor;
-    if ( !v30 && (!(v30 | v29) || LODWORD(p->pActorBuffs[ACTOR_BUFF_STONED].uExpireTime)) )
-    {
-      HIBYTE(v26) = HIBYTE(v41) | 1;
-      v0->field_1E = v26;
-    }
-    
-_continue:
-    ;
   }
 }
 //----- (0044028F) --------------------------------------------------------
 void PrepareItemsRenderList_BLV()
 {
-  ObjectDesc *v1; // ebx@4
-  __int16 v2; // ax@5
-  RenderBillboard *v3; // esi@12
   SpriteFrame *v4; // eax@12
-  SpriteFrame *v5; // ebx@12
   unsigned int v6; // eax@12
   int v7; // ecx@12
-  int v8; // edx@12
   int v9; // ecx@12
-  unsigned __int16 v10; // ax@12
-  int *v11; // eax@20
-  //char v12; // zf@26
+//  unsigned __int16 v10; // ax@12
+  //int *v11; // eax@20
   __int64 v18; // ST5C_4@27
-  signed __int64 v19; // qtt@28
-  int v20; // ST5C_4@28
-  //int v21; // edx@29
-  __int16 v22; // ax@29
-  //int v23; // eax@29
-  SpriteFrame *v24; // [sp+1Ch] [bp-40h]@12
-  //__int16 a5; // [sp+28h] [bp-34h]@12
+//  signed __int64 v19; // qtt@28
+//  int v20; // ST5C_4@28
+//  __int16 v22; // ax@29
   int a6; // [sp+2Ch] [bp-30h]@12
-  int a2; // [sp+30h] [bp-2Ch]@12
-  int a1; // [sp+34h] [bp-28h]@12
-  int v30; // [sp+38h] [bp-24h]@12
   int v31; // [sp+38h] [bp-24h]@27
-  int a3; // [sp+40h] [bp-1Ch]@12
   signed __int16 v34; // [sp+44h] [bp-18h]@14
   int v35; // [sp+48h] [bp-14h]@25
   int v36; // [sp+4Ch] [bp-10h]@25
@@ -4680,71 +3710,45 @@ void PrepareItemsRenderList_BLV()
 
   for (uint i = 0; i < uNumSpriteObjects; ++i)
   {
-    SpriteObject* p = &pSpriteObjects[i];
-    if (p->uObjectDescID)
+    if (pSpriteObjects[i].uObjectDescID)
     {
-      v1 = &pObjectList->pObjects[p->uObjectDescID];
-        if ( !(v1->uFlags & 1) )
+        if ( !(pObjectList->pObjects[pSpriteObjects[i].uObjectDescID].uFlags & 1) )
          {
-          if ( ((v2 = p->uType, v2 < 1000) || v2 >= 10000)
-            && (v2 < 500 || v2 >= 600)
-            && (v2 < 811 || v2 >= 815)
-            || pGame->pStru6Instance->_4A81CA(p))
+          if ( ( pSpriteObjects[i].uType < 1000 || pSpriteObjects[i].uType >= 10000)
+            && (pSpriteObjects[i].uType < 500 || pSpriteObjects[i].uType >= 600)
+            && (pSpriteObjects[i].uType < 811 || pSpriteObjects[i].uType >= 815)
+            || pGame->pStru6Instance->_4A81CA(&pSpriteObjects[i]))
           {
-            //a5 = p->uSectorID;
-            a1 = p->vPosition.x;
-            a2 = p->vPosition.y;
-            a3 = p->vPosition.z;
-            v3 = &pBillboardRenderList[uNumBillboardsToDraw];
-            v4 = pSpriteFrameTable->GetFrame(v1->uSpriteID, p->uSpriteFrameID);
-            v5 = v4;
-            v24 = v4;
-            v30 = v4->uFlags;
-            a6 = v4->uGlowRadius * p->field_22_glow_radius_multiplier;
-            v6 = stru_5C6E00->Atan2(p->vPosition.x - pGame->pIndoorCameraD3D->vPartyPos.x,
-                                    p->vPosition.y - pGame->pIndoorCameraD3D->vPartyPos.y);
-            LOWORD(v7) = p->uFacing;
-            v8 = v30;
+            v4 = pSpriteFrameTable->GetFrame(pObjectList->pObjects[pSpriteObjects[i].uObjectDescID].uSpriteID, pSpriteObjects[i].uSpriteFrameID);
+            a6 = v4->uGlowRadius * pSpriteObjects[i].field_22_glow_radius_multiplier;
+            v6 = stru_5C6E00->Atan2(pSpriteObjects[i].vPosition.x - pGame->pIndoorCameraD3D->vPartyPos.x,
+                                    pSpriteObjects[i].vPosition.y - pGame->pIndoorCameraD3D->vPartyPos.y);
+            LOWORD(v7) = pSpriteObjects[i].uFacing;
             v9 = ((signed int)(stru_5C6E00->uIntegerPi + ((signed int)stru_5C6E00->uIntegerPi >> 3) + v7 - v6) >> 8) & 7;
-            v10 = v5->pHwSpriteIDs[v9];
-            v3->uHwSpriteID = v10;
-            if ( v30 & 0x20 )
-            {
-              v8 = v30;
-              a3 -= (signed int)((unsigned __int64)(v5->scale * (signed __int64)pSprites_LOD->pSpriteHeaders[(signed __int16)v10].uHeight) >> 16) >> 1;
-            }
+            pBillboardRenderList[uNumBillboardsToDraw].HwSpriteID = v4->pHwSpriteIDs[v9];
+            if ( v4->uFlags & 0x20 )
+              pSpriteObjects[i].vPosition.z -= (signed int)(fixpoint_mul(v4->scale, pSprites_LOD->pSpriteHeaders[pBillboardRenderList[uNumBillboardsToDraw].HwSpriteID].uHeight) / 2);
+
             v34 = 0;
-            if ( v8 & 2 )
+            if ( v4->uFlags & 2 )
               v34 = 2;
-            if ( v8 & 0x40000 )
+            if ( v4->uFlags & 0x40000 )
               v34 |= 0x40u;
-            if ( v8 & 0x20000 )
+            if ( v4->uFlags & 0x20000 )
               LOBYTE(v34) = v34 | 0x80;
-            v11 = (int *)(256 << v9);
-            if ( (256 << v9) & v8 )
-              v34 |= 4u;
+            //v11 = (int *)(256 << v9);
+            if ( (256 << v9) & v4->uFlags )
+              v34 |= 4;
             if ( a6 )
             {
-              LOBYTE(v11) = byte_4E94D3;
-              pMobileLightsStack->AddLight(
-                a1,
-                a2,
-                a3,
-                p->uSectorID,
-                a6,
-                v1->uParticleTrailColorR,
-                v1->uParticleTrailColorG,
-                v1->uParticleTrailColorB,
-                byte_4E94D3);
+              //LOBYTE(v11) = _4E94D3_light_type;
+              pMobileLightsStack->AddLight(pSpriteObjects[i].vPosition.x, pSpriteObjects[i].vPosition.y, pSpriteObjects[i].vPosition.z,
+                   pSpriteObjects[i].uSectorID, a6, pObjectList->pObjects[pSpriteObjects[i].uObjectDescID].uParticleTrailColorR,
+                                                    pObjectList->pObjects[pSpriteObjects[i].uObjectDescID].uParticleTrailColorG,
+                                                    pObjectList->pObjects[pSpriteObjects[i].uObjectDescID].uParticleTrailColorB, _4E94D3_light_type);
             }
-            if ( pGame->pIndoorCameraD3D->ApplyViewTransform_TrueIfStillVisible_BLV(
-                   a1,
-                   a2,
-                   a3,
-                   &x,
-                   &y,
-                   &z,
-                   1) )
+            if ( pGame->pIndoorCameraD3D->ApplyViewTransform_TrueIfStillVisible_BLV(pSpriteObjects[i].vPosition.x, pSpriteObjects[i].vPosition.y,
+                                                                                    pSpriteObjects[i].vPosition.z, &x, &y, &z, 1) )
             {
               pGame->pIndoorCameraD3D->Project(x, y, z, &v36, &v35);
 
@@ -4753,52 +3757,49 @@ void PrepareItemsRenderList_BLV()
               //  return;
               ++uNumBillboardsToDraw;
               ++uNumSpritesDrawnThisFrame;
-              p->uAttributes |= 1u;
-              //v12 = pRenderer->pRenderD3D == 0;
-              v3->uPalette = v24->uPaletteIndex;
-              v3->uIndoorSectorID = p->uSectorID;
-              if ( pRenderer->pRenderD3D )
+              pSpriteObjects[i].uAttributes |= 1;
+              pBillboardRenderList[uNumBillboardsToDraw - 1].uPalette = v4->uPaletteIndex;
+              pBillboardRenderList[uNumBillboardsToDraw - 1].uIndoorSectorID = pSpriteObjects[i].uSectorID;
+              //if ( pRenderer->pRenderD3D )
               {
-                v3->fov_x = pGame->pIndoorCameraD3D->fov_x;
-                v3->fov_y = pGame->pIndoorCameraD3D->fov_y;
+                pBillboardRenderList[uNumBillboardsToDraw - 1].fov_x = pGame->pIndoorCameraD3D->fov_x;
+                pBillboardRenderList[uNumBillboardsToDraw - 1].fov_y = pGame->pIndoorCameraD3D->fov_y;
                 LODWORD(v18) = 0;
-                HIDWORD(v18) = (int)floorf(v3->fov_x + 0.5f);
-                v18 = v18 / x;
-                v3->_screenspace_x_scaler_packedfloat = (unsigned __int64)(v24->scale * v18) >> 16;
-                v31 = (unsigned __int64)(v24->scale * v18) >> 16;
+                HIDWORD(v18) = (int)floorf(pBillboardRenderList[uNumBillboardsToDraw - 1].fov_x + 0.5f);
+                pBillboardRenderList[uNumBillboardsToDraw - 1]._screenspace_x_scaler_packedfloat = fixpoint_mul(v4->scale, v18 / x);
+                v31 = fixpoint_mul(v4->scale, v18 / x);
               }
-              else
+              /*else
               {
                 __debugbreak(); // sw rendering
-                /*LODWORD(v19) = pBLVRenderParams->field_40 << 16;
+                LODWORD(v19) = pBLVRenderParams->field_40 << 16;
                 HIDWORD(v19) = pBLVRenderParams->field_40 >> 16;
                 v20 = v19 / x;
-                v3->_screenspace_x_scaler_packedfloat = (unsigned __int64)(v24->scale * v19 / x) >> 16;
-                v31 = (unsigned __int64)(v24->scale * (signed __int64)v20) >> 16;*/
-              }
+                pBillboardRenderList[uNumBillboardsToDraw - 1]._screenspace_x_scaler_packedfloat = fixpoint_mul(v24->scale, v19 / x);
+                v31 = fixpoint_mul(v24->scale, v20);
+              }*/
               //HIWORD(v21) = HIWORD(x);
               //LOWORD(v21) = 0;
-              v3->_screenspace_y_scaler_packedfloat = v31;
-              v3->field_1E = v34;
-              v3->world_x = a1;
-              v3->world_y = a2;
-              v3->world_z = a3;
-              v3->uScreenSpaceX = v36;
-              v22 = v35;
-              v3->uTintColor = 0;
-              v3->uScreenSpaceY = v22;
+              pBillboardRenderList[uNumBillboardsToDraw - 1]._screenspace_y_scaler_packedfloat = v31;
+              pBillboardRenderList[uNumBillboardsToDraw - 1].field_1E = v34;
+              pBillboardRenderList[uNumBillboardsToDraw - 1].world_x = pSpriteObjects[i].vPosition.x;
+              pBillboardRenderList[uNumBillboardsToDraw - 1].world_y = pSpriteObjects[i].vPosition.y;
+              pBillboardRenderList[uNumBillboardsToDraw - 1].world_z = pSpriteObjects[i].vPosition.z;
+              pBillboardRenderList[uNumBillboardsToDraw - 1].uScreenSpaceX = v36;
+              pBillboardRenderList[uNumBillboardsToDraw - 1].sTintColor = 0;
+              pBillboardRenderList[uNumBillboardsToDraw - 1].uScreenSpaceY = v35;
               //v23 = 8 * i;
               //LOBYTE(v23) = PID(OBJECT_Item,i);
-              v3->pSpriteFrame = v24;
+              pBillboardRenderList[uNumBillboardsToDraw - 1].pSpriteFrame = v4;
               //v12 = (p->uAttributes & 0x20) == 0;
-              //v3->sZValue = v21 + v23;
-              v3->actual_z = HIWORD(x);
-              v3->object_pid = PID(OBJECT_Item,i);
-              if (p->uAttributes & 0x20)
+              //pBillboardRenderList[uNumBillboardsToDraw - 1].sZValue = v21 + v23;
+              pBillboardRenderList[uNumBillboardsToDraw - 1].actual_z = HIWORD(x);
+              pBillboardRenderList[uNumBillboardsToDraw - 1].object_pid = PID(OBJECT_Item,i);
+              /*if (pSpriteObjects[i].uAttributes & 0x20)
               {
                 if ( !pRenderer->pRenderD3D )
-                  v3->sZValue = 0;
-              }
+                  pBillboardRenderList[uNumBillboardsToDraw - 1].sZValue = 0;
+              }*/
             }
           }
         }
@@ -4812,17 +3813,17 @@ void AddBspNodeToRenderList(unsigned int node_id)
   BLVSector *pSector; // esi@1
 
   pSector = &pIndoor->pSectors[pBspRenderer->nodes[node_id].uSectorID];
-  if ( pRenderer->pRenderD3D )
+  //if ( pRenderer->pRenderD3D )
   {
     for (uint i = 0; i < pSector->uNumNonBSPFaces; ++i)
       //Log::Warning(L"Non-BSP face: %X", v3->pFaceIDs[v2]);
       pBspRenderer->AddFaceToRenderList_d3d(node_id, pSector->pFaceIDs[i]);
   }
-  else
+  /*else
   {
     for (uint i = 0; i < pSector->uNumNonBSPFaces; ++i)
       pBspRenderer->AddFaceToRenderList_sw(node_id, pSector->pFaceIDs[i]);
-  }
+  }*/
   if ( pSector->field_0 & 0x10 )
     sub_4406BC(node_id, pSector->uFirstBSPNode);
 }
@@ -4869,16 +3870,16 @@ void __fastcall sub_4406BC(unsigned int node_id, unsigned int uFirstNode)
 
     //Log::Warning(L"Node %u: %X to %X (%hX)", uFirstNode, v7, v8, v2->pFaceIDs[v7]);
     
-    if ( pRenderer->pRenderD3D )
+    //if ( pRenderer->pRenderD3D )
     {
       while ( v7 < v8 )
         pBspRenderer->AddFaceToRenderList_d3d(node_id, pSector->pFaceIDs[v7++]);
     }
-    else
+    /*else
     {
       while ( v7 < v8 )
         pBspRenderer->AddFaceToRenderList_sw(node_id, pSector->pFaceIDs[v7++]);
-    }
+    }*/
     v9 = v5 > 0 ? pNode->uFront : pNode->uBack;
     if ( v9 == -1 )
       break;
@@ -4888,36 +3889,15 @@ void __fastcall sub_4406BC(unsigned int node_id, unsigned int uFirstNode)
 //----- (0043FA33) --------------------------------------------------------
 void PrepareDecorationsRenderList_BLV(unsigned int uDecorationID, unsigned int uSectorID)
 {
-  LevelDecoration *v2; // esi@1
-  DecorationDesc *v3; // ebx@2
-  __int16 v4; // ax@2
-  double v5; // st7@3
-  int v6; // eax@5
-  int v7; // edx@5
   unsigned int v8; // edi@5
   int v9; // edi@5
   int v10; // eax@7
   SpriteFrame *v11; // eax@7
-  SpriteFrame *v12; // esi@7
-  int v13; // eax@7
-  int v14; // ebx@16
-  RenderBillboard *v15; // ecx@17
-  char v16; // zf@18
-  IndoorCameraD3D **v17; // eax@19
-  double v18; // st7@19
-  //float v19; // eax@19
+//  char v16; // zf@18
   signed __int64 v20; // qtt@19
-  signed __int64 v21; // qtt@20
-  //int v22; // edx@21
-  //int v23; // eax@21
-  Particle_sw local_0; // [sp+Ch] [bp-A0h]@3
-  //double v25; // [sp+74h] [bp-38h]@19
-  //unsigned int v26; // [sp+7Ch] [bp-30h]@1
-  int a2; // [sp+80h] [bp-2Ch]@5
-  int a3; // [sp+84h] [bp-28h]@5
-  int a1; // [sp+88h] [bp-24h]@5
+//  signed __int64 v21; // qtt@20
+  Particle_sw particle; // [sp+Ch] [bp-A0h]@3
   int v30; // [sp+8Ch] [bp-20h]@7
-  //float v31; // [sp+90h] [bp-1Ch]@1
   int a5; // [sp+94h] [bp-18h]@17
   int z; // [sp+98h] [bp-14h]@15
   int a6; // [sp+9Ch] [bp-10h]@17
@@ -4925,132 +3905,102 @@ void PrepareDecorationsRenderList_BLV(unsigned int uDecorationID, unsigned int u
   int x; // [sp+A4h] [bp-8h]@15
   int v37; // [sp+A8h] [bp-4h]@5
 
-  //v26 = uDecorationID;
-  //LODWORD(v31) = uSectorID;
-  v2 = &pLevelDecorations[uDecorationID];
-  if (v2->uFlags & LEVEL_DECORATION_INVISIBLE)
+  if (pLevelDecorations[uDecorationID].uFlags & LEVEL_DECORATION_INVISIBLE)
     return;
 
-    v3 = &pDecorationList->pDecorations[v2->uDecorationDescID];
-    v4 = v3->uFlags;
-    if (v3->uFlags & DECORATION_DESC_EMITS_FIRE)
+  if (pDecorationList->pDecorations[pLevelDecorations[uDecorationID].uDecorationDescID].uFlags & DECORATION_DESC_EMITS_FIRE)
+  {
+    memset(&particle, 0, sizeof(particle));               // fire,  like at the Pit's tavern
+    particle.type = ParticleType_Bitmap | ParticleType_Rotating | ParticleType_8;
+    particle.uDiffuse = 0xFF3C1E;
+    particle.x = (double)pLevelDecorations[uDecorationID].vPosition.x;
+    particle.y = (double)pLevelDecorations[uDecorationID].vPosition.y;
+    particle.z = (double)pLevelDecorations[uDecorationID].vPosition.z;
+    particle.r = 0.0;
+    particle.g = 0.0;
+    particle.b = 0.0;
+    particle.flt_28 = 1.0;
+    particle.timeToLive = (rand() & 0x80) + 128;
+    particle.uTextureID = pBitmaps_LOD->LoadTexture("effpar01");
+    pGame->pParticleEngine->AddParticle(&particle);
+    return;
+  }
+
+  if (pDecorationList->pDecorations[pLevelDecorations[uDecorationID].uDecorationDescID].uFlags & DECORATION_DESC_DONT_DRAW)
+    return;
+
+  v8 = pLevelDecorations[uDecorationID].field_10_y_rot + ((signed int)stru_5C6E00->uIntegerPi >> 3)
+     - stru_5C6E00->Atan2(pLevelDecorations[uDecorationID].vPosition.x - pGame->pIndoorCameraD3D->vPartyPos.x,
+                          pLevelDecorations[uDecorationID].vPosition.y - pGame->pIndoorCameraD3D->vPartyPos.y);
+  v9 = ((signed int)(stru_5C6E00->uIntegerPi + v8) >> 8) & 7;
+  v37 = pBLVRenderParams->field_0_timer_;
+  if (pParty->bTurnBasedModeOn)
+    v37 = pMiscTimer->uTotalGameTimeElapsed;
+  v10 = abs(pLevelDecorations[uDecorationID].vPosition.x + pLevelDecorations[uDecorationID].vPosition.y);
+  v11 = pSpriteFrameTable->GetFrame(pDecorationList->pDecorations[pLevelDecorations[uDecorationID].uDecorationDescID].uSpriteID, v37 + v10);
+  v30 = 0;
+  if ( v11->uFlags & 2 )
+    v30 = 2;
+  if ( v11->uFlags & 0x40000 )
+    v30 |= 0x40u;
+  if ( v11->uFlags & 0x20000 )
+    LOBYTE(v30) = v30 | 0x80;
+  if ( (256 << v9) & v11->uFlags )
+    v30 |= 4;
+  if ( pGame->pIndoorCameraD3D->ApplyViewTransform_TrueIfStillVisible_BLV(pLevelDecorations[uDecorationID].vPosition.x,
+                                                                          pLevelDecorations[uDecorationID].vPosition.y,
+                                                                          pLevelDecorations[uDecorationID].vPosition.z, &x, &y, &z, 1) )
+  {
+    if ( abs(x) >= abs(y) )
     {
-      memset(&local_0, 0, 0x68u);               // fire,  like at the Pit's tavern
-      v5 = (double)v2->vPosition.x;
-      local_0.type = ParticleType_Bitmap | ParticleType_Rotating | ParticleType_8;
-      local_0.uDiffuse = 0xFF3C1E;
-      local_0.x = v5;
-      local_0.y = (double)v2->vPosition.y;
-      local_0.z = (double)v2->vPosition.z;
-      local_0.r = 0.0;
-      local_0.g = 0.0;
-      local_0.b = 0.0;
-      local_0.flt_28 = 1.0;
-      local_0.timeToLive = (rand() & 0x80) + 128;
-      local_0.uTextureID = pBitmaps_LOD->LoadTexture("effpar01");
-      pGame->pParticleEngine->AddParticle(&local_0);
-      return;
+      pGame->pIndoorCameraD3D->Project(x, y, z, &a5, &a6);
+
+      assert(uNumBillboardsToDraw < 500);
+
+      ++uNumBillboardsToDraw;
+      ++uNumDecorationsDrawnThisFrame;
+      pBillboardRenderList[uNumBillboardsToDraw - 1].HwSpriteID = v11->pHwSpriteIDs[v9];
+      pBillboardRenderList[uNumBillboardsToDraw - 1].uPalette = v11->uPaletteIndex;
+      pBillboardRenderList[uNumBillboardsToDraw - 1].uIndoorSectorID = uSectorID;
+      /*if ( !pRenderer->pRenderD3D )
+      {
+        LODWORD(v21) = pBLVRenderParams->fov_rad_fixpoint << 16;
+        HIDWORD(v21) = pBLVRenderParams->fov_rad_fixpoint >> 16;
+        //LODWORD(v31) = v12->scale;
+        pBillboardRenderList[uNumBillboardsToDraw - 1]._screenspace_x_scaler_packedfloat = fixpoint_mul(v12->scale, v21 / x);
+        v37 = fixpoint_mul(v12->scale, v21 / x);
+      }
+      else
+      {*/
+        pBillboardRenderList[uNumBillboardsToDraw - 1].fov_x = pGame->pIndoorCameraD3D->fov_x;
+        pBillboardRenderList[uNumBillboardsToDraw - 1].fov_y = pGame->pIndoorCameraD3D->fov_y;
+        LODWORD(v20) = 0;
+        HIDWORD(v20) = floorf(pBillboardRenderList[uNumBillboardsToDraw - 1].fov_x + 0.5f);
+        pBillboardRenderList[uNumBillboardsToDraw - 1]._screenspace_x_scaler_packedfloat = fixpoint_mul(v11->scale, v20 / x);
+        LODWORD(v20) = 0;
+        HIDWORD(v20) = floorf(pBillboardRenderList[uNumBillboardsToDraw - 1].fov_y + 0.5f);
+        v37 = fixpoint_mul(v11->scale, v20 / x);
+      //}
+      //HIWORD(v22) = HIWORD(x);
+      //LOWORD(v22) = 0;
+      pBillboardRenderList[uNumBillboardsToDraw - 1]._screenspace_y_scaler_packedfloat = v37;
+      pBillboardRenderList[uNumBillboardsToDraw - 1].field_1E = v30;
+      pBillboardRenderList[uNumBillboardsToDraw - 1].world_x = pLevelDecorations[uDecorationID].vPosition.x;
+      pBillboardRenderList[uNumBillboardsToDraw - 1].world_y = pLevelDecorations[uDecorationID].vPosition.y;
+      pBillboardRenderList[uNumBillboardsToDraw - 1].world_z = pLevelDecorations[uDecorationID].vPosition.z;
+      pBillboardRenderList[uNumBillboardsToDraw - 1].uScreenSpaceX = a5;
+      pBillboardRenderList[uNumBillboardsToDraw - 1].uScreenSpaceY = a6;
+      //v23 = 8 * uDecorationID;
+      //LOBYTE(v23) = PID(OBJECT_Decoration,uDecorationID);
+
+      //pBillboardRenderList[uNumBillboardsToDraw - 1].sZValue = v22 + v23;
+      pBillboardRenderList[uNumBillboardsToDraw - 1].actual_z = HIWORD(x);
+      pBillboardRenderList[uNumBillboardsToDraw - 1].object_pid = PID(OBJECT_Decoration,uDecorationID);
+
+      pBillboardRenderList[uNumBillboardsToDraw - 1].sTintColor = 0;
+      pBillboardRenderList[uNumBillboardsToDraw - 1].pSpriteFrame = v11;
     }
-
-
-      if (v4 & DECORATION_DESC_DONT_DRAW)
-        return;
-
-        v6 = v2->vPosition.x;
-        v7 = v2->vPosition.z;
-        a2 = v2->vPosition.y;
-        a1 = v6;
-        a3 = v7;
-        v8 = v2->field_10_y_rot
-           + ((signed int)stru_5C6E00->uIntegerPi >> 3)
-           - stru_5C6E00->Atan2(v6 - pGame->pIndoorCameraD3D->vPartyPos.x, a2 - pGame->pIndoorCameraD3D->vPartyPos.y);
-        v37 = pBLVRenderParams->field_0_timer_;
-        v9 = ((signed int)(stru_5C6E00->uIntegerPi + v8) >> 8) & 7;
-        if (pParty->bTurnBasedModeOn)
-          v37 = pMiscTimer->uTotalGameTimeElapsed;
-        v10 = abs(v2->vPosition.x + v2->vPosition.y);
-        v11 = pSpriteFrameTable->GetFrame(v3->uSpriteID, v37 + v10);
-        v30 = 0;
-        v12 = v11;
-        v13 = v11->uFlags;
-        if ( v13 & 2 )
-          v30 = 2;
-        if ( v13 & 0x40000 )
-          v30 |= 0x40u;
-        if ( v13 & 0x20000 )
-          LOBYTE(v30) = v30 | 0x80;
-        if ( (256 << v9) & v13 )
-          v30 |= 4u;
-        if ( pGame->pIndoorCameraD3D->ApplyViewTransform_TrueIfStillVisible_BLV(a1, a2, a3, &x, &y, &z, 1) )
-        {
-          v14 = abs(x);
-          if ( v14 >= abs(y) )
-          {
-            pGame->pIndoorCameraD3D->Project(x, y, z, &a5, &a6);
-
-            v15 = &pBillboardRenderList[uNumBillboardsToDraw];
-            assert(uNumBillboardsToDraw < 500);
-
-              ++uNumBillboardsToDraw;
-              ++uNumDecorationsDrawnThisFrame;
-              v16 = pRenderer->pRenderD3D == 0;
-              v15->uHwSpriteID = v12->pHwSpriteIDs[v9];
-              v15->uPalette = v12->uPaletteIndex;
-              v15->uIndoorSectorID = uSectorID;
-              if ( v16 )
-              {
-                LODWORD(v21) = pBLVRenderParams->fov_rad_fixpoint << 16;
-                HIDWORD(v21) = pBLVRenderParams->fov_rad_fixpoint >> 16;
-                v37 = v21 / x;
-                //LODWORD(v31) = v12->scale;
-                v37 = v21 / x;
-                v15->_screenspace_x_scaler_packedfloat = (unsigned __int64)(v12->scale * v21 / x) >> 16;
-                v37 = (unsigned __int64)(v12->scale * (signed __int64)v37) >> 16;
-              }
-              else
-              {
-                v17 = &pGame->pIndoorCameraD3D;
-                v15->fov_x = pGame->pIndoorCameraD3D->fov_x;
-                v18 = (*v17)->fov_y;
-                //v19 = v15->fov_x;
-                v15->fov_y = v18;
-                //v31 = v19;
-                //v25 = v19 + 6.7553994e15;
-                //v25 = floorf(v15->fov_x + 0.5f);
-                LODWORD(v20) = 0;
-                HIDWORD(v20) = floorf(v15->fov_x + 0.5f);
-                v37 = v20 / x;
-                //LODWORD(v31) = v12->scale;
-                v37 = (unsigned __int64)(v12->scale * v20 / x) >> 16;
-                v15->_screenspace_x_scaler_packedfloat = (unsigned __int64)(v12->scale * v20 / x) >> 16;
-                //v31 = v15->fov_y;
-                //v25 = v31 + 6.7553994e15;
-                //v25 = floorf(v15->fov_y + 0.5f);
-                LODWORD(v20) = 0;
-                HIDWORD(v20) = floorf(v15->fov_y + 0.5f);
-                v37 = v20 / x;
-                v37 = (unsigned __int64)(v12->scale * v20 / x) >> 16;
-              }
-              //HIWORD(v22) = HIWORD(x);
-              //LOWORD(v22) = 0;
-              v15->_screenspace_y_scaler_packedfloat = v37;
-              v15->field_1E = v30;
-              v15->world_x = a1;
-              v15->world_y = a2;
-              v15->world_z = a3;
-              v15->uScreenSpaceX = a5;
-              v15->uScreenSpaceY = a6;
-              //v23 = 8 * uDecorationID;
-              //LOBYTE(v23) = PID(OBJECT_Decoration,uDecorationID);
-
-              //v15->sZValue = v22 + v23;
-              v15->actual_z = HIWORD(x);
-              v15->object_pid = PID(OBJECT_Decoration,uDecorationID);
-
-              v15->uTintColor = 0;
-              v15->pSpriteFrame = v12;
-          }
-        }
+  }
 }
 //----- (0043F953) --------------------------------------------------------
 void PrepareBspRenderList_BLV()
@@ -5081,11 +4031,11 @@ void BspRenderer_PortalViewportData::GetViewportData(__int16 x, int y, __int16 z
   _viewport_space_y = y;
   _viewport_space_w = w;
 
-  for (uint i = 0; i < 480; ++i)
+  for (uint i = 0; i < window->GetHeight(); ++i)
   {
     if ( i < y || i > w )
     {
-      viewport_left_side[i] = 640;
+      viewport_left_side[i] = window->GetWidth();
       viewport_right_side[i] = -1;
     }
     else
@@ -5192,119 +4142,58 @@ void stru149::_48653D_frustum_blv(int a2, int a3, int a4, int a5, int a6, int a7
 bool __fastcall sub_407A1C(int x, int z, int y, Vec3_int_ v)
 {
   unsigned int v4; // esi@1
-  Vec3_int_ v5; // ST08_12@2
-  int v6; // edi@2
-  int v7; // ebx@2
-  int v8; // esi@2
+  int dist_y; // edi@2
+  int dist_z; // ebx@2
+  int dist_x; // esi@2
   signed int v9; // ecx@2
   int v10; // eax@2
-  int v11; // ecx@4
   int v12; // eax@4
-  int v13; // ebx@4
-  int v14; // edx@6
-  char *v15; // edi@16
-  ODMFace *v16; // esi@19
   int v17; // ST34_4@25
   int v18; // ST38_4@25
   int v19; // eax@25
   char v20; // zf@25
-  int v21; // ebx@25
-  int v22; // eax@26
+  signed int v21; // ebx@25
   signed int v23; // edi@26
   int v24; // ST34_4@30
-  //signed __int64 v25; // qtt@31
-  //int v26; // eax@31
   Vec3_int_ v27; // ST08_12@37
   Vec3_int_ v28; // ST08_12@37
-  int v29; // edi@37
-  int v30; // ebx@37
-  int v31; // esi@37
   signed int v32; // ecx@37
   int v33; // eax@37
-  int v34; // ecx@39
   int v35; // eax@39
-  int v36; // ebx@39
-  int v37; // edx@41
-  char *v38; // edi@51
-  ODMFace *v39; // esi@54
-  int v40; // ebx@60
-  int v41; // eax@61
+  ODMFace *odm_face; // esi@54
+  signed int v40; // ebx@60
   signed int v42; // edi@61
-  //signed __int64 v43; // qtt@66
-  //int v44; // eax@66
   Vec3_int_ v45; // ST08_12@73
-  int v46; // edi@73
-  int v47; // ebx@73
-  int v48; // esi@73
   signed int v49; // ecx@73
   int v50; // eax@73
   int v51; // edx@75
   int v52; // ecx@75
   int v53; // eax@75
-  int v54; // ebx@75
-  int v55; // edi@77
-  int v56; // ecx@77
-  int v57; // eax@81
-  int v58; // esi@81
   int v59; // eax@90
-  BLVSector *v60; // edx@90
-  int v61; // ecx@90
-  BLVFace *v62; // esi@91
+  BLVFace *face; // esi@91
   int v63; // ST34_4@98
   int v64; // ST30_4@98
   int v65; // eax@98
-  int v66; // ebx@98
-  int v67; // eax@99
+  signed int v66; // ebx@98
   signed int v68; // edi@99
   int v69; // ST2C_4@103
-  //signed __int64 v70; // qtt@104
-  //int v71; // eax@104
   Vec3_int_ v72; // ST08_12@111
-  Vec3_int_ v73; // ST08_12@111
-  int v74; // edi@111
-  int v75; // ebx@111
-  int v76; // esi@111
   signed int v77; // ecx@111
   int v78; // eax@111
   int v79; // edx@113
   int v80; // ecx@113
   int v81; // eax@113
-  int v82; // ebx@113
-  int v83; // edi@115
-  int v84; // ecx@115
-  int v85; // eax@119
-  int v86; // esi@119
   int v87; // ecx@128
-  BLVSector *v88; // eax@128
-  int v89; // ecx@128
-  BLVFace *v90; // esi@129
-  int v91; // ebx@136
-  int v92; // eax@137
+  signed int v91; // ebx@136
   signed int v93; // edi@137
-  //signed __int64 v94; // qtt@142
-  //int v95; // eax@142
   Vec3_int_ v97; // [sp-18h] [bp-94h]@1
-  int v98; // [sp-Ch] [bp-88h]@88
-  int v99; // [sp-Ch] [bp-88h]@126
-  int v100; // [sp-8h] [bp-84h]@88
-  int v101; // [sp-8h] [bp-84h]@126
-  int v102; // [sp-4h] [bp-80h]@88
-  int v103; // [sp-4h] [bp-80h]@126
-  int v104; // [sp+Ch] [bp-70h]@13
-  int v105; // [sp+Ch] [bp-70h]@48
-  int v106; // [sp+10h] [bp-6Ch]@18
   int v107; // [sp+10h] [bp-6Ch]@98
   int v108; // [sp+10h] [bp-6Ch]@104
   int v109; // [sp+18h] [bp-64h]@25
   int v110; // [sp+18h] [bp-64h]@31
-  int i; // [sp+18h] [bp-64h]@90
-  int v112; // [sp+18h] [bp-64h]@128
   signed int v113; // [sp+20h] [bp-5Ch]@1
   signed int v114; // [sp+24h] [bp-58h]@1
-  //unsigned __int64 a4; // [sp+28h] [bp-54h]@1
   unsigned int a4_8; // [sp+30h] [bp-4Ch]@1
-  int v117; // [sp+34h] [bp-48h]@4
-  int v118; // [sp+34h] [bp-48h]@39
   int v119; // [sp+34h] [bp-48h]@75
   int v120; // [sp+34h] [bp-48h]@113
   int v121; // [sp+38h] [bp-44h]@4
@@ -5333,27 +4222,19 @@ bool __fastcall sub_407A1C(int x, int z, int y, Vec3_int_ v)
   int v144; // [sp+4Ch] [bp-30h]@113
   int v145; // [sp+50h] [bp-2Ch]@5
   int v146; // [sp+50h] [bp-2Ch]@40
-  int v147; // [sp+50h] [bp-2Ch]@75
-  int v148; // [sp+50h] [bp-2Ch]@113
   int v149; // [sp+54h] [bp-28h]@4
   int v150; // [sp+54h] [bp-28h]@39
-  int v151; // [sp+54h] [bp-28h]@75
-  int v152; // [sp+54h] [bp-28h]@113
-  int sDepth; // [sp+58h] [bp-24h]@17
-  int sDeptha; // [sp+58h] [bp-24h]@52
   int sDepthb; // [sp+58h] [bp-24h]@90
-  char *a5; // [sp+5Ch] [bp-20h]@16
-  char *a5a; // [sp+5Ch] [bp-20h]@51
   signed int a5b; // [sp+5Ch] [bp-20h]@83
   signed int a5c; // [sp+5Ch] [bp-20h]@121
-  signed int v160; // [sp+60h] [bp-1Ch]@12
-  signed int v161; // [sp+60h] [bp-1Ch]@47
   int v162; // [sp+60h] [bp-1Ch]@128
-  int v163; // [sp+64h] [bp-18h]@2
+  int outz; // [sp+64h] [bp-18h]@2
   int outx; // [sp+68h] [bp-14h]@2
   int outy; // [sp+6Ch] [bp-10h]@2
-  int outz; // [sp+70h] [bp-Ch]@2
-  Vec3_int_ pOut; // [sp+74h] [bp-8h]@2
+  int sZ; // [sp+70h] [bp-Ch]@2  
+  int sX; // [sp+74h] [bp-8h]@2
+  int sY; // [sp+78h] [bp-4h]@2
+  //8bytes unused
   int ya; // [sp+84h] [bp+8h]@60
   int yb; // [sp+84h] [bp+8h]@136
   int ve; // [sp+88h] [bp+Ch]@60
@@ -5366,9 +4247,9 @@ bool __fastcall sub_407A1C(int x, int z, int y, Vec3_int_ v)
   int v_4a; // [sp+8Ch] [bp+10h]@65
   int v_4b; // [sp+8Ch] [bp+10h]@136
   int v_4c; // [sp+8Ch] [bp+10h]@141
-  int v_8; // [sp+90h] [bp+14h]@53
+//  int v_8; // [sp+90h] [bp+14h]@53
 
-  //__debugbreak();
+  //__debugbreak();срабатывает при стрельбе огненным шаром
 
   v4 = stru_5C6E00->Atan2(v.x - x, v.y - z);
   v114 = 0;
@@ -5376,127 +4257,85 @@ bool __fastcall sub_407A1C(int x, int z, int y, Vec3_int_ v)
   v97.x = x;
   v97.y = z;
   v113 = 0;
-  a4_8 = v4;
-  if ( uCurrentlyLoadedLevelType != LEVEL_Outdoor)
+  a4_8 = stru_5C6E00->Atan2(v.x - x, v.y - z);
+  if ( uCurrentlyLoadedLevelType == LEVEL_Indoor)
   {
-    Vec3_int_::Rotate(32, stru_5C6E00->uIntegerHalfPi + v4, 0, v97, &pOut.x, &pOut.y, &outz);
+    Vec3_int_::Rotate(32, stru_5C6E00->uIntegerHalfPi + v4, 0, v97, &sX, &sY, &sZ);
     v45.z = v.z;
     v45.x = v.x;
     v45.y = v.y;
-    Vec3_int_::Rotate(32, stru_5C6E00->uIntegerHalfPi + v4, 0, v45, &outx, &outy, &v163);
-    v46 = outy - pOut.y;
-    v47 = v163 - outz;
-    v48 = outx - pOut.x;
-    v49 = integer_sqrt(v48 * v48 + v46 * v46 + v47 * v47);
+    Vec3_int_::Rotate(32, stru_5C6E00->uIntegerHalfPi + v4, 0, v45, &outx, &outy, &outz);
+    dist_y = outy - sY;
+    dist_z = outz - sZ;
+	dist_x = outx - sX;
+	v49 = integer_sqrt(dist_x * dist_x + dist_y * dist_y + dist_z * dist_z);
     v50 = 65536;
     if ( v49 )
       v50 = 65536 / v49;
     v51 = outx;
-    v143 = v48 * v50;
-    v52 = v46 * v50;
-    v53 = v47 * v50;
-    v54 = pOut.x;
-    v147 = v52;
-    v151 = v53;
-    v119 = pOut.x;
-    if ( pOut.x < outx )
-    {
-      v123 = outx;
-    }
-    else
-    {
-      v119 = outx;
-      v123 = pOut.x;
-    }
-    v55 = pOut.y;
-    v56 = outy;
-    v127 = pOut.y;
-    if ( pOut.y < outy )
-    {
-      v131 = outy;
-    }
-    else
-    {
-      v127 = outy;
-      v131 = pOut.y;
-    }
-    v57 = v163;
-    v58 = outz;
-    v135 = outz;
-    if ( outz < v163 )
-    {
-      v139 = v163;
-    }
-    else
-    {
-      v135 = v163;
-      v139 = outz;
-    }
-    a5b = 0;
-    while ( !v114 )
+	v143 = dist_x * v50;
+	v52 = dist_y * v50;
+	v53 = dist_z * v50;
+
+	v123 = max(outx, sX);
+	v119 = min(outx, sX);
+
+	v131 = max(outy, sY);
+	v127 = min(outy, sY);
+
+	v139 = max(outz, sZ);
+	v135 = min(outz, sZ);
+
+    for ( a5b = 0; a5b < 2; a5b++ )
     {
       if ( a5b )
       {
-        v102 = v58;
-        v100 = v55;
-        v98 = v54;
+		v59 = pIndoor->GetSector(sX, sY, sZ);
       }
       else
       {
-        v102 = v57;
-        v100 = v56;
-        v98 = v51;
+		v59 = pIndoor->GetSector(outx, outy, outz);
       }
-      v59 = pIndoor->GetSector(v98, v100, v102);
-      v60 = pIndoor->pSectors;
-      v61 = 116 * v59;
-      sDepthb = 0;
-      for ( i = 116 * v59;
-            sDepthb < *(__int16 *)((char *)&pIndoor->pSectors->uNumWalls + v61)
-                    + 2 * *(__int16 *)((char *)&pIndoor->pSectors->uNumFloors + v61);
-            ++sDepthb )
+      //v60 = pIndoor->pSectors;
+      //v61 = 116 * v59;
+      //i = 116 * v59;
+      //for (sDepthb = 0; *(__int16 *)((char *)&pIndoor->pSectors->uNumWalls + v61)
+                    //+ 2 * *(__int16 *)((char *)&pIndoor->pSectors->uNumFloors + v61); ++sDepthb)
+      for ( sDepthb = 0; sDepthb < pIndoor->pSectors[v59].uNumFaces; ++sDepthb )
       {
-        v62 = &pIndoor->pFaces[(*(unsigned __int16 **)((char *)&v60->pWalls + v61))[sDepthb]];
-        if ( v62->Portal()
-          || v119 > v62->pBounding.x2
-          || v123 < v62->pBounding.x1
-          || v127 > v62->pBounding.y2
-          || v131 < v62->pBounding.y1
-          || v135 > v62->pBounding.z2
-          || v139 < v62->pBounding.z1
-          || (v63 = (unsigned __int64)(v143 * (signed __int64)v62->pFacePlane_old.vNormal.x) >> 16,
-              v64 = (unsigned __int64)(v151 * (signed __int64)v62->pFacePlane_old.vNormal.z) >> 16,
-              v65 = (unsigned __int64)(v147 * (signed __int64)v62->pFacePlane_old.vNormal.y) >> 16,
-              v20 = v63 + v64 + v65 == 0,
-              v66 = v63 + v64 + v65,
-              v107 = v63 + v64 + v65,
-              v20) )
-          goto LABEL_107;
-        v67 = outz * v62->pFacePlane_old.vNormal.z;
-        v68 = -(v62->pFacePlane_old.dist
-              + v67
-              + pOut.y * v62->pFacePlane_old.vNormal.y
-              + pOut.x * v62->pFacePlane_old.vNormal.x);
+        face = &pIndoor->pFaces[pIndoor->pSectors[v59].pFaceIDs[sDepthb]];// face = &pIndoor->pFaces[*(__int16 *)((char *)&pIndoor->pSectors->pWalls + v61)[sDepthb]]
+        v63 = fixpoint_mul(v143, face->pFacePlane_old.vNormal.x);
+        v64 = fixpoint_mul(v53, face->pFacePlane_old.vNormal.z);
+        v65 = fixpoint_mul(v52, face->pFacePlane_old.vNormal.y);
+        v20 = v63 + v64 + v65 == 0;
+        v66 = v63 + v64 + v65;
+        v107 = v63 + v64 + v65;
+        if ( face->Portal()
+          || v119 > face->pBounding.x2 || v123 < face->pBounding.x1
+          || v127 > face->pBounding.y2 || v131 < face->pBounding.y1
+          || v135 > face->pBounding.z2 || v139 < face->pBounding.z1
+          || v20 )
+          continue;
+        v68 = -(face->pFacePlane_old.dist + sX * face->pFacePlane_old.vNormal.x
+                                          + sY * face->pFacePlane_old.vNormal.y
+                                          + sZ * face->pFacePlane_old.vNormal.z);
         if ( v66 <= 0 )
         {
-          if ( v62->pFacePlane_old.dist
-             + v67
-             + pOut.y * v62->pFacePlane_old.vNormal.y
-             + pOut.x * v62->pFacePlane_old.vNormal.x < 0 )
-            goto LABEL_107;
+          if ( face->pFacePlane_old.dist + sX * face->pFacePlane_old.vNormal.x
+                                         + sY * face->pFacePlane_old.vNormal.y
+                                         + sZ * face->pFacePlane_old.vNormal.z < 0 )
+            continue;
         }
         else
         {
-          if ( v62->pFacePlane_old.dist
-             + v67
-             + pOut.y * v62->pFacePlane_old.vNormal.y
-             + pOut.x * v62->pFacePlane_old.vNormal.x > 0 )
-            goto LABEL_107;
+          if ( face->pFacePlane_old.dist + sX * face->pFacePlane_old.vNormal.x
+                                         + sY * face->pFacePlane_old.vNormal.y
+                                         + sZ * face->pFacePlane_old.vNormal.z > 0 )
+            continue;
         }
-        v69 = abs(-(v62->pFacePlane_old.dist
-                  + v67
-                  + pOut.y * v62->pFacePlane_old.vNormal.y
-                  + pOut.x * v62->pFacePlane_old.vNormal.x)) >> 14;
+        v69 = abs(-(face->pFacePlane_old.dist + sX * face->pFacePlane_old.vNormal.x
+                                              + sY * face->pFacePlane_old.vNormal.y
+                                              + sZ * face->pFacePlane_old.vNormal.z )) >> 14;
         if ( v69 <= abs(v66) )
         {
           //LODWORD(v70) = v68 << 16;
@@ -5506,166 +4345,93 @@ bool __fastcall sub_407A1C(int x, int z, int y, Vec3_int_ v)
           v108 = fixpoint_div(v68, v107);
           if ( v108 >= 0 )
           {
-            if ( sub_4075DB(
-                   pOut.x + ((signed int)(fixpoint_mul(v108, v143) + 32768) >> 16),
-                   pOut.y + ((signed int)(fixpoint_mul(v108, v147) + 32768) >> 16),
-                   outz + ((signed int)(fixpoint_mul(v108, v151) + 32768) >> 16),
-                   v62) )
+            if ( sub_4075DB(sX + ((signed int)(fixpoint_mul(v108, v143) + 0x8000) >> 16),
+                            sY + ((signed int)(fixpoint_mul(v108, v52) + 0x8000) >> 16),
+                              sZ + ((signed int)(fixpoint_mul(v108, v53) + 0x8000) >> 16),
+                            face) )
             {
               v114 = 1;
               break;
             }
           }
         }
-        v61 = i;
-LABEL_107:
-        v60 = pIndoor->pSectors;
       }
-      ++a5b;
-      if ( a5b >= 2 )
-        break;
-      v57 = v163;
-      v56 = outy;
-      v51 = outx;
-      v58 = outz;
-      v55 = pOut.y;
-      v54 = pOut.x;
     }
-    v72.z = y;
+    
+	v72.z = y;
     v72.x = x;
     v72.y = z;
-    Vec3_int_::Rotate(32, a4_8 - stru_5C6E00->uIntegerHalfPi, 0, v72, &pOut.x, &pOut.y, &outz);
-    v73.z = v.z;
-    v73.x = v.x;
-    v73.y = v.y;
-    Vec3_int_::Rotate(32, a4_8 - stru_5C6E00->uIntegerHalfPi, 0, v73, &outx, &outy, &v163);
-    v74 = outy - pOut.y;
-    v75 = v163 - outz;
-    v76 = outx - pOut.x;
-    v77 = integer_sqrt(v76 * v76 + v74 * v74 + v75 * v75);
+    Vec3_int_::Rotate(32, a4_8 - stru_5C6E00->uIntegerHalfPi, 0, v72, &sX, &sY, &sZ);
+    Vec3_int_::Rotate(32, a4_8 - stru_5C6E00->uIntegerHalfPi, 0, v, &outx, &outy, &outz);
+	dist_y = outy - sY;
+	dist_z = outz - sZ;
+	dist_x = outx - sX;
+	v77 = integer_sqrt(dist_x * dist_x + dist_y * dist_y + dist_z * dist_z);
     v78 = 65536;
     if ( v77 )
       v78 = 65536 / v77;
     v79 = outx;
-    v144 = v76 * v78;
-    v80 = v74 * v78;
-    v81 = v75 * v78;
-    v82 = pOut.x;
-    v148 = v80;
-    v152 = v81;
-    v120 = pOut.x;
-    if ( pOut.x < outx )
-    {
-      v124 = outx;
-    }
-    else
-    {
-      v120 = outx;
-      v124 = pOut.x;
-    }
-    v83 = pOut.y;
-    v84 = outy;
-    v128 = pOut.y;
-    if ( pOut.y < outy )
-    {
-      v132 = outy;
-    }
-    else
-    {
-      v128 = outy;
-      v132 = pOut.y;
-    }
-    v85 = v163;
-    v86 = outz;
-    v136 = outz;
-    if ( outz < v163 )
-    {
-      v140 = v163;
-    }
-    else
-    {
-      v136 = v163;
-      v140 = outz;
-    }
-    a5c = 0;
-    while ( 1 )
+	v144 = dist_x * v78;
+	v80 = dist_y * v78;
+	v81 = dist_z * v78;
+
+	v120 = max(outx, sX);
+	v124 = min(outx, sX);
+
+	v132 = max(outy, sY);
+	v128 = min(outy, sY);
+
+	v140 = max(outz, sZ);
+	v136 = min(outz, sZ);
+
+    for ( a5c = 0; a5c < 2; a5c++ )
     {
       if ( v113 )
         return !v114 || !v113;
       if ( a5c )
       {
-        v103 = v86;
-        v101 = v83;
-        v99 = v82;
+		v87 = pIndoor->GetSector(sX, sY, sZ);
       }
       else
       {
-        v103 = v85;
-        v101 = v84;
-        v99 = v79;
+		v87 = pIndoor->GetSector(outx, outy, outz);
       }
-      v87 = pIndoor->GetSector(v99, v101, v103);
-      v88 = pIndoor->pSectors;
-      v89 = 116 * v87;
-      v162 = 0;
-      v112 = v89;
-      if ( *(__int16 *)((char *)&pIndoor->pSectors->uNumWalls + v89)
-         + 2 * *(__int16 *)((char *)&pIndoor->pSectors->uNumFloors + v89) > 0 )
-        break;
-LABEL_148:
-      ++a5c;
-      if ( a5c >= 2 )
-        return !v114 || !v113;
-      v85 = v163;
-      v84 = outy;
-      v79 = outx;
-      v86 = outz;
-      v83 = pOut.y;
-      v82 = pOut.x;
-    }
-    while ( 1 )
+    for ( v162 = 0; v162 < pIndoor->pSectors[v87].uNumFaces; v162++)
     {
-      v90 = &pIndoor->pFaces[(*(unsigned __int16 **)((char *)&v88->pWalls + v89))[v162]];
-      if ( v90->Portal()
-        || v120 > v90->pBounding.x2
-        || v124 < v90->pBounding.x1
-        || v128 > v90->pBounding.y2
-        || v132 < v90->pBounding.y1
-        || v136 > v90->pBounding.z2
-        || v140 < v90->pBounding.z1
-        || (yb = fixpoint_mul(v144, v90->pFacePlane_old.vNormal.x),
-            v_4b = fixpoint_mul(v148, v90->pFacePlane_old.vNormal.y),
-            vf = fixpoint_mul(v152, v90->pFacePlane_old.vNormal.z),
-            v20 = yb + vf + v_4b == 0,
-            v91 = yb + vf + v_4b,
-            vc = yb + vf + v_4b,
-            v20) )
-        goto LABEL_145;
-      v92 = outz * v90->pFacePlane_old.vNormal.z;
-      v93 = -(v90->pFacePlane_old.dist
-            + v92
-            + pOut.y * v90->pFacePlane_old.vNormal.y
-            + pOut.x * v90->pFacePlane_old.vNormal.x);
+      face = &pIndoor->pFaces[pIndoor->pSectors[v87].pFaceIDs[v162]];
+      yb = fixpoint_mul(v144, face->pFacePlane_old.vNormal.x);
+      v_4b = fixpoint_mul(v80, face->pFacePlane_old.vNormal.y);
+      vf = fixpoint_mul(v81, face->pFacePlane_old.vNormal.z);
+      v20 = yb + vf + v_4b == 0;
+      v91 = yb + vf + v_4b;
+      vc = yb + vf + v_4b;
+      if ( face->Portal()
+        || v120 > face->pBounding.x2 || v124 < face->pBounding.x1
+        || v128 > face->pBounding.y2 || v132 < face->pBounding.y1
+        || v136 > face->pBounding.z2 || v140 < face->pBounding.z1
+        || v20 )
+        continue;
+      //v92 = sZ * face->pFacePlane_old.vNormal.z;
+      v93 = -(face->pFacePlane_old.dist + sX * face->pFacePlane_old.vNormal.x
+                                        + sY * face->pFacePlane_old.vNormal.y
+                                        + sZ * face->pFacePlane_old.vNormal.z);
       if ( v91 <= 0 )
       {
-        if ( v90->pFacePlane_old.dist
-           + v92
-           + pOut.y * v90->pFacePlane_old.vNormal.y
-           + pOut.x * v90->pFacePlane_old.vNormal.x < 0 )
-          goto LABEL_145;
+        if ( face->pFacePlane_old.dist + sX * face->pFacePlane_old.vNormal.x
+                                       + sY * face->pFacePlane_old.vNormal.y
+                                       + sZ * face->pFacePlane_old.vNormal.z < 0 )
+          continue;
       }
       else
       {
-        if ( v90->pFacePlane_old.dist
-           + v92
-           + pOut.y * v90->pFacePlane_old.vNormal.y
-           + pOut.x * v90->pFacePlane_old.vNormal.x > 0 )
-          goto LABEL_145;
+        if ( face->pFacePlane_old.dist + sX * face->pFacePlane_old.vNormal.x
+                                       + sY * face->pFacePlane_old.vNormal.y
+                                       + sZ * face->pFacePlane_old.vNormal.z > 0 )
+          continue;
       }
-      v_4c = abs(-(v90->pFacePlane_old.dist
-                 + v92
-                 + pOut.y * v90->pFacePlane_old.vNormal.y
-                 + pOut.x * v90->pFacePlane_old.vNormal.x)) >> 14;
+      v_4c = abs(-(face->pFacePlane_old.dist + sX * face->pFacePlane_old.vNormal.x
+                                             + sY * face->pFacePlane_old.vNormal.y
+                                             + sZ * face->pFacePlane_old.vNormal.z)) >> 14;
       if ( v_4c <= abs(v91) )
       {
         //LODWORD(v94) = v93 << 16;
@@ -5675,413 +4441,275 @@ LABEL_148:
         vd = fixpoint_div(v93, vc);
         if ( vd >= 0 )
         {
-          if ( sub_4075DB(
-                 pOut.x + ((signed int)(fixpoint_mul(vd, v144) + 32768) >> 16),
-                 pOut.y + ((signed int)(fixpoint_mul(vd, v148) + 32768) >> 16),
-                 outz + ((signed int)(fixpoint_mul(vd, v152) + 32768) >> 16),
-                 v90) )
+          if ( sub_4075DB(sX + ((signed int)(fixpoint_mul(vd, v144) + 0x8000) >> 16),
+                          sY + ((signed int)(fixpoint_mul(vd, v80) + 0x8000) >> 16),
+                            sZ + ((signed int)(fixpoint_mul(vd, v81) + 0x8000) >> 16),
+                          face) )
           {
             v113 = 1;
-            goto LABEL_148;
+            break;
           }
         }
       }
-      v89 = v112;
-LABEL_145:
-      v88 = pIndoor->pSectors;
-      ++v162;
-      if ( v162 >= *(__int16 *)((char *)&pIndoor->pSectors->uNumWalls + v89)
-                 + 2 * *(__int16 *)((char *)&pIndoor->pSectors->uNumFloors + v89) )
-        goto LABEL_148;
+      }
     }
   }
-  Vec3_int_::Rotate(32, stru_5C6E00->uIntegerHalfPi + v4, 0, v97, &pOut.x, &pOut.y, &outz);
-  v5.z = v.z;
-  v5.x = v.x;
-  v5.y = v.y;
-  Vec3_int_::Rotate(32, stru_5C6E00->uIntegerHalfPi + v4, 0, v5, &outx, &outy, &v163);
-  v6 = outy - pOut.y;
-  v7 = v163 - outz;
-  v8 = outx - pOut.x;
-  v9 = integer_sqrt(v8 * v8 + v6 * v6 + v7 * v7);
-  v10 = 65536;
-  if ( v9 )
-    v10 = 65536 / v9;
-  v125 = v8 * v10;
-  v11 = v10;
-  v12 = v7 * v10;
-  v13 = pOut.x;
-  v117 = v12;
-  v121 = v6 * v11;
-  v149 = pOut.x;
-  if ( pOut.x < outx )
+  else if ( uCurrentlyLoadedLevelType == LEVEL_Outdoor )
   {
-    v145 = outx;
-  }
-  else
-  {
-    v149 = outx;
-    v145 = pOut.x;
-  }
-  v14 = outy;
-  v141 = pOut.y;
-  if ( pOut.y < outy )
-  {
-    v137 = outy;
-  }
-  else
-  {
-    v141 = outy;
-    v137 = pOut.y;
-  }
-  v133 = outz;
-  if ( outz < v163 )
-  {
-    v129 = v163;
-  }
-  else
-  {
-    v133 = v163;
-    v129 = outz;
-  }
-  v160 = 0;
-  if ( (signed int)pOutdoor->uNumBModels > 0 )
-  {
-    v104 = 0;
-    while ( 1 )
+    Vec3_int_::Rotate(32, stru_5C6E00->uIntegerHalfPi + v4, 0, v97, &sX, &sY, &sZ);
+    Vec3_int_::Rotate(32, stru_5C6E00->uIntegerHalfPi + v4, 0, v, &outx, &outy, &outz);
+    dist_y = outy - sY;
+    dist_z = outz - sZ;
+    dist_x = outx - sX;
+    v9 = integer_sqrt(dist_x* dist_x+ dist_y* dist_y+ dist_z* dist_z);
+    v10 = 65536;
+    if ( v9 )
+      v10 = 65536 / v9;
+    v125 = dist_x* v10;
+    v12 = dist_z* v10;
+    v121 = dist_y* v10;
+
+	v145 = max(outx, sX);
+	v149 = min(outx, sX);
+
+	v137 = max(outy, sY);
+	v141 = min(outy, sY);
+
+	v129 = max(outz, sZ);
+	v133 = min(outz, sZ);
+
+	for ( uint model_id = 0; model_id < pOutdoor->uNumBModels; model_id++)
     {
-      v15 = (char *)&pOutdoor->pBModels[v104].pVertices;
-      a5 = (char *)&pOutdoor->pBModels[v104].pVertices;
-      if ( sub_4088E9(v13, pOut.y, outx, v14, pOutdoor->pBModels[v104].vPosition.x, pOutdoor->pBModels[v104].vPosition.y) <= pOutdoor->pBModels[v104].sBoundingRadius + 128 )
+      if ( sub_4088E9(sX, sY, outx, outy, pOutdoor->pBModels[model_id].vPosition.x, pOutdoor->pBModels[model_id].vPosition.y)
+           <= pOutdoor->pBModels[model_id].sBoundingRadius + 128 )
       {
-        sDepth = 0;
-        if ( *((int *)v15 + 2) > 0 )
-          break;
-      }
-LABEL_36:
-      ++v160;
-      ++v104;
-      if ( v160 >= (signed int)pOutdoor->uNumBModels )
-        goto LABEL_37;
-      v14 = outy;
-      v13 = pOut.x;
-    }
-    v106 = 0;
-    while ( 1 )
-    {
-      v16 = (ODMFace *)(v106 + *((int *)a5 + 4));
-      if ( v149 > v16->pBoundingBox.x2
-        || v145 < v16->pBoundingBox.x1
-        || v141 > v16->pBoundingBox.y2
-        || v137 < v16->pBoundingBox.y1
-        || v133 > v16->pBoundingBox.z2
-        || v129 < v16->pBoundingBox.z1
-        || (v17 = fixpoint_mul(v125, v16->pFacePlane.vNormal.x),
-            v18 = fixpoint_mul(v121, v16->pFacePlane.vNormal.y),
-            v19 = fixpoint_mul(v117, v16->pFacePlane.vNormal.z),
-            v20 = v17 + v18 + v19 == 0,
-            v21 = v17 + v18 + v19,
-            v109 = v17 + v18 + v19,
-            v20) )
-        goto LABEL_33;
-      v22 = pOut.y * v16->pFacePlane.vNormal.y;
-      v23 = -(v16->pFacePlane.dist + v22 + outz * v16->pFacePlane.vNormal.z + pOut.x * v16->pFacePlane.vNormal.x);
-      if ( v21 <= 0 )
-      {
-        if ( v16->pFacePlane.dist + v22 + outz * v16->pFacePlane.vNormal.z + pOut.x * v16->pFacePlane.vNormal.x < 0 )
-          goto LABEL_33;
-      }
-      else
-      {
-        if ( v16->pFacePlane.dist + v22 + outz * v16->pFacePlane.vNormal.z + pOut.x * v16->pFacePlane.vNormal.x > 0 )
-          goto LABEL_33;
-      }
-      v24 = abs(-(v16->pFacePlane.dist + v22 + outz * v16->pFacePlane.vNormal.z + pOut.x * v16->pFacePlane.vNormal.x)) >> 14;
-      if ( v24 <= abs(v21) )
-      {
-        //LODWORD(v25) = v23 << 16;
-        //HIDWORD(v25) = v23 >> 16;
-        //v26 = v25 / v109;
-        //v110 = v25 / v109;
-        v110 = fixpoint_div(v23, v109);
-        if ( v110 >= 0 )
+        for ( uint face_id = 0; face_id < pOutdoor->pBModels[model_id].uNumFaces; ++face_id )
         {
-          if ( sub_4077F1(
-                 pOut.x + ((signed int)(fixpoint_mul(v110, v125) + 32768) >> 16),
-                 pOut.y + ((signed int)(fixpoint_mul(v110, v121) + 32768) >> 16),
-                 outz + ((signed int)(fixpoint_mul(v110, v117) + 32768) >> 16),
-                 v16,
-                 (BSPVertexBuffer *)a5) )
+          odm_face = &pOutdoor->pBModels[model_id].pFaces[face_id];
+          v17 = fixpoint_mul(v125, odm_face->pFacePlane.vNormal.x);
+          v18 = fixpoint_mul(v121, odm_face->pFacePlane.vNormal.y);
+          v19 = fixpoint_mul(v12, odm_face->pFacePlane.vNormal.z);
+          v20 = v17 + v18 + v19 == 0;
+          v21 = v17 + v18 + v19;
+          v109 = v17 + v18 + v19;
+          if ( v149 > odm_face->pBoundingBox.x2 || v145 < odm_face->pBoundingBox.x1
+            || v141 > odm_face->pBoundingBox.y2 || v137 < odm_face->pBoundingBox.y1
+            || v133 > odm_face->pBoundingBox.z2 || v129 < odm_face->pBoundingBox.z1
+            || v20 )
+            continue;
+          v23 = -(odm_face->pFacePlane.dist + sX * odm_face->pFacePlane.vNormal.x
+                                            + sY * odm_face->pFacePlane.vNormal.y
+                                            + sZ * odm_face->pFacePlane.vNormal.z);
+          if ( v21 <= 0 )
           {
-            v114 = 1;
-            goto LABEL_36;
+            if ( odm_face->pFacePlane.dist + sX * odm_face->pFacePlane.vNormal.x
+                                           + sY * odm_face->pFacePlane.vNormal.y 
+                                           + sZ * odm_face->pFacePlane.vNormal.z < 0 )
+              continue;
+          }
+          else
+          {
+            if ( odm_face->pFacePlane.dist + sX * odm_face->pFacePlane.vNormal.x
+                                           + sY * odm_face->pFacePlane.vNormal.y
+                                           + sZ * odm_face->pFacePlane.vNormal.z > 0 )
+              continue;
+          }
+          v24 = abs(-(odm_face->pFacePlane.dist + sX * odm_face->pFacePlane.vNormal.x
+                                                + sY * odm_face->pFacePlane.vNormal.y 
+                                                + sZ * odm_face->pFacePlane.vNormal.z)) >> 14;
+          if ( v24 <= abs(v21) )
+          {
+            //LODWORD(v25) = v23 << 16;
+            //HIDWORD(v25) = v23 >> 16;
+            //v26 = v25 / v109;
+            //v110 = v25 / v109;
+            v110 = fixpoint_div(v23, v109);
+            if ( v110 >= 0 )
+            {
+              if ( sub_4077F1(sX + ((signed int)(fixpoint_mul(v110, v125) + 0x8000) >> 16),
+                              sY + ((signed int)(fixpoint_mul(v110, v121) + 0x8000) >> 16),
+                                sZ + ((signed int)(fixpoint_mul(v110, v12) + 0x8000) >> 16),
+                              odm_face,
+                              &pOutdoor->pBModels[model_id].pVertices) )
+              {
+                v114 = 1;
+                break;
+              }
+            }
           }
         }
       }
-LABEL_33:
-      ++sDepth;
-      v106 += 308;
-      if ( sDepth >= *((int *)a5 + 2) )
-        goto LABEL_36;
     }
-  }
-LABEL_37:
-  v27.z = y;
-  v27.x = x;
-  v27.y = z;
-  Vec3_int_::Rotate(32, a4_8 - stru_5C6E00->uIntegerHalfPi, 0, v27, &pOut.x, &pOut.y, &outz);
-  v28.z = v.z;
-  v28.x = v.x;
-  v28.y = v.y;
-  Vec3_int_::Rotate(32, a4_8 - stru_5C6E00->uIntegerHalfPi, 0, v28, &outx, &outy, &v163);
-  v29 = outy - pOut.y;
-  v30 = v163 - outz;
-  v31 = outx - pOut.x;
-  v32 = integer_sqrt(v31 * v31 + v29 * v29 + v30 * v30);
-  v33 = 65536;
-  if ( v32 )
-    v33 = 65536 / v32;
-  v126 = v31 * v33;
-  v34 = v33;
-  v35 = v30 * v33;
-  v36 = pOut.x;
-  v118 = v35;
-  v122 = v29 * v34;
-  v150 = pOut.x;
-  if ( pOut.x < outx )
-  {
-    v146 = outx;
-  }
-  else
-  {
-    v150 = outx;
-    v146 = pOut.x;
-  }
-  v37 = outy;
-  v142 = pOut.y;
-  if ( pOut.y < outy )
-  {
-    v138 = outy;
-  }
-  else
-  {
-    v142 = outy;
-    v138 = pOut.y;
-  }
-  v134 = outz;
-  if ( outz < v163 )
-  {
-    v130 = v163;
-  }
-  else
-  {
-    v134 = v163;
-    v130 = outz;
-  }
-  v161 = 0;
-  if ( (signed int)pOutdoor->uNumBModels > 0 )
-  {
-    v105 = 0;
-    while ( 1 )
+    
+	v27.z = y;
+    v27.x = x;
+    v27.y = z;
+    Vec3_int_::Rotate(32, a4_8 - stru_5C6E00->uIntegerHalfPi, 0, v27, &sX, &sY, &sZ);
+    v28.z = v.z;
+    v28.x = v.x;
+    v28.y = v.y;
+    Vec3_int_::Rotate(32, a4_8 - stru_5C6E00->uIntegerHalfPi, 0, v28, &outx, &outy, &outz);
+	dist_y = outy - sY;
+	dist_z = outz - sZ;
+	dist_x = outx - sX;
+	v32 = integer_sqrt(dist_x * dist_x + dist_y * dist_y + dist_z * dist_z);
+    v33 = 65536;
+    if ( v32 )
+      v33 = 65536 / v32;
+	v126 = dist_x * v33;
+	v35 = dist_z * v33;
+    v122 = dist_y * v33;
+    
+	v146 = max(outx, sX);
+	v150 = min(outx, sX);
+
+	v138 = max(outy, sY);
+	v142 = min(outy, sY);
+
+	v130 = max(outz, sZ);
+	v134 = min(outz, sZ);
+
+    for ( uint model_id = 0; model_id < (signed int)pOutdoor->uNumBModels; ++model_id )
     {
-      v38 = (char *)&pOutdoor->pBModels[v105].pVertices;
-      a5a = (char *)&pOutdoor->pBModels[v105].pVertices;
-      if ( sub_4088E9(v36, pOut.y, outx, v37, pOutdoor->pBModels[v105].vPosition.x, pOutdoor->pBModels[v105].vPosition.y) <= pOutdoor->pBModels[v105].sBoundingRadius + 128 )
+      if ( sub_4088E9(sX, sY, outx, outy, pOutdoor->pBModels[model_id].vPosition.x, pOutdoor->pBModels[model_id].vPosition.y)
+           <= pOutdoor->pBModels[model_id].sBoundingRadius + 128 )
       {
-        sDeptha = 0;
-        if ( *((int *)v38 + 2) > 0 )
-          break;
-      }
-LABEL_71:
-      ++v161;
-      ++v105;
-      if ( v161 >= (signed int)pOutdoor->uNumBModels )
-        return !v114 || !v113;
-      v37 = outy;
-      v36 = pOut.x;
-    }
-    v_8 = 0;
-    while ( 1 )
-    {
-      v39 = (ODMFace *)(v_8 + *((int *)a5a + 4));
-      if ( v150 > v39->pBoundingBox.x2
-        || v146 < v39->pBoundingBox.x1
-        || v142 > v39->pBoundingBox.y2
-        || v138 < v39->pBoundingBox.y1
-        || v134 > v39->pBoundingBox.z2
-        || v130 < v39->pBoundingBox.z1
-        || (ya = fixpoint_mul(v126, v39->pFacePlane.vNormal.x),
-            ve = fixpoint_mul(v122, v39->pFacePlane.vNormal.y),
-            v_4 = fixpoint_mul(v118, v39->pFacePlane.vNormal.z),
-            v20 = ya + ve + v_4 == 0,
-            v40 = ya + ve + v_4,
-            va = ya + ve + v_4,
-            v20) )
-        goto LABEL_68;
-      v41 = pOut.y * v39->pFacePlane.vNormal.y;
-      v42 = -(v39->pFacePlane.dist + v41 + outz * v39->pFacePlane.vNormal.z + pOut.x * v39->pFacePlane.vNormal.x);
-      if ( v40 <= 0 )
-      {
-        if ( v39->pFacePlane.dist + v41 + outz * v39->pFacePlane.vNormal.z + pOut.x * v39->pFacePlane.vNormal.x < 0 )
-          goto LABEL_68;
-      }
-      else
-      {
-        if ( v39->pFacePlane.dist + v41 + outz * v39->pFacePlane.vNormal.z + pOut.x * v39->pFacePlane.vNormal.x > 0 )
-          goto LABEL_68;
-      }
-      v_4a = abs(-(v39->pFacePlane.dist + v41 + outz * v39->pFacePlane.vNormal.z + pOut.x * v39->pFacePlane.vNormal.x)) >> 14;
-      if ( v_4a <= abs(v40) )
-      {
-        //LODWORD(v43) = v42 << 16;
-        //HIDWORD(v43) = v42 >> 16;
-        //vb = v43 / va;
-        vb = fixpoint_div(v42, va);
-        if ( vb >= 0 )
+        for ( uint face_id = 0; face_id < pOutdoor->pBModels[model_id].uNumFaces; ++face_id )
         {
-          if ( sub_4077F1(
-                 pOut.x + ((signed int)(fixpoint_mul(vb, v126) + 32768) >> 16),
-                 pOut.y + ((signed int)(fixpoint_mul(vb, v122) + 32768) >> 16),
-                 outz + ((signed int)(fixpoint_mul(vb, v118) + 32768) >> 16),
-                 v39,
-                 (BSPVertexBuffer *)a5a) )
+          odm_face = &pOutdoor->pBModels[model_id].pFaces[face_id];
+          ya = fixpoint_mul(v126, odm_face->pFacePlane.vNormal.x);
+          ve = fixpoint_mul(v122, odm_face->pFacePlane.vNormal.y);
+          v_4 = fixpoint_mul(v35, odm_face->pFacePlane.vNormal.z);
+          v20 = ya + ve + v_4 == 0;
+          v40 = ya + ve + v_4;
+          va = ya + ve + v_4;
+          if ( v150 > odm_face->pBoundingBox.x2 || v146 < odm_face->pBoundingBox.x1
+            || v142 > odm_face->pBoundingBox.y2 || v138 < odm_face->pBoundingBox.y1
+            || v134 > odm_face->pBoundingBox.z2 || v130 < odm_face->pBoundingBox.z1
+            || v20 )
+            continue;
+          v42 = -(odm_face->pFacePlane.dist + sX * odm_face->pFacePlane.vNormal.x
+                                            + sY * odm_face->pFacePlane.vNormal.y
+                                            + sZ * odm_face->pFacePlane.vNormal.z);
+          if ( v40 <= 0 )
           {
-            v113 = 1;
-            goto LABEL_71;
+            if ( odm_face->pFacePlane.dist + sX * odm_face->pFacePlane.vNormal.x
+                                           + sY * odm_face->pFacePlane.vNormal.y 
+                                           + sZ * odm_face->pFacePlane.vNormal.z  < 0 )
+              continue;
+          }
+          else
+          {
+            if ( odm_face->pFacePlane.dist + sX * odm_face->pFacePlane.vNormal.x
+                                           + sY * odm_face->pFacePlane.vNormal.y 
+                                           + sZ * odm_face->pFacePlane.vNormal.z  > 0 )
+              continue;
+          }
+          v_4a = abs(-(odm_face->pFacePlane.dist + sX * odm_face->pFacePlane.vNormal.x
+                                                 + sY * odm_face->pFacePlane.vNormal.y 
+                                                 + sZ * odm_face->pFacePlane.vNormal.z )) >> 14;
+          if ( v_4a <= abs(v40) )
+          {
+            //LODWORD(v43) = v42 << 16;
+            //HIDWORD(v43) = v42 >> 16;
+            //vb = v43 / va;
+            vb = fixpoint_div(v42, va);
+            if ( vb >= 0 )
+            {
+              if ( sub_4077F1(sX + ((signed int)(fixpoint_mul(vb, v126) + 0x8000) >> 16),
+                              sY + ((signed int)(fixpoint_mul(vb, v122) + 0x8000) >> 16),
+                                sZ + ((signed int)(fixpoint_mul(vb, v35) + 0x8000) >> 16),
+                              odm_face,
+                              &pOutdoor->pBModels[model_id].pVertices) )
+              {
+                v113 = 1;
+                break;
+               }
+            }
           }
         }
       }
-LABEL_68:
-      ++sDeptha;
-      v_8 += 308;
-      if ( sDeptha >= *((int *)a5a + 2) )
-        goto LABEL_71;
     }
+
   }
   return !v114 || !v113;
 }
 //----- (0043F333) --------------------------------------------------------
 void BspRenderer::MakeVisibleSectorList()
 {
-  int v6; // ebx@3
+//  int v6; // ebx@3
 
   uNumVisibleNotEmptySectors = 0;
   for (uint i = 0; i < num_nodes; ++i)
   {
-      if (!uNumVisibleNotEmptySectors)
-      {
-        pVisibleSectorIDs_toDrawDecorsActorsEtcFrom[uNumVisibleNotEmptySectors++] = nodes[i].uSectorID;
-        continue;
-      }
-      
-      v6 = 0;
-        while (pVisibleSectorIDs_toDrawDecorsActorsEtcFrom[v6] != nodes[i].uSectorID )
-        {
-          ++v6;
-          if ( v6 >= uNumVisibleNotEmptySectors)
-          {
-            pVisibleSectorIDs_toDrawDecorsActorsEtcFrom[uNumVisibleNotEmptySectors++] = nodes[i].uSectorID;
-          }
-        }
-
+    //if (!uNumVisibleNotEmptySectors)
+    //{
+      //pVisibleSectorIDs_toDrawDecorsActorsEtcFrom[uNumVisibleNotEmptySectors++] = nodes[i].uSectorID;
+      //continue;
+    //}
+    //v6 = 0;
+    //while (pVisibleSectorIDs_toDrawDecorsActorsEtcFrom[v6] != nodes[i].uSectorID )
+    for ( uint j = 0; j < uNumVisibleNotEmptySectors; j++ )
+    {
+      //++v6;
+      if ( pVisibleSectorIDs_toDrawDecorsActorsEtcFrom[j] == nodes[i].uSectorID)
+        break;
+    }
+    pVisibleSectorIDs_toDrawDecorsActorsEtcFrom[uNumVisibleNotEmptySectors++] = nodes[i].uSectorID;
   }
 }
 //----- (0046A334) --------------------------------------------------------
 char __fastcall DoInteractionWithTopmostZObject(int a1, int a2)
 {
-  int v2; // edx@1
-  BLVFace *v4; // eax@9
-  unsigned int v5; // ecx@9
-  unsigned __int16 v6; // ax@11
-  //ODMFace *v7; // eax@16
-  LevelDecoration *v8; // esi@19
-  __int16 v9; // ax@19
-  int v10; // eax@22
-  int v11; // ecx@22
-  int v12; // edi@23
-  Actor *v13; // esi@23
-  unsigned __int16 v14; // ax@23
-  unsigned __int16 v15; // ax@33
-  const char *v16; // eax@34
   int v17; // edi@36
-  int v18; // eax@36
-  ItemGen *v19; // esi@39
-  unsigned int v20; // eax@39
-  int v21; // ecx@40
-  std::string v22; // [sp-18h] [bp-2Ch]@5
-  const char *v23; // [sp-8h] [bp-1Ch]@5
-  int v24; // [sp-4h] [bp-18h]@5
-  char v25; // [sp+8h] [bp-Ch]@5
-  int v26; // [sp+Ch] [bp-8h]@1
-  int a3; // [sp+13h] [bp-1h]@5
 
-  v26 = a2;
-  v2 = a1;
+  v17 = PID_ID(a1);
   switch ( PID_TYPE(a1) )
   {
     case OBJECT_Item: // take the item
-      v17 = PID_ID(a1);
-      v26 = PID_ID(a1);
-      v18 = PID_ID(a1);
-      if ( pObjectList->pObjects[pSpriteObjects[v18].uObjectDescID].uFlags & 0x10
-        || v17 >= 1000
-        || !pSpriteObjects[v18].uObjectDescID )
+      if ( pObjectList->pObjects[pSpriteObjects[v17].uObjectDescID].uFlags & 0x10 || v17 >= 1000 || !pSpriteObjects[v17].uObjectDescID )
         return 1;
-      v19 = &pSpriteObjects[v18].stru_24;
-      v20 = pSpriteObjects[v18].stru_24.uItemID;
-      if ( pItemsTable->pItems[v20].uEquipType == EQUIP_GOLD)
+      if ( pItemsTable->pItems[pSpriteObjects[v17].stru_24.uItemID].uEquipType == EQUIP_GOLD)
       {
-        pParty->PartyFindsGold(v19->uSpecEnchantmentType, 0);
+        pParty->PartyFindsGold(pSpriteObjects[v17].stru_24.uSpecEnchantmentType, 0);
         viewparams->bRedrawGameUI = 1;
-        v21 = v17;
       }
       else
       {
         if ( pParty->pPickedItem.uItemID )
           return 1;
-        v24 = (int)pItemsTable->pItems[v20].pUnidentifiedName;
-        sprintfex(pTmpBuf2.data(), pGlobalTXT_LocalizationStrings[471], v24);
-        ShowStatusBarString(pTmpBuf2.data(), 2u);
-        if ( v19->uItemID == 506 )
-          _449B7E_toggle_bit(pParty->_quest_bits, 184, 1u);
-        if ( v19->uItemID == 455 )
-          _449B7E_toggle_bit(pParty->_quest_bits, 185, 1u);
-        if ( !pParty->AddItemToParty(v19) )
-          pParty->SetHoldingItem(v19);
-        v21 = v26;
+        sprintfex(pTmpBuf2.data(), pGlobalTXT_LocalizationStrings[471], pItemsTable->pItems[pSpriteObjects[v17].stru_24.uItemID].pUnidentifiedName);//You found an item (%s)!
+        ShowStatusBarString(pTmpBuf2.data(), 2);
+        if ( pSpriteObjects[v17].stru_24.uItemID == 506 )//artefact
+          _449B7E_toggle_bit(pParty->_quest_bits, 184, 1);
+        if ( pSpriteObjects[v17].stru_24.uItemID == 455 )
+          _449B7E_toggle_bit(pParty->_quest_bits, 185, 1);
+        if ( !pParty->AddItemToParty(&pSpriteObjects[v17].stru_24) )
+          pParty->SetHoldingItem(&pSpriteObjects[v17].stru_24);
       }
-      SpriteObject::OnInteraction(v21);
+      SpriteObject::OnInteraction(v17);
       break;
 
     case OBJECT_Actor:
-      v12 = PID_ID(a1);
-      v13 = &pActors[PID_ID(a1)];
-      v14 = v13->uAIState;
-      if ( v14 == 4 || v14 == 17 )
+      if ( pActors[v17].uAIState == Dying || pActors[v17].uAIState == Summoned )
         return 1;
-      if ( v14 == 5 )
-      {
-        pActors[PID_ID(a1)].LootActor();
-      }
+      if ( pActors[v17].uAIState == Dead )
+        pActors[v17].LootActor();
       else
       {
-        if ( !v13->GetActorsRelation(0) && !(BYTE2(v13->uAttributes) & 8) && v13->CanAct() )
+        if ( !pActors[v17].GetActorsRelation(0) && !(pActors[v17].uAttributes & 0x80000) && pActors[v17].CanAct() )
         {
-          Actor::AI_FaceObject(v12, 4u, 0, 0);
-          if ( v13->sNPC_ID )
-          {
-            pMessageQueue_50CBD0->AddMessage(UIMSG_StartNPCDialogue, v12, 0);
-          }
+          Actor::AI_FaceObject(v17, 4, 0, 0);
+          if ( pActors[v17].sNPC_ID )
+            pMessageQueue_50CBD0->AddMessage(UIMSG_StartNPCDialogue, v17, 0);
           else
           {
-            v15 = pNPCStats->pGroups_copy[v13->uGroup];
-            if ( v15 )
+            if ( pNPCStats->pGroups_copy[pActors[v17].uGroup] )
             {
-              v16 = pNPCStats->pCatchPhrases[v15];
-              if ( v16 )
+              if ( pNPCStats->pCatchPhrases[pNPCStats->pGroups_copy[pActors[v17].uGroup]] )
               {
-                pParty->uFlags |= 2u;
-                strcpy(byte_5B0938.data(), v16);
+                pParty->uFlags |= 2;
+                strcpy(byte_5B0938.data(), pNPCStats->pCatchPhrases[pNPCStats->pGroups_copy[pActors[v17].uGroup]]);
                 sub_4451A8_press_any_key(0, 0, 0);
               }
             }
@@ -6091,23 +4719,18 @@ char __fastcall DoInteractionWithTopmostZObject(int a1, int a2)
       break;
 
     case OBJECT_Decoration:
-      v8 = &pLevelDecorations[PID_ID(a1)];
-      v9 = v8->uEventID;
-      if ( v9 )
+      if ( pLevelDecorations[v17].uEventID )
       {
-        EventProcessor(v9, a1, 1);
-        v8->uFlags |= LEVEL_DECORATION_VISIBLE_ON_MAP;
+        EventProcessor(pLevelDecorations[v17].uEventID, a1, 1);
+        pLevelDecorations[v17].uFlags |= LEVEL_DECORATION_VISIBLE_ON_MAP;
       }
       else
       {
-        if ( !pLevelDecorations[PID_ID(a1)].IsInteractive() )
+        if ( !pLevelDecorations[v17].IsInteractive() )
           return 1;
-        v10 = v8->_idx_in_stru123;
-        v24 = 1;
-        v11 = stru_5E4C90_MapPersistVars._decor_events[v10 - 75] + 380;
-        activeLevelDecoration = v8;
-        EventProcessor(v11, 0, 1);
-        activeLevelDecoration = NULL;
+        activeLevelDecoration = &pLevelDecorations[v17];
+        EventProcessor(stru_5E4C90_MapPersistVars._decor_events[pLevelDecorations[v17]._idx_in_stru123 - 75] + 380, 0, 1);
+        activeLevelDecoration = nullptr;
       }
       break;
 
@@ -6119,27 +4742,25 @@ char __fastcall DoInteractionWithTopmostZObject(int a1, int a2)
       if ( uCurrentlyLoadedLevelType == LEVEL_Outdoor )
       {
         int bmodel_id = a1 >> 9,
-            face_id = PID_ID(a1) & 0x3F;
+            face_id = v17 & 0x3F;
         if (bmodel_id >= pOutdoor->uNumBModels)
           return 1;
-        ODMFace* face = &pOutdoor->pBModels[bmodel_id].pFaces[face_id];
-        if (face->uAttributes & 0x100000 || face->sCogTriggeredID == 0 )
+        if (pOutdoor->pBModels[bmodel_id].pFaces[face_id].uAttributes & FACE_UNKNOW 
+         || pOutdoor->pBModels[bmodel_id].pFaces[face_id].sCogTriggeredID == 0 )
           return 1;
-        EventProcessor((signed __int16)face->sCogTriggeredID, v2, 1);
+        EventProcessor((signed __int16)pOutdoor->pBModels[bmodel_id].pFaces[face_id].sCogTriggeredID, a1, 1);
       }
       else
       {
-        v4 = &pIndoor->pFaces[PID_ID(a1)];
-        v5 = v4->uAttributes;
-        if ( !(v5 & 0x2000000) )
+        if ( !(pIndoor->pFaces[v17].uAttributes & FACE_CLICKABLE) )
         {
           ShowNothingHereStatus();
           return 1;
         }
-        if ( v5 & 0x100000 || (v6 = pIndoor->pFaceExtras[v4->uFaceExtraID].uEventID) == 0 )
+        if ( pIndoor->pFaces[v17].uAttributes & FACE_UNKNOW || !pIndoor->pFaceExtras[pIndoor->pFaces[v17].uFaceExtraID].uEventID )
           return 1;
         if ( pCurrentScreen != SCREEN_BRANCHLESS_NPC_DIALOG )
-          EventProcessor((signed __int16)v6, v2, 1);
+          EventProcessor((signed __int16)pIndoor->pFaceExtras[pIndoor->pFaces[v17].uFaceExtraID].uEventID, a1, 1);
       }
       return 0;
       break;
@@ -6170,12 +4791,12 @@ bool PortalFrustrum(int pNumVertices, BspRenderer_PortalViewportData *far_portal
   int v22; // edi@46
   int v24; // edx@48
   int v26; // eax@55
-  signed int v27; // edi@55
+//  signed int v27; // edi@55
   int v29; // edx@57
   int v31; // eax@64
-  signed int v32; // edi@64
-  int v34; // eax@66
-  int v35; // dx@66
+//  signed int v32; // edi@64
+//  int v34; // eax@66
+//  int v35; // dx@66
   __int16 v36; // dx@67
   //__int16 v37; // di@67
   __int16 v38; // dx@67
@@ -6439,15 +5060,15 @@ int __fastcall GetPortalScreenCoord(unsigned int uFaceID)
   signed int right_num_vertices; // ebx@41
   signed int top_num_vertices; // edi@51
   int bottom_num_vertices; // ebx@61
-  signed int v62; // edx@75
-  int v63; // ecx@76
-  int v64; // esi@76
-  int v65; // ecx@83
-  signed int v71; // [sp+14h] [bp-14h]@75
+//  signed int v62; // edx@75
+//  int v63; // ecx@76
+//  int v64; // esi@76
+//  int v65; // ecx@83
+//  signed int v71; // [sp+14h] [bp-14h]@75
   bool current_vertices_flag; // [sp+18h] [bp-10h]@9
-  int thisf; // [sp+18h] [bp-10h]@74
+//  int thisf; // [sp+18h] [bp-10h]@74
   signed int depth_num_vertices; // [sp+1Ch] [bp-Ch]@9
-  int v80; // [sp+1Ch] [bp-Ch]@76
+//  int v80; // [sp+1Ch] [bp-Ch]@76
   bool next_vertices_flag; // [sp+20h] [bp-8h]@10
   //Доп инфо "Программирование трёхмерных игр для windows" Ламот стр 910
 
@@ -6530,39 +5151,39 @@ int __fastcall GetPortalScreenCoord(unsigned int uFaceID)
   PortalFace._view_transformed_z[pFace->uNumVertices + 3] = PortalFace._view_transformed_z[3];
   PortalFace._view_transformed_x[pFace->uNumVertices + 3] = PortalFace._view_transformed_x[3];
   PortalFace._view_transformed_y[pFace->uNumVertices + 3] = PortalFace._view_transformed_y[3];
-  current_vertices_flag = PortalFace._view_transformed_z[3] >= 524288;// 8.0(0x80000)
+  current_vertices_flag = PortalFace._view_transformed_z[3] >= 0x80000; //524288
   if ( pFace->uNumVertices >= 1 )
   {
     for ( uint i = 1; i <= pFace->uNumVertices; ++i)
     {
-      next_vertices_flag = PortalFace._view_transformed_z[i + 3] >= 524288;// 8.0(0x80000)
-      if ( current_vertices_flag ^ next_vertices_flag )//или текущая или следующая вершина за ближней границей
+      next_vertices_flag = PortalFace._view_transformed_z[i + 3] >= 0x80000; //524288;// 8.0
+      if ( current_vertices_flag ^ next_vertices_flag )//или текущая или следующая вершина за ближней границей - v5
       {
         if ( next_vertices_flag )//следующая вершина за ближней границей
         {
-          //t = near_clip - v0.z / v1.z - v0.z
-          t = fixpoint_div(524288 - PortalFace._view_transformed_z[i + 2], PortalFace._view_transformed_z[i + 3] - PortalFace._view_transformed_z[i + 2]);
-          //New_x = (v1.x - v0.x)*t + v0.x
-          PortalFace._view_transformed_x[depth_num_vertices] = ((unsigned __int64)((PortalFace._view_transformed_x[i + 3]
-                                                           - PortalFace._view_transformed_x[i + 2]) * t) >> 16) + PortalFace._view_transformed_x[i + 2];
-          //New_y = (v1.y - v0.y)*t + v0.y
-          PortalFace._view_transformed_y[depth_num_vertices] = ((unsigned __int64)((PortalFace._view_transformed_y[i + 3] - PortalFace._view_transformed_y[i + 2])
-                                   * t) >> 16) + PortalFace._view_transformed_y[i + 2];
+          //t = near_clip - v4.z / v5.z - v4.z
+          t = fixpoint_div(0x80000 - PortalFace._view_transformed_z[i + 2], PortalFace._view_transformed_z[i + 3] - PortalFace._view_transformed_z[i + 2]);
+          //New_x = (v5.x - v4.x)*t + v4.x
+          PortalFace._view_transformed_x[depth_num_vertices] = fixpoint_mul((PortalFace._view_transformed_x[i + 3] - PortalFace._view_transformed_x[i + 2]), t) 
+                                                               + PortalFace._view_transformed_x[i + 2];
+          //New_y = (v5.y - v4.y)*t + v4.y
+          PortalFace._view_transformed_y[depth_num_vertices] = fixpoint_mul((PortalFace._view_transformed_y[i + 3] - PortalFace._view_transformed_y[i + 2]), t)
+                                                               + PortalFace._view_transformed_y[i + 2];
           //New_z = 8.0(0x80000)
-          PortalFace._view_transformed_z[depth_num_vertices] = 524288;
+          PortalFace._view_transformed_z[depth_num_vertices] = 0x80000; //524288
         }
         else// текущая вершина за ближней границей
         {
           //t = near_clip - v1.z / v0.z - v1.z
           t = fixpoint_div(524288 - PortalFace._view_transformed_z[i + 3], PortalFace._view_transformed_z[i + 2] - PortalFace._view_transformed_z[i + 3]);
           //New_x = (v0.x - v1.x)*t + v1.x
-          PortalFace._view_transformed_x[depth_num_vertices] = ((unsigned __int64)((PortalFace._view_transformed_x[i + 2]
-                                                   - PortalFace._view_transformed_x[i + 3]) * t) >> 16) + PortalFace._view_transformed_x[i + 3];
+          PortalFace._view_transformed_x[depth_num_vertices] = fixpoint_mul((PortalFace._view_transformed_x[i + 2] - PortalFace._view_transformed_x[i + 3]), t)
+                                                               + PortalFace._view_transformed_x[i + 3];
           //New_y = (v0.x - v1.y)*t + v1.y
-          PortalFace._view_transformed_y[depth_num_vertices] = ((unsigned __int64)((PortalFace._view_transformed_y[i + 2] - PortalFace._view_transformed_y[i + 3])
-                                   * t) >> 16) + PortalFace._view_transformed_y[i + 3];
+          PortalFace._view_transformed_y[depth_num_vertices] = fixpoint_mul((PortalFace._view_transformed_y[i + 2] - PortalFace._view_transformed_y[i + 3]), t)
+                                                               + PortalFace._view_transformed_y[i + 3];
           //New_z = 8.0(0x80000)
-          PortalFace._view_transformed_z[depth_num_vertices] = 524288;
+          PortalFace._view_transformed_z[depth_num_vertices] = 0x80000; //524288
         }
         depth_num_vertices++;
       }
@@ -6623,8 +5244,8 @@ int __fastcall GetPortalScreenCoord(unsigned int uFaceID)
           pScreenY = 0x400000;  // 64.0
       }
     }
-    PortalFace._screen_space_x[i + 12] = pBLVRenderParams->uViewportCenterX - ((unsigned __int64)(SHIWORD(pBLVRenderParams->fov_rad_fixpoint) * (signed __int64)pScreenX) >> 16);
-    PortalFace._screen_space_y[i + 12] = pBLVRenderParams->uViewportCenterY - ((unsigned __int64)(SHIWORD(pBLVRenderParams->fov_rad_fixpoint) * (signed __int64)pScreenY) >> 16);
+    PortalFace._screen_space_x[i + 12] = pBLVRenderParams->uViewportCenterX - fixpoint_mul(SHIWORD(pBLVRenderParams->fov_rad_fixpoint), pScreenX);
+    PortalFace._screen_space_y[i + 12] = pBLVRenderParams->uViewportCenterY - fixpoint_mul(SHIWORD(pBLVRenderParams->fov_rad_fixpoint), pScreenY);
   }
   // результат: при повороте камеры, когда граница портала сдвигается к краю экрана, портал остается прозрачным(видимым)
   //******************************************************************************************************************************************
@@ -6648,8 +5269,8 @@ int __fastcall GetPortalScreenCoord(unsigned int uFaceID)
         //t = left_clip - v0.x / v1.x - v0.x
         t = fixpoint_div(pBLVRenderParams->uViewportX - PortalFace._screen_space_x[i + 11], PortalFace._screen_space_x[i + 12] - PortalFace._screen_space_x[i + 11]);
         //New_y = (v1.y - v0.y)*t + v0.y
-        PortalFace._screen_space_y[left_num_vertices + 9] = ((signed int)((PortalFace._screen_space_y[i + 12]- PortalFace._screen_space_y[i + 11])
-                                                            * t) >> 16) + PortalFace._screen_space_y[i + 11];
+        PortalFace._screen_space_y[left_num_vertices + 9] = fixpoint_mul((PortalFace._screen_space_y[i + 12]- PortalFace._screen_space_y[i + 11]), t)
+                                                            + PortalFace._screen_space_y[i + 11];
         //New_x = left_clip
         PortalFace._screen_space_x[left_num_vertices + 9] = pBLVRenderParams->uViewportX;
       }
@@ -6658,8 +5279,8 @@ int __fastcall GetPortalScreenCoord(unsigned int uFaceID)
         //t = left_clip - v1.x / v0.x - v1.x
         t = fixpoint_div(pBLVRenderParams->uViewportX - PortalFace._screen_space_x[i + 12], PortalFace._screen_space_x[i + 11] - PortalFace._screen_space_x[i + 12]);
         //New_y = (v0.y - v1.y)*t + v1.y
-        PortalFace._screen_space_y[left_num_vertices + 9] = ((signed int)(( PortalFace._screen_space_y[i + 11] - PortalFace._screen_space_y[i + 12])
-                                                            * t) >> 16) + PortalFace._screen_space_y[i + 12];
+        PortalFace._screen_space_y[left_num_vertices + 9] = fixpoint_mul((PortalFace._screen_space_y[i + 11] - PortalFace._screen_space_y[i + 12]), t)
+                                                            + PortalFace._screen_space_y[i + 12];
         //New_x = left_clip
         PortalFace._screen_space_x[left_num_vertices + 9] = pBLVRenderParams->uViewportX;
       }
@@ -6691,8 +5312,8 @@ int __fastcall GetPortalScreenCoord(unsigned int uFaceID)
         //t = right_clip - v1.x / v0.x - v1.x
         t = fixpoint_div(pBLVRenderParams->uViewportZ - PortalFace._screen_space_x[i + 8], PortalFace._screen_space_x[i + 9] - PortalFace._screen_space_x[i + 8]);
         //New_y = (v0.y - v1.y)*t + v1.y
-        PortalFace._screen_space_y[right_num_vertices + 6] = ((signed int)((PortalFace._screen_space_y[i + 9] - PortalFace._screen_space_y[i + 8])
-                                                           * t) >> 16) + PortalFace._screen_space_y[i + 8];
+        PortalFace._screen_space_y[right_num_vertices + 6] = fixpoint_mul((PortalFace._screen_space_y[i + 9] - PortalFace._screen_space_y[i + 8]), t)
+                                                             + PortalFace._screen_space_y[i + 8];
         //New_x = right_clip
         PortalFace._screen_space_x[right_num_vertices + 6] = pBLVRenderParams->uViewportZ;
       }
@@ -6701,8 +5322,8 @@ int __fastcall GetPortalScreenCoord(unsigned int uFaceID)
         //t = right_clip - v0.x / v1.x - v0.x
         t = fixpoint_div(pBLVRenderParams->uViewportZ - PortalFace._screen_space_x[i + 9], PortalFace._screen_space_x[i + 8] - PortalFace._screen_space_x[i + 9]);
         //New_y = (v1.y - v0.y)*t + v0.y
-        PortalFace._screen_space_y[right_num_vertices + 6] = ((signed int)((PortalFace._screen_space_y[i + 8] - PortalFace._screen_space_y[i + 9])
-                                                           * t) >> 16) + PortalFace._screen_space_y[i + 9];
+        PortalFace._screen_space_y[right_num_vertices + 6] = fixpoint_mul((PortalFace._screen_space_y[i + 8] - PortalFace._screen_space_y[i + 9]), t)
+                                                             + PortalFace._screen_space_y[i + 9];
         //New_x = right_clip
         PortalFace._screen_space_x[right_num_vertices + 6] = pBLVRenderParams->uViewportZ;
       }
@@ -6740,8 +5361,8 @@ int __fastcall GetPortalScreenCoord(unsigned int uFaceID)
       else
       {
         t = fixpoint_div(pBLVRenderParams->uViewportY - PortalFace._screen_space_y[i + 6], PortalFace._screen_space_y[i + 5] - PortalFace._screen_space_y[i + 6]);
-        PortalFace._screen_space_x[top_num_vertices + 3] = ((signed int)((PortalFace._screen_space_x[i + 5]- PortalFace._screen_space_x[i + 6])
-            * t) >> 16) + PortalFace._screen_space_x[i + 6];
+        PortalFace._screen_space_x[top_num_vertices + 3] = fixpoint_mul((PortalFace._screen_space_x[i + 5]- PortalFace._screen_space_x[i + 6]), t)
+                                                           + PortalFace._screen_space_x[i + 6];
         PortalFace._screen_space_y[top_num_vertices + 3] = pBLVRenderParams->uViewportY;
       }
       top_num_vertices++;
@@ -6770,15 +5391,15 @@ int __fastcall GetPortalScreenCoord(unsigned int uFaceID)
       if ( next_vertices_flag )
       {
         t = fixpoint_div(pBLVRenderParams->uViewportW - PortalFace._screen_space_y[i + 2], PortalFace._screen_space_y[i + 3] - PortalFace._screen_space_y[i + 2]);
-        PortalFace._screen_space_x[bottom_num_vertices] = ((signed int)((PortalFace._screen_space_x[i + 3] - PortalFace._screen_space_x[i + 2])
-            * t) >> 16) + PortalFace._screen_space_x[i + 2];
+        PortalFace._screen_space_x[bottom_num_vertices] = fixpoint_mul((PortalFace._screen_space_x[i + 3] - PortalFace._screen_space_x[i + 2]), t)
+                                                          + PortalFace._screen_space_x[i + 2];
         PortalFace._screen_space_y[bottom_num_vertices] = pBLVRenderParams->uViewportW;
       }
       else
       {
         t = fixpoint_div(pBLVRenderParams->uViewportW - PortalFace._screen_space_y[i + 3], PortalFace._screen_space_y[i + 2] - PortalFace._screen_space_y[i + 3]);
-        PortalFace._screen_space_x[bottom_num_vertices] = ((signed int)((PortalFace._screen_space_x[i + 2] - PortalFace._screen_space_x[i + 3])
-            * t) >> 16) + PortalFace._screen_space_x[i + 3];
+        PortalFace._screen_space_x[bottom_num_vertices] = fixpoint_mul((PortalFace._screen_space_x[i + 2] - PortalFace._screen_space_x[i + 3]), t) 
+                                                          + PortalFace._screen_space_x[i + 3];
         PortalFace._screen_space_y[bottom_num_vertices] = pBLVRenderParams->uViewportW;
       }
       bottom_num_vertices++;
@@ -6798,7 +5419,7 @@ int __fastcall GetPortalScreenCoord(unsigned int uFaceID)
   PortalFace._screen_space_x[bottom_num_vertices] = PortalFace._screen_space_x[0];
   PortalFace._screen_space_y[bottom_num_vertices] = PortalFace._screen_space_y[0];
 //check for software(проверка для софтвар)
-  if ( !pRenderer->pRenderD3D && bottom_num_vertices > 3 )
+  /*if ( !pRenderer->pRenderD3D && bottom_num_vertices > 3 )
   {
     PortalFace._screen_space_x[bottom_num_vertices + 1] = PortalFace._screen_space_x[1];
     PortalFace._screen_space_y[bottom_num_vertices + 1] = PortalFace._screen_space_y[1];
@@ -6844,7 +5465,7 @@ int __fastcall GetPortalScreenCoord(unsigned int uFaceID)
     }
     PortalFace._screen_space_x[bottom_num_vertices] = PortalFace._screen_space_x[0];
     PortalFace._screen_space_y[bottom_num_vertices] = PortalFace._screen_space_y[0];
-  }
+  }*/
   return bottom_num_vertices;
 }
 
@@ -6893,4 +5514,812 @@ int __fastcall sub_4AAEA6_transform(RenderVertexSoft *a1)
     }*/
   }
   return 0;
+}
+//----- (00472866) --------------------------------------------------------
+void BLV_ProcessPartyActions()
+{
+  int v1; // ebx@1
+  int v2; // edi@1
+  double v10; // st7@27
+//  unsigned int v12; // eax@49
+//  double v13; // st7@50
+//  int v17; // eax@62
+//  double v18; // st7@62
+//  int v19; // ST40_4@62
+//  int v20; // eax@65
+//  double v21; // st7@65
+//  int v22; // ST40_4@65
+//  int v23; // eax@66
+//  double v24; // st7@66
+//  int v25; // ST40_4@66
+//  int v26; // eax@67
+//  double v27; // st7@67
+//  int v28; // ST40_4@67
+  int new_party_z; // esi@96
+  int v38; // eax@96
+  int v39; // ecx@106
+  int v40; // eax@106
+  int v42; // eax@120
+  BLVFace *pFace; // esi@126
+  int v46; // ecx@133
+  int v52; // eax@140
+  int v54; // ebx@146
+//  int v63; // [sp-8h] [bp-68h]@75
+//  int v65; // [sp-4h] [bp-64h]@75
+  unsigned int uFaceEvent; // [sp+14h] [bp-4Ch]@1
+  bool party_running_flag; // [sp+1Ch] [bp-44h]@1
+  bool bFeatherFall; // [sp+24h] [bp-3Ch]@15
+  unsigned int uSectorID; // [sp+28h] [bp-38h]@1
+  bool party_walking_flag; // [sp+2Ch] [bp-34h]@1
+  unsigned int uFaceID; // [sp+30h] [bp-30h]@1
+  int v80; // [sp+34h] [bp-2Ch]@1
+  int v82; // [sp+3Ch] [bp-24h]@47
+  int _view_angle; // [sp+40h] [bp-20h]@47
+  bool hovering; // [sp+44h] [bp-1Ch]@1
+  int new_party_y; // [sp+48h] [bp-18h]@1
+  int new_party_x; // [sp+4Ch] [bp-14h]@1
+  int party_z; // [sp+50h] [bp-10h]@1
+  int angle; // [sp+5Ch] [bp-4h]@47
+
+  uFaceEvent = 0;
+  //v89 = pParty->uFallSpeed;
+  v1 = 0;
+  v2 = 0;
+  new_party_x = pParty->vPosition.x;
+  new_party_y = pParty->vPosition.y;
+  party_z = pParty->vPosition.z;
+  uSectorID = pIndoor->GetSector(pParty->vPosition.x, pParty->vPosition.y, pParty->vPosition.z);
+  party_running_flag = false;
+  party_walking_flag = false;
+  hovering = false;
+
+  uFaceID = -1;
+  int floor_level = collide_against_floor(new_party_x, new_party_y, party_z + 40, &uSectorID, &uFaceID);//получить высоту пола
+
+  if ( pParty->bFlying )//отключить полёт
+  {
+    pParty->bFlying = false;
+    if (pParty->FlyActive())
+      pOtherOverlayList->pOverlays[pParty->pPartyBuffs[PARTY_BUFF_FLY].uOverlayID - 1].field_E |= 1;
+  }
+
+  if ( floor_level == -30000  || uFaceID == -1)
+  {
+    floor_level = collide_against_floor_approximate(new_party_x, new_party_y, party_z + 40, &uSectorID, &uFaceID);
+    if ( floor_level == -30000 || uFaceID == -1)
+    {
+      __debugbreak(); // level built with errors 
+      pParty->vPosition.x = blv_prev_party_x;
+      pParty->vPosition.y = blv_prev_party_z;
+      pParty->vPosition.z = blv_prev_party_y;
+      pParty->uFallStartY = blv_prev_party_y;
+      return;
+    }
+  }
+
+  blv_prev_party_x = pParty->vPosition.x;
+  blv_prev_party_z = pParty->vPosition.y;
+  blv_prev_party_y = pParty->vPosition.z;
+  if (!pParty->bTurnBasedModeOn)
+  {
+    static int dword_720CDC = 0;
+
+    int v67 = GetTickCount() / 500;
+    if (dword_720CDC != v67 )
+    {
+      dword_4F8580[3 * dword_4F8580[1]] = pParty->vPosition.x;
+      dword_4F8580[3 * dword_4F8580[2]] = pParty->vPosition.y;
+      dword_4F8580[3 * dword_4F8580[3]] = pParty->vPosition.z;
+      if ( dword_4F8580[0] > 60 )
+        dword_4F8580[0] = 1;
+
+      dword_720CDC = v67;
+    }
+  }
+
+  int fall_start;
+  /*
+  if (!pParty->FeatherFallActive())// не активно падение пера
+  {
+    bFeatherFall = false;
+    if (!pParty->pPlayers[0].WearsItemAnyWhere(ITEM_ARTIFACT_LADYS_ESCORT) &&  // grants feather fall
+        !pParty->pPlayers[1].WearsItemAnyWhere(ITEM_ARTIFACT_LADYS_ESCORT) &&
+        !pParty->pPlayers[2].WearsItemAnyWhere(ITEM_ARTIFACT_LADYS_ESCORT) &&
+        !pParty->pPlayers[3].WearsItemAnyWhere(ITEM_ARTIFACT_LADYS_ESCORT))
+    {
+      fall_start = pParty->uFallStartY;
+    }
+	else// was missing
+	{
+		fall_start = floor_level;
+		bFeatherFall = true;
+		pParty->uFallStartY = floor_level;
+	}
+  }
+  else// активно падение пера
+  {
+    fall_start = floor_level;
+    bFeatherFall = true;
+    pParty->uFallStartY = floor_level;
+  }
+
+  Reworked condition below
+  */
+  if (pParty->FeatherFallActive()
+	  || pParty->pPlayers[0].WearsItemAnyWhere(ITEM_ARTIFACT_LADYS_ESCORT)
+	  || pParty->pPlayers[1].WearsItemAnyWhere(ITEM_ARTIFACT_LADYS_ESCORT)
+	  || pParty->pPlayers[2].WearsItemAnyWhere(ITEM_ARTIFACT_LADYS_ESCORT)
+	  || pParty->pPlayers[3].WearsItemAnyWhere(ITEM_ARTIFACT_LADYS_ESCORT))
+  {
+	  fall_start = floor_level;
+	  bFeatherFall = true;
+	  pParty->uFallStartY = floor_level;
+  }
+  else
+  {
+	  bFeatherFall = false;
+	  fall_start = pParty->uFallStartY;
+  }
+
+  if (fall_start - party_z > 512 && !bFeatherFall && party_z <= floor_level + 1)//повреждение от падения с высоты
+  {
+    assert(~pParty->uFlags & PARTY_FLAGS_1_LANDING); // why land in indoor?
+    if (pParty->uFlags & PARTY_FLAGS_1_LANDING)
+      pParty->uFlags &= ~PARTY_FLAGS_1_LANDING;
+    else for (uint i = 0; i < 4; ++i)
+    {                                      // receive falling damage
+      if (!pParty->pPlayers[i].HasEnchantedItemEquipped(72) && !pParty->pPlayers[i].WearsItem(ITEM_ARTIFACT_HERMES_SANDALS, EQUIP_BOOTS))
+      {
+        pParty->pPlayers[i].ReceiveDamage((pParty->uFallStartY - party_z) * (0.1f * pParty->pPlayers[i].GetMaxHealth()) / 256, DMGT_PHISYCAL);
+        v10 = (double)(20 - pParty->pPlayers[i].GetParameterBonus(pParty->pPlayers[i].GetActualEndurance())) * flt_6BE3A4_debug_recmod1 * 2.133333333333333;
+        pParty->pPlayers[i].SetRecoveryTime((signed __int64)v10);
+      }
+    }
+  }
+
+  if ( party_z > floor_level + 1 )
+    hovering = true;
+
+  bool not_high_fall = false;
+
+  if ( party_z - floor_level <= 32 )
+  {
+    pParty->uFallStartY = party_z;
+    not_high_fall = true;
+  }
+
+  if (bWalkSound && pParty->walk_sound_timer)//таймеры для звуков передвижения
+  {
+    if (pParty->walk_sound_timer > pEventTimer->uTimeElapsed)
+      pParty->walk_sound_timer -= pEventTimer->uTimeElapsed;
+    else pParty->walk_sound_timer = 0;
+  }
+
+  if (party_z <= floor_level + 1)// группа ниже уровня пола
+  {
+    party_z = floor_level + 1;
+    pParty->uFallStartY = floor_level + 1;
+
+    if (!hovering && pParty->floor_face_pid != uFaceID)// не парящие и 
+    {
+      if (pIndoor->pFaces[uFaceID].uAttributes & FACE_PRESSURE_PLATE)
+        uFaceEvent = pIndoor->pFaceExtras[pIndoor->pFaces[uFaceID].uFaceExtraID].uEventID;
+    }
+  }
+  if (!hovering)
+    pParty->floor_face_pid = uFaceID;
+
+  bool on_water = false;
+  if ( pIndoor->pFaces[uFaceID].Fluid())// на воде
+    on_water = true;
+
+  //v81 = pParty->uWalkSpeed;
+  angle = pParty->sRotationY;
+  _view_angle = pParty->sRotationX;
+  v82 = (unsigned __int64)(pEventTimer->dt_in_some_format * (signed __int64)((signed int)(pParty->y_rotation_speed * stru_5C6E00->uIntegerPi)
+                                          / 180)) >> 16;
+  while ( pPartyActionQueue->uNumActions )
+  {
+    switch ( pPartyActionQueue->Next() )
+    {
+      case PARTY_TurnLeft:
+        if (uTurnSpeed)
+          angle = stru_5C6E00->uDoublePiMask & (angle + uTurnSpeed);
+        else
+          angle = stru_5C6E00->uDoublePiMask & (angle + (int)(v82 * fTurnSpeedMultiplier));
+        break;
+      case PARTY_TurnRight:
+        if (uTurnSpeed)
+          angle = stru_5C6E00->uDoublePiMask & (angle - uTurnSpeed);
+        else
+          angle = stru_5C6E00->uDoublePiMask & (angle - (int)(v82 * fTurnSpeedMultiplier));
+        break;
+
+      case PARTY_FastTurnLeft:
+        if (uTurnSpeed)
+          angle = stru_5C6E00->uDoublePiMask & (angle + uTurnSpeed);
+        else
+          angle = stru_5C6E00->uDoublePiMask & (angle + (int)(2.0f * fTurnSpeedMultiplier * (double)v82));
+        break;
+
+      case PARTY_FastTurnRight:
+        if (uTurnSpeed)
+          angle = stru_5C6E00->uDoublePiMask & (angle - uTurnSpeed);
+        else
+          angle = stru_5C6E00->uDoublePiMask & (angle - (int)(2.0f * fTurnSpeedMultiplier * (double)v82));
+        break;
+
+      case PARTY_StrafeLeft:
+        v2 -= fixpoint_mul(stru_5C6E00->Sin(angle), pParty->uWalkSpeed * fWalkSpeedMultiplier / 2);
+        v1 += fixpoint_mul(stru_5C6E00->Cos(angle), pParty->uWalkSpeed * fWalkSpeedMultiplier / 2);
+        party_walking_flag = true;
+        break;
+      case PARTY_StrafeRight:
+        v2 += fixpoint_mul(stru_5C6E00->Sin(angle), pParty->uWalkSpeed * fWalkSpeedMultiplier / 2);
+        v1 -= fixpoint_mul(stru_5C6E00->Cos(angle), pParty->uWalkSpeed * fWalkSpeedMultiplier / 2);
+        party_walking_flag = true;
+        break;
+      case PARTY_WalkForward:
+        v2 += fixpoint_mul(stru_5C6E00->Cos(angle), 5 * pParty->uWalkSpeed * fWalkSpeedMultiplier);
+        v1 += fixpoint_mul(stru_5C6E00->Sin(angle), 5 * pParty->uWalkSpeed * fWalkSpeedMultiplier);
+        party_walking_flag = true;
+        break;
+      case PARTY_WalkBackward:
+        v2 -= fixpoint_mul(stru_5C6E00->Cos(angle), pParty->uWalkSpeed * fBackwardWalkSpeedMultiplier);
+        v1 -= fixpoint_mul(stru_5C6E00->Sin(angle), pParty->uWalkSpeed * fBackwardWalkSpeedMultiplier);
+        party_walking_flag = true;
+        break;
+      case PARTY_RunForward://Бег вперёд
+        v2 += fixpoint_mul(stru_5C6E00->Cos(angle), 2 * pParty->uWalkSpeed * fWalkSpeedMultiplier);
+        v1 += fixpoint_mul(stru_5C6E00->Sin(angle), 2 * pParty->uWalkSpeed * fWalkSpeedMultiplier);
+        party_running_flag = true;
+        break;
+      case PARTY_RunBackward:
+        //v32 = stru_5C6E00->SinCos(angle);
+        //v33 = (double)v81;
+        //v88 = (double)v81;
+        v2 -= fixpoint_mul(stru_5C6E00->Cos(angle), pParty->uWalkSpeed * fBackwardWalkSpeedMultiplier);
+        //v34 = stru_5C6E00->SinCos(angle - stru_5C6E00->uIntegerHalfPi);
+        v1 -= fixpoint_mul(stru_5C6E00->Sin(angle), pParty->uWalkSpeed * fBackwardWalkSpeedMultiplier);
+        party_running_flag = true;
+        break;
+      case PARTY_LookUp:
+        _view_angle += (signed __int64)(flt_6BE150_look_up_down_dangle * 25.0);
+        if ( _view_angle > 128 )
+          _view_angle = 128;
+        if ( uActiveCharacter )
+          pPlayers[uActiveCharacter]->PlaySound((PlayerSpeech)SPEECH_63, 0);
+        break;
+      case PARTY_LookDown:
+        _view_angle += (signed __int64)(flt_6BE150_look_up_down_dangle * -25.0);
+        if ( _view_angle < -128 )
+          _view_angle = -128;
+        if ( uActiveCharacter )
+          pPlayers[uActiveCharacter]->PlaySound((PlayerSpeech)SPEECH_64, 0);
+        break;
+      case PARTY_CenterView:
+        _view_angle = 0;
+        break;
+      case PARTY_Jump:
+        if ( (!hovering || party_z <= floor_level + 6 && pParty->uFallSpeed <= 0) && pParty->field_24 )
+        {
+          hovering = true;
+          pParty->uFallSpeed = (signed __int64)((double)(pParty->field_24 << 6) * 1.5 + (double)pParty->uFallSpeed);
+        }
+        break;
+      default:
+        break;
+    }
+  }
+  pParty->sRotationY = angle;
+  pParty->sRotationX = _view_angle;
+  if ( hovering )//парящие
+  {
+    pParty->uFallSpeed += -2 * pEventTimer->uTimeElapsed * GetGravityStrength();// расчёт скорости падения
+    if ( hovering && pParty->uFallSpeed <= 0 )
+    {
+      if ( pParty->uFallSpeed < -500 && !pParty->bFlying )
+      {
+        for ( uint pl = 1; pl <= 4; pl++ )
+        {
+          if ( !pPlayers[pl]->HasEnchantedItemEquipped(72) && !pPlayers[pl]->WearsItem(ITEM_ARTIFACT_HERMES_SANDALS, EQUIP_BOOTS) ) //was 8 
+             pPlayers[pl]->PlayEmotion(CHARACTER_EXPRESSION_SCARED, 0);
+        }
+      }
+    }
+    else
+      pParty->uFallStartY = party_z;
+  }
+  else// не парящие
+  {
+    if ( pIndoor->pFaces[uFaceID].pFacePlane_old.vNormal.z < 0x8000 )
+    {
+      pParty->uFallSpeed -= pEventTimer->uTimeElapsed * GetGravityStrength();
+      pParty->uFallStartY = party_z;
+    }
+    else
+    {
+      if (! (pParty->uFlags & PARTY_FLAGS_1_LANDING) )
+        pParty->uFallSpeed = 0;
+      pParty->uFallStartY = party_z;
+    }
+  }
+  if ( v2 * v2 + v1 * v1 < 400 )
+  {
+    v1 = 0;
+    v2 = 0;
+  }
+
+  stru_721530.field_84 = -1;
+  stru_721530.field_70 = 0;
+  stru_721530.prolly_normal_d = pParty->field_14_radius;
+  stru_721530.field_8_radius = pParty->field_14_radius / 2;
+  stru_721530.field_0 = 1;
+  stru_721530.height = pParty->uPartyHeight - 32;
+  for ( uint i = 0; i < 100; i++ )
+  {
+    new_party_z = party_z;
+    stru_721530.position.x = new_party_x;
+    stru_721530.position.y = new_party_y;
+    stru_721530.position.z = stru_721530.height + party_z + 1;
+
+    stru_721530.normal.x = new_party_x;
+    stru_721530.normal.y = new_party_y;
+    stru_721530.normal.z = stru_721530.prolly_normal_d + party_z + 1;
+
+    stru_721530.velocity.x = v2;
+    stru_721530.velocity.y = v1;
+    stru_721530.velocity.z = pParty->uFallSpeed;
+
+    stru_721530.uSectorID = uSectorID;
+    v38 = 0;
+    if ( pParty->bTurnBasedModeOn == true && pTurnEngine->turn_stage == TE_MOVEMENT )
+      v38 = 13312;
+    if ( stru_721530._47050A(v38) )
+      break;
+    for ( uint j = 0; j < 100; ++j )
+    {
+      _46E44E_collide_against_faces_and_portals(1);
+      _46E0B2_collide_against_decorations();//столкновения с декором
+      for ( v80 = 0; v80 < (signed int)uNumActors; ++v80 )
+        Actor::_46DF1A_collide_against_actor(v80, 0);//столкновения с монстрами
+      if ( _46F04E_collide_against_portals() )//столкновения с порталами
+        break;
+    }
+    if ( stru_721530.field_7C >= stru_721530.field_6C )
+    {
+      v39 = stru_721530.normal2.x;
+      uSectorID = stru_721530.normal2.y;
+      v40 = stru_721530.normal2.z - stru_721530.prolly_normal_d - 1;
+    }
+    else
+    {
+      v39 = new_party_x + fixpoint_mul(stru_721530.field_7C, stru_721530.direction.x);
+      uSectorID = new_party_y + fixpoint_mul(stru_721530.field_7C, stru_721530.direction.y);
+      v40 = new_party_z + fixpoint_mul(stru_721530.field_7C, stru_721530.direction.z);
+    }
+    v42 = collide_against_floor(v39, uSectorID, v40 + 40, &stru_721530.uSectorID, &uFaceID);
+    if ( v42 == -30000 || v42 - new_party_z > 128 )
+      return;
+    if ( stru_721530.field_7C >= stru_721530.field_6C )//???
+    {
+      new_party_x = stru_721530.normal2.x;
+      new_party_y = stru_721530.normal2.y;
+      new_party_z = stru_721530.normal2.z - stru_721530.prolly_normal_d - 1;
+      break;
+    }
+    new_party_x += fixpoint_mul(stru_721530.field_7C, stru_721530.direction.x);
+    new_party_y += fixpoint_mul(stru_721530.field_7C, stru_721530.direction.y);
+    uSectorID = stru_721530.uSectorID;
+    stru_721530.field_70 += stru_721530.field_7C;
+    unsigned long long v87 = new_party_z + fixpoint_mul(stru_721530.field_7C, stru_721530.direction.z);
+    if ( PID_TYPE(stru_721530.uFaceID) == OBJECT_Actor)//при столкновении с монстром
+    {
+      if ( pParty->pPartyBuffs[PARTY_BUFF_INVISIBILITY].uExpireTime > 0 )
+        pParty->pPartyBuffs[PARTY_BUFF_INVISIBILITY].Reset();
+      viewparams->bRedrawGameUI = true;
+    }
+    else if ( PID_TYPE(stru_721530.uFaceID) == OBJECT_Decoration)//при столкновении с декорацией
+    {
+      v54 = stru_5C6E00->Atan2(new_party_x - pLevelDecorations[stru_721530.uFaceID >> 3].vPosition.x,
+              new_party_y - pLevelDecorations[stru_721530.uFaceID >> 3].vPosition.y);
+      v2 = fixpoint_mul(stru_5C6E00->Cos(v54), integer_sqrt(v2 * v2 + v1 * v1));
+      v1 = fixpoint_mul(stru_5C6E00->Sin(v54), integer_sqrt(v2 * v2 + v1 * v1));
+    }
+    else if ( PID_TYPE(stru_721530.uFaceID) == OBJECT_BModel)//при столкновении с bmodel
+    {
+      pFace = &pIndoor->pFaces[(signed int)stru_721530.uFaceID >> 3];
+      if ( pFace->uPolygonType == POLYGON_Floor )// если bmodel - пол
+      {
+        if ( pParty->uFallSpeed < 0 )
+          pParty->uFallSpeed = 0;
+        v87 = pIndoor->pVertices[*pFace->pVertexIDs].z + 1;
+        if ( pParty->uFallStartY - v87 < 512 )
+          pParty->uFallStartY = v87;
+        if ( v2 * v2 + v1 * v1 < 400 )
+        {
+          v1 = 0;
+          v2 = 0;
+        }
+        if ( pParty->floor_face_pid != PID_ID(stru_721530.uFaceID) && pFace->Pressure_Plate() )
+          uFaceEvent = pIndoor->pFaceExtras[pFace->uFaceExtraID].uEventID;
+      }
+      else// если не пол
+      {
+        v46 = pParty->uFallSpeed * pFace->pFacePlane_old.vNormal.z;
+        if ( pFace->uPolygonType != POLYGON_InBetweenFloorAndWall )//полез на холм
+        {
+          v80 = abs(v1 * pFace->pFacePlane_old.vNormal.y + v46 + v2 * pFace->pFacePlane_old.vNormal.x) >> 16;
+          if ((stru_721530.speed >> 3) > v80 )
+          v80 = stru_721530.speed >> 3;
+          v2 += fixpoint_mul(v80, pFace->pFacePlane_old.vNormal.x);
+          v1 += fixpoint_mul(v80, pFace->pFacePlane_old.vNormal.y);
+          pParty->uFallSpeed += fixpoint_mul(v80, pFace->pFacePlane_old.vNormal.z);
+          //v80 = pFace->pFacePlane_old.vNormal.y;
+          v52 = stru_721530.prolly_normal_d - ((pFace->pFacePlane_old.dist
+                + v87 * pFace->pFacePlane_old.vNormal.z
+                + new_party_y * pFace->pFacePlane_old.vNormal.y
+                + new_party_x * pFace->pFacePlane_old.vNormal.x) >> 16);
+          if ( v52 > 0 )
+          {
+            new_party_x += fixpoint_mul(v52, pFace->pFacePlane_old.vNormal.x);
+            new_party_y += fixpoint_mul(v52, pFace->pFacePlane_old.vNormal.y);
+            v87 += fixpoint_mul(v52, pFace->pFacePlane_old.vNormal.z);
+          }
+          if ( pParty->floor_face_pid != PID_ID(stru_721530.uFaceID) && pFace->Pressure_Plate() )
+            uFaceEvent = pIndoor->pFaceExtras[pFace->uFaceExtraID].uEventID;
+        }
+        if ( pFace->uPolygonType == POLYGON_InBetweenFloorAndWall )
+        {
+          v80 = abs(v1 * pFace->pFacePlane_old.vNormal.y + v46 + v2 * pFace->pFacePlane_old.vNormal.x) >> 16;
+          if ((stru_721530.speed >> 3) > v80 )
+            v80 = stru_721530.speed >> 3;
+          v2 += fixpoint_mul(v80, pFace->pFacePlane_old.vNormal.x);
+          v1 += fixpoint_mul(v80, pFace->pFacePlane_old.vNormal.y);
+          pParty->uFallSpeed += fixpoint_mul(v80, pFace->pFacePlane_old.vNormal.z);
+          if ( v2 * v2 + v1 * v1 >= 400 )
+          {
+            if ( pParty->floor_face_pid != PID_ID(stru_721530.uFaceID) && pFace->Pressure_Plate() )
+              uFaceEvent = pIndoor->pFaceExtras[pFace->uFaceExtraID].uEventID;
+          }
+          else
+          {
+            v2 = 0;
+            v1 = 0;
+            pParty->uFallSpeed = 0;
+          }
+        }
+      }
+    }
+    v2 = fixpoint_mul(58500, v2);
+    v1 = fixpoint_mul(58500, v1);
+    pParty->uFallSpeed = fixpoint_mul(58500, pParty->uFallSpeed);
+  }
+
+  //  //Воспроизведение звуков ходьбы/бега-------------------------
+  uint pX_ = abs(pParty->vPosition.x - new_party_x);
+  uint pY_ = abs(pParty->vPosition.y - new_party_y);
+  uint pZ_ = abs(pParty->vPosition.z - new_party_z);
+  if ( bWalkSound && pParty->walk_sound_timer <= 0 )
+  {
+    pAudioPlayer->_4AA258(804);//stop sound
+    if ( party_running_flag && (!hovering || not_high_fall) ) //Бег и (не прыжок или не высокое падение )
+    {
+      if ( integer_sqrt(pX_ * pX_ + pY_ * pY_ + pZ_ * pZ_) >= 16 )
+      {
+        if ( on_water )
+          pAudioPlayer->PlaySound(SOUND_RunAlongWater, 804, 1, -1, 0, 0, 0, 0);
+        else if ( pIndoor->pFaces[uFaceID].uAttributes & FACE_UNKNOW6 )//по ковру
+          pAudioPlayer->PlaySound((SoundID)50, 804, 1, -1, 0, 0, 0, 0);
+        else
+          pAudioPlayer->PlaySound(SOUND_RunAlong3DModel, 804, 1, -1, 0, 0, 0, 0);
+        pParty->walk_sound_timer = 96;//64
+      }
+    }
+    else if ( party_walking_flag && (!hovering || not_high_fall) )//Ходьба и (не прыжок или не высокое падение)
+    {
+      if ( integer_sqrt(pX_ * pX_ + pY_ * pY_ + pZ_ * pZ_) >= 8 )
+      {
+        if ( on_water )
+          pAudioPlayer->PlaySound(SOUND_WalkAlongWater, 804, 1, -1, 0, 0, 0, 0);
+        else if ( pIndoor->pFaces[uFaceID].uAttributes & FACE_UNKNOW6 )//по ковру
+          pAudioPlayer->PlaySound((SoundID)89, 804, 1, -1, 0, 0, 0, 0);
+        else
+          pAudioPlayer->PlaySound(SOUND_WalkAlong3DModel, 804, 1, -1, 0, 0, 0, 0);
+        pParty->walk_sound_timer = 144;//64
+      }
+    }
+  }
+  if ( integer_sqrt(pX_ * pX_ + pY_ * pY_ + pZ_ * pZ_) < 8 )//отключить  звук ходьбы при остановке
+    pAudioPlayer->_4AA258(804);
+  //-------------------------------------------------------------
+  if ( !hovering || !not_high_fall )
+    pParty->uFlags &= ~PARTY_FLAGS_1_FALLING;
+  else
+    pParty->uFlags |= PARTY_FLAGS_1_FALLING;
+  pParty->uFlags &= ~0x200;
+  pParty->vPosition.x = new_party_x;
+  pParty->vPosition.z = new_party_z;
+  pParty->vPosition.y = new_party_y;
+  //pParty->uFallSpeed = v89;
+  if ( !hovering && pIndoor->pFaces[uFaceID].uAttributes & FACE_UNKNOW5 )
+    pParty->uFlags |= 0x200;
+  if (uFaceEvent)
+    EventProcessor(uFaceEvent, 0, 1);
+}
+
+//----- (00449A49) --------------------------------------------------------
+void Door_switch_animation(unsigned int uDoorID, int a2)
+{
+  int old_state; // eax@1
+  signed int door_id; // esi@2
+
+  if ( !pIndoor->pDoors )
+    return;
+  for ( door_id = 0; door_id < 200; ++door_id )
+  {
+    if ( pIndoor->pDoors[door_id].uDoorID == uDoorID )
+      break;
+  }
+  if ( door_id >= 200 )
+  {
+    Error("Unable to find Door ID: %i!", uDoorID);
+  }
+  old_state = pIndoor->pDoors[door_id].uState;
+  //old_state: 0 - в нижнем положении/закрыто
+  //           2 - в верхнем положении/открыто,
+  //a2: 1 - открыть
+  //    2 - опустить/поднять
+  if ( a2 == 2 )
+  {
+    if ( pIndoor->pDoors[door_id].uState == BLVDoor::Closing || pIndoor->pDoors[door_id].uState == BLVDoor::Opening )
+      return;
+    if ( pIndoor->pDoors[door_id].uState )
+    {
+      if ( pIndoor->pDoors[door_id].uState != BLVDoor::Closed && pIndoor->pDoors[door_id].uState != BLVDoor::Closing )
+      {
+        pIndoor->pDoors[door_id].uState = BLVDoor::Closing;
+        if ( old_state == BLVDoor::Open )
+        {
+          pIndoor->pDoors[door_id].uTimeSinceTriggered = 0;
+          return;
+        }
+        if ( pIndoor->pDoors[door_id].uTimeSinceTriggered != 15360 )
+        {
+          pIndoor->pDoors[door_id].uTimeSinceTriggered = (pIndoor->pDoors[door_id].uMoveLength << 7) / pIndoor->pDoors[door_id].uOpenSpeed
+             - ((signed int)(pIndoor->pDoors[door_id].uTimeSinceTriggered * pIndoor->pDoors[door_id].uCloseSpeed)
+             / 128 << 7) / pIndoor->pDoors[door_id].uOpenSpeed;
+          return;
+        }
+        pIndoor->pDoors[door_id].uTimeSinceTriggered = 15360;
+      }
+      return;
+    }
+  }
+  else
+  {
+    if ( a2 == 0 )
+    {
+      if ( pIndoor->pDoors[door_id].uState != BLVDoor::Closed && pIndoor->pDoors[door_id].uState != BLVDoor::Closing )
+      {
+        pIndoor->pDoors[door_id].uState = BLVDoor::Closing;
+        if ( old_state == BLVDoor::Open )
+        {
+          pIndoor->pDoors[door_id].uTimeSinceTriggered = 0;
+          return;
+        }
+        if ( pIndoor->pDoors[door_id].uTimeSinceTriggered != 15360 )
+        {
+          pIndoor->pDoors[door_id].uTimeSinceTriggered = (pIndoor->pDoors[door_id].uMoveLength << 7) / pIndoor->pDoors[door_id].uOpenSpeed
+             - ((signed int)(pIndoor->pDoors[door_id].uTimeSinceTriggered * pIndoor->pDoors[door_id].uCloseSpeed)
+             / 128 << 7) / pIndoor->pDoors[door_id].uOpenSpeed;
+          return;
+        }
+        pIndoor->pDoors[door_id].uTimeSinceTriggered = 15360;
+      }
+      return;
+    }
+    if ( a2 != 1 )
+      return;
+  }
+  if ( old_state != BLVDoor::Open && old_state != BLVDoor::Opening )
+  {
+    pIndoor->pDoors[door_id].uState = BLVDoor::Opening;
+    if ( old_state == BLVDoor::Closed )
+    {
+      pIndoor->pDoors[door_id].uTimeSinceTriggered = 0;
+      return;
+    }
+    if ( pIndoor->pDoors[door_id].uTimeSinceTriggered != 15360 )
+    {
+      pIndoor->pDoors[door_id].uTimeSinceTriggered = (pIndoor->pDoors[door_id].uMoveLength << 7) / pIndoor->pDoors[door_id].uCloseSpeed
+         - ((signed int)(pIndoor->pDoors[door_id].uTimeSinceTriggered * pIndoor->pDoors[door_id].uOpenSpeed)
+         / 128 << 7) / pIndoor->pDoors[door_id].uCloseSpeed;
+      return;
+    }
+    pIndoor->pDoors[door_id].uTimeSinceTriggered = 15360;
+  }
+  return;
+}
+
+
+//----- (004088E9) --------------------------------------------------------
+int __fastcall sub_4088E9(int x1, int y1, int x2, int y2, int x3, int y3)
+{
+  signed int result; // eax@1
+
+  result = integer_sqrt(abs(x2 - x1) * abs(x2 - x1) + abs(y2 - y1) * abs(y2 - y1));
+  if ( result )
+    result = abs(((x2 - x1) * (y1 - y3) - (y2 - y1) * (x1 - x3)) / result);
+  return result;
+}
+
+//----- (00450DA3) --------------------------------------------------------
+int  GetAlertStatus()
+{
+  int result; // eax@2
+
+  if ( uCurrentlyLoadedLevelType == LEVEL_Indoor )
+    result = pOutdoor->ddm.field_C_alert;
+  else
+    result = uCurrentlyLoadedLevelType == LEVEL_Outdoor ? pIndoor->dlv.field_C_alert : 0;
+  return result;
+}
+
+
+//----- (0045063B) --------------------------------------------------------
+int __fastcall _45063B_spawn_some_monster(MapInfo *a1, int a2)
+{
+  int result; // eax@8
+  int v6; // edi@11
+  int v7; // ebx@11
+  int v8; // edi@11
+  int v9; // ebx@12
+  int v10; // eax@12
+  char v11; // zf@16
+  int v12; // edi@20
+  int v13; // eax@20
+  int v14; // ebx@20
+  int v15; // eax@20
+  int v16; // eax@20
+  int v17; // eax@20
+  int v18; // eax@21
+  SpawnPointMM7 v19; // [sp+Ch] [bp-38h]@1
+  int v22; // [sp+2Ch] [bp-18h]@3
+  unsigned int uFaceID; // [sp+38h] [bp-Ch]@10
+  int v26; // [sp+3Ch] [bp-8h]@11
+  int v27; // [sp+40h] [bp-4h]@11
+
+  if (!uNumActors)
+    return 0;
+
+  for ( uint mon_id = 0; mon_id < uNumActors; ++mon_id )
+  {
+    if ((pActors[mon_id].pMonsterInfo.uID < 121 || pActors[mon_id].pMonsterInfo.uID > 123) && // Dwarf FemaleC A-C
+      (pActors[mon_id].pMonsterInfo.uID < 124 || pActors[mon_id].pMonsterInfo.uID > 126) && // Dwarf MaleA A-C
+      (pActors[mon_id].pMonsterInfo.uID < 133 || pActors[mon_id].pMonsterInfo.uID > 135) && // Peasant Elf FemaleA A-C
+      pActors[mon_id].CanAct())
+    {
+      if ( uCurrentlyLoadedLevelType == LEVEL_Outdoor )
+      {
+        v22 = 0;
+        uint face_id = 0;
+        for ( face_id; face_id < 100; ++face_id )
+        {
+          v6 = rand() % 1024 + 512;
+          v7 = rand() % (signed int)stru_5C6E00->uIntegerDoublePi;
+          v19.vPosition.x = pParty->vPosition.x + fixpoint_mul(stru_5C6E00->Cos(v7), v6);
+          v8 = 0;
+          v19.uIndex = a2;
+          v19.vPosition.y = fixpoint_mul(stru_5C6E00->Sin(v7), v6) + pParty->vPosition.y;
+          v19.vPosition.z = pParty->vPosition.z;
+          v26 = 0;
+          v27 = 0;
+          v19.vPosition.z = ODM_GetFloorLevel(v19.vPosition.x, v19.vPosition.y, pParty->vPosition.z, 0, &v26, &v27, 0);
+          for( int i = 0; i < pOutdoor->uNumBModels; i++ )
+          {
+            v9 = abs(v19.vPosition.y - pOutdoor->pBModels[i].vBoundingCenter.y);
+            v10 = abs(v19.vPosition.x - pOutdoor->pBModels[i].vBoundingCenter.x);
+            if ( int_get_vector_length(v10, v9, 0) < pOutdoor->pBModels[i].sBoundingRadius + 256 )
+            {
+              v22 = 1;
+              break;
+            }
+          }
+          if ( v22 )
+          {
+            v11 = face_id == 100;
+            break;
+          }
+        }
+        v11 = face_id == 100;
+      }
+      else if ( uCurrentlyLoadedLevelType == LEVEL_Indoor )
+      {
+        v22 = pIndoor->GetSector(pParty->vPosition.x, pParty->vPosition.y, pParty->vPosition.z);
+        for ( uint i = 0; i < 100; ++i )
+        {
+          v12 = rand() % 512 + 256;
+          v13 = rand();
+          v14 = v13 % (signed int)stru_5C6E00->uIntegerDoublePi;
+          v15 = stru_5C6E00->Cos(v13 % (signed int)stru_5C6E00->uIntegerDoublePi);
+          v19.vPosition.x = pParty->vPosition.x + fixpoint_mul(v15, v12);
+          v16 = stru_5C6E00->Sin(v13 % (signed int)stru_5C6E00->uIntegerDoublePi);
+          v19.vPosition.y = fixpoint_mul(v16, v12) + pParty->vPosition.y;
+          v19.vPosition.z = pParty->vPosition.z;
+          v19.uIndex = a2;
+          v17 = pIndoor->GetSector(v19.vPosition.x, v19.vPosition.y, pParty->vPosition.z);
+          if ( v17 == v22 )
+          {
+            v18 = BLV_GetFloorLevel(v19.vPosition.x, v19.vPosition.y, v19.vPosition.z, v17, &uFaceID);
+            v19.vPosition.z = v18;
+            if ( v18 != -30000 )
+            {
+              if ( abs(v18 - pParty->vPosition.z) <= 1024 )
+                break;
+            }
+          }
+        }
+        v11 = v26 == 100;
+      }
+      if ( v11 )
+        result = 0;
+      else
+      {
+        SpawnEncounter(a1, &v19, 0, 0, 1);
+        result = a2;
+      }
+    }
+
+    //break;
+    //v22 = v3->pMonsterInfo.uID - 1;
+    //v4 = (signed __int64)((double)v22 * 0.3333333333333333);
+    //if ( (int)v4 != 40 )
+    //{
+    //  if ( (int)v4 != 41 && (int)v4 != 44 && v3->CanAct() )
+    //    break;
+    //}
+    //++v2;
+    //++v3;
+    //if ( v2 >= (signed int)uNumActors )
+    //  goto LABEL_8;
+  }
+  return result;
+}
+
+//----- (00450521) --------------------------------------------------------
+int __fastcall sub_450521_ProllyDropItemAt(int ecx0, signed int a2, int a3, int a4, int a5, unsigned __int16 a6)
+{
+  int v6; // edi@1
+  int v7; // esi@1
+  signed int v8; // edi@1
+  unsigned __int16 v9; // cx@1
+  //  char *v10; // edx@2
+  unsigned __int16 v11; // ax@5
+  SpriteObject a1; // [sp+8h] [bp-70h]@1
+
+  v6 = ecx0;
+  v7 = a2;
+  pItemsTable->GenerateItem(v6, v7, &a1.stru_24);
+  v8 = 0;
+  v9 = pItemsTable->pItems[a1.stru_24.uItemID].uSpriteID;
+  a1.uType = pItemsTable->pItems[a1.stru_24.uItemID].uSpriteID;
+  v11 = 0;
+  for( int i = 0; i < pObjectList->uNumObjects; i++ )
+  {
+    if( v9 == pObjectList->pObjects[i].uObjectID )
+    {
+      v11 = i;
+      break;
+    }
+  }
+  a1.uObjectDescID = v11;
+  a1.vPosition.y = a4;
+  a1.vPosition.x = a3;
+  a1.vPosition.z = a5;
+  a1.uFacing = a6;
+  a1.uAttributes = 0;
+  a1.uSectorID = pIndoor->GetSector(a3, a4, a5);
+  a1.uSpriteFrameID = 0;
+  return a1.Create(0, 0, 0, 0);
 }

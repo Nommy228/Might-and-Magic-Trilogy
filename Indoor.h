@@ -226,19 +226,30 @@ struct BLVMapOutline //0C
 
 #define FACE_PORTAL             0x00000001 // portal/two-sided
 #define FACE_CAN_SATURATE_COLOR 0x00000002
+#define FACE_UNKNOW8            0x00000004
 #define FACE_FLUID              0x00000010 // wavy animated water or lava
+#define FACE_UNKNOW9            0x00000020
 #define FACE_DONT_CACHE_TEXTURE 0x00000040 // do not load face texture if it isn't loaded already
+#define FACE_UNKNOW4            0x00000080
 #define FACE_XY_PLANE           0x00000100
 #define FACE_XZ_PLANE           0x00000200
 #define FACE_YZ_PLANE           0x00000400
+#define FACE_UNKNOW10           0x00000800
+#define FACE_UNKNOW3            0x00001000
 #define FACE_INVISIBLE          0x00002000
 #define FACE_TEXTURE_FRAME      0x00004000 // Texture ID is a frameset from TextureFrameTable, otherwise BitmapID
 #define FACE_OUTLINED           0x00010000 // outline face edges
+#define FACE_UNKNOW7            0x00020000
 #define FACE_TEXTURE_FLOW       0x00040000 // The texture moves slowly. For horizontal facets only.
-#define FACE_INDOOR_SKY       0x00400000
+#define FACE_UNKNOW             0x00100000
+#define FACE_UNKNOW6            0x00200000
+#define FACE_INDOOR_SKY         0x00400000
 #define FACE_CLICKABLE          0x02000000 // Event can be triggered by clicking on the facet.
 #define FACE_PRESSURE_PLATE     0x04000000 // Event can be triggered by stepping on the facet.
+#define FACE_INDICATE           0x06000000 // Event can be triggered by indicating on the facet.
+#define FACE_UNKNOW2            0x10000000
 #define FACE_ETHEREAL           0x20000000 // Untouchable. You can pass through it.
+#define FACE_UNKNOW5            0x40000000
 #define FACE_PICKED             0x80000000
 
 /*   93 */
@@ -251,13 +262,13 @@ struct BLVFace  //60h
     this->uNumVertices = 0;
     this->uAttributes = 0;
     this->uFaceExtraID = 0;
-    this->pVertexIDs = 0;
-    this->pZInterceptDisplacements = 0;
-    this->pYInterceptDisplacements = 0;
-    this->pXInterceptDisplacements = 0;
+    this->pVertexIDs = nullptr;
+    this->pZInterceptDisplacements = nullptr;
+    this->pYInterceptDisplacements = nullptr;
+    this->pXInterceptDisplacements = nullptr;
   }
 
-  char _get_normals(Vec3_int_ *a2, Vec3_int_ *a3);
+  void _get_normals(Vec3_int_ *a2, Vec3_int_ *a3);
   struct Texture *GetTexture();
   void FromODM(struct ODMFace *face);
 
@@ -265,8 +276,10 @@ struct BLVFace  //60h
   inline bool Visible() const   {return !Invisible();}
   inline bool Portal() const    {return (uAttributes & FACE_PORTAL) != 0;}
   inline bool Fluid() const     {return (uAttributes & FACE_FLUID) != 0;}
+  inline bool Indoor_sky() const     {return (uAttributes & FACE_INDOOR_SKY) != 0;}
   inline bool Clickable() const {return (uAttributes & FACE_CLICKABLE) != 0;}
-
+  inline bool Pressure_Plate() const {return (uAttributes & FACE_PRESSURE_PLATE) != 0;}
+  inline bool Ethereal() const {return (uAttributes & FACE_ETHEREAL) != 0;}
 
   struct Plane_float_ pFacePlane;
   struct Plane_int_ pFacePlane_old;
@@ -495,7 +508,7 @@ struct BLVRenderParams
   float _unused_fSineNegX;   // the same
   int fov_rad_fixpoint;
   int fov_rad_inv_fixpoint;//float
-  unsigned __int16 *pRenderTarget;
+  void *pRenderTarget;
   unsigned int uTargetWidth;
   unsigned int uTargetHeight;
   unsigned int uViewportX;
@@ -522,3 +535,27 @@ extern BLVRenderParams *pBLVRenderParams;
 
 
 
+
+int __fastcall GetPortalScreenCoord(unsigned int uFaceID);
+bool PortalFrustrum(int pNumVertices, struct BspRenderer_PortalViewportData *a2, struct BspRenderer_PortalViewportData *near_portal, int uFaceID);
+void PrepareBspRenderList_BLV();
+void PrepareDecorationsRenderList_BLV(unsigned int uDecorationID, unsigned int uSectorID);
+void PrepareActorRenderList_BLV();
+void PrepareItemsRenderList_BLV();
+void AddBspNodeToRenderList(unsigned int node_id);
+void __fastcall sub_4406BC(unsigned int node_id, unsigned int uFirstNode); // idb
+char __fastcall DoInteractionWithTopmostZObject(int a1, int a2);
+int __fastcall sub_4AAEA6_transform(struct RenderVertexSoft *a1);
+unsigned int __fastcall sub_4B0E07(unsigned int uFaceID); // idb
+void BLV_UpdateUserInputAndOther();
+int BLV_GetFloorLevel(int x, int y, int z, unsigned int uSectorID, unsigned int *pFaceID);
+void BLV_UpdateDoors();
+void UpdateActors_BLV();
+void BLV_ProcessPartyActions();
+void Door_switch_animation(unsigned int uDoorID, int a2); // idb: sub_449A49
+int __fastcall sub_4088E9(int a1, int a2, int a3, int a4, int a5, int a6);
+void __fastcall PrepareDrawLists_BLV();
+void PrepareToLoadBLV(unsigned int bLoading);
+int GetAlertStatus();
+int __fastcall _45063B_spawn_some_monster(struct MapInfo *a1, int a2);
+int __fastcall sub_450521_ProllyDropItemAt(int ecx0, signed int a2, int a3, int a4, int a5, unsigned __int16 a6);

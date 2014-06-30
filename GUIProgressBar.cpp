@@ -1,8 +1,6 @@
-#ifdef _MSC_VER
 #define _CRT_SECURE_NO_WARNINGS
-#endif
-
 #include "GUIProgressBar.h"
+#include "ErrorHandling.h"
 #include "LOD.h"
 #include "Mouse.h"
 #include "Party.h"
@@ -63,7 +61,7 @@ bool GUIProgressBar::Initialize(Type type)
     }
     while ( v4 <= 5 );
     if ( v5 == 5 )
-      memset(&field_10, 0, 8u);
+      memset(&field_10, 0, 8);
     v7 = rand() % 5 + 1;
     if ( *(&field_10 + v7) == 1 )
     {
@@ -128,48 +126,41 @@ void GUIProgressBar::Reset(unsigned __int8 uMaxProgress)
 //----- (004435CD) --------------------------------------------------------
 void GUIProgressBar::Progress()
 {
-  unsigned __int8 v1; // al@1
-
   ++this->uProgressCurrent;
-  v1 = this->uProgressMax;
-  if ( this->uProgressCurrent > v1 )
-    this->uProgressCurrent = v1;
+  if ( this->uProgressCurrent > this->uProgressMax )
+    this->uProgressCurrent = this->uProgressMax;
   Draw();
 }
 
 //----- (004435E2) --------------------------------------------------------
 void GUIProgressBar::Release()
 {
-  GUIProgressBar *v1; // esi@1
-  char v2; // al@5
   int v3; // edi@7
 
-  v1 = this;
-  if ( v1->uType == 1 )
+  if ( this->uType == 1 )
   {
-    if ( !v1->pLoadingBg.pPixels )
+    if ( !this->pLoadingBg.pPixels )
       return;
-    v2 = v1->uProgressMax;
-    if ( v1->uProgressCurrent != v2 )
+    if ( this->uProgressCurrent != this->uProgressMax )
     {
-      v1->uProgressCurrent = v2 - 1;
+      this->uProgressCurrent = this->uProgressMax - 1;
       Progress();
     }
-    free(v1->pLoadingBg.pPixels);
-    v3 = (int)&v1->pLoadingProgress.pLevelOfDetail0_prolly_alpha_mask;
-    free(v1->pLoadingProgress.pLevelOfDetail0_prolly_alpha_mask);
-    free(v1->pLoadingProgress.pPalette16);
-    v1->pLoadingProgress.pPalette16 = 0;
-    v1->pLoadingBg.pPixels = 0;
+    free(this->pLoadingBg.pPixels);
+    v3 = (int)&this->pLoadingProgress.pLevelOfDetail0_prolly_alpha_mask;
+    free(this->pLoadingProgress.pLevelOfDetail0_prolly_alpha_mask);
+    free(this->pLoadingProgress.pPalette16);
+    this->pLoadingProgress.pPalette16 = 0;
+    this->pLoadingBg.pPixels = 0;
   }
   else
   {
-    if ( !v1->pBardata.pLevelOfDetail0_prolly_alpha_mask )
+    if ( !this->pBardata.pLevelOfDetail0_prolly_alpha_mask )
       return;
-    free(v1->pBardata.pLevelOfDetail0_prolly_alpha_mask);
-    v3 = (int)&v1->pBardata.pPalette16;
-    free(v1->pBardata.pPalette16);
-    v1->pBardata.pLevelOfDetail0_prolly_alpha_mask = 0;
+    free(this->pBardata.pLevelOfDetail0_prolly_alpha_mask);
+    v3 = (int)&this->pBardata.pPalette16;
+    free(this->pBardata.pPalette16);
+    this->pBardata.pLevelOfDetail0_prolly_alpha_mask = 0;
   }
   *(int *)v3 = 0;
 }
@@ -177,33 +168,22 @@ void GUIProgressBar::Release()
 //----- (00443670) --------------------------------------------------------
 void GUIProgressBar::Draw()
 {
-  IconFrame *v3; // eax@10
-  float v4; // ST2C_4@10
-
-  //v1 = this;
   pRenderer->BeginScene();
   if (uType != TYPE_Fullscreen)
   {
     if (pBardata.pLevelOfDetail0_prolly_alpha_mask)
     {
-      if (pRenderer->pRenderD3D)
-      {
-        if (!pRenderer->bWindowMode)
-          pRenderer->_49FD3A();
-      }
-      pRenderer->DrawTextureIndexed(0x50u, 0x7Au, &pBardata);
-      v3 = pIconsFrameTable->GetFrame(uIconID_TurnHour, 0);
-      pRenderer->DrawTextureTransparent(0x64u, 0x92u, &pIcons_LOD->pTextures[v3->uTextureID]);
-      v4 = (double)(113 * uProgressCurrent) / (double)uProgressMax;
-      pRenderer->FillRectFast(
-        174,
-        164,
-        floorf(v4 + 0.5f),//COERCE_UNSIGNED_INT64(v4 + 6.7553994e15),
-        16,
-        pRenderer->uTargetRMask);
-        pRenderer->EndScene();
-		pRenderer->Present();
-		return;
+      pRenderer->Sub01();
+
+      pRenderer->DrawTextureIndexed(80, 122, &pBardata);//прогрессбар для данжей
+      pRenderer->DrawTextureTransparent(100, 146, &pIcons_LOD->pTextures[pIconsFrameTable->GetFrame(uIconID_TurnHour, 0)->uTextureID]);
+      //pRenderer->FillRectFast(174, 164, floorf(((double)(113 * uProgressCurrent) / (double)uProgressMax) + 0.5f),//COERCE_UNSIGNED_INT64(v4 + 6.7553994e15),
+        //16, pRenderer->uTargetRMask);
+      pRenderer->FillRectFast(174, 164, floorf(((double)(113 * uProgressCurrent) / (double)uProgressMax) + 0.5f),//COERCE_UNSIGNED_INT64(v4 + 6.7553994e15),
+        16, 0xF800);
+      pRenderer->EndScene();
+      pRenderer->Present();
+      return;
     }
     pRenderer->EndScene();
     return;
@@ -211,16 +191,14 @@ void GUIProgressBar::Draw()
 
   if (!pLoadingBg.pPixels)
   {
-	pRenderer->EndScene();
+    pRenderer->EndScene();
     return;
   }
 
   pRenderer->DrawTextureRGB(0, 0, &pLoadingBg);
-  pRenderer->SetRasterClipRect(0, 0, 0x27Fu, 0x1DFu);
-  pRenderer->SetTextureClipRect(0xACu, 0x1CBu,
-    15 * (signed int)(signed __int64)((double)(300 * uProgressCurrent) / (double)uProgressMax) / 15 + 172,
-    0x1D7u);
-  pRenderer->DrawTextureTransparent(0xACu, 0x1CBu, &pLoadingProgress);
+  pRenderer->SetRasterClipRect(0, 0, 639, 479);
+  pRenderer->SetTextureClipRect(172, 459, 15 * (signed int)(signed __int64)((double)(300 * uProgressCurrent) / (double)uProgressMax) / 15 + 172, 471);
+  pRenderer->DrawTextureTransparent(172, 459, &pLoadingProgress);
   pRenderer->ResetTextureClipRect();
   pRenderer->EndScene();
   pRenderer->Present();

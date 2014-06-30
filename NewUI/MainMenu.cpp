@@ -1,4 +1,5 @@
-#include "MainMenu.h"è
+#define _CRT_SECURE_NO_WARNINGS
+#include "MainMenu.h"
 #include "..\LOD.h"
 
 bool MainMenuWindow::OnMouseLeftClick(int x, int y)

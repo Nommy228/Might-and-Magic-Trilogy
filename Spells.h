@@ -217,8 +217,12 @@ struct stru324_spell
 
 /*  151 */
 #pragma pack(push, 1)
-struct SpellData
+class SpellData
 {
+public:
+  SpellData(__int16 innormalMana, __int16 inExpertLevelMana, __int16 inMasterLevelMana, __int16 inMagisterLevelMana,
+            __int16 inNormalLevelRecovery, __int16 inExpertLevelRecovery, __int16 inMasterLevelRecovery, __int16 inMagisterLevelRecovery,
+            __int8 inbaseDamage, __int8 inbonusSkillDamage, __int16 instats);
   union
   {
     unsigned __int16 mana_per_skill[4];
@@ -241,8 +245,9 @@ struct SpellData
       unsigned __int16 uMagisterLevelRecovery;
     };
   };
-  __int16 field_10;
-  __int16 field_12;
+  __int8 baseDamage;
+  __int8 bonusSkillDamage;
+  __int16 stats;
  // char field_12;
  // char field_13;
  // __int16 field_14;
@@ -279,3 +284,8 @@ extern std::array<std::array<struct SpellBookIconPos, 12>, 9> pIconPos;
 extern std::array<stru324_spell, 103> stru_4E3ACC;
 extern std::array<SpellData, 100> pSpellDatas;
 extern std::array<unsigned int, 25> wand_spell_ids;
+
+int _43AFE3_calc_spell_damage(int spellId, int spellLevel, signed int skillMastery, int currentHp);
+
+bool sub_427769_isSpellQuickCastableOnShiftClick(unsigned int uSpellID);
+void __fastcall EventCastSpell(int uSpellID, int uSkillLevel, int uSkill, int fromx, int fromy, int fromz, int tox, int toy, int toz);//sub_448DF8

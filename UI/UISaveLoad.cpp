@@ -1,9 +1,8 @@
-#ifdef _MSC_VER
 #define _CRT_SECURE_NO_WARNINGS
-#endif
-
 #include <io.h>
+
 #include "..\MM7.h"
+#include "..\ErrorHandling.h"
 
 #include "..\Keyboard.h"
 
@@ -16,12 +15,13 @@
 #include "..\texts.h"
 
 #include "..\mm7_data.h"
+#include "..\mm7_unsorted_subs.h"
 
 
 //----- (004601B7) --------------------------------------------------------
 static void UI_DrawSaveLoad(bool save)
 {
-  const char *pSlotName; // edi@36
+//  const char *pSlotName; // edi@36
   GUIWindow save_load_window; // [sp+Ch] [bp-78h]@8
   unsigned int pSaveFiles; // [sp+70h] [bp-14h]@10
   unsigned __int64 full_hours;
@@ -125,9 +125,9 @@ static void UI_DrawSaveLoad(bool save)
       if ( slot_Y >= 346 )
         break;
       if ( pGUIWindow_CurrentMenu->receives_keyboard_input_2 != WINDOW_INPUT_IN_PROGRESS || i != uLoadGameUI_SelectedSlot )
-        pGUIWindow_CurrentMenu->DrawTextInRect(pFontSmallnum, 27, slot_Y, i == uLoadGameUI_SelectedSlot ? TargetColor(0xFF, 0xFF, 0x64) : 0, pSavegameHeader[i].pName, 185, 0);
+        pGUIWindow_CurrentMenu->DrawTextInRect(pFontSmallnum, 27, slot_Y, i == uLoadGameUI_SelectedSlot ? Color16(0xFF, 0xFF, 0x64) : 0, pSavegameHeader[i].pName, 185, 0);
       else
-        pGUIWindow_CurrentMenu->DrawFlashingInputCursor(pGUIWindow_CurrentMenu->DrawTextInRect(pFontSmallnum, 27, slot_Y, i == uLoadGameUI_SelectedSlot ? TargetColor(0xFF, 0xFF, 0x64) : 0, (const char *)pKeyActionMap->pPressedKeysBuffer, 175, 1) + 27,
+        pGUIWindow_CurrentMenu->DrawFlashingInputCursor(pGUIWindow_CurrentMenu->DrawTextInRect(pFontSmallnum, 27, slot_Y, i == uLoadGameUI_SelectedSlot ? Color16(0xFF, 0xFF, 0x64) : 0, (const char *)pKeyActionMap->pPressedKeysBuffer, 175, 1) + 27,
            slot_Y, pFontSmallnum);
       slot_Y += 21;
     }
@@ -255,8 +255,8 @@ void SaveUI_Load()
   ++pIcons_LOD->uTexturePacksCount;
   if ( !pIcons_LOD->uNumPrevLoadedFiles )
     pIcons_LOD->uNumPrevLoadedFiles = pIcons_LOD->uNumLoadedFiles;
-  memset(pSavegameUsedSlots.data(), 0, 0xB4u);
-  memset(&pSavegameThumbnails, 0, 0x708u);
+  memset(&pSavegameUsedSlots, 0, sizeof(pSavegameUsedSlots));
+  memset(&pSavegameThumbnails, 0, sizeof(pSavegameThumbnails));
   uTextureID_loadsave = pIcons_LOD->LoadTexture("loadsave", TEXTURE_16BIT_PALETTE);
   uTextureID_load_up = pIcons_LOD->LoadTexture("load_up", TEXTURE_16BIT_PALETTE);
   uTextureID_save_up = pIcons_LOD->LoadTexture("save_up", TEXTURE_16BIT_PALETTE);
@@ -310,7 +310,7 @@ void SaveUI_Load()
   uTextureID_LS_ = pIcons_LOD->LoadTexture("LS_saveD", TEXTURE_16BIT_PALETTE);
   uTextureID_AR_UP_DN = pIcons_LOD->LoadTexture("AR_UP_DN", TEXTURE_16BIT_PALETTE);
   uTextureID_AR_DN_DN = pIcons_LOD->LoadTexture("AR_DN_DN", TEXTURE_16BIT_PALETTE);
-  pGUIWindow_CurrentMenu = GUIWindow::Create(0, 0, 640, 480, WINDOW_SaveLoadButtons, 0, 0);
+  pGUIWindow_CurrentMenu = GUIWindow::Create(0, 0, window->GetWidth(), window->GetHeight(), WINDOW_SaveLoadButtons, 0, 0);
   pGUIWindow_CurrentMenu->CreateButton(21, 198, 191, 18, 1, 0, UIMSG_SelectLoadSlot, 0, 0, "", 0);
   pGUIWindow_CurrentMenu->CreateButton(21, 218, 191, 18, 1, 0, UIMSG_SelectLoadSlot, 1, 0, "", 0);
   pGUIWindow_CurrentMenu->CreateButton(21, 238, 191, 18, 1, 0, UIMSG_SelectLoadSlot, 2, 0, "", 0);

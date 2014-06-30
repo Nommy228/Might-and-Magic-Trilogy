@@ -1,8 +1,6 @@
-#ifdef _MSC_VER
 #define _CRT_SECURE_NO_WARNINGS
-#endif
-
 #include <string>
+#include "mm7_unsorted_subs.h"
 
 #include "Render.h"
 #include "Arcomage.h"
@@ -11,7 +9,7 @@
 #include "Mouse.h"
 #include "Game.h"
 #include "Viewport.h"
-#include "Time.h"
+#include "Timer.h"
 #include "GUIFont.h"
 #include "Party.h"
 #include "GUIWindow.h"
@@ -57,10 +55,8 @@ int  ApplyDamageToBuildings(int player_num, int damage); // weak
 void GameResultsApply();
 
 void am_DrawText(int a1, const char *pText, POINT *pXY);
-void  am_BeginScene(unsigned __int16 *pPcxPixels, int a2, int a3); // idb
-void __fastcall Blt_Chroma(RECT  *pSrcXYZW, POINT *pTargetXY, int a3, int a4);
-void  Blt_Copy(RECT *pSrcRect, POINT *pTargetXY, int a3);
-void  am_EndScene();
+void am_BeginScene(unsigned __int16 *pPcxPixels, int a2, int a3); // idb
+void am_EndScene();
 void DrawRect(RECT *pXYZW, unsigned __int16 uColor, char bSolidFill);
 void DrawSquare( POINT *pTargetXY, unsigned __int16 uColor );
 void DrawPixel(POINT *pTargetXY, unsigned __int16 uColor);
@@ -70,7 +66,7 @@ void __fastcall am_IntToString(int val, char *pOut);
 //----- (0040DEDB) --------------------------------------------------------
 unsigned int R8G8B8_to_TargetFormat(int uColor)
 {
-  return TargetColor(LOBYTE(uColor), BYTE1(uColor), BYTE2(uColor));
+  return Color16(LOBYTE(uColor), BYTE1(uColor), BYTE2(uColor));
 }
 
 /*  388 */
@@ -175,6 +171,7 @@ int opponent_mastery = 1 ; // weak
 bool am_gameover; // 004FAA2C
 char byte_4FAA2D; // weak
 
+int am_default_starting_player = 0; // 505890
 int current_player_num; // 004FAA6C
 char need_to_discard_card; // 04FAA77
 
@@ -255,47 +252,44 @@ stru272_stru0 *stru272_stru0::New()
 
 //----- (0040DFFE) --------------------------------------------------------
 int stru272_stru0::Free()
-    {
-
-    if ( this->signature == SIG_trpg )
-        {
-        this->signature = SIG_xxxx;
-        free(this);
-        return 0;
-        }
-    else
-        return 2;
-
-    }
+{
+  if ( this->signature == SIG_trpg )
+  {
+    this->signature = SIG_xxxx;
+    free(this);
+    return 0;
+  }
+  else
+    return 2;
+}
 
 //----- (0040E01A) --------------------------------------------------------
 int stru272_stru0::StartFill( stru272_stru2* a2 )
-    {
-    stru272_stru0* a1 = this;
-    if ( a1->signature == SIG_trpg )
-        {
-        a1->field_4 = a2->field_20;
-        a1->field_C = a2->effect_area.left << 16;
-        a1->field_10 = a2->effect_area.top << 16;
-        a1->field_14 = a2->effect_area.right << 16;
-        a1->field_18 = a2->effect_area.bottom << 16;
-        a1->field_1C = a2->field_10;
-        a1->field_20 = a2->field_14;
-        a1->field_24 = a2->field_18;
-        a1->field_28 = (float)(a2->field_1Cf * 65536.0);
-        a1->field_2C = a2->field_24f;
-        a1->field_34 = (int)(a2->field_28f * 65536.0);
-        a1->field_38 = (int)(a2->field_2Cf * 65536.0);
-        a1->field_3C = a2->field_30;
-        a1->field_40 = a2->field_34;
-        a1->field_54 = a2->sparks_array;
-        a1->field_59 = 1;
-
-        return 0;
-        }
-    else
-       return 2;
-    }
+{
+  //stru272_stru0* a1 = this;
+  if ( this->signature == SIG_trpg )
+  {
+    this->field_4 = a2->field_20;
+    this->field_C = a2->effect_area.left << 16;
+    this->field_10 = a2->effect_area.top << 16;
+    this->field_14 = a2->effect_area.right << 16;
+    this->field_18 = a2->effect_area.bottom << 16;
+    this->field_1C = a2->field_10;
+    this->field_20 = a2->field_14;
+    this->field_24 = a2->field_18;
+    this->field_28 = (float)(a2->field_1Cf * 65536.0);
+    this->field_2C = a2->field_24f;
+    this->field_34 = (int)(a2->field_28f * 65536.0);
+    this->field_38 = (int)(a2->field_2Cf * 65536.0);
+    this->field_3C = a2->field_30;
+    this->field_40 = a2->field_34;
+    this->field_54 = a2->sparks_array;
+    this->field_59 = 1;
+    return 0;
+  }
+  else
+    return 2;
+}
 
 //----- (0040E0F5) --------------------------------------------------------
 int stru272_stru0::Clear(char a2, char a3)
@@ -322,118 +316,117 @@ int stru272_stru0::Clear(char a2, char a3)
 
 //----- (0040E133) --------------------------------------------------------
 int stru272_stru0::DrawEffect()
+{
+//    stru272_stru0 *v1; // edi@1
+  int v3; // ST18_4@3
+  double v4; // st7@3
+  double v5; // st6@4
+  char v6; // bl@8
+  stru272_stru1 *v7; // esi@8
+  int v8; // ecx@10
+  signed int v9; // eax@10
+  int v10; // ecx@10
+  signed int v11; // eax@10
+  int v12; // ebx@12
+  int v13; // ST1C_4@12
+  int v14; // ebx@12
+  int v15; // ST1C_4@12
+  signed int v16; // edx@12
+  int v17; // ebx@12
+  int v18; // ST1C_4@12
+  signed int v19; // edx@12
+  int v20; // [sp+8h] [bp-10h]@8
+  int v21; // [sp+Ch] [bp-Ch]@8
+  float v22; // [sp+14h] [bp-4h]@3
+
+  if ( this->signature != SIG_trpg )
+    return 2;
+  v3 = this->position_in_sparks_arr;
+  v22 = this->field_30;
+  v4 = v3;
+  if ( v3 > 0 )
+  {
+    v5 = v22 + this->field_2C;
+    v22 = v5;
+    if ( v5 > v4 )
+      v22 = v4;
+  }
+  if ( v22 >= 1.0 || this->field_58 )
+  {
+    v6 = 0;
+    v7 = this->field_54;
+    v20 = this->field_28;
+
+    for ( v21 = this->field_4; v21; v21-- )
     {
-
-    stru272_stru0 *v1; // edi@1
-    int v3; // ST18_4@3
-    double v4; // st7@3
-    double v5; // st6@4
-    char v6; // bl@8
-    stru272_stru1 *v7; // esi@8
-    int v8; // ecx@10
-    signed int v9; // eax@10
-    int v10; // ecx@10
-    signed int v11; // eax@10
-    int v12; // ebx@12
-    int v13; // ST1C_4@12
-    int v14; // ebx@12
-    int v15; // ST1C_4@12
-    signed int v16; // edx@12
-    int v17; // ebx@12
-    int v18; // ST1C_4@12
-    signed int v19; // edx@12
-    int v20; // [sp+8h] [bp-10h]@8
-    int v21; // [sp+Ch] [bp-Ch]@8
-    float v22; // [sp+14h] [bp-4h]@3
-
-    v1 = this;
-    if ( this->signature != SIG_trpg )
-        return 2;
-    v3 = this->position_in_sparks_arr;
-    v22 = this->field_30;
-    v4 = v3;
-    if ( v3 > 0 )
-        {
-        v5 = v22 + this->field_2C;
-        v22 = v5;
-        if ( v5 > v4 )
-            v22 = v4;
-        }
-    if ( v22 >= 1.0 || this->field_58 )
-        {
-        v6 = 0;
-        v7 = this->field_54;
-        v20 = this->field_28;
-        v21 = this->field_4;
-        while ( v7->have_spark <= 0 )
-            {
-            if ( v22 >= 1.0 )
-                {
-                v12 = v1->field_40;
-                v13 = v1->field_3C;
-                v7->have_spark = rand_interval(v13,v12);
-                v7->field_14 = (rand() % 17 - 8) << 16;
-                v7->field_18 = (rand() % 17 - 8) << 16;
-
-                v14 = v1->field_14 - 1;
-                v15 = v1->field_C;
-                v16 = rand_interval(v15,v14);
-                v7->field_C = v16;
-                v7->spark_position.x = v16 >> 16;
-
-                v17 = v1->field_18 - 1;
-                v18 = v1->field_10;
-                v19 = rand_interval(v17, v18);
-                v7->field_10 = v19;
-                v7->spark_position.y = v19 >> 16;
-                --v1->position_in_sparks_arr;
-                v22 = v22 - 1.0;
-                goto LABEL_13;
-                }
-LABEL_14:
-            ++v7;
-            --v21;
-            if ( !v21 )
-                {
-                v1->field_58 = v6;
-                v1->field_30 = v22;
-                return 0;
-                }
-            }
-        v8 = v7->field_14;
-        --v7->have_spark;
-        v9 = v8 + v7->field_C;
-
-        v10 = v20 + v7->field_18;
-        v7->field_C = v9;
-        v7->spark_position.x = v9 >> 16;
-
-        v11 = v10 + v7->field_10;
-        v7->field_18 = v10;
-        v7->field_10 = v11;
-        v7->spark_position.y = v11 >> 16;
-LABEL_13:
+		if ( v7->have_spark > 0  )
+		{
+    v8 = v7->field_14;
+    --v7->have_spark;
+    v9 = v8 + v7->field_C;
+    v10 = v20 + v7->field_18;
+    v7->field_C = v9;
+    v7->spark_position.x = v9 >> 16;
+    v11 = v10 + v7->field_10;
+    v7->field_18 = v10;
+    v7->field_10 = v11;
+    v7->spark_position.y = v11 >> 16;
+    v6 = 1;
+    //goto LABEL_14;
+		}
+		else
+		{
+      if ( v22 >= 1.0 )
+      {
+        v12 = this->field_40;
+        v13 = this->field_3C;
+        v7->have_spark = rand_interval(v13,v12);
+        v7->field_14 = (rand() % 17 - 8) << 16;
+        v7->field_18 = (rand() % 17 - 8) << 16;
+        v14 = this->field_14 - 1;
+        v15 = this->field_C;
+        v16 = rand_interval(v15,v14);
+        v7->field_C = v16;
+        v7->spark_position.x = v16 >> 16;
+        v17 = this->field_18 - 1;
+        v18 = this->field_10;
+        v19 = rand_interval(v17, v18);
+        v7->field_10 = v19;
+        v7->spark_position.y = v19 >> 16;
+        --this->position_in_sparks_arr;
+        v22 = v22 - 1.0;
         v6 = 1;
-        goto LABEL_14;
-        }
-    return 0;
+      }
+		}
+//LABEL_14:
+      ++v7;
+      //--v21;
+      //if ( !v21 )
+      //{
+        //this->field_58 = v6;
+        //this->field_30 = v22;
+        //return 0;
+      //}
     }
+    this->field_58 = v6;
+    this->field_30 = v22;
+  }
+  return 0;
+}
 
 //----- (0040E2A7) --------------------------------------------------------
 int stru272_stru0::_40E2A7()
-    {
-
-    if (signature == SIG_trpg )
-        {
-        if ( position_in_sparks_arr <= 0 )
-            return field_58 != 0 ? 2 : 0;
-        else
-            return 1;
-        }
+{
+  if (signature == SIG_trpg )
+  {
+    if ( position_in_sparks_arr <= 0 )
+      return field_58 != 0 ? 2 : 0;
     else
-        return 3;
-    }
-
+      return 1;
+  }
+  else
+    return 3;
+}
 
 //----- (0040DFAF) --------------------------------------------------------
 void ArcomageGame::OnMouseClick(char right_left, bool bDown)
@@ -451,7 +444,6 @@ void ArcomageGame::OnMouseMove(int x, int y)
   pArcomageGame->mouse_y = y;
 }
 
-
 //----- (0040DF47) --------------------------------------------------------
 void DoBlt_Copy(unsigned __int16 *pPixels)
 {
@@ -465,19 +457,19 @@ void DoBlt_Copy(unsigned __int16 *pPixels)
 
   pSrcRect.left   = 0;
   pSrcRect.top    = 0;
-  pSrcRect.right  = 640;
-  pSrcRect.bottom = 480;
+  pSrcRect.right  = window->GetWidth();
+  pSrcRect.bottom = window->GetHeight();
 
   pRenderer->BeginScene();
   pArcomageGame->pBlit_Copy_pixels = pPixels;
-  Blt_Copy(&pSrcRect, &pTargetPoint, 2);
+  pRenderer->am_Blt_Copy(&pSrcRect, &pTargetPoint, 2);
   pRenderer->EndScene();
-  pArcomageGame->pBlit_Copy_pixels = 0;
+  pArcomageGame->pBlit_Copy_pixels = nullptr;
 }
 
 //----- (0040DDC9) --------------------------------------------------------
 void ArcomageGame::PlaySound( unsigned int event_id )
-    {
+{
   SoundID play_sound_id; // eax@10
 
   switch ( event_id )
@@ -551,7 +543,7 @@ void ArcomageGame::PlaySound( unsigned int event_id )
       break;
   default:
       return;
-      }
+  }
   pAudioPlayer->PlaySound(play_sound_id, 0, 0, -1, 0, 0, 0, 0);
 }
 
@@ -560,10 +552,6 @@ bool ArcomageGame::MsgLoop(int a1, ArcomageGame_stru1 *a2)
 {
   void *v2; // ebp@1
   BOOL v3; // eax@1
-  //int v4; // edx@6
-  //int v5; // edx@6
-  //int v6; // eax@6
-  //int v7; // edx@7
 
   v2 = a2;
   pArcomageGame->field_0 = 0;
@@ -611,7 +599,6 @@ bool ArcomageGame::MsgLoop(int a1, ArcomageGame_stru1 *a2)
   return pArcomageGame->stru1.field_0 != 0;
 }
 
-
 //----- (0040D7D5) --------------------------------------------------------
 void am_BeginScene(unsigned __int16 *pPcxPixels, int a2, int a3)
 {
@@ -620,161 +607,162 @@ void am_BeginScene(unsigned __int16 *pPcxPixels, int a2, int a3)
 }
 
 //----- (0040D7EC) --------------------------------------------------------
-void __fastcall Blt_Chroma(RECT *pSrcRect, POINT *pTargetPoint, int a3, int blend_mode)
+void Render::am_Blt_Chroma(RECT *pSrcRect, POINT *pTargetPoint, int a3, int blend_mode)
 {
+  unsigned __int16 *pSrc; // eax@2
+  int uSrcTotalWidth; // ecx@4
+  unsigned int v10; // esi@9
+  int v21; // [sp+Ch] [bp-18h]@8
+  unsigned __int16 *src_surf_pos; // [sp+10h] [bp-14h]@9
+  __int32 src_width; // [sp+14h] [bp-10h]@3
+  __int32 src_height; // [sp+18h] [bp-Ch]@3
+  int uSrcPitch; // [sp+1Ch] [bp-8h]@5
 
-unsigned __int16 *pSrc; // eax@2
-unsigned __int16 *dest_surf_pos; // edi@3
-int uSrcTotalWidth; // ecx@4
-unsigned int v10; // esi@9
-int v21; // [sp+Ch] [bp-18h]@8
-unsigned __int16 *src_surf_pos; // [sp+10h] [bp-14h]@9
-__int32 src_width; // [sp+14h] [bp-10h]@3
-__int32 src_height; // [sp+18h] [bp-Ch]@3
-int uSrcPitch; // [sp+1Ch] [bp-8h]@5
-
-
-if ( !pRenderer->uNumSceneBegins )
+  if ( !uNumSceneBegins )
     return;
-if ( !pArcomageGame->pBlit_Copy_pixels )
+  if ( !pArcomageGame->pBlit_Copy_pixels )
     return;
 
-dest_surf_pos = &pRenderer->pTargetSurface[pTargetPoint->x + pTargetPoint->y * pRenderer->uTargetSurfacePitch];
-src_width = pSrcRect->right - pSrcRect->left;
-src_height = pSrcRect->bottom - pSrcRect->top;
+  //dest_surf_pos = &pRenderer->pTargetSurface[pTargetPoint->x + pTargetPoint->y * pRenderer->uTargetSurfacePitch];
+  src_width = pSrcRect->right - pSrcRect->left;
+  src_height = pSrcRect->bottom - pSrcRect->top;
 
-if ( pArcomageGame->pBlit_Copy_pixels == pArcomageGame->pBackgroundPixels )
+  if ( pArcomageGame->pBlit_Copy_pixels == pArcomageGame->pBackgroundPixels )
     uSrcTotalWidth = pArcomageGame->pGameBackground.uWidth;
-else if ( pArcomageGame->pBlit_Copy_pixels == pArcomageGame->pSpritesPixels )
+  else if ( pArcomageGame->pBlit_Copy_pixels == pArcomageGame->pSpritesPixels )
     uSrcTotalWidth = pArcomageGame->pSprites.uWidth;
 
-//v20 = 157;
-//v19 = "E:\\WORK\\MSDEV\\MM7\\MM7\\Code\\am_nw.cpp";
-//v21 = &v18;
-//std__string_char_40E2C8(&v18, "Problem in Blit_Chroma", &a3a);
-//466D09_xcpt_string(&v21, v18, v19, v20);
-//pSrc = pArcomageGame.pBlit_Copy_pixels;
-//LABEL_9:
-pSrc = pArcomageGame->pBlit_Copy_pixels;
-uSrcPitch = uSrcTotalWidth;
-
-src_surf_pos = &pSrc[pSrcRect->left + uSrcPitch * pSrcRect->top];
-v10 = 0xFFu >> (8 - (unsigned __int8)pRenderer->uTargetBBits);
-v21 = (pRenderer->uTargetGBits != 6 ? 0x31EF : 0x7BEF);
-
-
-if ( blend_mode == 2 )
+  //v20 = 157;
+  //v19 = "E:\\WORK\\MSDEV\\MM7\\MM7\\Code\\am_nw.cpp";
+  //v21 = &v18;
+  //std__string_char_40E2C8(&v18, "Problem in Blit_Chroma", &a3a);
+  //466D09_xcpt_string(&v21, v18, v19, v20);
+  //pSrc = pArcomageGame.pBlit_Copy_pixels;
+  //LABEL_9:
+  pSrc = pArcomageGame->pBlit_Copy_pixels;
+  uSrcPitch = uSrcTotalWidth;
+  src_surf_pos = &pSrc[pSrcRect->left + uSrcPitch * pSrcRect->top];
+  v10 = 0x1F;//0xFF >> (8 - (unsigned __int8)uTargetBBits);
+  v21 = (uTargetGBits != 6 ? 0x31EF : 0x7BEF);
+  if ( blend_mode == 2 )
+  {
+    uSrcPitch =  (uSrcPitch - src_width);
+    for ( int i = 0; i < src_height; ++i )
     {
-        uSrcPitch =  (uSrcPitch - src_width);
-        for (int i=0; i< src_height; ++i)
-            {
-            for (int j=0; j< src_width; ++j)
-                {
-                if ( *src_surf_pos != v10 )
-                    *dest_surf_pos = *src_surf_pos;
-                ++dest_surf_pos;
-                ++src_surf_pos;
-                }
-            src_surf_pos+=uSrcPitch;
-            dest_surf_pos += pRenderer->uTargetSurfacePitch - src_width;
-            }
-    }
-else 
-    {
-    uSrcPitch = (uSrcPitch - src_width);
-    for (int i=0; i< src_height; ++i)
+      for ( int j = 0; j < src_width; ++j )
+      {
+        if ( *src_surf_pos != v10 )
         {
-        for (int j=0; j< src_width; ++j)
-            {
-            if ( *src_surf_pos != v10 )
-                *dest_surf_pos = (v21 & (*dest_surf_pos >> 1)) + (v21 & (*src_surf_pos >> 1));
-            ++dest_surf_pos;
-            ++src_surf_pos;
-            }
-        src_surf_pos+=uSrcPitch;
-        dest_surf_pos += pRenderer->uTargetSurfacePitch - src_width;
+          if ( pTargetPoint->x + j >= 0 && pTargetPoint->x + j <= window->GetWidth() - 1 
+            && pTargetPoint->y + i >= 0 && pTargetPoint->y + i <= window->GetHeight() - 1)
+            WritePixel16(pTargetPoint->x + j, pTargetPoint->y + i, *src_surf_pos);
         }
+        ++src_surf_pos;
+      }
+      src_surf_pos += uSrcPitch;
     }
-
+  }
+  else 
+  {
+    uSrcPitch = (uSrcPitch - src_width);
+    for ( int i = 0; i < src_height; ++i )
+    {
+      for ( int j = 0; j < src_width; ++j )
+      {
+        if ( *src_surf_pos != v10 )
+        {
+          if ( pTargetPoint->x + j >= 0 && pTargetPoint->x + j <= window->GetWidth() - 1
+            && pTargetPoint->y + i >= 0 && pTargetPoint->y + i <= window->GetHeight() - 1)
+          //WritePixel16(pTargetPoint->x + j, pTargetPoint->y + i, (v21 & (ReadPixel16(pTargetPoint->x + j, pTargetPoint->y + i) >> 1)) + (v21 & (*src_surf_pos >> 1)));
+            WritePixel16(pTargetPoint->x + j, pTargetPoint->y + i, (0x7BEF & (*src_surf_pos / 2)));
+        }
+        ++src_surf_pos;
+      }
+      src_surf_pos+=uSrcPitch;
+    }
+  }
 }
 
 //----- (0040D9B1) --------------------------------------------------------
-void Blt_Copy( RECT *pSrcRect, POINT *pTargetPoint, int blend_mode )
+void Render::am_Blt_Copy( RECT *pSrcRect, POINT *pTargetPoint, int blend_mode )
+{
+  unsigned __int16 *pSrc; // eax@2
+  int uSrcTotalWidth; // ecx@4
+  int v21; // [sp+Ch] [bp-18h]@8
+  unsigned __int16 *src_surf_pos; // [sp+10h] [bp-14h]@9
+  __int32 src_width; // [sp+14h] [bp-10h]@3
+  __int32 src_height; // [sp+18h] [bp-Ch]@3
+  int uSrcPitch; // [sp+1Ch] [bp-8h]@5
+
+  if ( !uNumSceneBegins )
+    return;
+  if ( !pArcomageGame->pBlit_Copy_pixels )
+    return;
+
+    //dest_surf_pos = &pRenderer->pTargetSurface[pTargetPoint->x + pTargetPoint->y * pRenderer->uTargetSurfacePitch];
+  src_width = pSrcRect->right - pSrcRect->left;
+  src_height = pSrcRect->bottom - pSrcRect->top;
+  if ( pArcomageGame->pBlit_Copy_pixels == pArcomageGame->pBackgroundPixels )
+    uSrcTotalWidth = pArcomageGame->pGameBackground.uWidth;
+  else if ( pArcomageGame->pBlit_Copy_pixels == pArcomageGame->pSpritesPixels )
+    uSrcTotalWidth = pArcomageGame->pSprites.uWidth;
+
+  //v20 = 157;
+  //v19 = "E:\\WORK\\MSDEV\\MM7\\MM7\\Code\\am_nw.cpp";
+  //v21 = &v18;
+  //std__string_char_40E2C8(&v18, "Problem in Blit_Chroma", &a3a);
+  //466D09_xcpt_string(&v21, v18, v19, v20);
+  //pSrc = pArcomageGame.pBlit_Copy_pixels;
+  //LABEL_9:
+  pSrc = pArcomageGame->pBlit_Copy_pixels;
+  uSrcPitch = uSrcTotalWidth;
+  src_surf_pos = &pSrc[pSrcRect->left + uSrcPitch * pSrcRect->top];
+  v21 = (uTargetGBits != 6 ? 0x31EF : 0x7BEF);
+
+  if ( blend_mode == 2 )
+  {
+    uSrcPitch =  (uSrcPitch - src_width);
+    for ( int i = 0; i < src_height; ++i )
     {
-
-    unsigned __int16 *pSrc; // eax@2
-    unsigned __int16 *dest_surf_pos; // edi@3
-    int uSrcTotalWidth; // ecx@4
-    int v21; // [sp+Ch] [bp-18h]@8
-    unsigned __int16 *src_surf_pos; // [sp+10h] [bp-14h]@9
-    __int32 src_width; // [sp+14h] [bp-10h]@3
-    __int32 src_height; // [sp+18h] [bp-Ch]@3
-    int uSrcPitch; // [sp+1Ch] [bp-8h]@5
-
-    if ( !pRenderer->uNumSceneBegins )
-        return;
-    if ( !pArcomageGame->pBlit_Copy_pixels )
-        return;
-
-    dest_surf_pos = &pRenderer->pTargetSurface[pTargetPoint->x + pTargetPoint->y * pRenderer->uTargetSurfacePitch];
-    src_width = pSrcRect->right - pSrcRect->left;
-    src_height = pSrcRect->bottom - pSrcRect->top;
-
-    if ( pArcomageGame->pBlit_Copy_pixels == pArcomageGame->pBackgroundPixels )
-        uSrcTotalWidth = pArcomageGame->pGameBackground.uWidth;
-    else if ( pArcomageGame->pBlit_Copy_pixels == pArcomageGame->pSpritesPixels )
-        uSrcTotalWidth = pArcomageGame->pSprites.uWidth;
-
-    //v20 = 157;
-    //v19 = "E:\\WORK\\MSDEV\\MM7\\MM7\\Code\\am_nw.cpp";
-    //v21 = &v18;
-    //std__string_char_40E2C8(&v18, "Problem in Blit_Chroma", &a3a);
-    //466D09_xcpt_string(&v21, v18, v19, v20);
-    //pSrc = pArcomageGame.pBlit_Copy_pixels;
-    //LABEL_9:
-    pSrc = pArcomageGame->pBlit_Copy_pixels;
-    uSrcPitch = uSrcTotalWidth;
-
-    src_surf_pos = &pSrc[pSrcRect->left + uSrcPitch * pSrcRect->top];
-    v21 = (pRenderer->uTargetGBits != 6 ? 0x31EF : 0x7BEF);
-
-    if ( blend_mode == 2 )
+      for ( int j = 0; j < src_width; ++j )
+      { 
+        if ( *src_surf_pos != v21 )
         {
-        uSrcPitch =  (uSrcPitch - src_width);
-        for (int i=0; i< src_height; ++i)
-            {
-            for (int j=0; j< src_width; ++j)
-                {    
-                *dest_surf_pos = *src_surf_pos;
-                ++dest_surf_pos;
-                ++src_surf_pos;
-                }
-            src_surf_pos+=uSrcPitch;
-            dest_surf_pos += pRenderer->uTargetSurfacePitch - src_width;
-            }
+          if ( pTargetPoint->x + j >= 0 && pTargetPoint->x + j <= window->GetWidth() - 1 
+            && pTargetPoint->y + i >= 0 && pTargetPoint->y + i <= window->GetHeight() - 1)
+            WritePixel16(pTargetPoint->x + j, pTargetPoint->y + i, *src_surf_pos);
         }
-    else 
+        ++src_surf_pos;
+      }
+      src_surf_pos += uSrcPitch;
+    }
+  }
+  else 
+  {
+    uSrcPitch =  (uSrcPitch - src_width);
+    for ( int i = 0; i < src_height; ++i )
+    {
+      for ( int j = 0; j < src_width; ++j )
+      {
+        if ( *src_surf_pos != v21 )
         {
-        uSrcPitch =  (uSrcPitch - src_width);
-        for (int i=0; i< src_height; ++i)
-            {
-            for (int j=0; j< src_width; ++j)
-                {
-                 *dest_surf_pos = (v21 & (*dest_surf_pos >> 1)) + (v21 & (*src_surf_pos >> 1));
-                ++dest_surf_pos;
-                ++src_surf_pos;
-                }
-            src_surf_pos+=uSrcPitch;
-            dest_surf_pos += pRenderer->uTargetSurfacePitch - src_width;
-            }
+          if ( pTargetPoint->x + j >= 0 && pTargetPoint->x + j <= window->GetWidth() - 1
+            && pTargetPoint->y + i >= 0 && pTargetPoint->y + i <= window->GetHeight() - 1)
+          //WritePixel16(pTargetPoint->x + j, pTargetPoint->y + i, (v21 & (ReadPixel16(pTargetPoint->x + j, pTargetPoint->y + i) / 2)) + (v21 & (*src_surf_pos / 2)));
+            WritePixel16(pTargetPoint->x + j, pTargetPoint->y + i, (0x7BEF & (*src_surf_pos / 2)));
         }
+        ++src_surf_pos;
+      }
+      src_surf_pos += uSrcPitch;
+    }
+  }
 }
 
 //----- (0040DB10) --------------------------------------------------------
-void  am_EndScene()
+void am_EndScene()
 {
   pRenderer->EndScene();
-  pArcomageGame->pBlit_Copy_pixels = NULL;
+  pArcomageGame->pBlit_Copy_pixels = nullptr;
 }
 
 //----- (0040D7B7) --------------------------------------------------------
@@ -794,8 +782,8 @@ bool ArcomageGame::LoadBackground()
 }
 
 int CalculateCardPower(ArcomagePlayer* player, ArcomagePlayer* enemy, ArcomageCard* pCard, int mastery)
-    {
-    enum V_INDX{
+{
+  enum V_INDX{
         P_TOWER_M10,
         P_WALL_M10,
         E_TOWER,
@@ -821,7 +809,6 @@ int CalculateCardPower(ArcomagePlayer* player, ArcomagePlayer* enemy, ArcomageCa
     int card_power= 0;
     int element_power;
 
-   
     if ( pCard->to_player_tower  == 99 || pCard->to_pl_enm_tower  == 99|| 
             pCard->to_player_tower2 == 99 || pCard->to_pl_enm_tower2 == 99 )
         element_power = enemy->tower_height - player->tower_height; 
@@ -964,281 +951,121 @@ int CalculateCardPower(ArcomagePlayer* player, ArcomagePlayer* enemy, ArcomageCa
 
     if ( enemy->tower_height <= pCard->to_enemy_tower2 + pCard->to_enemy_tower )
         card_power += 9999;
-  
+
     if (pCard->to_enemy_tower2    + pCard->to_enemy_tower + 
         pCard->to_enemy_wall      + pCard->to_enemy_wall2 + 
         pCard->to_enemy_buildings + pCard->to_enemy_buildings2 >= enemy->wall_height + enemy->tower_height) 
         card_power += 9999;
 
-    if ( (pCard->to_player_tower2 + pCard->to_pl_enm_tower2 + 
-          pCard->to_player_tower  + pCard->to_pl_enm_tower  + player->tower_height) >= max_tower_height )
-        card_power += 9999;
+  if ( (pCard->to_player_tower2 + pCard->to_pl_enm_tower2 + pCard->to_player_tower  + pCard->to_pl_enm_tower  + player->tower_height)
+         >= max_tower_height )
+    card_power += 9999;
 
-    return card_power;
-    }
-
+  return card_power;
+}
 
 //----- (00408BB4) --------------------------------------------------------
 bool OpponentsAITurn(int player_num)
 {
-    char result; // al@3
-    signed int v2; // ebx@8
-    int v3; // esi@8
-    int all_player_cards_count; // eax@9
-    int random_card_slot; // edi@9
-    int v6; // eax@11
-    signed int v7; // eax@11
-    int v8; // ebx@5
-    int v9; // eax@5
-    int v10; // ecx@18
-    int v11; // eax@20
-    ArcomageCard *v12; // ecx@20
-    char v13; // dl@20
-    char v14; // dl@24
-    int v15; // edx@25
-    int v16; // edx@27
-    char v17; // dl@31
-    int v18; // edx@32
-    char v19; // dl@35
-    char v20; // dl@39
-    int v21; // edx@40
-    char v22; // dl@45
-    int v23; // edx@46
-    char v24; // dl@52
-    int v25; // edx@53
-    char v26; // dl@58
-    int v27; // edx@59
-    char v28; // dl@64
-    int v29; // edx@65
-    char v30; // dl@70
-    int v31; // edx@71
-    char v32; // dl@76
-    int v33; // edx@77
-    char v34; // dl@82
-    int v35; // edx@83
-    char v36; // dl@86
-    char v37; // dl@90
-    int v38; // edi@93
-    char v39; // dl@93
-    int v40; // esi@93
-    char v41; // bl@94
-    char v42; // dl@98
-    char v43; // dl@102
-    char v44; // dl@106
-    char v45; // dl@110
-    char v46; // dl@114
-    ArcomagePlayer *v47; // ebx@115
-    ArcomagePlayer *v48; // edx@115
-    int v49; // esi@123
-    int v50; // edx@123
-    int v51; // edx@126
-    int v52; // esi@129
-    int v53; // edi@137
-    int j; // esi@137
-    am_2 *v55; // eax@139
-    int v56; // ecx@141
-    int v57; // edx@141
-    int v58; // ebx@141
-    int v59; // eax@144
-    int v60; // esi@145
-    int v61; // ebx@4
-    int v62; // eax@4
-    int v63; // ecx@167
-    int v64; // eax@169
-    ArcomageCard *pCard; // ecx@169
-    char v66; // dl@169
-    char v67; // dl@173
-    int v68; // edx@174
-    int v69; // edx@176
-    char v70; // dl@180
-    char v71; // dl@183
-    char v72; // dl@187
-    int v73; // edx@188
-    char v74; // dl@193
-    char v75; // dl@199
-    int v76; // edx@200
-    char v77; // dl@205
-    int v78; // edx@206
-    char v79; // dl@211
-    int v80; // edx@212
-    char v81; // dl@217
-    int v82; // edx@218
-    char v83; // dl@223
-    int v84; // edx@224
-    char v85; // dl@229
-    int v86; // edx@230
-    char v87; // dl@233
-    int v88; // edx@234
-    char v89; // dl@237
-    int v90; // edx@238
-    int v91; // esi@240
-    char v92; // dl@240
-    int v93; // esi@240
-    char v94; // bl@241
-    int v95; // edx@243
-    int v96; // edi@244
-    char v97; // dl@245
-    int v98; // edx@246
-    char v99; // dl@249
-    int v100; // edx@250
-    char v101; // dl@253
-    int v102; // edx@254
-    char v103; // dl@257
-    int v104; // edx@258
-    char v105; // dl@261
-    ArcomagePlayer *v106; // ebx@262
-    ArcomagePlayer *v107; // edx@262
-    int v108; // esi@270
-    int v109; // edx@270
-    int v110; // edx@273
-    int v111; // esi@276
-    int v112; // edi@284
-   // int j; // esi@284
-    am_2 *v114; // eax@286
-    int v115; // ecx@288
-    int v116; // edx@288
-    int v117; // ebx@288
-    int v118; // eax@291
-    int v119; // esi@292
-    int v120; // [sp-28h] [bp-28h]@129
-    int v121; // [sp-28h] [bp-28h]@276
-    int k; // [sp-24h] [bp-24h]@18
-    int i; // [sp-24h] [bp-24h]@167
-    int v124; // [sp-20h] [bp-20h]@5
-    int v125; // [sp-20h] [bp-20h]@4
-    int v126; // [sp-1Ch] [bp-1Ch]@17
-    int v127; // [sp-1Ch] [bp-1Ch]@139
-    int v128; // [sp-1Ch] [bp-1Ch]@166
-    int v129; // [sp-1Ch] [bp-1Ch]@286
-    int v130; // [sp-18h] [bp-18h]@5
-    int cards_count; // [sp-18h] [bp-18h]@4
-    int v132; // [sp-14h] [bp-14h]@0
-    int v133; // [sp-14h] [bp-14h]@93
-    int v134; // [sp-14h] [bp-14h]@129
-    int v135; // [sp-14h] [bp-14h]@240
-    int v136; // [sp-14h] [bp-14h]@276
-    ArcomagePlayer *enemy; // [sp-10h] [bp-10h]@5
-    ArcomagePlayer *enemy1; // [sp-10h] [bp-10h]@4
-    ArcomagePlayer *player; // [sp-Ch] [bp-Ch]@5
-    ArcomagePlayer *player1; // [sp-Ch] [bp-Ch]@4
-    char v141; // [sp-8h] [bp-8h]@35
-    char v142; // [sp-8h] [bp-8h]@183
-    char v143; // [sp-5h] [bp-5h]@20
-    char v144; // [sp-5h] [bp-5h]@169
+  int all_player_cards_count; // eax@9
+  int random_card_slot; // edi@9
+  ArcomageCard *v12; // ecx@20
+  int v56; // ecx@141
+  int v57; // edx@141
+//  int v64; // eax@169
+//  ArcomageCard *pCard; // ecx@169
+//  char v66; // dl@169
+//  char v67; // dl@173
+//  int v68; // edx@174
+  int v132; // [sp-14h] [bp-14h]@0
+  ArcomagePlayer *enemy; // [sp-10h] [bp-10h]@5
+  ArcomagePlayer *player; // [sp-Ch] [bp-Ch]@5
 
-     byte_4FAA00 = 1;
-    if ( opponent_mastery == 0)
-        {
-        if ( need_to_discard_card==0 )  //am_byte_4FAA77
-            {
-           for(int i = 0; i<10 ; ++i )
-                {
-                all_player_cards_count = GetPlayerHandCardCount(player_num);
-                random_card_slot = rand_interval(0, all_player_cards_count - 1);
-                if ( CanCardBePlayed(player_num, random_card_slot) )
-                    return PlayCard(player_num, random_card_slot);
-                 }
-            }
-            all_player_cards_count = GetPlayerHandCardCount(player_num);
-            random_card_slot= rand_interval(0, all_player_cards_count - 1);
-            return DiscardCard(player_num, random_card_slot);
-        }
-    else if (( opponent_mastery == 1 )|| ( opponent_mastery == 2 ))
-        {
-        player = &am_Players[player_num];
-        enemy = &am_Players[(player_num + 1) % 2];
+  byte_4FAA00 = 1;
+  if ( opponent_mastery == 0)
+  {
+    if ( need_to_discard_card == 0 )  //am_byte_4FAA77
+    {
+      for(int i = 0; i < 10; ++i )
+      {
         all_player_cards_count = GetPlayerHandCardCount(player_num);
-        for(int i = 0; i<10 ; ++i )
-            {
-            if ( i >= all_player_cards_count )
-                {
-                cards_power[i].slot_index = -1;
-                cards_power[i].card_power = -9999;
-                }
-            else
-                {
-                cards_power[i].slot_index = i;
-                cards_power[i].card_power = 0;
-                }
-            }
-        for(int i = 0; i< all_player_cards_count ; ++i )
-            {   
-               v12 = &pCards[am_Players[player_num].cards_at_hand[cards_power[i].slot_index]];          
-               cards_power[i].card_power = CalculateCardPower(player, enemy, v12, opponent_mastery-1);
-            }
+        random_card_slot = rand_interval(0, all_player_cards_count - 1);
+        if ( CanCardBePlayed(player_num, random_card_slot) )
+          return PlayCard(player_num, random_card_slot);
+      }
+    }
+    all_player_cards_count = GetPlayerHandCardCount(player_num);
+    random_card_slot= rand_interval(0, all_player_cards_count - 1);
+    return DiscardCard(player_num, random_card_slot);
+  }
+  else if (( opponent_mastery == 1 )|| ( opponent_mastery == 2 ))
+  {
+    player = &am_Players[player_num];
+    enemy = &am_Players[(player_num + 1) % 2];
+    all_player_cards_count = GetPlayerHandCardCount(player_num);
+    for(int i = 0; i < 10 ; ++i )
+    {
+      if ( i >= all_player_cards_count )
+      {
+        cards_power[i].slot_index = -1;
+        cards_power[i].card_power = -9999;
+      }
+      else
+      {
+        cards_power[i].slot_index = i;
+        cards_power[i].card_power = 0;
+      }
+    }
+    for(int i = 0; i < all_player_cards_count ; ++i )
+    {
+      v12 = &pCards[am_Players[player_num].cards_at_hand[cards_power[i].slot_index]];
+      cards_power[i].card_power = CalculateCardPower(player, enemy, v12, opponent_mastery-1);
+    }
 
-            for (int j = all_player_cards_count - 1; j >= 0; --j )
-                {
-                    for (int m=0; m<j; ++m )
-                        {
-                        if ( cards_power[m].card_power < cards_power[m+1].card_power )
-                            {
-                            v56 = cards_power[m].slot_index;
-                            v57 = cards_power[m].card_power;
-                            cards_power[m].slot_index = cards_power[m+1].slot_index;
-                            cards_power[m].card_power = cards_power[m+1].card_power;
-                            cards_power[m+1].slot_index = v56;
-                            cards_power[m+1].card_power = v57;
-                            }
-                        }
-                }                           
-            v59 = all_player_cards_count - 1;
-            if ( need_to_discard_card )
-                {
-                if ( all_player_cards_count - 1 >= 0 )
-                    {
-                    while ( !pCards[am_Players[player_num].cards_at_hand[cards_power[v59].slot_index]].can_be_discarded )
-                        {
-                        --v59;
-                        if ( v59 < 0 )
-                            return DiscardCard(player_num, v132);
-                        }
-                    v132 = cards_power[v59].slot_index;
-                    }
-                }
-            else
-                {
-                v60 = 0;
-                if ( all_player_cards_count - 1 >= 0 )
-                    {
-                    while ( !pCards[am_Players[player_num].cards_at_hand[cards_power[v59].slot_index]].can_be_discarded )
-                        {
-                        --v59;
-                        if ( v59 < 0 )
-                            goto LABEL_150;
-                        }
-                    v132 = cards_power[v59].slot_index;
-                    }
-LABEL_150:
-                if ( (all_player_cards_count - 1)> 0 )
-                    {
-                    while ( !CanCardBePlayed(player_num, cards_power[v60].slot_index) || cards_power[v60].card_power < 0 )
-                        {
-                        ++v60;
-                        if ( v60 >= all_player_cards_count - 1 )
-                            return DiscardCard(player_num, v132);
-                        }
-                    return PlayCard(player_num, cards_power[v60].slot_index);
-                    }
-                }
-            return DiscardCard(player_num, v132);
+    for (int j = all_player_cards_count - 1; j >= 0; --j )
+    {
+      for (int m = 0; m < j; ++m )
+      {
+        if ( cards_power[m].card_power < cards_power[m + 1].card_power )
+        {
+          v56 = cards_power[m].slot_index;
+          v57 = cards_power[m].card_power;
+          cards_power[m].slot_index = cards_power[m + 1].slot_index;
+          cards_power[m].card_power = cards_power[m + 1].card_power;
+          cards_power[m + 1].slot_index = cards_power[m].slot_index;
+          cards_power[m + 1].card_power = cards_power[m].card_power;
         }
-   
-
+      }
+    }
+    if ( need_to_discard_card )
+    {
+      for ( int i = all_player_cards_count - 1; i; --i )
+      {
+        if ( pCards[am_Players[player_num].cards_at_hand[cards_power[i].slot_index]].can_be_discarded )
+          v132 = cards_power[i].slot_index;
+      }
+    }
+    else
+    {
+      for ( int i = all_player_cards_count - 1; i; --i )
+      {
+        if ( pCards[am_Players[player_num].cards_at_hand[cards_power[i].slot_index]].can_be_discarded )
+          v132 = cards_power[i].slot_index;
+      }
+      for ( int i = 0; i < all_player_cards_count - 1; ++i )
+      {
+        if ( CanCardBePlayed(player_num, cards_power[i].slot_index) && cards_power[i].card_power )
+          return PlayCard(player_num, cards_power[i].slot_index);
+      }
+    }
+    return DiscardCard(player_num, v132);
+  }
   return true;//result != 0;
 }
-
-
 
 //----- (00409E6A) --------------------------------------------------------
 void ArcomageGame::Loop()
 {
-  int v0; // edx@2
-  int v1; // ecx@14
-  signed int v2; // eax@15
-  stru272 *v3; // esi@17
-  __int16 *v4; // esi@23
-
   while ( !pArcomageGame->GameOver )
   {
     pArcomageGame->field_F6 = 1;
@@ -1268,15 +1095,11 @@ LABEL_8:
   }
   GameResultsApply();
   if ( am_gameover )
-  {
      dword_4FAA70 = 0;
-  }
   else
-  {
     dword_4FAA70 = -1;
-  }
 
-  for(int i=0; i<10; ++i)
+  for( int i = 0; i < 10; ++i )
   {
       array_4FABD0[i].field_40->Clear(1, 1);
       array_4FABD0[i].field_40->Free();
@@ -1286,14 +1109,11 @@ LABEL_8:
   pArcomageGame->pSprites.Release();
   pArcomageGame->bGameInProgress = false;
   viewparams->bRedrawGameUI = true;
-  if ( pVideoPlayer->AnyMovieLoaded() )
+  if ( pMovie )
     pVideoPlayer->_4BF5B2();
-  for(int i=0; i<12; ++i)
+  for( int i = 0; i < 12; ++i )
     pSoundList->UnloadSound(am_sounds[i], 1);
 }
-
-
-
 
 //----- (00409FE9) --------------------------------------------------------
 void SetStartGameData()
@@ -1303,9 +1123,9 @@ void SetStartGameData()
   signed int i; // ecx@13
   signed int card_dispenser_counter; // eax@13
 
-  current_player_num = dword_505890;
+  current_player_num = am_default_starting_player;
   SetStartConditions();
-  for(i=0; i<2; ++i )
+  for( i = 0; i < 2; ++i )
   {
     if ( i )
     {
@@ -1329,7 +1149,7 @@ void SetStartGameData()
     am_Players[i].resource_gems   = start_gems_amount;
     am_Players[i].resource_beasts = start_beasts_amount;
 
-    for (j=0; j<10; ++j )
+    for ( j = 0; j < 10; ++j )
     {
       am_Players[i].cards_at_hand[j] = -1;
       if ( am_byte_4E185D )
@@ -1345,12 +1165,12 @@ void SetStartGameData()
     }  
   }
   strcpy(deckMaster.name, "Master Deck");
-  for (i=0, card_dispenser_counter=-2, card_id_counter=0; i<DECK_SIZE; ++i, ++card_dispenser_counter)
-      {
-      deckMaster.cardsInUse[i] = 0;
-      deckMaster.cards_IDs[i] =card_id_counter;
-      switch ( card_dispenser_counter )
-          {
+  for ( i = 0, card_dispenser_counter = -2, card_id_counter = 0; i < DECK_SIZE; ++i, ++card_dispenser_counter)
+  {
+    deckMaster.cardsInUse[i] = 0;
+    deckMaster.cards_IDs[i] = card_id_counter;
+    switch ( card_dispenser_counter )
+    {
       case 0:
       case 2:
       case 6:
@@ -1372,13 +1192,12 @@ void SetStartGameData()
       case 81:
       case 84:
       case 89:
-          break;
+        break;
       default:
-          ++card_id_counter;
-          }
-      }
-
-   FillPlayerDeck();
+        ++card_id_counter;
+    }
+  }
+  FillPlayerDeck();
 }
 
 //----- (0040A198) --------------------------------------------------------
@@ -1393,25 +1212,25 @@ void FillPlayerDeck()
   memset(deckMaster.cardsInUse, 0,DECK_SIZE );
   memset(card_taken_flags, 0, DECK_SIZE);
 
-  for (i=0; i<2; ++i)
+  for ( i = 0; i < 2; ++i )
   {
-    for (j=0; j<10; ++j)
+    for ( j = 0; j < 10; ++j )
     {
       if ( am_Players[i].cards_at_hand[j] > -1 )
       {
         for (m = 0; m<DECK_SIZE; ++m)
-            {
-            if (deckMaster.cards_IDs[m] == am_Players[i].cards_at_hand[j] && deckMaster.cardsInUse[m] == 0)
-                {
-                    deckMaster.cardsInUse[m] = 1;
-                    break;
-                }
-            }
+        {
+          if (deckMaster.cards_IDs[m] == am_Players[i].cards_at_hand[j] && deckMaster.cardsInUse[m] == 0)
+          {
+            deckMaster.cardsInUse[m] = 1;
+            break;
+          }
+        }
       }
     }
   }
 
-  for (i=0; i<DECK_SIZE; ++i)
+  for ( i = 0; i < DECK_SIZE; ++i )
   {
     do
       rand_deck_pos = rand() % DECK_SIZE;
@@ -1430,20 +1249,19 @@ void FillPlayerDeck()
 
 //----- (0040A255) --------------------------------------------------------
 void InitalHandsFill()
-    {
+{
   for (int i = 0; i < minimum_cards_at_hand; ++i )
   {
-      GetNextCardFromDeck(0);
-      GetNextCardFromDeck(1);
+    GetNextCardFromDeck(0);
+    GetNextCardFromDeck(1);
   }
   pArcomageGame->field_F6 = 1;
-
 }
 // 4E1874: using guessed type int dword_4E1874;
 
 //----- (0040A283) --------------------------------------------------------
 void GetNextCardFromDeck( int player_num )
-    {
+{
   signed int deck_index; // eax@1
   int new_card_id; // edi@1
   signed int card_slot_indx; // eax@7
@@ -1457,16 +1275,16 @@ void GetNextCardFromDeck( int player_num )
       deck_index = deck_walk_index;
     }
     if ( !playDeck.cardsInUse[deck_index] )
-        {
-        new_card_id = playDeck.cards_IDs[deck_index];
-        ++deck_index;
-        deck_walk_index = deck_index;
-        break;
-        }
+    {
+      new_card_id = playDeck.cards_IDs[deck_index];
+      ++deck_index;
+      deck_walk_index = deck_index;
+      break;
+    }
     ++deck_index;
     deck_walk_index = deck_index;
   }
-  
+
   ArcomageGame::PlaySound(21);
   card_slot_indx = GetEmptyCardSlotIndex(player_num);
   if ( card_slot_indx != -1 )
@@ -1478,23 +1296,17 @@ void GetNextCardFromDeck( int player_num )
     pArcomageGame->field_F6 = 1;
     byte_4FAA2D = 1;
   }
-
 }
-
 
 //----- (0040A324) --------------------------------------------------------
 int GetEmptyCardSlotIndex( int player_num )
-    {
-  int i; 
-  for (i=0; i<10; ++i )
-      {
-       if (am_Players[player_num].cards_at_hand[i]==-1)
-           break;
-      }
-  if ( i >= 10 )
-      return -1;
-  else
-     return i;  
+{
+  for ( int i = 0; i < 10; ++i )
+  {
+    if (am_Players[player_num].cards_at_hand[i] == -1)
+      return i;
+  }
+  return -1;
 }
 
 //----- (0040A346) --------------------------------------------------------
@@ -1511,7 +1323,6 @@ void TurnChange()
 {
   char player_name[64]; // [sp+4h] [bp-64h]@4
  // RECT v6; // [sp+44h] [bp-24h]@6
- 
   ArcomageGame_stru1 v10; // [sp+54h] [bp-14h]@7
   POINT v11; // [sp+60h] [bp-8h]@4
 
@@ -1530,7 +1341,7 @@ void TurnChange()
    //   v11.x = 0;
    //   v11.y = 0;
       strcpy(player_name, "The Next Player is: ");//"След"
-     // v0 = 0;
+      // v0 = 0;
       v11.y = 200;
       v11.x = 320; // - 12 * v0 / 2;
       am_DrawText(-1, player_name, &v11);
@@ -1539,11 +1350,11 @@ void TurnChange()
       if ( current_player_num >= 2  )
         current_player_num = 0;
       strcpy(player_name, am_Players[current_player_num].pPlayerName);
-     // v4 = 0;
+      // v4 = 0;
       v11.y = 260;
       v11.x = 320;// - 12 * v4 / 2;
       am_DrawText(-1, player_name, &v11);
-     /* v6.left = 0;
+      /* v6.left = 0;
       v6.right = 640;
       v6.top = 0;
       v6.bottom = 480;*/
@@ -1551,24 +1362,24 @@ void TurnChange()
       pRenderer->Present();
       //nullsub_1();
       while ( 1 )
-      {  
-          while ( !ArcomageGame::MsgLoop(20, &v10) )
-            ;
-          if ( v10.field_0 == 1 )
-              {
-              if ( v10.field_4 )
-                  break;
-              //nullsub_1();
-              continue;
-              }
-           if (( v10.field_0 > 4 )&& ( v10.field_0 <= 8 )) 
-               break;
-           if ( v10.field_0 == 10 )
-               {
-               pArcomageGame->field_F4 = 1;
-               byte_4FAA74 = 1;
-               break;
-               }
+      {
+        while ( !ArcomageGame::MsgLoop(20, &v10) )
+          ;
+        if ( v10.field_0 == 1 )
+        {
+          if ( v10.field_4 )
+            break;
+          //nullsub_1();
+          continue;
+        }
+        if (( v10.field_0 > 4 ) && ( v10.field_0 <= 8 ))
+          break;
+        if ( v10.field_0 == 10 )
+        {
+          pArcomageGame->field_F4 = 1;
+          byte_4FAA74 = 1;
+          break;
+        }
       }
       /*  v11.x = 0;
       v11.y = 0;
@@ -1582,14 +1393,13 @@ void TurnChange()
   }
 }
 
-
 //----- (0040A514) --------------------------------------------------------
 bool IsGameOver()
 {
   bool result; // eax@1
 
   result = false;
-  for(int i=0; i<2; ++i)
+  for( int i = 0; i < 2; ++i )
   {
     if ( am_Players[i].tower_height <= 0 )
        result  = true;
@@ -1604,23 +1414,22 @@ bool IsGameOver()
   return am_gameover = result;
 }
 
-
 //----- (0040A560) --------------------------------------------------------
 char PlayerTurn( int player_num )
-    {
-  int v1; // ebp@0
-  unsigned __int64 v2; // qax@3
+{
+//  int v1; // ebp@0
+//  unsigned __int64 v2; // qax@3
   unsigned __int64 v3; // kr00_8@3
  
-  int v5; // esi@67
-  char Dest[100]; // [sp+8h] [bp-A8h]@67
-  int v8; // [sp+6Ch] [bp-44h]@3
+//  int v5; // esi@67
+//  char Dest[100]; // [sp+8h] [bp-A8h]@67
+//  int v8; // [sp+6Ch] [bp-44h]@3
   RECT pSrcXYZW; // [sp+70h] [bp-40h]@75
-  int v10[4]; // [sp+80h] [bp-30h]@69
+//  int v10[4]; // [sp+80h] [bp-30h]@69
   POINT pTargetXY; // [sp+90h] [bp-20h]@75
   ArcomageGame_stru1 a2; // [sp+98h] [bp-18h]@8
   int animation_stage; // [sp+A4h] [bp-Ch]@1
-  char v15; // [sp+AEh] [bp-2h]@63
+//  char v15; // [sp+AEh] [bp-2h]@63
   bool break_loop; // [sp+AFh] [bp-1h]@1
 
   uCardID = -1;
@@ -1634,16 +1443,14 @@ char PlayerTurn( int player_num )
     byte_4FAA2D = 1;
   do
   {
-   
-      do
-      {
-        v3 = pEventTimer->Time() - pArcomageGame->event_timer_time;
-      }
-      while (v3 < 6);
-    
+    do
+    {
+      v3 = pEventTimer->Time() - pArcomageGame->event_timer_time;
+    }
+    while (v3 < 6);
     pArcomageGame->event_timer_time = (unsigned int)pEventTimer->Time();
     if ( pArcomageGame->field_F4 )
-      break_loop = 1;
+      break_loop = true;
     ArcomageGame::MsgLoop(0, &a2);
     switch ( a2.field_0 )
     {
@@ -1701,9 +1508,7 @@ char PlayerTurn( int player_num )
             byte_4FAA00 = 0;
           }
           else
-          {
             break_loop = true;
-          }
           byte_4FAA2E = 0;
           animation_stage = 20;
         }
@@ -1808,11 +1613,11 @@ char PlayerTurn( int player_num )
       pTargetXY.x = 0;
       pTargetXY.y = 0;
       pSrcXYZW.left = 0;
-      pSrcXYZW.right = 640;
+      pSrcXYZW.right = window->GetWidth();
       pSrcXYZW.top = 0;
-      pSrcXYZW.bottom = 480;
+      pSrcXYZW.bottom = window->GetHeight();
       am_BeginScene(pArcomageGame->pBackgroundPixels, -1, 1);
-      Blt_Copy(&pSrcXYZW, &pTargetXY, 2);
+      pRenderer->am_Blt_Copy(&pSrcXYZW, &pTargetXY, 2);
       am_EndScene();
       DrawGameUI(animation_stage);
       pRenderer->Present();
@@ -1832,20 +1637,20 @@ void DrawGameUI( int animation_stage )
   am_EndScene();
 
   am_BeginScene(pArcomageGame->pSpritesPixels, -1, 1);
-  DrawCards();
-  DrawPlayersTowers();
-  DrawPlayersWall();
-  DrawPlayersText();
+  DrawCards();//рисуем карты
+  DrawPlayersTowers();//рисуем башню
+  DrawPlayersWall();//рисуем стену
+  DrawPlayersText();//рисуем текст
   am_EndScene();
 
   am_BeginScene(pArcomageGame->pSpritesPixels, -1, 1);
   DrawCardAnimation(animation_stage);
 
-  for( int i=0; i<10; ++i)
-      {
-      if (array_4FABD0[i].have_effect)
-          array_4FABD0[i].field_40->DrawEffect();
-      }
+  for( int i = 0; i < 10; ++i )
+  {
+    if (array_4FABD0[i].have_effect)
+      array_4FABD0[i].field_40->DrawEffect();
+  }
   current_card_slot_index = DrawCardsRectangles(current_player_num);
   DrawSparks();
   am_EndScene();
@@ -1853,37 +1658,35 @@ void DrawGameUI( int animation_stage )
 
 //----- (0040AA4E) --------------------------------------------------------
 void DrawSparks()
-    {
+{
   int rgb_pixel_color; // [sp-4h] [bp-2Ch]@4
   unsigned int pixel_color;
 
-  for (int i=0; i<10; ++i)
+  for ( int i = 0; i < 10; ++i )
+  {
+    if(array_4FABD0[i].have_effect && (array_4FABD0[i].field_40->_40E2A7()==2))
+    {
+      rgb_pixel_color = 0x0000FF00;
+      if ( !array_4FABD0[i].effect_sign )
+        rgb_pixel_color =  0x000000FF;
+      pixel_color = R8G8B8_to_TargetFormat(rgb_pixel_color);
+      for( int j = 0; j < 150; ++j )
       {
-        if(array_4FABD0[i].have_effect && (array_4FABD0[i].field_40->_40E2A7()==2))
-            {
-            rgb_pixel_color = 0x0000FF00;
-            if ( !array_4FABD0[i].effect_sign )
-                rgb_pixel_color =  0x000000FF;
-
-             pixel_color = R8G8B8_to_TargetFormat(rgb_pixel_color);
-             for(int j=0; j<150; ++j )
-                 {
-                 if (array_4FABD0[i].effect_sparks[j].have_spark > 0)
-                     {
-                      if (j%2)
-                          DrawPixel(&array_4FABD0[i].effect_sparks[j].spark_position, pixel_color);
-                      else
-                          DrawSquare(&array_4FABD0[i].effect_sparks[j].spark_position, pixel_color);
-                     }
-                 }
-            }
+        if (array_4FABD0[i].effect_sparks[j].have_spark > 0)
+        {
+          if ( j%2 )
+            DrawPixel(&array_4FABD0[i].effect_sparks[j].spark_position, pixel_color);
+          else
+            DrawSquare(&array_4FABD0[i].effect_sparks[j].spark_position, pixel_color);
+        }
       }
-
+    }
+  }
 }
 
 //----- (0040AB0A) --------------------------------------------------------
 void DrawRectanglesForText()
-{ 
+{
   RECT pSrcRect; // [sp+Ch] [bp-18h]@1
   POINT pTargetXY; // [sp+1Ch] [bp-8h]@1
 
@@ -1895,11 +1698,11 @@ void DrawRectanglesForText()
 
   pTargetXY.x = 8;
   pTargetXY.y = 56;
-  Blt_Copy(&pSrcRect, &pTargetXY, 2);
+  pRenderer->am_Blt_Copy(&pSrcRect, &pTargetXY, 2);
 
   pTargetXY.x = 555;
   pTargetXY.y = 56;
-  Blt_Copy(&pSrcRect, &pTargetXY, 2);
+  pRenderer->am_Blt_Copy(&pSrcRect, &pTargetXY, 2);
 
   //players name rectangle
   pSrcRect.left   = 283;
@@ -1908,11 +1711,11 @@ void DrawRectanglesForText()
   pSrcRect.bottom = 190;
   pTargetXY.x = 8;
   pTargetXY.y = 13;
-  Blt_Chroma(&pSrcRect, &pTargetXY, pArcomageGame->field_54, 2);
+  pRenderer->am_Blt_Chroma(&pSrcRect, &pTargetXY, pArcomageGame->field_54, 2);
 
   pTargetXY.x = 555;
   pTargetXY.y = 13;
-  Blt_Chroma(&pSrcRect, &pTargetXY, pArcomageGame->field_54, 2);
+  pRenderer->am_Blt_Chroma(&pSrcRect, &pTargetXY, pArcomageGame->field_54, 2);
 
   //tower height rectangle
   pSrcRect.left   = 234;
@@ -1921,11 +1724,11 @@ void DrawRectanglesForText()
   pSrcRect.bottom = 190;
   pTargetXY.x = 100;
   pTargetXY.y = 296;
-  Blt_Chroma(&pSrcRect, &pTargetXY, pArcomageGame->field_54, 2);
+  pRenderer->am_Blt_Chroma(&pSrcRect, &pTargetXY, pArcomageGame->field_54, 2);
 
   pTargetXY.x = 492;
   pTargetXY.y = 296;
-  Blt_Chroma(&pSrcRect, &pTargetXY, pArcomageGame->field_54, 2);
+  pRenderer->am_Blt_Chroma(&pSrcRect, &pTargetXY, pArcomageGame->field_54, 2);
 
   //wall height rectangle
   pSrcRect.left   = 192; 
@@ -1934,17 +1737,16 @@ void DrawRectanglesForText()
   pSrcRect.bottom = 190;
   pTargetXY.x = 168;
   pTargetXY.y = 296;
-  Blt_Chroma(&pSrcRect, &pTargetXY, pArcomageGame->field_54, 2);
+  pRenderer->am_Blt_Chroma(&pSrcRect, &pTargetXY, pArcomageGame->field_54, 2);
 
   pTargetXY.x = 430;
   pTargetXY.y = 296;
-  Blt_Chroma(&pSrcRect, &pTargetXY, pArcomageGame->field_54, 2);
+  pRenderer->am_Blt_Chroma(&pSrcRect, &pTargetXY, pArcomageGame->field_54, 2);
 }
 
 //----- (0040AC5F) --------------------------------------------------------
 void DrawPlayersText()
-    {
- 
+{
   int res_value; // ecx@18
   char text_buff[32]; // [sp+Ch] [bp-28h]@2
   POINT text_position; // [sp+2Ch] [bp-8h]@2
@@ -2077,7 +1879,7 @@ void DrawPlayersText()
 
 //----- (0040B102) --------------------------------------------------------
 void DrawPlayerLevels( int a1, char *text, POINT *pXY )
-    {
+{
   char *v3; // esi@1
   unsigned char test_char; // bl@2
   int v7; // eax@3
@@ -2099,7 +1901,7 @@ void DrawPlayerLevels( int a1, char *text, POINT *pXY )
       pSrcRect.left = v7 - 864;
       pSrcRect.top = 190;
       pSrcRect.bottom = 207;
-      Blt_Chroma(&pSrcRect, &pTargetPoint, pArcomageGame->field_54, 1);
+      pRenderer->am_Blt_Chroma(&pSrcRect, &pTargetPoint, pArcomageGame->field_54, 1);
       pTargetPoint.x += 22;
     }
   }
@@ -2109,557 +1911,518 @@ void DrawPlayerLevels( int a1, char *text, POINT *pXY )
 
 //----- (0040B17E) --------------------------------------------------------
 void DrawBricksCount( int a1, char* text, POINT *pXY )
+{
+  char *v3; // esi@1
+  unsigned char test_char; // bl@2
+  int v7; // eax@3
+  RECT pSrcRect;
+  POINT pTargetPoint;
+
+  v3 = text;
+  am_BeginScene(pArcomageGame->pSpritesPixels, -1, 1);
+  pTargetPoint.x = pXY->x;
+  pTargetPoint.y = pXY->y;
+  do
+  {
+    test_char = *v3;
+    ++v3;
+    if ( test_char )
     {
-
-    char *v3; // esi@1
-    unsigned char test_char; // bl@2
-    int v7; // eax@3
-    RECT pSrcRect;
-    POINT pTargetPoint;
-
-    v3 = text;
-    am_BeginScene(pArcomageGame->pSpritesPixels, -1, 1);
-    pTargetPoint.x = pXY->x;
-    pTargetPoint.y = pXY->y;
-    do
-        {
-        test_char = *v3;
-        ++v3;
-        if ( test_char )
-            {
-            v7 = 13 * test_char;
-            pSrcRect.left = v7 - 370;
-            pSrcRect.right = v7 - 357;
-            pSrcRect.top = 128;
-            pSrcRect.bottom = 138;
-            Blt_Copy(&pSrcRect, &pTargetPoint, 2);
-            pTargetPoint.x += 13;
-            }
-        }
-        while ( test_char!= 0 );
-        am_EndScene();
-
+      v7 = 13 * test_char;
+      pSrcRect.left = v7 - 370;
+      pSrcRect.right = v7 - 357;
+      pSrcRect.top = 128;
+      pSrcRect.bottom = 138;
+      pRenderer->am_Blt_Copy(&pSrcRect, &pTargetPoint, 2);
+      pTargetPoint.x += 13;
+    }
+  }
+  while ( test_char!= 0 );
+  am_EndScene();
 }
 
 //----- (0040B1F3) --------------------------------------------------------
 void DrawGemsCount( int a1, char* text, POINT* pXY )
+{
+  char *v3; // esi@1
+  unsigned char test_char; // bl@2
+  int v7; // eax@3
+  RECT pSrcRect;
+  POINT pTargetPoint;
+
+  v3 = text;
+  am_BeginScene(pArcomageGame->pSpritesPixels, -1, 1);
+  pTargetPoint.x = pXY->x;
+  pTargetPoint.y = pXY->y;
+  do
+  {
+    test_char = *v3;
+    ++v3;
+    if ( test_char )
     {
-
-    char *v3; // esi@1
-    unsigned char test_char; // bl@2
-    int v7; // eax@3
-    RECT pSrcRect;
-    POINT pTargetPoint;
-
-    v3 = text;
-    am_BeginScene(pArcomageGame->pSpritesPixels, -1, 1);
-    pTargetPoint.x = pXY->x;
-    pTargetPoint.y = pXY->y;
-    do
-        {
-        test_char = *v3;
-        ++v3;
-        if ( test_char )
-            {
-            v7 = 13 * test_char;
-            pSrcRect.left = v7 - 370;
-            pSrcRect.right = v7 - 357;
-            pSrcRect.top = 138;
-            pSrcRect.bottom = 148;
-            Blt_Copy(&pSrcRect, &pTargetPoint, 2);
-            pTargetPoint.x += 13;
-            }
-        }
-        while ( test_char!= 0 );
-        am_EndScene();
-  
+      v7 = 13 * test_char;
+      pSrcRect.left = v7 - 370;
+      pSrcRect.right = v7 - 357;
+      pSrcRect.top = 138;
+      pSrcRect.bottom = 148;
+      pRenderer->am_Blt_Copy(&pSrcRect, &pTargetPoint, 2);
+      pTargetPoint.x += 13;
+    }
+  }
+  while ( test_char!= 0 );
+  am_EndScene();
 }
 
 //----- (0040B268) --------------------------------------------------------
 void DrawBeastsCount( int a1, char *text, POINT *pXY )
+{
+  char *v3; // esi@1
+  unsigned char test_char; // bl@2
+  int v7; // eax@3
+  RECT pSrcRect;
+  POINT pTargetPoint;
+
+  v3 = text;
+  am_BeginScene(pArcomageGame->pSpritesPixels, -1, 1);
+  pTargetPoint.x = pXY->x;
+  pTargetPoint.y = pXY->y;
+  do
+  {
+    test_char = *v3;
+    ++v3;
+    if ( test_char )
     {
-
-    char *v3; // esi@1
-    unsigned char test_char; // bl@2
-    int v7; // eax@3
-    RECT pSrcRect;
-    POINT pTargetPoint;
-
-    v3 = text;
-    am_BeginScene(pArcomageGame->pSpritesPixels, -1, 1);
-    pTargetPoint.x = pXY->x;
-    pTargetPoint.y = pXY->y;
-    do
-        {
-        test_char = *v3;
-        ++v3;
-        if ( test_char )
-            {
-            v7 = 13 * test_char;
-            pSrcRect.left = v7 - 370;
-            pSrcRect.right = v7 - 357;
-            pSrcRect.top = 148;
-            pSrcRect.bottom = 158;
-            Blt_Copy(&pSrcRect, &pTargetPoint, 2);
-            pTargetPoint.x += 13;
-            }
-        }
-        while ( test_char!= 0 );
-        am_EndScene();
-
+      v7 = 13 * test_char;
+      pSrcRect.left = v7 - 370;
+      pSrcRect.right = v7 - 357;
+      pSrcRect.top = 148;
+      pSrcRect.bottom = 158;
+      pRenderer->am_Blt_Copy(&pSrcRect, &pTargetPoint, 2);
+      pTargetPoint.x += 13;
+    }
+  }
+  while ( test_char!= 0 );
+  am_EndScene();
 }
 
 //----- (0040B2DD) --------------------------------------------------------
 void DrawPlayersTowers()
-    {
-int tower_height; // eax@1
-int tower_top; // esi@3
-RECT pSrcXYZW; // [sp+0h] [bp-18h]@3
-POINT pTargetXY; // [sp+10h] [bp-8h]@3
+{
+  int tower_height; // eax@1
+  int tower_top; // esi@3
+  RECT pSrcXYZW; // [sp+0h] [bp-18h]@3
+  POINT pTargetXY; // [sp+10h] [bp-8h]@3
 
-tower_height= am_Players[0].tower_height;
-if ( am_Players[0].tower_height > max_tower_height )
-      tower_height = max_tower_height;
-pSrcXYZW.top = 0;
-pSrcXYZW.left = 892;
-pSrcXYZW.right = 937;
-tower_top = 200 * tower_height / max_tower_height;
-pSrcXYZW.bottom = tower_top;
-pTargetXY.x = 102;
-pTargetXY.y = 297 - tower_top;
-Blt_Copy(&pSrcXYZW, &pTargetXY, 2);
-
-pSrcXYZW.top = 0;
-pSrcXYZW.left = 384;
-pSrcXYZW.right = 452;
-pSrcXYZW.bottom = 94;
-pTargetXY.y = 203 - tower_top;
-pTargetXY.x = 91;
-Blt_Chroma(&pSrcXYZW, &pTargetXY, pArcomageGame->field_54, 2);
-
-
-tower_height = am_Players[1].tower_height;
-if (am_Players[1].tower_height  > max_tower_height )
+  tower_height= am_Players[0].tower_height;
+  if ( am_Players[0].tower_height > max_tower_height )
     tower_height = max_tower_height;
-tower_top = 200 * tower_height / max_tower_height;
-pSrcXYZW.top    = 0;
-pSrcXYZW.left   = 892;
-pSrcXYZW.right  = 937;
-pSrcXYZW.bottom = tower_top;
+  pSrcXYZW.top = 0;
+  pSrcXYZW.left = 892;
+  pSrcXYZW.right = 937;
+  tower_top = 200 * tower_height / max_tower_height;
+  pSrcXYZW.bottom = tower_top;
+  pTargetXY.x = 102;
+  pTargetXY.y = 297 - tower_top;
+  pRenderer->am_Blt_Copy(&pSrcXYZW, &pTargetXY, 2);//стена башни
 
-pTargetXY.x = 494;
-pTargetXY.y = 297 - tower_top;
-Blt_Copy(&pSrcXYZW, &pTargetXY, 2);
-//draw tower up cone
-pSrcXYZW.left   = 384;
-pSrcXYZW.right  = 452;
-pSrcXYZW.top    =  94;
-pSrcXYZW.bottom = 188;
+  pSrcXYZW.top = 0;
+  pSrcXYZW.left = 384;
+  pSrcXYZW.right = 452;
+  pSrcXYZW.bottom = 94;
+  pTargetXY.y = 203 - tower_top;
+  pTargetXY.x = 91;
+  pRenderer->am_Blt_Chroma(&pSrcXYZW, &pTargetXY, pArcomageGame->field_54, 2);//верхушка башни
 
-pTargetXY.x = 483;
-pTargetXY.y = 203 - tower_top;
-Blt_Chroma(&pSrcXYZW, &pTargetXY, pArcomageGame->field_54, 2);
- 
+  tower_height = am_Players[1].tower_height;
+  if (am_Players[1].tower_height  > max_tower_height )
+    tower_height = max_tower_height;
+  tower_top = 200 * tower_height / max_tower_height;
+  pSrcXYZW.top    = 0;
+  pSrcXYZW.left   = 892;
+  pSrcXYZW.right  = 937;
+  pSrcXYZW.bottom = tower_top;
+
+  pTargetXY.x = 494;
+  pTargetXY.y = 297 - tower_top;
+  pRenderer->am_Blt_Copy(&pSrcXYZW, &pTargetXY, 2);
+  //draw tower up cone
+  pSrcXYZW.left   = 384;
+  pSrcXYZW.right  = 452;
+  pSrcXYZW.top    =  94;
+  pSrcXYZW.bottom = 188;
+
+  pTargetXY.x = 483;
+  pTargetXY.y = 203 - tower_top;
+  pRenderer->am_Blt_Chroma(&pSrcXYZW, &pTargetXY, pArcomageGame->field_54, 2);
 }
 // 4E1884: using guessed type int dword_4E1884;
 
 //----- (0040B400) --------------------------------------------------------
 void DrawPlayersWall()
-    {
-int v0; // eax@1
-int v1; // eax@4
-LONG v2; // ecx@4
-int v3; // eax@5
-int v4; // eax@8
-LONG v5; // esi@8
-RECT pSrcXYZW; // [sp+4h] [bp-18h]@4
-POINT pTargetXY; // [sp+14h] [bp-8h]@4
+{
+  int v0; // eax@1
+  int v1; // eax@4
+//  LONG v2; // ecx@4
+  int v3; // eax@5
+  int v4; // eax@8
+//  LONG v5; // esi@8
+  RECT pSrcXYZW; // [sp+4h] [bp-18h]@4
+  POINT pTargetXY; // [sp+14h] [bp-8h]@4
 
-v0 = am_Players[0].wall_height;
+  v0 = am_Players[0].wall_height;
 
-if ( am_Players[0].wall_height > 100 )
+  if ( am_Players[0].wall_height > 100 )
     v0 = 100;
 
-if ( am_Players[0].wall_height > 0 )
-       {
-
-pSrcXYZW.top = 0;
-pSrcXYZW.left = 843;
-v1 = 200 * v0 / 100;
-pSrcXYZW.right = 867;
-pSrcXYZW.bottom = v1;
-pTargetXY.x = 177;
-pTargetXY.y = 297 - v1;
-Blt_Chroma(&pSrcXYZW, &pTargetXY, pArcomageGame->field_54, 2);
- }
-
-v3 = am_Players[1].wall_height;
-if ( am_Players[1].wall_height > 100 )
- v3 = 100;
-
-    
-    if ( am_Players[1].wall_height > 0 )
-        {
- 
-pSrcXYZW.top = 0;
-pSrcXYZW.left = 843;
-v4 = 200 * v3 / 100;
-pSrcXYZW.right = 867;
-pSrcXYZW.bottom = v4;
-pTargetXY.x = 439;
-pTargetXY.y =  297 - v4;
-Blt_Chroma(&pSrcXYZW, &pTargetXY, pArcomageGame->field_54, 2);
-        }
+  if ( am_Players[0].wall_height > 0 )
+  {
+    pSrcXYZW.top = 0;
+    pSrcXYZW.left = 843;
+    v1 = 200 * v0 / 100;
+    pSrcXYZW.right = 867;
+    pSrcXYZW.bottom = v1;
+    pTargetXY.x = 177;
+    pTargetXY.y = 297 - v1;
+    pRenderer->am_Blt_Chroma(&pSrcXYZW, &pTargetXY, pArcomageGame->field_54, 2);
+  }
+  v3 = am_Players[1].wall_height;
+  if ( am_Players[1].wall_height > 100 )
+    v3 = 100;
+  if ( am_Players[1].wall_height > 0 )
+  {
+    pSrcXYZW.top = 0;
+    pSrcXYZW.left = 843;
+    v4 = 200 * v3 / 100;
+    pSrcXYZW.right = 867;
+    pSrcXYZW.bottom = v4;
+    pTargetXY.x = 439;
+    pTargetXY.y =  297 - v4;
+    pRenderer->am_Blt_Chroma(&pSrcXYZW, &pTargetXY, pArcomageGame->field_54, 2);
+  }
 }
 
 //----- (0040B4B9) --------------------------------------------------------
 void DrawCards()
-    {
+{
+  int v0; // esi@1
+//  char v1; // bl@1
+  int v2; // edi@1
+  //int v3; // edx@2
+//  int v4; // eax@3
+//  int v5; // ecx@3
+//  int v6; // eax@3
+  unsigned int v7; // ecx@4
+//  int v8; // eax@16
+//  int v9; // ecx@16
+//  int v10; // eax@16
+  signed int v11; // edi@18
+//  signed int v12; // esi@20
+//  int v13; // ecx@20
+//  int v14; // eax@23
+//  signed int v15; // eax@25
+//  int v16; // ecx@25
+//  POINT *v17; // esi@26
+//  signed int v18; // eax@29
+//  AcromageCardOnTable *v19; // ecx@29
+//  int v20; // ecx@31
+//  int v21; // [sp-4h] [bp-2Ch]@8
+  RECT pSrcXYZW; // [sp+Ch] [bp-1Ch]@8
+  POINT pTargetXY; // [sp+1Ch] [bp-Ch]@1
+  int v24; // [sp+24h] [bp-4h]@1
 
-int v0; // esi@1
-char v1; // bl@1
-int v2; // edi@1
-int v3; // edx@2
-int v4; // eax@3
-int v5; // ecx@3
-int v6; // eax@3
-unsigned int v7; // ecx@4
-int v8; // eax@16
-int v9; // ecx@16
-int v10; // eax@16
-signed int v11; // edi@18
-signed int v12; // esi@20
-int v13; // ecx@20
-int v14; // eax@23
-signed int v15; // eax@25
-int v16; // ecx@25
-POINT *v17; // esi@26
-signed int v18; // eax@29
-AcromageCardOnTable *v19; // ecx@29
-int v20; // ecx@31
-int v21; // [sp-4h] [bp-2Ch]@8
-RECT pSrcXYZW; // [sp+Ch] [bp-1Ch]@8
-POINT pTargetXY; // [sp+1Ch] [bp-Ch]@1
-int v24; // [sp+24h] [bp-4h]@1
-
-v0 = GetPlayerHandCardCount(current_player_num);
-v2 = 0;
-pTargetXY.y = 327;
-v24 = (640 - 96 * v0) / (v0 + 1);
-pTargetXY.x = (640 - 96 * v0) / (v0 + 1);
-while ( v2 < v0 )
-    {
-    v3 = current_player_num;
+  v0 = GetPlayerHandCardCount(current_player_num);
+  pTargetXY.y = 327;
+  v24 = (window->GetWidth() - 96 * v0) / (v0 + 1);
+  pTargetXY.x = (window->GetWidth() - 96 * v0) / (v0 + 1);
+  for ( v2 = 0; v2 < v0; ++v2 )
+  {
+    //v3 = current_player_num;
     if ( am_byte_4E185D)
-        {
-
-        pTargetXY.x += am_Players[current_player_num].card_shift[v2].x ;
-        pTargetXY.y += am_Players[current_player_num].card_shift[v2].y;
-        }
+    {
+      pTargetXY.x += am_Players[current_player_num].card_shift[v2].x;
+      pTargetXY.y += am_Players[current_player_num].card_shift[v2].y;
+    }
     v7 = am_Players[current_player_num].cards_at_hand[v2];
-    if ( v7 == -1 )
-        {
-        ++v0;
-        goto LABEL_15;
-        }
+    if ( am_Players[current_player_num].cards_at_hand[v2] == -1 )
+    {
+      ++v0;
+      goto LABEL_15;
+    }
     if ( v2 != amuint_4FAA4C )
-        {
-        if ( am_Players[current_player_num].IsHisTurn == 0 && byte_505881 == 0 )
-            {
-            pSrcXYZW.left = 192;
-            pSrcXYZW.right = 288;
-            pSrcXYZW.top = 0;
-            pSrcXYZW.bottom = 128;
-            Blt_Copy(&pSrcXYZW, &pTargetXY, 2);
-            goto LABEL_13;
-            }
-        pArcomageGame->GetCardRect(v7, &pSrcXYZW);
-        if ( !CanCardBePlayed(current_player_num, v2) )
-            {
-            Blt_Copy(&pSrcXYZW, &pTargetXY, 0);
-            goto LABEL_13;
-            }
-        Blt_Copy(&pSrcXYZW, &pTargetXY, 2);
-
-        }
-LABEL_13:
-    v3 = current_player_num;
+    {
+      if ( am_Players[current_player_num].IsHisTurn == 0 && byte_505881 == 0 )
+      {
+        pSrcXYZW.left = 192;
+        pSrcXYZW.right = 288;
+        pSrcXYZW.top = 0;
+        pSrcXYZW.bottom = 128;
+        pRenderer->am_Blt_Copy(&pSrcXYZW, &pTargetXY, 2);//рисуется оборотные стороны карт противника
+        pTargetXY.x += v24 + 96;
+        goto LABEL_15;
+      }
+      pArcomageGame->GetCardRect(v7, &pSrcXYZW);
+      if ( !CanCardBePlayed(current_player_num, v2) )
+      {
+        pRenderer->am_Blt_Copy(&pSrcXYZW, &pTargetXY, 0);//рисуются неактивные карты
+        pTargetXY.x += v24 + 96;
+        goto LABEL_15;
+      }
+      pRenderer->am_Blt_Copy(&pSrcXYZW, &pTargetXY, 2);//рисуются активные карты
+    }
     pTargetXY.x += v24 + 96;
 LABEL_15:
     if ( am_byte_4E185D )
-        {
-        pTargetXY.x -= am_Players[current_player_num].card_shift[v2].x ;
-        pTargetXY.y -= am_Players[current_player_num].card_shift[v2].y ;
-        }
-    ++v2;
-    }
-
-for (v11=0; v11<10; ++v11)
     {
-    if ( am_byte_4FAA76 == 0 )
-        {
-        if ( shown_cards[v11].uCardId != -1 )
-            {
-            pArcomageGame->GetCardRect(shown_cards[v11].uCardId, &pSrcXYZW);
-            Blt_Copy(&pSrcXYZW, &shown_cards[v11].field_18_point, 0);
-            }
-        if ( shown_cards[v11].field_4 != 0 )
-            {
-            pTargetXY.x = shown_cards[v11].field_18_point.x + 12;
-            pTargetXY.y = shown_cards[v11].field_18_point.y + 40;
-            pSrcXYZW.left   = 843;
-            pSrcXYZW.right  = 916;
-            pSrcXYZW.top    = 200;
-            pSrcXYZW.bottom = 216;
-            Blt_Chroma(&pSrcXYZW, &pTargetXY, pArcomageGame->field_54, 2);
-            }
-        }
-    else if ( amuint_4FAA34 <= 0 )
-        {
-        if ( v11 == 9 )
-            {
-            am_byte_4FAA76 = 0;
-            am_byte_4FAA75 = 0;
-            amuint_4FAA34 = 5;
-            }
-        if ( shown_cards[v11].uCardId != -1 )
-            amuint_4FABC4 = shown_cards[v11].uCardId;
-        shown_cards[v11].uCardId = -1;
-        shown_cards[v11].field_18_point.x = shown_cards[v11].field_8.x;
-        shown_cards[v11].field_18_point.y = shown_cards[v11].field_8.y;
-        shown_cards[v11].field_4 = 0;
-        }
-    else
-        {
-        if ( shown_cards[v11].uCardId != -1 )
-            {
-            shown_cards[v11].field_18_point.x += shown_cards[v11].field_10_xplus;
-            shown_cards[v11].field_18_point.y += shown_cards[v11].field_14_y_plus;
-            pArcomageGame->GetCardRect(shown_cards[v11].uCardId, &pSrcXYZW);
-            Blt_Copy(&pSrcXYZW, &shown_cards[v11].field_18_point, 0);
-            }
-        }
+      pTargetXY.x -= am_Players[current_player_num].card_shift[v2].x;
+      pTargetXY.y -= am_Players[current_player_num].card_shift[v2].y;
     }
-    if ( am_byte_4FAA76 != 0 )
-        --amuint_4FAA34;
+  }
 
-    pSrcXYZW.left   = 192;
-    pSrcXYZW.right  = 288;
-    pSrcXYZW.top    = 0;
-    pSrcXYZW.bottom = 128;
-    pTargetXY.x     = 120;
-    pTargetXY.y     = 18;
-    Blt_Copy(&pSrcXYZW, &pTargetXY, 0);
-
+  for ( v11 = 0; v11 < 10; ++v11 )
+  {
+    if ( am_byte_4FAA76 == 0 )
+    {
+      if ( shown_cards[v11].uCardId != -1 )
+      {
+        pArcomageGame->GetCardRect(shown_cards[v11].uCardId, &pSrcXYZW);
+        pRenderer->am_Blt_Copy(&pSrcXYZW, &shown_cards[v11].field_18_point, 0);
+      }
+      if ( shown_cards[v11].field_4 != 0 )
+      {
+        pTargetXY.x = shown_cards[v11].field_18_point.x + 12;
+        pTargetXY.y = shown_cards[v11].field_18_point.y + 40;
+        pSrcXYZW.left   = 843;
+        pSrcXYZW.right  = 916;
+        pSrcXYZW.top    = 200;
+        pSrcXYZW.bottom = 216;
+        pRenderer->am_Blt_Chroma(&pSrcXYZW, &pTargetXY, pArcomageGame->field_54, 2);
+      }
+    }
+    else if ( amuint_4FAA34 <= 0 )
+    {
+      if ( v11 == 9 )
+      {
+        am_byte_4FAA76 = 0;
+        am_byte_4FAA75 = 0;
+        amuint_4FAA34 = 5;
+      }
+      if ( shown_cards[v11].uCardId != -1 )
+        amuint_4FABC4 = shown_cards[v11].uCardId;
+      shown_cards[v11].uCardId = -1;
+      shown_cards[v11].field_18_point.x = shown_cards[v11].field_8.x;
+      shown_cards[v11].field_18_point.y = shown_cards[v11].field_8.y;
+      shown_cards[v11].field_4 = 0;
+    }
+    else
+    {
+      if ( shown_cards[v11].uCardId != -1 )
+      {
+        shown_cards[v11].field_18_point.x += shown_cards[v11].field_10_xplus;
+        shown_cards[v11].field_18_point.y += shown_cards[v11].field_14_y_plus;
+        pArcomageGame->GetCardRect(shown_cards[v11].uCardId, &pSrcXYZW);
+        pRenderer->am_Blt_Copy(&pSrcXYZW, &shown_cards[v11].field_18_point, 0);
+      }
+    }
+  }
+  if ( am_byte_4FAA76 != 0 )
+    --amuint_4FAA34;
+  pSrcXYZW.left   = 192;
+  pSrcXYZW.right  = 288;
+  pSrcXYZW.top    = 0;
+  pSrcXYZW.bottom = 128;
+  pTargetXY.x     = 120;
+  pTargetXY.y     = 18;
+  pRenderer->am_Blt_Copy(&pSrcXYZW, &pTargetXY, 0);
 }
-
 
 //----- (0040B76F) --------------------------------------------------------
 void DrawCardAnimation( int animation_stage )
-    {
+{
+  int v1; // eax@3
+  int v2; // eax@3
+//  int v3; // esi@4
+  int v4; // eax@4
+//  POINT *v5; // edx@6
+//  RECT *v6; // ecx@6
+  int v8; // eax@15
+//  AcromageCardOnTable *v9; // ecx@15
+//  int v10; // ecx@19
+//  int v11; // eax@20
+//  int v12; // ecx@20
+//  int v13; // eax@20
+//  unsigned int v14; // ecx@21
+  double v15; // st7@22
+//  POINT *v16; // edx@23
+  int v17; // eax@32
+  char v18; // zf@37
+  int v19; // eax@41
+//  int v20; // eax@46
+//  int v21; // ecx@46
+//  int v22; // eax@46
+//  int v23; // [sp-4h] [bp-2Ch]@28
+  RECT pSrcXYZW; // [sp+Ch] [bp-1Ch]@6
+  POINT pTargetXY; // [sp+1Ch] [bp-Ch]@20
+  int v26; // [sp+24h] [bp-4h]@1
 
-int v1; // eax@3
-int v2; // eax@3
-int v3; // esi@4
-int v4; // eax@4
-POINT *v5; // edx@6
-RECT *v6; // ecx@6
-
-int v8; // eax@15
-AcromageCardOnTable *v9; // ecx@15
-int v10; // ecx@19
-int v11; // eax@20
-int v12; // ecx@20
-int v13; // eax@20
-unsigned int v14; // ecx@21
-double v15; // st7@22
-POINT *v16; // edx@23
-int v17; // eax@32
-char v18; // zf@37
-int v19; // eax@41
-int v20; // eax@46
-int v21; // ecx@46
-int v22; // eax@46
-int v23; // [sp-4h] [bp-2Ch]@28
-RECT pSrcXYZW; // [sp+Ch] [bp-1Ch]@6
-POINT pTargetXY; // [sp+1Ch] [bp-Ch]@20
-int v26; // [sp+24h] [bp-4h]@1
-
-v26 = animation_stage;
-if ( amuint_4FAA4C != -1 )
-    {
+  v26 = animation_stage;
+  if ( amuint_4FAA4C != -1 )
+  {
     if ( amuint_4FAA38 >= 9 )
-        {
-        am_uint_4FAA44_blt_xy.y = 18;
-        am_uint_4FAA44_blt_xy.x = 120;
-        v1 = GetPlayerHandCardCount(current_player_num);
-        v2 = (640 - 96 * v1) / v1 + 96;
-        if ( am_byte_4E185D )
-            {
-           // v3 = 188 * current_player_num + 8 * amuint_4FAA4C;
-           // amuint_4FAA3C_blt_xy.x = (amuint_4FAA4C * v2 + *(am_Players[0].arr_6C[0] + v3) - 120) / 10;
-            amuint_4FAA3C_blt_xy.x=(amuint_4FAA4C * v2 + am_Players[current_player_num].card_shift[amuint_4FAA4C].x-120)/10;
-            v4 = (am_Players[current_player_num].card_shift[amuint_4FAA4C].y+309) /10;//(*(&am_Players[0].arr_6C[0][1] + v3) + 309) / 10;
-            }
-        else
-            {
-            amuint_4FAA3C_blt_xy.x = (amuint_4FAA4C * v2 - 120) / 10;
-            v4 = 30;
-            }
-        am_uint_4FAA44_blt_xy.y += v4;
-        am_uint_4FAA44_blt_xy.x += amuint_4FAA3C_blt_xy.x;
-        
-        amuint_4FAA3C_blt_xy.y = v4;
-        
-        pSrcXYZW.left = 192;
-        pSrcXYZW.top = 0;
-        pSrcXYZW.right = 288;
-        pSrcXYZW.bottom = 128;
-        Blt_Copy(&pSrcXYZW, &am_uint_4FAA44_blt_xy, 2);
-        }
-    else
-        {
-
-    
-    pSrcXYZW.left  = 192;
-    pSrcXYZW.top    = 0;
-    pSrcXYZW.right  = 288;
-    pSrcXYZW.bottom = 128;
-    am_uint_4FAA44_blt_xy.x += amuint_4FAA3C_blt_xy.x;
-    am_uint_4FAA44_blt_xy.y += amuint_4FAA3C_blt_xy.y;
-    Blt_Copy(&pSrcXYZW, &am_uint_4FAA44_blt_xy, 2);
-    if ( !amuint_4FAA38 )
-        {
-        
-    amuint_4FAA4C = -1;
-        }
-        }
-    }
-LABEL_11:
-
-if ( uCardID != -1 )
     {
+      am_uint_4FAA44_blt_xy.y = 18;
+      am_uint_4FAA44_blt_xy.x = 120;
+      v1 = GetPlayerHandCardCount(current_player_num);
+      v2 = (window->GetWidth() - 96 * v1) / v1 + 96;
+      if ( am_byte_4E185D )
+      {
+        // v3 = 188 * current_player_num + 8 * amuint_4FAA4C;
+        // amuint_4FAA3C_blt_xy.x = (amuint_4FAA4C * v2 + *(am_Players[0].arr_6C[0] + v3) - 120) / 10;
+        amuint_4FAA3C_blt_xy.x=(amuint_4FAA4C * v2 + am_Players[current_player_num].card_shift[amuint_4FAA4C].x-120)/10;
+        v4 = (am_Players[current_player_num].card_shift[amuint_4FAA4C].y+309) /10;//(*(&am_Players[0].arr_6C[0][1] + v3) + 309) / 10;
+      }
+      else
+      {
+        amuint_4FAA3C_blt_xy.x = (amuint_4FAA4C * v2 - 120) / 10;
+        v4 = 30;
+      }
+      am_uint_4FAA44_blt_xy.y += v4;
+      am_uint_4FAA44_blt_xy.x += amuint_4FAA3C_blt_xy.x;
+      amuint_4FAA3C_blt_xy.y = v4;
+      pSrcXYZW.left = 192;
+      pSrcXYZW.top = 0;
+      pSrcXYZW.right = 288;
+      pSrcXYZW.bottom = 128;
+      pRenderer->am_Blt_Copy(&pSrcXYZW, &am_uint_4FAA44_blt_xy, 2);
+    }
+    else
+    {
+      pSrcXYZW.left  = 192;
+      pSrcXYZW.top    = 0;
+      pSrcXYZW.right  = 288;
+      pSrcXYZW.bottom = 128;
+      am_uint_4FAA44_blt_xy.x += amuint_4FAA3C_blt_xy.x;
+      am_uint_4FAA44_blt_xy.y += amuint_4FAA3C_blt_xy.y;
+      pRenderer->am_Blt_Copy(&pSrcXYZW, &am_uint_4FAA44_blt_xy, 2);
+      if ( !amuint_4FAA38 )
+       amuint_4FAA4C = -1;
+    }
+  }
+  if ( uCardID != -1 )
+  {
     if ( v26 <= 10 )
-        {
-        if ( v26 == 10 )
-            {
-            pArcomageGame->GetCardRect(uCardID, &pSrcXYZW);
-          //  v8 = 0;
-            for (v8=0; v8<10; ++v8)
-                {
-                if (shown_cards[v8].uCardId==-1)
-                    {
-                    shown_cards[v8].uCardId = uCardID;
-                    shown_cards[v8].field_4 = 1;
-                    break;
-                    }
-                }
-            /* v9 = shown_cards;
-            while ( v9->uCardId != -1 )
-            {
-            ++v9;
-            ++v8;
-            if ( v9 >= &dword_4FABB8 )
-            goto LABEL_20;
-            }
-
-            v10 = v8;
-            shown_cards[v10].uCardId = uCardID;
-            shown_cards[v10].field_4 = 1;*/
-//LABEL_20:
-            pTargetXY.x = shown_cards[v8].field_8.x;
-            pTargetXY.y = shown_cards[v8].field_8.y;
-            Blt_Copy(&pSrcXYZW, &pTargetXY, 0);
-            uCardID = -1;
-            }
-        }
-    else
-        {
-        pArcomageGame->GetCardRect(uCardID, &pSrcXYZW);
-        amuint_4FAA5C_blt_xy.x += amuint_4FAA54_blt_xy.x;
-        amuint_4FAA5C_blt_xy.y += amuint_4FAA54_blt_xy.y;
-        Blt_Copy(&pSrcXYZW, &amuint_4FAA5C_blt_xy, 0);
-        }
-    }
-
-if ( played_card_id != -1 )
     {
+      if ( v26 == 10 )
+      {
+        pArcomageGame->GetCardRect(uCardID, &pSrcXYZW);
+        //  v8 = 0;
+        for ( v8 = 0; v8 < 10; ++v8 )
+        {
+          if (shown_cards[v8].uCardId==-1)
+          {
+            shown_cards[v8].uCardId = uCardID;
+            shown_cards[v8].field_4 = 1;
+            break;
+          }
+        }
+        /* v9 = shown_cards;
+        while ( v9->uCardId != -1 )
+        {
+          ++v9;
+          ++v8;
+          if ( v9 >= &dword_4FABB8 )
+          goto LABEL_20;
+        }
+        v10 = v8;
+        shown_cards[v10].uCardId = uCardID;
+        shown_cards[v10].field_4 = 1;*/
+//LABEL_20:
+        pTargetXY.x = shown_cards[v8].field_8.x;
+        pTargetXY.y = shown_cards[v8].field_8.y;
+        pRenderer->am_Blt_Copy(&pSrcXYZW, &pTargetXY, 0);
+        uCardID = -1;
+      }
+    }
+    else
+    {
+      pArcomageGame->GetCardRect(uCardID, &pSrcXYZW);
+      amuint_4FAA5C_blt_xy.x += amuint_4FAA54_blt_xy.x;
+      amuint_4FAA5C_blt_xy.y += amuint_4FAA54_blt_xy.y;
+      pRenderer->am_Blt_Copy(&pSrcXYZW, &amuint_4FAA5C_blt_xy, 0);
+    }
+  }
+  if ( played_card_id != -1 )
+  {
     v15 = v26;
     if ( v15 > 15.0 )
-        {
+    {
+      pArcomageGame->GetCardRect(played_card_id, &pSrcXYZW);
+      amuint_4FAA5C_blt_xy.x += amuint_4FAA54_blt_xy.x;
+      amuint_4FAA5C_blt_xy.y += amuint_4FAA54_blt_xy.y;
+      pRenderer->am_Blt_Copy(&pSrcXYZW, &amuint_4FAA5C_blt_xy, 2);
+      return;
+    }
+    if ( v15 == 15.0 )
+    {
+      ApplyCardToPlayer(current_player_num, played_card_id);
+      pArcomageGame->GetCardRect(played_card_id, &pSrcXYZW);
+      pTargetXY.x = 272;
+      pTargetXY.y = 173;
+      pRenderer->am_Blt_Copy(&pSrcXYZW, &pTargetXY, 2);
+      return;
+    }
+    if ( v15 == 5.0 )
+    {
+      amuint_4FAA5C_blt_xy.x = 272;
+      amuint_4FAA5C_blt_xy.y = 173;
+      for ( v17 = 0; v17 < 10; ++v17 )
+      {
+        if (shown_cards[v17].uCardId == -1)
+          break;
+      }
+      amuint_4FAA54_blt_xy.x = (shown_cards[v17].field_8.x - 272) / 5;
+      amuint_4FAA54_blt_xy.y = (shown_cards[v17].field_8.y - 173) / 5;
+      pArcomageGame->GetCardRect(played_card_id, &pSrcXYZW);
+      pTargetXY.x = 272;
+      pTargetXY.y = 173;
+      pRenderer->am_Blt_Copy(&pSrcXYZW, &pTargetXY, 2);
+      return;
+    }
+    if ( v15 >= 5.0 )
+      v18 = v26 == 0;
+    else
+    {
+      v18 = v26 == 0;
+      if ( v26 > 0 )
+      {
         pArcomageGame->GetCardRect(played_card_id, &pSrcXYZW);
         amuint_4FAA5C_blt_xy.x += amuint_4FAA54_blt_xy.x;
         amuint_4FAA5C_blt_xy.y += amuint_4FAA54_blt_xy.y;
-        Blt_Copy(&pSrcXYZW, &amuint_4FAA5C_blt_xy, 2);
+        pRenderer->am_Blt_Copy(&pSrcXYZW, &amuint_4FAA5C_blt_xy, 0);
         return;
-        }
-    if ( v15 == 15.0 )
-        {
-        ApplyCardToPlayer(current_player_num, played_card_id);
-        pArcomageGame->GetCardRect(played_card_id, &pSrcXYZW);
-        pTargetXY.x = 272;
-        pTargetXY.y = 173;
-        Blt_Copy(&pSrcXYZW, &pTargetXY, 2);
-        return;
-        }
-    if ( v15 == 5.0 )
-        {
-        amuint_4FAA5C_blt_xy.x = 272;
-        amuint_4FAA5C_blt_xy.y = 173;
-        for (v17=0; v17<10; ++v17)
-            {
-            if (shown_cards[v17].uCardId==-1)
-                break;
-            }
-        
-            amuint_4FAA54_blt_xy.x = (shown_cards[v17].field_8.x - 272) / 5;
-            amuint_4FAA54_blt_xy.y = (shown_cards[v17].field_8.y - 173) / 5;
-            pArcomageGame->GetCardRect(played_card_id, &pSrcXYZW);
-            pTargetXY.x = 272;
-            pTargetXY.y = 173;
-            Blt_Copy(&pSrcXYZW, &pTargetXY, 2);
-            return;
-        }
-    if ( v15 >= 5.0 )
-        {
-        v18 = v26 == 0;
-        }
-    else
-        {
-        v18 = v26 == 0;
-        if ( v26 > 0 )
-            {
-            pArcomageGame->GetCardRect(played_card_id, &pSrcXYZW);
-            amuint_4FAA5C_blt_xy.x += amuint_4FAA54_blt_xy.x;
-            amuint_4FAA5C_blt_xy.y += amuint_4FAA54_blt_xy.y;
-            Blt_Copy(&pSrcXYZW, &amuint_4FAA5C_blt_xy, 0);
-            return;
-            }
-        }
-    if ( !v18 )
-        {
-
-        pArcomageGame->GetCardRect(played_card_id, &pSrcXYZW);
-        pTargetXY.x = 272;
-        pTargetXY.y = 173;
-        Blt_Copy(&pSrcXYZW, &pTargetXY, 2);
-        return;
-        }
-
-    pArcomageGame->GetCardRect(played_card_id, &pSrcXYZW);
-    for (v19=0; v19<10; ++v19)
-        {
-        if (shown_cards[v19].uCardId==-1)
-            {
-            shown_cards[v19].uCardId = played_card_id;
-            break;
-            }       
-        }
-        pTargetXY.x = shown_cards[v19].field_8.x;
-    pTargetXY.y = shown_cards[v19].field_8.y;
-    Blt_Copy(&pSrcXYZW, &pTargetXY, 0);
-    played_card_id = -1;
+      }
     }
+    if ( !v18 )
+    {
+      pArcomageGame->GetCardRect(played_card_id, &pSrcXYZW);
+      pTargetXY.x = 272;
+      pTargetXY.y = 173;
+      pRenderer->am_Blt_Copy(&pSrcXYZW, &pTargetXY, 2);
+      return;
+    }
+    pArcomageGame->GetCardRect(played_card_id, &pSrcXYZW);
+    for ( v19 = 0; v19 < 10; ++v19 )
+    {
+      if (shown_cards[v19].uCardId == -1)
+      {
+        shown_cards[v19].uCardId = played_card_id;
+        break;
+      }
+    }
+    pTargetXY.x = shown_cards[v19].field_8.x;
+    pTargetXY.y = shown_cards[v19].field_8.y;
+    pRenderer->am_Blt_Copy(&pSrcXYZW, &pTargetXY, 0);
+    played_card_id = -1;
+  }
 }
 
 //----- (0040BB12) --------------------------------------------------------
@@ -2678,178 +2441,107 @@ void ArcomageGame::GetCardRect(unsigned int uCardID, RECT *pCardRect)
 
 //----- (0040BB49) --------------------------------------------------------
 int GetPlayerHandCardCount( int player_num )
-    {
+{
   int card_count; // eax@1
 
   card_count = 0;
   for(int i=0; i<10; ++i)
-      {
-      if (am_Players[player_num].cards_at_hand[i]!=-1)
-            ++card_count;
-      }
+  {
+    if (am_Players[player_num].cards_at_hand[i]!=-1)
+      ++card_count;
+  }
   return card_count;
-  
 }
 
 //----- (0040BB67) --------------------------------------------------------
 signed int DrawCardsRectangles( int player_num )
 {
-//int v1; // esi@1
-signed int result; // eax@1
-int v3; // ebx@1
-char v4; // zf@1
-int v5; // eax@3
-int v6; // eax@4
-int v7; // ecx@6
-char *v8; // eax@6
-int v9; // eax@10
-int v10; // ecx@10
-int v11; // eax@10
-char v12; // ch@2@11
-int v13; // ST00_4@12
-unsigned __int16 v14; // ax@12
-int v15; // eax@13
-int v16; // ecx@13
-int v17; // eax@13
-char v18; // al@16
-char v19; // ch@2@16
-int v20; // ST00_4@19
-unsigned __int16 v21; // ax@19
-RECT pXYZW; // [sp+Ch] [bp-3Ch]@3
-stru273 v26; // [sp+1Ch] [bp-2Ch]@2
-int v25; // [sp+2Ch] [bp-1Ch]@3
-__int32 var18; // [sp+30h] [bp-18h]@3
-int i; // [sp+34h] [bp-14h]@4
-int v28; // [sp+38h] [bp-10h]@1
-int hand_index; // [sp+3Ch] [bp-Ch]@3
-int v30; // [sp+40h] [bp-8h]@1
-char v31; // [sp+44h] [bp-4h]@12
-char v32; // [sp+45h] [bp-3h]@12
-char v33; // [sp+46h] [bp-2h]@12
+  int v5; // eax@3
+//  int i; // ecx@6
+  int color; // ST00_4@19
+  RECT pXYZW; // [sp+Ch] [bp-3Ch]@3
+  stru273 v26; // [sp+1Ch] [bp-2Ch]@2
+  __int32 var18; // [sp+30h] [bp-18h]@3
+  int hand_index; // [sp+3Ch] [bp-Ch]@3
 
-__debugbreak(); // need do fix rectangle not fit to card
+//__debugbreak(); // need do fix rectangle not fit to card
 
-v30 = 0;
-result = -1;
-//v3 = 188 * a1;
-
-//v4 = LOBYTE(am_Players[a1].field_20) == 0;
-v28 = -1;
-if ( am_Players[player_num].IsHisTurn )
-    {
+  if ( am_Players[player_num].IsHisTurn )
+  {
     if ( v26._40DD2F() )
+    {
+      v5 = GetPlayerHandCardCount(player_num);
+      pXYZW.top = 327;
+      pXYZW.bottom = 455;
+      pXYZW.left = (window->GetWidth() - 96 * v5) / (v5 + 1);
+      var18 = pXYZW.left + 96;
+      pXYZW.right = pXYZW.left + 96;
+      for( hand_index = 0; hand_index < v5; hand_index++)
+      {
+        //for ( i = 0; i < 10; ++i )
+        //{
+        if (am_Players[player_num].cards_at_hand[hand_index] != -1 )
         {
-        v5 = GetPlayerHandCardCount(player_num);
-        hand_index = 0;
-        v25 = v5;
-        pXYZW.top = 327;
-        pXYZW.bottom = 455;
-        pXYZW.left = (640 - 96 * v5) / (v5 + 1);
-        var18 = pXYZW.left + 96;
-        pXYZW.right = pXYZW.left + 96;
-        if ( v5 > 0 )
-            {
-           // v6 = 47 * v1;
-           // for ( i = player_num; ; v6 = i )
-            for(;;)
-                {
-                v7 = v30;
-              //  v8 = &am_Players[0].cards_at_hand[v30 + v6];
-
-                for (v7=0; v7<10; ++v7)
-                    {
-                    if (am_Players[player_num].cards_at_hand[v7]!= -1 )
-                        break;
-                    }
-                //if ( *v8 )
-                //    {
-                //    do
-                //        {
-                //        //v8 += 4;
-                //        ++v7;
-                //        }
-                //        while ( *v8 == -1 );
-                        v30 = v7;
-                  //  }
-                if ( am_byte_4E185D )
-                    {
-                 //   v9 = v3 + 8 * v7;
-                    v10 = am_Players[player_num].card_shift[v7].x;//*(am_player[0].arr_6C[0] + v9);
-                    v11 = am_Players[player_num].card_shift[v7].y;//*(&am_player[0].arr_6C[0][1] + v9);
-                    pXYZW.left += v10;
-                    pXYZW.right += v10;
-                    pXYZW.top += v11;
-                    pXYZW.bottom += v11;
-                    }
-                if (v26.Inside(&pXYZW) )
-                    break;
-           
-                v13=0;
-                v14 = R8G8B8_to_TargetFormat(v13);
-                DrawRect(&pXYZW, v14, 0);
-                pXYZW.left += var18;
-                pXYZW.right += var18;
-                if ( am_byte_4E185D )
-                    {
-                    v16 = am_Players[player_num].card_shift[v30].x;//*(am_player[0].arr_6C[0] + v15);
-                    v17 = am_Players[player_num].card_shift[v30].y;//*(&am_player[0].arr_6C[0][1] + v15);
-                    pXYZW.left -= v16;
-                    pXYZW.right -= v16;
-                    pXYZW.top -= v17;
-                    pXYZW.bottom -= v17;
-                    }
-                ++v30;
-                ++hand_index;
-                if ( hand_index >= v25 )
-                    return v28;
-                }
-            v28 = hand_index;
-            v18 = CanCardBePlayed(player_num, hand_index);
-            if ( v18 )
-                {
-                 v20=0x00FFFFFF;
-                }
+            //break;
+        //}
+          if ( am_byte_4E185D )
+          {
+            pXYZW.left += am_Players[player_num].card_shift[hand_index].x;
+            pXYZW.right += am_Players[player_num].card_shift[hand_index].x;
+            pXYZW.top += am_Players[player_num].card_shift[hand_index].y;
+            pXYZW.bottom += am_Players[player_num].card_shift[hand_index].y;
+          }
+          if ( v26.Inside(&pXYZW) )
+          {
+            if ( CanCardBePlayed(player_num, hand_index) )
+              color = 0x00FFFFFF;//белый цвет
             else
-                {
-                v20=0x000000FF;
-                }
-           
-            v21 = R8G8B8_to_TargetFormat(v20);
-            DrawRect(&pXYZW, v21, 0);
-            }
+              color = 0x000000FF;//красный цвет
+            DrawRect(&pXYZW, R8G8B8_to_TargetFormat(color), 0);
+            return hand_index;
+          }
+          DrawRect(&pXYZW, R8G8B8_to_TargetFormat(0), 0);//рамка чёрного цвета
+          if ( am_byte_4E185D )
+          {
+            pXYZW.left -= am_Players[player_num].card_shift[hand_index].x;
+            pXYZW.right -= am_Players[player_num].card_shift[hand_index].x;
+            pXYZW.top -= am_Players[player_num].card_shift[hand_index].y;
+            pXYZW.bottom -= am_Players[player_num].card_shift[hand_index].y;
+          }
+          pXYZW.left += var18;
+          pXYZW.right += var18;
         }
-    result = v28;
+      }
     }
-return result;
-
-
+  }
+  return -1;
 }
 // 4E185D: using guessed type char am_byte_4E185D;
 
 //----- (0040BCFB) --------------------------------------------------------
 bool DiscardCard( int player_num, signed int card_slot_index )
-    {
+{
   int v2; // esi@2
-  signed int v3; // edi@2
-  char *v4; // eax@2
-  int v5; // ecx@7
-  int v6; // ebx@7
-  int v7; // esi@8
+//  signed int v3; // edi@2
+//  char *v4; // eax@2
+//  int v5; // ecx@7
+//  int v6; // ebx@7
+//  int v7; // esi@8
   int v8; // eax@8
-  int v9; // esi@8
+//  int v9; // esi@8
   int v10; // ecx@8
-  int v11; // eax@8
+//  int v11; // eax@8
   int v12; // eax@8
-  signed int v13; // edx@9
-  unsigned int v14; // eax@12
-  char result; // al@12
+//  signed int v13; // edx@9
+//  unsigned int v14; // eax@12
+//  char result; // al@12
   int i;
 
   if ( card_slot_index <= -1 )
     return false;
   v2 = 0;
 
-  for(i=0; i<10; ++i)
+  for( i = 0; i < 10; ++i )
   {
     if ( am_Players[player_num].cards_at_hand[i] != -1 )
     {
@@ -2863,18 +2555,18 @@ bool DiscardCard( int player_num, signed int card_slot_index )
   {
     ArcomageGame::PlaySound(22);
     v8 = GetPlayerHandCardCount(current_player_num);
-    v10=am_Players[player_num].card_shift[i].x + (640 - 96 * v8) / (v8 + 1);
+    v10 = am_Players[player_num].card_shift[i].x + (window->GetWidth() - 96 * v8) / (v8 + 1);
     amuint_4FAA5C_blt_xy.x = v10;
     amuint_4FAA5C_blt_xy.y = am_Players[player_num].card_shift[i].y + 327;//v11;
     v12 = 0;
 
     if ( !am_byte_4FAA75 )
     {
-      for (v12=0; v12<10; ++v12)
-          {
-           if (shown_cards[v12].uCardId== -1)
-               break;
-          }
+      for ( v12 = 0; v12 < 10; ++v12 )
+      {
+        if (shown_cards[v12].uCardId == -1)
+          break;
+      }
     }
     pArcomageGame->field_F6 = 1;
     amuint_4FAA54_blt_xy.x = (shown_cards[v12].field_8.x - v10) / 10;
@@ -2888,24 +2580,23 @@ bool DiscardCard( int player_num, signed int card_slot_index )
     return false;
 }
 
-
 //----- (0040BE0E) --------------------------------------------------------
 bool PlayCard( int player_num, int card_slot_num )
 {
-  int v3; // ebp@1
+//  int v3; // ebp@1
   int v4; // ecx@2
-  ArcomagePlayer *v5; // esi@2
+//  ArcomagePlayer *v5; // esi@2
   int card_index; // edi@2
-  int v7; // eax@2
-  int v8; // ebx@8
+//  int v7; // eax@2
+//  int v8; // ebx@8
   int cards_at_hand; // eax@8
-  int v10; // ebx@8
-  int v11; // ebp@8
+//  int v10; // ebx@8
+//  int v11; // ebp@8
   int v12; // ecx@8
-  int v13; // eax@8
+//  int v13; // eax@8
   ArcomageCard *pCard; // eax@8
-  int v15; // ecx@8
-  int v16; // ecx@8
+//  int v15; // ecx@8
+//  int v16; // ecx@8
 
   if ( card_slot_num <= -1 )
     return false;
@@ -2927,7 +2618,7 @@ bool PlayCard( int player_num, int card_slot_num )
     cards_at_hand = GetPlayerHandCardCount(current_player_num);
     pArcomageGame->field_F6 = 1;
     v12 =  am_Players[player_num].card_shift[card_index].x + 
-         (640 - 96 * cards_at_hand) / (cards_at_hand + 1)+ 
+         (window->GetWidth() - 96 * cards_at_hand) / (cards_at_hand + 1)+ 
          96 * card_index ;
         
   //  v13 = *(int *)((char *)&am_Players[0].arr_6C[0][1] + v10) + 327;
@@ -2975,9 +2666,6 @@ bool CanCardBePlayed(int player_num, int hand_card_indx)
   return result;
 }
 
-
-
-
 //----- (0040BF77) --------------------------------------------------------
 void ApplyCardToPlayer( int player_num, unsigned int uCardID )
     {
@@ -3019,26 +2707,26 @@ void ApplyCardToPlayer( int player_num, unsigned int uCardID )
             }\
        }
         ArcomagePlayer *player; // esi@1
-        int v3; // eax@1
+//        int v3; // eax@1
         ArcomagePlayer *enemy; // edi@1
-        int v5; // eax@2
-        char v6; // sf@2
-        unsigned __int8 v7; // of@2
-        int v8; // eax@3
-        int v9; // eax@4
-        char v10; // zf@5
-        int v11; // eax@8
-        unsigned __int8 v12; // zf@8
-        char v13; // sf@8
-        unsigned __int8 v14; // of@8
-        int v15; // eax@9
-        int v16; // eax@10
-        char v17; // zf@12
-        char v18; // al@15
-        int v19; // eax@16
-        int v20; // eax@17
-        int v21; // eax@22
-        int v22; // eax@23
+//        int v5; // eax@2
+//        char v6; // sf@2
+//        unsigned __int8 v7; // of@2
+//        int v8; // eax@3
+//        int v9; // eax@4
+//        char v10; // zf@5
+//        int v11; // eax@8
+//        unsigned __int8 v12; // zf@8
+//        char v13; // sf@8
+//        unsigned __int8 v14; // of@8
+//        int v15; // eax@9
+//        int v16; // eax@10
+//        char v17; // zf@12
+//        char v18; // al@15
+//        int v19; // eax@16
+//        int v20; // eax@17
+//        int v21; // eax@22
+//        int v22; // eax@23
         int v23; // eax@26
         signed int v24; // ebx@26
         int v103;
@@ -3094,109 +2782,81 @@ void ApplyCardToPlayer( int player_num, unsigned int uCardID )
         enemy_num = (player_num + 1) % 2;
         enemy = &am_Players[enemy_num];
         switch ( pCard->compare_param )
-            {
+        {
         case 2:
-            v5 = player->quarry_level;
-            v7 = __OFSUB__(v5, enemy->quarry_level);
-            v6 = v5 - enemy->quarry_level < 0;
-            v18 = v6 ^ v7;
-            goto LABEL_25;
+            if ( player->quarry_level < enemy->quarry_level )//если рудники < рудника врага
+                goto LABEL_26;
+            goto LABEL_231;
         case 3:
-            v8 = player->magic_level;
-            v7 = __OFSUB__(v8, enemy->magic_level);
-            v6 = v8 - enemy->magic_level < 0;
-            v18 = v6 ^ v7;
-            goto LABEL_25;
+            if ( player->magic_level < enemy->magic_level )
+                goto LABEL_26;
+            goto LABEL_231;
         case 4:
-            v9 = player->zoo_level;
-            v7 = __OFSUB__(v9, enemy->zoo_level);
-            v6 = v9 - enemy->zoo_level < 0;
-            v18 = v6 ^ v7;
-            goto LABEL_25;
+            if ( player->zoo_level < enemy->zoo_level )//если зверинец < зверинца врага
+                goto LABEL_26;
+            goto LABEL_231;
         case 5:
-            v10 = player->quarry_level == enemy->quarry_level;
-            v18 = v10;
-            goto LABEL_25;
+            if ( player->quarry_level == enemy->quarry_level )
+                goto LABEL_26;
+            goto LABEL_231;
         case 6:
-            v10 = player->magic_level == enemy->magic_level;
-            v18 = v10;
-            goto LABEL_25;
+            if ( player->magic_level == enemy->magic_level )
+                goto LABEL_26;
+            goto LABEL_231;
         case 7:
-            v10 = player->zoo_level == enemy->zoo_level;
-            v18 = v10;
-            goto LABEL_25;
+            if ( player->zoo_level == enemy->zoo_level )
+                goto LABEL_26;
+            goto LABEL_231;
         case 8:
-            v11 = player->quarry_level;
-            v14 = __OFSUB__(v11, enemy->quarry_level);
-            v12 = v11 == enemy->quarry_level;
-            v13 = v11 - enemy->quarry_level < 0;
-            v18 = !((v13 ^ v14) | v12);
-            goto LABEL_25;
+            if ( player->quarry_level < enemy->quarry_level )
+                goto LABEL_26;
+            goto LABEL_231;
         case 9:
-            v15 = player->magic_level;
-            v14 = __OFSUB__(v15, enemy->magic_level);
-            v12 = v15 == enemy->magic_level;
-            v13 = v15 - enemy->magic_level < 0;
-            v18 = !((v13 ^ v14) | v12);
-            goto LABEL_25;
+            if ( player->magic_level < enemy->magic_level )
+                goto LABEL_26;
+            goto LABEL_231;
         case 10:
-            v16 = player->zoo_level;
-            v14 = __OFSUB__(v16, enemy->zoo_level);
-            v12 = v16 == enemy->zoo_level;
-            v13 = v16 - enemy->zoo_level < 0;
-            v18 = !((v13 ^ v14) | v12);
-            goto LABEL_25;
+            if ( player->zoo_level < enemy->zoo_level )
+                goto LABEL_26;
+            goto LABEL_231;
         case 11:
-            v10 = player->wall_height == 0;
-            v18 = v10;
-            goto LABEL_25;
+            if ( !player->wall_height )
+                goto LABEL_26;
+            goto LABEL_231;
         case 12:
-            v17 = player->wall_height == 0;
-            v18 = !v17;
-            goto LABEL_25;
+            if ( player->wall_height )
+                goto LABEL_26;
+            goto LABEL_231;
         case 13:
-            v10 = enemy->wall_height == 0;
-            v18 = v10;
-            goto LABEL_25;
+            if ( !enemy->wall_height )
+                goto LABEL_26;
+            goto LABEL_231;
         case 14:
-            v17 = enemy->wall_height == 0;
-            v18 = !v17;
-            goto LABEL_25;
+            if ( enemy->wall_height )
+                goto LABEL_26;
+            goto LABEL_231;
         case 15:
-            v19 = player->wall_height;
-            v7 = __OFSUB__(v19, enemy->wall_height);
-            v6 = v19 - enemy->wall_height < 0;
-            v18 = v6 ^ v7;
-            goto LABEL_25;
+            if ( player->wall_height < enemy->wall_height )
+                goto LABEL_26;
+            goto LABEL_231;
         case 16:
-            v20 = player->tower_height;
-            v7 = __OFSUB__(v20, enemy->tower_height);
-            v6 = v20 - enemy->tower_height < 0;
-            v18 = v6 ^ v7;
-            goto LABEL_25;
+            if ( player->tower_height < enemy->tower_height )
+                goto LABEL_26;
+            goto LABEL_231;
         case 17:
-            v10 = player->wall_height == enemy->wall_height;
-            v18 = v10;
-            goto LABEL_25;
+            if ( player->wall_height == enemy->wall_height )
+                goto LABEL_26;
+            goto LABEL_231;
         case 18:
-            v10 = player->tower_height == enemy->tower_height;
-            v18 = v10;
-            goto LABEL_25;
+            if ( player->tower_height == enemy->tower_height )
+                goto LABEL_26;
+            goto LABEL_231;
         case 19:
-            v21 = player->wall_height;
-            v14 = __OFSUB__(v21, enemy->wall_height);
-            v12 = v21 == enemy->wall_height;
-            v13 = v21 - enemy->wall_height < 0;
-            v18 = !((v13 ^ v14) | v12);
-            goto LABEL_25;
+            if ( player->wall_height < enemy->wall_height )
+                goto LABEL_26;
+            goto LABEL_231;
         case 20:
-            v22 = player->tower_height;
-            v14 = __OFSUB__(v22, enemy->tower_height);
-            v12 = v22 == enemy->tower_height;
-            v13 = v22 - enemy->tower_height < 0;
-            v18 = !((v13 ^ v14) | v12);
-LABEL_25:
-            if ( v18 )
+            if ( player->tower_height < enemy->tower_height )
                 goto LABEL_26;
             goto LABEL_231;
         default:
@@ -3206,17 +2866,16 @@ LABEL_26:
             dword_4FAA68 = v23 + (pCard->field_30 == 1);
             dword_4FAA64 = v23;
             if ( v23 > 0 )
-                {
-                do
-                    {
-                    GetNextCardFromDeck(player_num);
-                    ++v24;
-                    }
-                    while ( v24 < pCard->draw_extra_card_count );
-                }
+            {
+              do
+              {
+                GetNextCardFromDeck(player_num);
+                ++v24;
+              }
+              while ( v24 < pCard->draw_extra_card_count );
+            }
 
             need_to_discard_card = GetPlayerHandCardCount(player_num) > minimum_cards_at_hand;
-
 
             APPLY_TO_PLAYER(player, enemy, quarry_level,    pCard->to_player_quarry_lvl, quarry_p);
             APPLY_TO_PLAYER(player, enemy, magic_level,     pCard->to_player_magic_lvl,  magic_p);
@@ -3608,51 +3267,45 @@ LABEL_231:
                 }
             }
 #undef APPLY_TO_BOTH
-#undef APPLY_TO_ENEMY        
+#undef APPLY_TO_ENEMY
 #undef APPLY_TO_PLAYER
 
 }
 
-
-
-
 //----- (0040D2B4) --------------------------------------------------------
 int am_40D2B4( POINT* startXY, int effect_value )
-    {
+{
   int v2; // ebp@1
-  POINT *v3; // edi@1
+//  POINT *v3; // edi@1
   int result; // eax@3
   int v6;
   stru272_stru0 *v8; // ecx@12
   signed int v11; // [sp+10h] [bp-8h]@1
- 
 
   v11 = 0;
   v2 = effect_value;
 
-  while ( array_4FABD0[v11].have_effect )
-      {
-      result = array_4FABD0[v11].field_40->_40E2A7();
-      if ( !result )
-          {
-          array_4FABD0[v11].have_effect = 0;
-          --v11;
-          }
-      ++v11;
-      if ( v11 >= 10 )
-          return result;
-      }
+  while ( array_4FABD0[v11].have_effect )//Ritor1: needed refactoring
+  {
+    result = array_4FABD0[v11].field_40->_40E2A7();
+    if ( !result )
+    {
+      array_4FABD0[v11].have_effect = 0;
+      --v11;
+    }
+    ++v11;
+    if ( v11 >= 10 )
+      return result;
+  }
   v6 = v11;
   array_4FABD0[v11].have_effect = 1;
   if ( effect_value <= 0 )
-      {
-      array_4FABD0[v6].effect_sign = 0;
-      effect_value = -effect_value;
-      }
+  {
+    array_4FABD0[v6].effect_sign = 0;
+    effect_value = -effect_value;
+  }
   else
-      {
-      array_4FABD0[v6].effect_sign = 1;
-      }
+    array_4FABD0[v6].effect_sign = 1;
   array_4FABD0[v6].field_4.effect_area.left = startXY->x - 20;
   array_4FABD0[v6].field_4.effect_area.right = startXY->x + 20;
   array_4FABD0[v6].field_4.effect_area.top = startXY->y - 20;
@@ -3684,42 +3337,36 @@ int am_40D2B4( POINT* startXY, int effect_value )
   v8->field_4C = 0;
   v8->field_48 = 0;
   v8->field_50 = 0;
-  for (int i=0; i<v8->field_4; ++i)
-      v8->field_54[i].have_spark=0;
+  for (int i = 0; i < v8->field_4; ++i)
+    v8->field_54[i].have_spark = 0;
   return 0;
 }
 
-
 //----- (0040D402) --------------------------------------------------------
 int ApplyDamageToBuildings( int player_num, int damage )
-    {
-  ArcomagePlayer *v2; // ecx@1
+{
+//  ArcomagePlayer *v2; // ecx@1
   int v3; // esi@1
   int result; // eax@3
 
-
   v3 = am_Players[player_num].wall_height;
-  if ( v3 <= 0 )
-  {
+  //if ( v3 <= 0 )
     result = 0;
-  }
-  else
-  {
+  //else
+  //{
     if ( v3 >= -damage )
     {
       result = damage;
       am_Players[player_num].wall_height += damage;
-
     }
     else
-        {      
-    damage += v3;
-    result = -v3;
-    am_Players[player_num].wall_height = 0;
-    am_Players[player_num].tower_height += damage;
-        }
-  }
-
+    {
+      damage += v3;
+      result = -v3;
+      am_Players[player_num].wall_height = 0;
+      am_Players[player_num].tower_height += damage;
+    }
+  //}
   if ( am_Players[player_num].tower_height < 0 )
     am_Players[player_num].tower_height = 0;
   return result;
@@ -3728,233 +3375,195 @@ int ApplyDamageToBuildings( int player_num, int damage )
 
 //----- (0040D444) --------------------------------------------------------
 void GameResultsApply()
-    {
-  int v0; // esi@1
-  int v1; // edi@1
-  int v2; // eax@1
-  int v3; // eax@23
-  int v4; // edx@25
-  int v5; // ecx@28
-  int v6; // eax@28
-  GUIWindow *v7; // ecx@50
-  signed int v8; // eax@50
-  char v9; // eax@52
-  signed int v10; // eax@54
-  char *v11; // esi@59
-  char *v12; // esi@65
-  signed int v14; // [sp-4h] [bp-58h]@46
-  char pText[64]; // [sp+Ch] [bp-48h]@1
-  POINT xy; // [sp+4Ch] [bp-8h]@1
+{
+  int winner; // esi@1
+  int victory_type; // edi@1
+  int pl_resource; // edx@25
+  int en_resource; // eax@28
+  unsigned int tavern_num; // eax@54
+//  char pText[64]; // [sp+Ch] [bp-48h]@1
+//  POINT xy; // [sp+4Ch] [bp-8h]@1
 
-  v0 = -1;
-  v1 = -1;
+  winner = -1;
+  victory_type = -1;
   //nullsub_1();
-  xy.x = 0;
-  xy.y = 0;
-  strcpy(pText, "The Winner is: ");//"Победи"
- // v2 = 0;
+  /*strcpy(pText, "The Winner is: ");//"Победил: " Ritor1: архаизм
   xy.y = 160;
   xy.x = 320; //- 12 * v2 / 2;
-//  am_DrawText(-1, pText, xy);
-  if ( am_Players[0].tower_height < max_tower_height )
+  am_DrawText(-1, pText, &xy);*/
+
+  //проверка построена ли башня
+  if ( am_Players[0].tower_height < max_tower_height && am_Players[1].tower_height >= max_tower_height )//наша башня не построена, а у врага построена
   {
-    if ( am_Players[1].tower_height < max_tower_height )
-      goto LABEL_10;
-    v0 = 2;
+    winner = 2;//победил игрок 2(враг)
+    victory_type = 0;
   }
-  else
+  else if ( am_Players[0].tower_height >= max_tower_height && am_Players[1].tower_height < max_tower_height )//наша башня построена, а у врага нет
   {
-    if ( am_Players[1].tower_height < max_tower_height )
+    winner = 1;//победил игрок 1(мы)
+    victory_type = 0;
+  }
+  else if ( am_Players[0].tower_height >= max_tower_height && am_Players[1].tower_height >= max_tower_height )//и у нас, и у врага построена
+  {
+    if ( am_Players[0].tower_height == am_Players[1].tower_height )//наши башни равны
     {
-      v0 = 1;
+      winner = 0;//никто не победил
+      victory_type = 4;//ничья
     }
-    else
+    else//наши башни не равны
     {
-      if ( am_Players[0].tower_height == am_Players[1].tower_height )
+      winner = (am_Players[0].tower_height <= am_Players[1].tower_height) + 1;//победил тот, у кого выше
+      victory_type = 0;
+    }
+  }
+
+  //проверка разрушена ли башня
+  if ( am_Players[0].tower_height <= 0 && am_Players[1].tower_height > 0 )//наша башня разрушена, а у врага нет
+  {
+    winner = 2;// победил игрок 2(враг)
+    victory_type = 2;//победил разрушив башню врага
+  }
+  else if ( am_Players[0].tower_height > 0 && am_Players[1].tower_height <= 0 )//у врага башня разрушена, а у нас нет
+  {
+    winner = 1;//победил игрок 1(мы)
+    victory_type = 2;//победил разрушив башню врага
+  }
+  else if ( am_Players[0].tower_height <= 0 && am_Players[1].tower_height <= 0  )//наша башня разрушена, и у врага разрушена
+  {
+    if ( am_Players[0].tower_height == am_Players[1].tower_height )//если башни равны
+    {
+      if ( am_Players[0].wall_height == am_Players[1].wall_height )//если стены равны
       {
-        v0 = 0;
-        v1 = 4;
-        goto LABEL_10;
+        winner = 0;
+        victory_type = 4;
       }
-      v0 = (am_Players[0].tower_height <= am_Players[1].tower_height) + 1;
-    }
-  }
-  v1 = 0;
-LABEL_10:
-  if ( am_Players[0].tower_height <= 0 )
-  {
-    if ( am_Players[1].tower_height > 0 )
-    {
-      v0 = 2;
-    }
-    else
-    {
-      if ( am_Players[0].tower_height == am_Players[1].tower_height )
+      else//если стены не равны
       {
-LABEL_20:
-        if ( am_Players[0].wall_height == am_Players[1].wall_height )
-        {
-          v0 = 0;
-          v1 = 4;
-        }
-        else
-        {
-          v0 = (am_Players[0].wall_height <= am_Players[1].wall_height) + 1;
-          v1 = 1;
-        }
-        goto LABEL_23;
+        winner = (am_Players[0].wall_height <= am_Players[1].wall_height) + 1;//победил тот, у кого стена выше
+        victory_type = 1;//победа когда больше стена при ничье
       }
-      v0 = (am_Players[0].tower_height <= am_Players[1].tower_height) + 1;
     }
-    goto LABEL_17;
-  }
-  if ( am_Players[1].tower_height <= 0 )
-  {
-    v0 = 1;
-LABEL_17:
-    v1 = 2;
-  }
-  if ( !v0 && v1 == 4 )
-    goto LABEL_20;
-LABEL_23:
-  v3 = am_Players[0].resource_bricks;
-  if ( am_Players[0].resource_bricks <= am_Players[0].resource_gems )
-  {
-    v3 = am_Players[0].resource_beasts;
-    v4 = am_Players[0].resource_gems;
-    if ( am_Players[0].resource_gems > am_Players[0].resource_beasts )
-      goto LABEL_28;
-  }
-  else
-  {
-    if ( am_Players[0].resource_bricks <= am_Players[0].resource_beasts )
+    else//башни не равны
     {
-      v4 = am_Players[0].resource_beasts;
-      goto LABEL_28;
+      winner = (am_Players[0].tower_height <= am_Players[1].tower_height) + 1;// побеждает тот у кого башня больше
+      victory_type = 2;//победил разрушив башню врага
     }
   }
-  v4 = v3;
-LABEL_28:
-  v5 = am_Players[1].resource_bricks;
-  v6 = am_Players[1].resource_gems;
-  if ( am_Players[1].resource_bricks <= am_Players[1].resource_gems )
+
+  //проверка набраны ли ресурсы
+  //проверка какого ресурса больше всего у игрока 1(нас)
+  pl_resource = am_Players[0].resource_bricks;//кирпичей больше чем др. ресурсов
+  if ( am_Players[0].resource_gems > am_Players[0].resource_bricks
+    && am_Players[0].resource_gems > am_Players[0].resource_beasts )//драг.камней больше всего
+    pl_resource = am_Players[0].resource_gems;
+  else if ( am_Players[0].resource_beasts > am_Players[0].resource_gems
+          && am_Players[0].resource_beasts > am_Players[0].resource_bricks )//зверей больше всего
+    pl_resource = am_Players[0].resource_beasts;
+
+  //проверка какого ресурса больше у игрока 2(врага)
+  en_resource = am_Players[1].resource_bricks;//кирпичей больше чем др. ресурсов
+  if ( am_Players[1].resource_gems > am_Players[1].resource_bricks
+    && am_Players[1].resource_gems > am_Players[1].resource_beasts )//драг.камней больше всего
+    en_resource = am_Players[1].resource_gems;
+  else if ( am_Players[1].resource_beasts > am_Players[1].resource_gems
+          && am_Players[1].resource_beasts > am_Players[1].resource_bricks )//зверей больше всего
+    en_resource = am_Players[1].resource_beasts;
+
+  //сравнение ресурсов игроков
+  if ( winner == -1 && victory_type == -1 )//нет победителя по башням
   {
-    v5 = am_Players[1].resource_beasts;
-    if ( am_Players[1].resource_gems > am_Players[1].resource_beasts )
-      goto LABEL_33;
-    goto LABEL_32;
-  }
-  v6 = am_Players[1].resource_beasts;
-  if ( am_Players[1].resource_bricks > am_Players[1].resource_beasts )
-LABEL_32:
-    v6 = v5;
-LABEL_33:
-  if ( v0 == -1 )
-  {
-    if ( v1 != -1 )
-      goto LABEL_49;
-    if ( v4 < max_resources_amount )
+    if ( pl_resource < max_resources_amount && en_resource >= max_resources_amount )//враг набрал нужное количество
     {
-      if ( v6 < max_resources_amount )
-        goto LABEL_49;
-      v0 = 2;
+      winner = 2;// враг победил
+      victory_type = 3;//победа собрав нужное количество ресурсов
     }
-    else
+    else if ( pl_resource >= max_resources_amount && en_resource < max_resources_amount )//мы набрали нужное количество
     {
-      if ( v6 < max_resources_amount )
+      winner = 1;// мы победили
+      victory_type = 3;//победа собрав нужное количество ресурсов
+    }
+    else if ( pl_resource >= max_resources_amount && en_resource >= max_resources_amount )//и у нас и у врага нужное количество ресурсов
+    {
+      if ( pl_resource == en_resource )// ресурсы равны
       {
-        v0 = 1;
+        winner = 0;//ресурсы равны
+        victory_type = 4; //ничья
       }
       else
       {
-        if ( v4 == v6 )
-          goto LABEL_46;
-        v0 = (v4 <= v6) + 1;
+        winner = (pl_resource <= en_resource) + 1;//ресурсы не равны, побеждает тот у кого больше
+        victory_type = 3;//победа собрав нужное количество ресурсов
       }
     }
-    v1 = 3;
   }
-  if ( !v0 && v1 == 4 )
+  else if ( winner == 0 && victory_type == 4 )// при ничье по башням и стене
   {
-    if ( v4 != v6 )
+    if ( pl_resource != en_resource )//ресурсы не равны
     {
-      v14 = 5;
-      v0 = (v4 <= v6) + 1;
-      goto LABEL_48;
+      winner = (pl_resource <= en_resource) + 1;//победил тот у кого больше
+      victory_type = 5;//победа когда при ничье большее количество ресурсов
     }
-LABEL_46:
-    v0 = 0;
-    v14 = 4;
-LABEL_48:
-    v1 = v14;
+    else //ресурсы равны
+    {
+      winner = 0;//нет победителя
+      victory_type = 4; //ничья
+    }
   }
-LABEL_49:
-  pArcomageGame->field_B0 = v1;
-  pArcomageGame->uGameResult = v0;
-  if ( v0 == 1 )
-  {
 
-    v8 = (signed int)window_SpeakInHouse->par1C;
-    if (( v8 >= 108 )&&( v8 <= 120 ))
+  //подведение итогов
+  pArcomageGame->Victory_type = victory_type;
+  pArcomageGame->uGameWinner = winner;
+  if ( winner == 1 )//победитель игрок 1(мы)
+  {
+    if (( window_SpeakInHouse->par1C >= 108 ) && ( window_SpeakInHouse->par1C <= 120 ))//таверны
     {
-        if ( !pParty->pArcomageWins[v8-108] )
-        {
-          pParty->pArcomageWins[v8-108] = 1;
-          signed int _a = (signed int)(p2DEvents[ window_SpeakInHouse->par1C - 1].fPriceMultiplier * 100.0);
-          pParty->PartyFindsGold(_a, 0);
-        }
-      
+      if ( !pParty->pArcomageWins[window_SpeakInHouse->par1C - 108] )
+      {
+        pParty->pArcomageWins[window_SpeakInHouse->par1C - 108] = 1;
+        pParty->PartyFindsGold(p2DEvents[ window_SpeakInHouse->par1C - 1].fPriceMultiplier * 100.0, 0);//вознаграждение
+      }
     }
-    v10 = 108;
-    do
+    //проверка выполнен ли квест по аркомагу
+    tavern_num = 0;
+    for ( uint i = 108; i <= 120; ++i )
     {
-      if ( !pParty->pArcomageWins[v10-108] )
+      if ( !pParty->pArcomageWins[i - 108] )
         break;
-      ++v10;
+      tavern_num++;
     }
-    while ( v10 <= 120 );
+    if ( tavern_num == 13 )
+      _449B7E_toggle_bit(pParty->_quest_bits, 238, 1);// 238 - Won all Arcomage games
 
-    if ( v10 == 121 )
-      _449B7E_toggle_bit(pParty->_quest_bits, 238, 1u);
-
-   
-    for (int i=0; i<4; ++i  )
+    for ( int i = 0; i < 4; ++i )//внесение записи в Заслуги
     {
-      v11 = (char *)&pParty->pPlayers[i]._achieved_awards_bits;
-      if ( !(unsigned __int16)_449B57_test_bit((unsigned __int8 *)v11, 1) )
-        _449B7E_toggle_bit((unsigned char *)v11, PLAYER_GUILD_BITS__ARCOMAGE_WIN, 1);
-      
+      if ( !_449B57_test_bit(pParty->pPlayers[i]._achieved_awards_bits, 1) )
+        _449B7E_toggle_bit(pParty->pPlayers[i]._achieved_awards_bits, PLAYER_GUILD_BITS__ARCOMAGE_WIN, 1);
     }
-   
     ++pParty->uNumArcomageWins;
-    if ( pParty->uNumArcomageWins > 1000000 )
+    if ( pParty->uNumArcomageWins > 1000000 )//ограничение количества побед
       pParty->uNumArcomageWins = 1000000;
   }
-  else
+  else//проигрыш
   {
-  for (int i=0; i<4; ++i  )
-      {
-      v12 = (char *)&pParty->pPlayers[i]._achieved_awards_bits;
-      if ( !(unsigned __int16)_449B57_test_bit((unsigned __int8 *)v12, 1) )
-        _449B7E_toggle_bit((unsigned char *)v12, PLAYER_GUILD_BITS__ARCOMAGE_LOSE, 1);
+    for ( int i = 0; i < 4; ++i )//внесение записи в Заслуги
+    {
+      if ( !_449B57_test_bit(pParty->pPlayers[i]._achieved_awards_bits, 1) )
+        _449B7E_toggle_bit(pParty->pPlayers[i]._achieved_awards_bits, PLAYER_GUILD_BITS__ARCOMAGE_LOSE, 1);
     }
-   
     ++pParty->uNumArcomageLoses;
-    if ( pParty->uNumArcomageLoses > 1000000 )
+    if ( pParty->uNumArcomageLoses > 1000000 )//ограничение количества проигрышей
       pParty->uNumArcomageLoses = 1000000;
   }
 }
 
-
-
 //----- (00409C8B) --------------------------------------------------------
-void PrepareArcomage()
-    {
-  signed __int64 v1; // qax@4
+void ArcomageGame::PrepareArcomage()
+{
+//  signed __int64 v1; // qax@4
   int v2; // esi@4
   int v3; // esi@5
   signed int v4; // edi@5
-  int v6; // edx@9
+//  int v6; // edx@9
   RECT pXYZW; // [sp+8h] [bp-1Ch]@5
   POINT pXY; // [sp+18h] [bp-Ch]@5
 
@@ -3964,39 +3573,39 @@ void PrepareArcomage()
   am_byte_4FAA76 = 0;
   am_byte_4FAA75 = 0;
 
-  for (int i=0; i<10; ++i)
-      {
-      v2 = (i+1) % 4;
-      v3 = (i+1) / 4;
-      shown_cards[i].uCardId = -1;
-      shown_cards[i].field_4 = 0;
-      shown_cards[i].field_8.x = 100 * v2 + 120;
-      shown_cards[i].field_8.y = 138 * v3 + 18;
-      shown_cards[i].field_10_xplus = -100 * v2 / 5;
-      shown_cards[i].field_14_y_plus = -138 * v3 / 5;
-      shown_cards[i].field_18_point.x = shown_cards[i].field_8.x;
-      shown_cards[i].field_18_point.y = shown_cards[i].field_8.y;
-      }
+  for (int i = 0; i < 10; ++i)
+  {
+    v2 = (i+1) % 4;
+    v3 = (i+1) / 4;
+    shown_cards[i].uCardId = -1;
+    shown_cards[i].field_4 = 0;
+    shown_cards[i].field_8.x = 100 * v2 + 120;
+    shown_cards[i].field_8.y = 138 * v3 + 18;
+    shown_cards[i].field_10_xplus = -100 * v2 / 5;
+    shown_cards[i].field_14_y_plus = -138 * v3 / 5;
+    shown_cards[i].field_18_point.x = shown_cards[i].field_8.x;
+    shown_cards[i].field_18_point.y = shown_cards[i].field_8.y;
+  }
 
   pXY.x = 0;
   pXY.y = 0;
   ArcomageGame::LoadBackground();
   pXYZW.left = 0;
-  pXYZW.right = 640;
+  pXYZW.right = window->GetWidth();
   pXYZW.top = 0;
-  pXYZW.bottom = 480;
+  pXYZW.bottom = window->GetHeight();
   am_BeginScene(pArcomageGame->pBackgroundPixels, -1, 1);
-  Blt_Copy(&pXYZW, &pXY, 2);
+  pRenderer->am_Blt_Copy(&pXYZW, &pXY, 2);
   am_EndScene();
   pRenderer->Present();
   ArcomageGame::LoadSprites();
   pRenderer->Present();
 
   v4 = 120;
-  for (int i=0; i<12; ++i)
+  for ( int i = 0; i < 12; ++i )
     am_sounds[i] = pSoundList->LoadSound(v4++, 0);
 
-  for (int i=0; i<10; ++i)
+  for (int i = 0; i < 10; ++i)
      array_4FABD0[i].field_40 = stru272_stru0::New();
   
   current_card_slot_index = -1;
@@ -4015,7 +3624,6 @@ void PrepareArcomage()
   pArcomageGame->pfntArrus = pFontArrus;
 }
 
-
 //----- (0040D711) --------------------------------------------------------
 ArcomageGame::ArcomageGame()
 {
@@ -4026,12 +3634,11 @@ ArcomageGame::ArcomageGame()
   field_F9 = 0;
 }
 
-
 //----- (00409BE8) --------------------------------------------------------
 void SetStartConditions()
 {
   const ArcomageStartConditions *st_cond; // eax@1
-    
+
   st_cond = &start_conditions[window_SpeakInHouse->par1C - 108];
   start_tower_height = st_cond->tower_height;
   start_wall_height  = st_cond->wall_height;
@@ -4050,87 +3657,83 @@ void SetStartConditions()
   start_bricks_amount = st_cond->bricks_amount;
   start_gems_amount   = st_cond->gems_amount;
   start_beasts_amount = st_cond->beasts_amount;
-  
 }
-
 
 //----- (0040D75D) --------------------------------------------------------
 void am_DrawText( int a1, const char *pText, POINT *pXY )
-    {
-    pPrimaryWindow->DrawText( pFontComic, pXY->x, pXY->y - ((pFontComic->uFontHeight - 3) >> 1) + 3, 0, pText, 0, 0, 0);
-    }
-
+{
+  pPrimaryWindow->DrawText( pFontComic, pXY->x, pXY->y - ((pFontComic->uFontHeight - 3) / 2) + 3, 0, pText, 0, 0, 0);
+}
 
 //----- (0040DB27) --------------------------------------------------------
 void DrawRect( RECT *pXYZW, unsigned __int16 uColor, char bSolidFill )
-    {
-    RECT *v3; // esi@1
-
-    v3 = pXYZW;
-    pRenderer->BeginScene();
-    pRenderer->SetRasterClipRect(0, 0, 639u, 479u);
-    if ( bSolidFill )
-        {
-        for ( int i = v3->top; i <= v3->bottom;  ++i )
-            pRenderer->RasterLine2D(v3->left, i, v3->right, i, uColor);
-        }
-    else
-        {
-        pRenderer->RasterLine2D(v3->left, v3->top, v3->right, v3->top, uColor);
-        pRenderer->RasterLine2D(v3->right, v3->top, v3->right, v3->bottom, uColor);
-        pRenderer->RasterLine2D(v3->right, v3->bottom, v3->left, v3->bottom, uColor);
-        pRenderer->RasterLine2D(v3->left, v3->bottom, v3->left, v3->top, uColor);
-        }
-    pRenderer->EndScene();
-    }
+{
+  pRenderer->BeginScene();
+  pRenderer->SetRasterClipRect(0, 0, window->GetWidth() - 1, window->GetHeight() - 1);
+  if ( bSolidFill )
+  {
+    for ( int i = pXYZW->top; i <= pXYZW->bottom;  ++i )
+      pRenderer->RasterLine2D(pXYZW->left, i, pXYZW->right, i, uColor);
+  }
+  else
+  {
+    pRenderer->RasterLine2D(pXYZW->left, pXYZW->top, pXYZW->right, pXYZW->top, uColor);
+    pRenderer->RasterLine2D(pXYZW->right, pXYZW->top, pXYZW->right, pXYZW->bottom, uColor);
+    pRenderer->RasterLine2D(pXYZW->right, pXYZW->bottom, pXYZW->left, pXYZW->bottom, uColor);
+    pRenderer->RasterLine2D(pXYZW->left, pXYZW->bottom, pXYZW->left, pXYZW->top, uColor);
+  }
+  pRenderer->EndScene();
+}
 
 void DrawSquare( POINT *pTargetXY, unsigned __int16 uColor )
+{
+  pRenderer->BeginScene();
+  //if ( uNumSceneBegins )
+  {
+    if ( pTargetXY->x >= 0 && pTargetXY->x <= window->GetWidth() - 1
+      && pTargetXY->y >= 0 && pTargetXY->y <= window->GetHeight() - 1)
     {
-    pRenderer->BeginScene();
-    if ( pRenderer->uNumSceneBegins )
-        {
-        int xVal = pTargetXY->x;
-        int yVal = pTargetXY->y;
-        if ( xVal >= 0 && xVal <= 639 && yVal >= 0 && yVal <= 479)
-            {
-            pRenderer->pTargetSurface[xVal + pRenderer->uTargetSurfacePitch * yVal] = uColor;
-            pRenderer->pTargetSurface[xVal+1 + pRenderer->uTargetSurfacePitch * yVal] = uColor;
-            pRenderer->pTargetSurface[xVal + pRenderer->uTargetSurfacePitch * (yVal+1)] = uColor;
-            pRenderer->pTargetSurface[xVal+1 + pRenderer->uTargetSurfacePitch * (yVal+1)] = uColor;
-            }
-        pRenderer->EndScene();
-        }
+      pRenderer->WritePixel16(pTargetXY->x,     pTargetXY->y, uColor);
+      pRenderer->WritePixel16(pTargetXY->x + 1, pTargetXY->y, uColor);
+      pRenderer->WritePixel16(pTargetXY->x,     pTargetXY->y + 1, uColor);
+      pRenderer->WritePixel16(pTargetXY->x + 1, pTargetXY->y + 1, uColor);
     }
+    pRenderer->EndScene();
+  }
+}
 
 //----- (0040DBD3) --------------------------------------------------------
 void DrawPixel( POINT *pTargetXY, unsigned __int16 uColor )
+{
+  pRenderer->BeginScene();
+  //if ( pRenderer->uNumSceneBegins )
+  {
+    if ( pTargetXY->x >= 0 && pTargetXY->x <= window->GetWidth() - 1
+      && pTargetXY->y >= 0 && pTargetXY->y <= window->GetHeight() - 1)
     {
-    pRenderer->BeginScene();
-    if ( pRenderer->uNumSceneBegins )
-        {
-        int xVal = pTargetXY->x;
-        int yVal = pTargetXY->y;
-        if ( xVal >= 0 && xVal <= 639 && yVal >= 0 && yVal <= 479)
-            {
-            pRenderer->pTargetSurface[xVal + pRenderer->uTargetSurfacePitch * yVal] = uColor;
-            }
-        pRenderer->EndScene();
-        }
+      pRenderer->WritePixel16(pTargetXY->x, pTargetXY->y, uColor);
+    /*int xVal = pTargetXY->x;
+    int yVal = pTargetXY->y;
+    if ( xVal >= 0 && xVal <= 639 && yVal >= 0 && yVal <= 479)
+    {
+      pRenderer->pTargetSurface[xVal + pRenderer->uTargetSurfacePitch * yVal] = uColor;
+    }*/
     }
-
+    pRenderer->EndScene();
+  }
+}
 
 //----- (0040DDB1) --------------------------------------------------------
 int rand_interval( int min, int max )
-    {
-    return min + rand() % (max - min + 1);
-    }
-
+{
+  return min + rand() % (max - min + 1);
+}
 
 //----- (0040DEC8) --------------------------------------------------------
 void __fastcall am_IntToString(int val, char *pOut)
-    {
-    sprintfex(pOut, "%d", val);
-    }
+{
+  sprintfex(pOut, "%d", val);
+}
 
 void set_stru1_field_8_InArcomage(int inValue)
 {

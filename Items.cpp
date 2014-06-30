@@ -1,8 +1,10 @@
-#ifdef _MSC_VER
 #define _CRT_SECURE_NO_WARNINGS
-#endif
-
 #include <stdlib.h>
+#include <string>
+#include "UI\UIHouses.h"
+#include "GUIButton.h"
+#include "mm7_unsorted_subs.h"
+#include "ErrorHandling.h"
 
 #include "Items.h"
 #include "MapInfo.h"
@@ -16,7 +18,7 @@
 #include "StorylineTextTable.h"
 #include "texts.h"
 #include "mm7_data.h"
-
+#include "OurMath.h"
 
 
 struct ITEM_VARIATION
@@ -141,7 +143,8 @@ std::array< std::array<char, 14>, 7> byte_4E8168={{  //byte_4E8178
     { 2, 2, 2, 2, 4, 4, 4, 5, 5, 5, 5, 6, 6, 6},
     { 2, 2, 2, 2, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7}}};
 
-int  sub_4BE571(int a1, int *a2, int a3, int a4);
+int sub_4BE571_AddItemToSet(int valueToAdd, int *outPutSet, int elemsAlreadyPresent, int elemsNeeded);
+int dword_F8B1DC_currentShopOption; // weak
 
 ItemGen *ptr_50C9A4_ItemToEnchant;
 
@@ -280,47 +283,81 @@ void ItemGen::UpdateTempBonus(__int64 uTimePlayed)
 //----- (0045814E) --------------------------------------------------------
 void ItemsTable::Release()
 {
-  if ( pMonstersTXT_Raw )
-    free(pMonstersTXT_Raw);
-  if ( pMonsterPlacementTXT_Raw )
-    free(pMonsterPlacementTXT_Raw);
-  if ( pSkillDescTXT_Raw )
-    free(pSkillDescTXT_Raw);
-  if (pSpcItemsTXT_Raw )
-    free(pSpcItemsTXT_Raw);
-  if ( pStdItemsTXT_Raw )
-    free(pStdItemsTXT_Raw);
-  if ( pRndItemsTXT_Raw )
-    free(pRndItemsTXT_Raw);
-  if ( pItemsTXT_Raw )
-    free(pItemsTXT_Raw);
-  if ( pHostileTXT_Raw )
-    free(pHostileTXT_Raw);
-  if ( pHistoryTXT_Raw )
-    free(pHistoryTXT_Raw);
-  if ( pPotionsTXT_Raw )
-    free(pPotionsTXT_Raw);
-  if ( pPotionNotesTXT_Raw )
-    free(pPotionNotesTXT_Raw);
-  pSpcItemsTXT_Raw = NULL;
-  pSkillDescTXT_Raw = NULL;
-  pStdItemsTXT_Raw = NULL;
-  pRndItemsTXT_Raw = NULL;
-  pItemsTXT_Raw = NULL;
+  free(pMonstersTXT_Raw);
+  free(pMonsterPlacementTXT_Raw);
+  free(pSkillDescTXT_Raw);
+  free(pSpcItemsTXT_Raw);
+  free(pStdItemsTXT_Raw);
+  free(pRndItemsTXT_Raw);
+  free(pItemsTXT_Raw);
+  free(pHostileTXT_Raw);
+  free(pHistoryTXT_Raw);
+  free(pPotionsTXT_Raw);
+  free(pPotionNotesTXT_Raw);
+  pMonstersTXT_Raw = nullptr;
+  pMonsterPlacementTXT_Raw = nullptr;
+  pSpcItemsTXT_Raw = nullptr;
+  pSkillDescTXT_Raw = nullptr;
+  pStdItemsTXT_Raw = nullptr;
+  pRndItemsTXT_Raw = nullptr;
+  pItemsTXT_Raw = nullptr;
+  pHostileTXT_Raw = nullptr;
+  pHistoryTXT_Raw = nullptr;
+  pPotionsTXT_Raw = nullptr;
+  pPotionNotesTXT_Raw = nullptr;
 }
 
 
 //----- (00456D84) --------------------------------------------------------
 void ItemsTable::Initialize()
-	{
-	int i,j;
-	char* test_string;
-	unsigned char c;
-	bool break_loop;
-	unsigned int temp_str_len;
-	char* tmp_pos;
-	int decode_step;
-	int item_counter;
+{
+  std::map<std::string, ITEM_EQUIP_TYPE, ci_less> equipStatMap;
+  equipStatMap["weapon"] = EQUIP_SINGLE_HANDED;
+  equipStatMap["weapon2"] = EQUIP_TWO_HANDED;
+  equipStatMap["weapon1or2"] = EQUIP_SINGLE_HANDED;
+  equipStatMap["missile"] = EQUIP_BOW;
+  equipStatMap["bow"] = EQUIP_BOW;
+  equipStatMap["armor"] = EQUIP_ARMOUR;
+  equipStatMap["shield"] = EQUIP_SHIELD;
+  equipStatMap["helm"] = EQUIP_HELMET;
+  equipStatMap["belt"] = EQUIP_BELT;
+  equipStatMap["cloak"] = EQUIP_CLOAK;
+  equipStatMap["gauntlets"] = EQUIP_GAUNTLETS;
+  equipStatMap["boots"] = EQUIP_BOOTS;
+  equipStatMap["ring"] = EQUIP_RING;
+  equipStatMap["amulet"] = EQUIP_AMULET;
+  equipStatMap["weaponw"] = EQUIP_WAND;
+  equipStatMap["herb"] = EQUIP_REAGENT;
+  equipStatMap["reagent"] = EQUIP_REAGENT;
+  equipStatMap["bottle"] = EQUIP_POTION;
+  equipStatMap["sscroll"] = EQUIP_SPELL_SCROLL;
+  equipStatMap["book"] = EQUIP_BOOK;
+  equipStatMap["mscroll"] = EQUIP_MESSAGE_SCROLL;
+  equipStatMap["gold"] = EQUIP_GOLD;
+  equipStatMap["gem"] = EQUIP_GEM;
+
+  std::map<std::string, PLAYER_SKILL_TYPE, ci_less> equipSkillMap;
+  equipSkillMap["staff"] = PLAYER_SKILL_STAFF;
+  equipSkillMap["sword"] = PLAYER_SKILL_SWORD;
+  equipSkillMap["dagger"] = PLAYER_SKILL_DAGGER;
+  equipSkillMap["axe"] = PLAYER_SKILL_AXE;
+  equipSkillMap["spear"] = PLAYER_SKILL_SPEAR;
+  equipSkillMap["bow"] = PLAYER_SKILL_BOW;
+  equipSkillMap["mace"] = PLAYER_SKILL_MACE;
+  equipSkillMap["blaster"] = PLAYER_SKILL_BLASTER;
+  equipSkillMap["shield"] = PLAYER_SKILL_SHIELD;
+  equipSkillMap["leather"] = PLAYER_SKILL_LEATHER;
+  equipSkillMap["chain"] = PLAYER_SKILL_CHAIN;
+  equipSkillMap["plate"] = PLAYER_SKILL_PLATE;
+  equipSkillMap["club"] = PLAYER_SKILL_CLUB;
+  
+  std::map<std::string, ITEM_MATERIAL, ci_less> materialMap;
+  materialMap["artifact"] = MATERIAL_ARTEFACT;
+  materialMap["relic"] = MATERIAL_RELIC;
+  materialMap["special"] = MATERIAL_SPECIAL;
+
+  char* test_string;
+  int item_counter;
 
 	pMapStats = new MapStats;
 	pMapStats->Initialize();
@@ -341,59 +378,28 @@ void ItemsTable::Initialize()
 	pStorylineText = new StorylineText;
 	pStorylineText->Initialize();
 
-	pStdItemsTXT_Raw = NULL;
 	pStdItemsTXT_Raw = (char *)pEvents_LOD->LoadRaw("stditems.txt", 0);
 	strtok(pStdItemsTXT_Raw, "\r");
 	strtok(NULL, "\r");
 	strtok(NULL, "\r");
 	strtok(NULL, "\r");
 	//Standard Bonuses by Group	
-	for (i=0;i<24;++i)
+	for (int i=0;i<24;++i)
 		{
 		test_string = strtok(NULL, "\r") + 1;
-		break_loop = false;
-		decode_step=0;
-		do 
-			{
-			c = *(unsigned char*)test_string;
-			temp_str_len = 0;
-			while((c!='\t')&&(c>0))
-				{
-				++temp_str_len;
-				c=test_string[temp_str_len];
-				}		
-			tmp_pos=test_string+temp_str_len;
-			if (*tmp_pos == 0)
-				break_loop = true;
-			*tmp_pos = 0;
-			if (temp_str_len)
-				{
-				switch (decode_step)
-					{
-				case 0: 
-					pEnchantments[i].pBonusStat=RemoveQuotes(test_string);
-					break;
-				case 1:
-					pEnchantments[i].pOfName= RemoveQuotes(test_string);
-					break;
-				default:
-					pEnchantments[i].to_item[decode_step-2]=atoi(test_string);
-					}
-				}
-			else
-				{ 
-				if (decode_step)
-					break_loop = true;
-				}
-			++decode_step;
-			test_string=tmp_pos+1;
-			} while ((decode_step<11)&&!break_loop);
-		}
+    auto tokens = Tokenize(test_string, '\t');
+    pEnchantments[i].pBonusStat=RemoveQuotes(tokens[0]);
+    pEnchantments[i].pOfName=RemoveQuotes(tokens[1]);
+    for (int j = 0; j < 9; j++)
+    {
+      pEnchantments[i].to_item[j]=atoi(tokens[j+2]);
+    }
+	}
 
 	memset(&pEnchantmentsSumm, 0, 36);
-	for(i=0;i<9;++i)
+	for(int i=0;i<9;++i)
 		{
-		for (j=0;j<24;++j)
+		for (int j=0;j<24;++j)
 			pEnchantmentsSumm[i]+=pEnchantments[j].to_item[i];
 		}
 
@@ -403,525 +409,161 @@ void ItemsTable::Initialize()
 	strtok(NULL, "\r");
 	strtok(NULL, "\r");
 	strtok(NULL, "\r");
-	for(i=0;i<6;++i) //counted from 1
-		{
-		test_string = strtok(NULL, "\r") + 1;
-		break_loop = false;
-		decode_step=0;
-		do 
-			{
-			c = *(unsigned char*)test_string;
-			temp_str_len = 0;
-			while((c!='\t')&&(c>0))
-				{
-				++temp_str_len;
-				c=test_string[temp_str_len];
-				}		
-			tmp_pos=test_string+temp_str_len;
-			if (*tmp_pos == 0)
-				break_loop = true;
-			*tmp_pos = 0;
-			if  (decode_step==2)
-				bonus_ranges[i].minR = atoi(test_string);
-			else if (decode_step==3)
-				bonus_ranges[i].maxR =atoi(test_string);
-			++decode_step;
-			test_string=tmp_pos+1;
-			} while ((decode_step<4)&&!break_loop);
-		}
+	for(int i=0;i<6;++i) //counted from 1
+  {
+    test_string = strtok(NULL, "\r") + 1;
+    auto tokens = Tokenize(test_string, '\t');
+    Assert(tokens.size() == 4, "Invalid number of tokens");
+    bonus_ranges[i].minR = atoi(tokens[2]);
+    bonus_ranges[i].maxR =atoi(tokens[3]);
+	}
 
 
-	pSpcItemsTXT_Raw = 0;
 	pSpcItemsTXT_Raw = (char *)pEvents_LOD->LoadRaw("spcitems.txt", 0);
 	strtok(pSpcItemsTXT_Raw, "\r");
 	strtok(NULL, "\r");
 	strtok(NULL, "\r");
 	strtok(NULL, "\r");
-	for (i=0;i<72;++i)
-		{
-		test_string = strtok(NULL, "\r") + 1;
-		break_loop = false;
-		decode_step=0;
-		do 
-			{
-			c = *(unsigned char*)test_string;
-			temp_str_len = 0;
-			while((c!='\t')&&(c>0))
-				{
-				++temp_str_len;
-				c=test_string[temp_str_len];
-				}		
-			tmp_pos=test_string+temp_str_len;
-			if (*tmp_pos == 0)
-				break_loop = true;
-			*tmp_pos = 0;
-			if (temp_str_len)
-				{
-				switch (decode_step)
-					{
-				case 0: 
-					pSpecialEnchantments[i].pBonusStatement=RemoveQuotes(test_string);
-					break;
-				case 1:
-					pSpecialEnchantments[i].pNameAdd= RemoveQuotes(test_string);
-					break;
-				case 14:
-					int res;
-					res=atoi(test_string);
-					if(!res)
-						{
-						++test_string; 
-						while (*test_string==' ')//fix X 2 case
-							++test_string; 
-						res=atoi(test_string);
-						}				
-					pSpecialEnchantments[i].iValue=res;
-					break;
-				case 15:
-					pSpecialEnchantments[i].iTreasureLevel=  tolower(*test_string) - 97;;
-					break;
-				default:
-					pSpecialEnchantments[i].to_item_apply[decode_step-2]=atoi(test_string);
-					}
-				}
-			else
-				{ 
-				if (decode_step)
-					break_loop = true;
-				}
-			++decode_step;
-			test_string=tmp_pos+1;
-			} while ((decode_step<16)&&!break_loop);
-		}
+	for (int i=0;i<72;++i)
+	{
+    test_string = strtok(NULL, "\r") + 1;
+    auto tokens = Tokenize(test_string, '\t');
+    Assert(tokens.size() >= 17, "Invalid number of tokens");
+    pSpecialEnchantments[i].pBonusStatement=RemoveQuotes(tokens[0]);
+    pSpecialEnchantments[i].pNameAdd= RemoveQuotes(tokens[1]);
+    for (int j = 0; j < 12; j++)
+    {
+      pSpecialEnchantments[i].to_item_apply[j]=atoi(tokens[j+2]);
+    }
+    int res;
+    res=atoi(tokens[14]);
+    if(!res)
+    {
+      ++tokens[14]; 
+      while (*tokens[14]==' ')//fix X 2 case
+        ++tokens[14]; 
+      res=atoi(tokens[14]);
+    }				
+    pSpecialEnchantments[i].iValue=res;
+    pSpecialEnchantments[i].iTreasureLevel=  tolower(tokens[15][0]) - 97;
+	}
 
 	pSpecialEnchantments_count = 71;
 	memset(&pSpecialEnchantmentsSumm, 0, 96);
-	for(i=0;i<12;++i)
+	for(int i=0;i<12;++i)
 		{
-		for (j=0;j<=pSpecialEnchantments_count;++j)
+		for (unsigned int j=0;j<=pSpecialEnchantments_count;++j)
 			pSpecialEnchantmentsSumm[i]+=pSpecialEnchantments[j].to_item_apply[i];
 		}
 
-	Initialize2DA();
+	InitializeBuildingResidents();
 
-	pItemsTXT_Raw = NULL;
 	pItemsTXT_Raw = (char*) pEvents_LOD->LoadRaw("items.txt", 0);
 	strtok(pItemsTXT_Raw, "\r");
 	strtok(NULL, "\r");
 	uAllItemsCount = 0;
 	item_counter = 0;
-	while (true)
+	while (item_counter < 800)
 		{
 		test_string = strtok(NULL, "\r") + 1;
-		break_loop = false;
-		decode_step=0;
-		do 
-			{
-			c = *(unsigned char*)test_string;
-			temp_str_len = 0;
-			while((c!='\t')&&(c>0))
-				{
-				++temp_str_len;
-				c=test_string[temp_str_len];
-				}		
-			tmp_pos=test_string+temp_str_len;
-			if (*tmp_pos == 0)
-				break_loop = true;
-			*tmp_pos = 0;
-			if (temp_str_len)
-				{
-				switch (decode_step)
-					{
-				case 0: //Item #
-					item_counter=atoi(test_string);
-					uAllItemsCount=item_counter;
-					break;
-				case 1: //Pic File
-					pItems[item_counter].pIconName = RemoveQuotes(test_string);
-					break;
-				case 2: //Name
-					pItems[item_counter].pName = RemoveQuotes(test_string);
-					break;
-				case 3: //Value
-					pItems[item_counter].uValue=atoi(test_string);
-					break;
-				case 4: //Equip Stat
-					{
-					if ( !_stricmp(test_string, "weapon") )
-						{
-						pItems[item_counter].uEquipType = EQUIP_SINGLE_HANDED;
-						break;
-						}
-					if ( !_stricmp(test_string, "weapon2") )
-						{
-						pItems[item_counter].uEquipType = EQUIP_TWO_HANDED;
-						break;
-						}
-					if ( !_stricmp(test_string, "weapon1or2") )
-						{
-						pItems[item_counter].uEquipType = EQUIP_SINGLE_HANDED;
-						break;
-						}
-					if ( !(_stricmp(test_string, "missile")&&_stricmp(test_string, "bow")))
-						{
-						pItems[item_counter].uEquipType = EQUIP_BOW;
-						break;
-						}
-					if ( !_stricmp(test_string, "armor") )
-						{
-						pItems[item_counter].uEquipType = EQUIP_ARMOUR;
-						break;
-						}
-					if ( !_stricmp(test_string, "shield") )
-						{
-						pItems[item_counter].uEquipType = EQUIP_SHIELD;
-						break;
-						}
-					if ( !_stricmp(test_string, "helm") )
-						{
-						pItems[item_counter].uEquipType = EQUIP_HELMET;
-						break;
-						}
-					if ( !_stricmp(test_string, "belt") )
-						{
-						pItems[item_counter].uEquipType = EQUIP_BELT;
-						break;
-						}
-					if ( !_stricmp(test_string, "cloak") )
-						{
-						pItems[item_counter].uEquipType = EQUIP_CLOAK;
-						break;
-						}
-					if ( !_stricmp(test_string, "gauntlets") )
-						{
-						pItems[item_counter].uEquipType = EQUIP_GAUNTLETS;
-						break;
-						}
-					if ( !_stricmp(test_string, "boots") )
-						{
-						pItems[item_counter].uEquipType = EQUIP_BOOTS;
-						break;
-						}
-					if ( !_stricmp(test_string, "ring") )
-						{
-						pItems[item_counter].uEquipType = EQUIP_RING;
-						break;
-						}
-					if ( !_stricmp(test_string, "amulet") )
-						{
-						pItems[item_counter].uEquipType = EQUIP_AMULET;
-						break;
-						}
-					if ( !_stricmp(test_string, "weaponw") )
-						{
-						pItems[item_counter].uEquipType = EQUIP_WAND;
-						break;
-						}
-					if ( !(_stricmp(test_string, "herb")&&_stricmp(test_string, "reagent")))
-						{
-						pItems[item_counter].uEquipType = EQUIP_REAGENT;
-						break;
-						}
-					if ( !_stricmp(test_string, "bottle") )
-						{
-						pItems[item_counter].uEquipType = EQUIP_POTION;
-						break;
-						}
-					if ( !_stricmp(test_string, "sscroll") )
-						{
-						pItems[item_counter].uEquipType = EQUIP_SPELL_SCROLL;
-						break;
-						}
-					if ( !_stricmp(test_string, "book") )
-						{
-						pItems[item_counter].uEquipType = EQUIP_BOOK;
-						break;
-						}
-					if ( !_stricmp(test_string, "mscroll") )
-						{
-						pItems[item_counter].uEquipType = EQUIP_MESSAGE_SCROLL;
-						break;
-						}
-					if ( !_stricmp(test_string, "gold") )
-						{
-						pItems[item_counter].uEquipType = EQUIP_GOLD;
-						break;
-						}
-					if ( !_stricmp(test_string, "gem") )
-						{
-						pItems[item_counter].uEquipType = EQUIP_GEM;
-						break;
-						}
-					pItems[item_counter].uEquipType = EQUIP_NONE;
-					break;
-					}
-				case 5: //Skill Group
-					{
-					if ( !_stricmp(test_string, "staff") )
-						{
-						pItems[item_counter].uSkillType = PLAYER_SKILL_STAFF;
-						break;
-						}
-					if ( !_stricmp(test_string, "sword") )
-						{
-						pItems[item_counter].uSkillType = PLAYER_SKILL_SWORD;
-						break;
-						}
-					if ( !_stricmp(test_string, "dagger") )
-						{
-						pItems[item_counter].uSkillType = PLAYER_SKILL_DAGGER;
-						break;
-						}
-					if ( !_stricmp(test_string, "axe") )
-						{
-						pItems[item_counter].uSkillType = PLAYER_SKILL_AXE;
-						break;
-						}
-					if ( !_stricmp(test_string, "spear") )
-						{
-						pItems[item_counter].uSkillType = PLAYER_SKILL_SPEAR;
-						break;
-						}
-					if ( !_stricmp(test_string, "bow") )
-						{
-						pItems[item_counter].uSkillType = PLAYER_SKILL_BOW;
-						break;
-						}
-					if ( !_stricmp(test_string, "mace") )
-						{
-						pItems[item_counter].uSkillType = PLAYER_SKILL_MACE;
-						break;
-						}
-					if ( !_stricmp(test_string, "blaster") )
-						{
-						pItems[item_counter].uSkillType = PLAYER_SKILL_BLASTER;
-						break;
-						}
-					if ( !_stricmp(test_string, "shield") )
-						{
-						pItems[item_counter].uSkillType = PLAYER_SKILL_SHIELD;
-						break;
-						}
-					if ( !_stricmp(test_string, "leather") )
-						{
-						pItems[item_counter].uSkillType = PLAYER_SKILL_LEATHER;
-						break;
-						}
-					if ( !_stricmp(test_string, "chain") )
-						{
-						pItems[item_counter].uSkillType = PLAYER_SKILL_CHAIN;
-						break;
-						}
-					if ( !_stricmp(test_string, "plate") )
-						{
-						pItems[item_counter].uSkillType = PLAYER_SKILL_PLATE;
-						break;
-						}
-					if ( !_stricmp(test_string, "club") )
-						{
-						pItems[item_counter].uSkillType = PLAYER_SKILL_CLUB;
-						break;
-						}
-					pItems[item_counter].uSkillType = PLAYER_SKILL_MISC;
-					break;
-					}
-				case 6: //Mod1
-					{
-					int ii;
-					char* test_char;
-					int tst_len;
-					tst_len=strlen(test_string);
-					pItems[item_counter].uDamageDice=0;
-					pItems[item_counter].uDamageRoll=0;
-					test_char=test_string;
-					for (ii=0; ii<tst_len; ++ii)
-						{
-						if (tolower(*test_char)=='d')
-							{
-							*test_char=0;
-							pItems[item_counter].uDamageDice=atoi(test_string);
-							pItems[item_counter].uDamageRoll=atoi(test_char+1);
-							*test_char='d';
-							break;
-							}
-						++test_char;
-						}
-					test_char=test_string;
-					if ((ii==tst_len)&&(tolower(*test_char)!='s'))
-						{
-						pItems[item_counter].uDamageDice=atoi(test_char);
-						pItems[item_counter].uDamageRoll=1;
-						}
-					break;
-					}
-				case 7: //Mod2
-					pItems[item_counter].uDamageMod=atoi(test_string);
-					break;
-				case 8: //material
-					{
-					if ( !_stricmp(test_string, "artifact") )
-						{
-						pItems[item_counter].uMaterial = MATERIAL_ARTEFACT;
-						break;
-						}
-					if ( !_stricmp(test_string, "relic") )
-						{
-						pItems[item_counter].uMaterial = MATERIAL_RELIC;
-						break;
-						}
-					if ( !_stricmp(test_string, "special") )
-						{
-						pItems[item_counter].uMaterial = MATERIAL_SPECIAL;
-						break;
-						}
-					pItems[item_counter].uMaterial = MATERIAL_COMMON;
-					break;}
-				case 9:  //ID/Rep/St
-					pItems[item_counter].uItemID_Rep_St=atoi(test_string);
-					break;
-				case 10: //Not identified name
-					pItems[item_counter].pUnidentifiedName = RemoveQuotes(test_string);
-					break;
-				case 11: //Sprite Index
-					pItems[item_counter].uSpriteID=atoi(test_string);
-					break;
-				case 12: //VarA
-					{
-					pItems[item_counter]._additional_value=0;
-					pItems[item_counter]._bonus_type=0;
-					if (pItems[item_counter].uMaterial==MATERIAL_SPECIAL)
-						{
-						for(int ii=0; ii<24; ++ii)
-							{
-							if (!_stricmp(test_string,pEnchantments[ii].pOfName))
-								{
-								pItems[item_counter]._bonus_type=ii+1;
-								break;
-								}
-							}
-						if (!pItems[item_counter]._bonus_type)
-							{
-							for(int ii=0; ii<72; ++ii)
-								{
-								if (!_stricmp(test_string,pSpecialEnchantments[ii].pNameAdd))
-									{
-									pItems[item_counter]._additional_value=ii+1;
-									}
-								}
-							}
-						}
+    auto tokens = Tokenize(test_string, '\t');
+    item_counter=atoi(tokens[0]);
+    uAllItemsCount=item_counter;
+    pItems[item_counter].pIconName = RemoveQuotes(tokens[1]);
+    pItems[item_counter].pName = RemoveQuotes(tokens[2]);
+    pItems[item_counter].uValue=atoi(tokens[3]);
+    auto findResult = equipStatMap.find(tokens[4]);
+    pItems[item_counter].uEquipType = findResult == equipStatMap.end() ? EQUIP_NONE : findResult->second;
+    auto findResult2 = equipSkillMap.find(tokens[5]);
+    pItems[item_counter].uSkillType = findResult2 == equipSkillMap.end() ? PLAYER_SKILL_MISC : findResult2->second;
+    auto tokens2 = Tokenize(tokens[6], 'd');
+    if (tokens2.size() == 2)
+    {
+      pItems[item_counter].uDamageDice=atoi(tokens2[0]);
+      pItems[item_counter].uDamageRoll=atoi(tokens2[1]);
+    }
+    else if (tolower(tokens2[0][0]) != 's')
+    {
+      pItems[item_counter].uDamageDice=atoi(tokens2[0]);
+      pItems[item_counter].uDamageRoll=1;
+    }
+    else
+    {
+      pItems[item_counter].uDamageDice=0;
+      pItems[item_counter].uDamageRoll=0;
+    }
+    pItems[item_counter].uDamageMod=atoi(tokens[7]);
+    auto findResult3 = materialMap.find(tokens[8]);
+    pItems[item_counter].uMaterial = findResult3 == materialMap.end() ? MATERIAL_COMMON : findResult->second;
+    pItems[item_counter].uItemID_Rep_St=atoi(tokens[9]);
+    pItems[item_counter].pUnidentifiedName = RemoveQuotes(tokens[10]);
+    pItems[item_counter].uSpriteID=atoi(tokens[11]);
 
-					break;
-					}
-				case 13: //VarB
-					if ((pItems[item_counter].uMaterial==MATERIAL_SPECIAL)&&(pItems[item_counter]._bonus_type))
-						{
-						char b_s=atoi(test_string);
-						if (b_s)
-							pItems[item_counter]._bonus_strength=b_s;
-						else
-							pItems[item_counter]._bonus_strength=1;
-						}
-					else
-						pItems[item_counter]._bonus_strength=0;
-					break;
-				case 14: //Equip X
-					pItems[item_counter].uEquipX=atoi(test_string);
-					break;
-				case 15: //Equip Y
-					pItems[item_counter].uEquipY=atoi(test_string);
-					break;
-				case 16: //Notes
-					pItems[item_counter].pDescription = RemoveQuotes(test_string);
-					break;
+    pItems[item_counter]._additional_value=0;
+    pItems[item_counter]._bonus_type=0;
+    if (pItems[item_counter].uMaterial==MATERIAL_SPECIAL)
+    {
+      for(int ii=0; ii<24; ++ii)
+      {
+        if (!_stricmp(tokens[12],pEnchantments[ii].pOfName))
+        {
+          pItems[item_counter]._bonus_type=ii+1;
+          break;
+        }
+      }
+      if (!pItems[item_counter]._bonus_type)
+      {
+        for(int ii=0; ii<72; ++ii)
+        {
+          if (!_stricmp(tokens[12],pSpecialEnchantments[ii].pNameAdd))
+          {
+            pItems[item_counter]._additional_value=ii+1;
+          }
+        }
+      }
+    }
 
-					}
-				}
-			else
-				{ 
-				if (decode_step)
-					break_loop = true;
-				}
-			++decode_step;
-			test_string=tmp_pos+1;
-			} while ((decode_step<17)&&!break_loop);
-			++item_counter;
-			if (item_counter>799)
-				break;
-		}
+    if ((pItems[item_counter].uMaterial==MATERIAL_SPECIAL)&&(pItems[item_counter]._bonus_type))
+    {
+      char b_s=atoi(tokens[13]);
+      if (b_s)
+        pItems[item_counter]._bonus_strength=b_s;
+      else
+        pItems[item_counter]._bonus_strength=1;
+    }
+    else
+      pItems[item_counter]._bonus_strength=0;
+    pItems[item_counter].uEquipX=atoi(tokens[14]);
+    pItems[item_counter].uEquipY=atoi(tokens[15]);
+    pItems[item_counter].pDescription = RemoveQuotes(tokens[16]);
+    item_counter++;
+	}
 
-
-	pRndItemsTXT_Raw = NULL;
 	uAllItemsCount = item_counter;
 	pRndItemsTXT_Raw = (char *)pEvents_LOD->LoadRaw("rnditems.txt", 0);
 	strtok(pRndItemsTXT_Raw, "\r");
 	strtok(NULL, "\r");
 	strtok(NULL, "\r");
 	strtok(NULL, "\r");
-	item_counter = 0;
-	while (true)
+  for (item_counter = 0; item_counter < 619; item_counter++)
 		{
 		test_string = strtok(NULL, "\r") + 1;
-		break_loop = false;
-		decode_step=0;
-		do 
-			{
-			c = *(unsigned char*)test_string;
-			temp_str_len = 0;
-			while((c!='\t')&&(c>0))
-				{
-				++temp_str_len;
-				c=test_string[temp_str_len];
-				}		
-			tmp_pos=test_string+temp_str_len;
-			if (*tmp_pos == 0)
-				break_loop = true;
-			*tmp_pos = 0;
-			if (temp_str_len)
-				{
-				switch (decode_step)
-					{
-				case 0: 
-					item_counter=atoi(test_string);
-					break;
-				case 2:
-					pItems[item_counter].uChanceByTreasureLvl1=atoi(test_string);
-					break;
-				case 3:
-					pItems[item_counter].uChanceByTreasureLvl2=atoi(test_string);
-					break;
-				case 4:
-					pItems[item_counter].uChanceByTreasureLvl3=atoi(test_string);
-					break;
-				case 5:
-					pItems[item_counter].uChanceByTreasureLvl4=atoi(test_string);
-					break;
-				case 6:
-					pItems[item_counter].uChanceByTreasureLvl5=atoi(test_string);
-					break;
-				case 7:
-					pItems[item_counter].uChanceByTreasureLvl6=atoi(test_string);
-					break;
-					}
-				}
-			else
-				{ 
-				if (decode_step)
-					break_loop = true;
-				}
-			++decode_step;
-			test_string=tmp_pos+1;
-			} while ((decode_step<8)&&!break_loop);
-			++item_counter;
-			if (item_counter>618)
-				break;
-		}
+    auto tokens = Tokenize(test_string, '\t');
+    Assert(tokens.size() > 7, "Invalid number of tokens");
+    item_counter = atoi(tokens[0]);
+    pItems[item_counter].uChanceByTreasureLvl1=atoi(tokens[2]);
+    pItems[item_counter].uChanceByTreasureLvl2=atoi(tokens[3]);
+    pItems[item_counter].uChanceByTreasureLvl3=atoi(tokens[4]);
+    pItems[item_counter].uChanceByTreasureLvl4=atoi(tokens[5]);
+    pItems[item_counter].uChanceByTreasureLvl5=atoi(tokens[6]);
+    pItems[item_counter].uChanceByTreasureLvl6=atoi(tokens[7]);
+  }
 
 	//ChanceByTreasureLvl Summ - to calculate chance
 	memset(&uChanceByTreasureLvlSumm, 0, 24);
-	for(i=0;i<6;++i)
+	for(int i=0;i<6;++i)
 		{
-		for (j=1;j<item_counter;++j)
+		for (int j=1;j<item_counter;++j)
 			uChanceByTreasureLvlSumm[i]+=pItems[j].uChanceByTreasureLvl[i];
 		}
 
@@ -930,321 +572,144 @@ void ItemsTable::Initialize()
 	strtok(NULL, "\r");
 	strtok(NULL, "\r");
 	strtok(NULL, "\r");
-	for (i=0;i<3;++i)
+	for (int i=0;i<3;++i)
 		{
 		test_string = strtok(NULL, "\r") + 1;
-		break_loop = false;
-		decode_step=0;
-		do 
-			{
-			c = *(unsigned char*)test_string;
-			temp_str_len = 0;
-			while((c!='\t')&&(c>0))
-				{
-				++temp_str_len;
-				c=test_string[temp_str_len];
-				}		
-			tmp_pos=test_string+temp_str_len;
-			if (*tmp_pos == 0)
-				break_loop = true;
-			*tmp_pos = 0;
-			if (temp_str_len)
-				{
-				switch (decode_step)
-					{
-				case 2: 
-					switch (i)
-						{
-					case 0:
-						uBonusChanceStandart[0]=atoi(test_string);
-						break;
-					case 1:
-						uBonusChanceSpecial[0]=atoi(test_string);
-						break;
-					case 2:
-						uBonusChanceWpSpecial[0]=atoi(test_string);
-						break;
-						}
-					break;
-				case 3:
-					switch (i)
-						{
-					case 0:
-						uBonusChanceStandart[1]=atoi(test_string);
-						break;
-					case 1:
-						uBonusChanceSpecial[1]=atoi(test_string);
-						break;
-					case 2:
-						uBonusChanceWpSpecial[1]=atoi(test_string);
-						break;
-						}
-					break;
-				case 4: 
-					switch (i)
-						{
-					case 0:
-						uBonusChanceStandart[2]=atoi(test_string);
-						break;
-					case 1:
-						uBonusChanceSpecial[2]=atoi(test_string);
-						break;
-					case 2:
-						uBonusChanceWpSpecial[2]=atoi(test_string);
-						break;
-						}
-					break;
-				case 5:
-					switch (i)
-						{
-					case 0:
-						uBonusChanceStandart[3]=atoi(test_string);
-						break;
-					case 1:
-						uBonusChanceSpecial[3]=atoi(test_string);
-						break;
-					case 2:
-						uBonusChanceWpSpecial[3]=atoi(test_string);
-						break;
-						}
-					break;
-				case 6: 
-					switch (i)
-						{
-					case 0:
-						uBonusChanceStandart[4]=atoi(test_string);
-						break;
-					case 1:
-						uBonusChanceSpecial[4]=atoi(test_string);
-						break;
-					case 2:
-						uBonusChanceWpSpecial[4]=atoi(test_string);
-						break;
-						}
-					break;
-				case 7:
-					switch (i)
-						{
-					case 0:
-						uBonusChanceStandart[5]=atoi(test_string);
-						break;
-					case 1:
-						uBonusChanceSpecial[5]=atoi(test_string);
-						break;
-					case 2:
-						uBonusChanceWpSpecial[5]=atoi(test_string);
-						break;
-						}
-					break;
-					}
-				}
-			else
-				{ 
-				if (decode_step)
-					break_loop = true;
-				}
-			++decode_step;
-			test_string=tmp_pos+1;
-			} while ((decode_step<8)&&!break_loop);
+    auto tokens = Tokenize(test_string, '\t');
+    Assert(tokens.size() > 7, "Invalid number of tokens");
+      switch (i)
+      {
+      case 0:
+        uBonusChanceStandart[0]=atoi(tokens[2]);
+        uBonusChanceStandart[1]=atoi(tokens[3]);
+        uBonusChanceStandart[2]=atoi(tokens[4]);
+        uBonusChanceStandart[3]=atoi(tokens[5]);
+        uBonusChanceStandart[4]=atoi(tokens[6]);
+        uBonusChanceStandart[5]=atoi(tokens[7]);
+        break;
+      case 1:
+        uBonusChanceSpecial[0]=atoi(tokens[2]);
+        uBonusChanceSpecial[1]=atoi(tokens[3]);
+        uBonusChanceSpecial[2]=atoi(tokens[4]);
+        uBonusChanceSpecial[3]=atoi(tokens[5]);
+        uBonusChanceSpecial[4]=atoi(tokens[6]);
+        uBonusChanceSpecial[5]=atoi(tokens[7]);
+        break;
+      case 2:
+        uBonusChanceWpSpecial[0]=atoi(tokens[2]);
+        uBonusChanceWpSpecial[1]=atoi(tokens[3]);
+        uBonusChanceWpSpecial[2]=atoi(tokens[4]);
+        uBonusChanceWpSpecial[3]=atoi(tokens[5]);
+        uBonusChanceWpSpecial[4]=atoi(tokens[6]);
+        uBonusChanceWpSpecial[5]=atoi(tokens[7]);
+        break;
+      }
 		}
+  free(pRndItemsTXT_Raw);
+  pRndItemsTXT_Raw = nullptr;
 
-	if ( pRndItemsTXT_Raw )
-		{
-		free(pRndItemsTXT_Raw);
-		pRndItemsTXT_Raw = NULL;
-		}
-
-	pSkillDescTXT_Raw = NULL;
 	pSkillDescTXT_Raw = (char *)pEvents_LOD->LoadRaw("skilldes.txt", 0);
 	strtok(pSkillDescTXT_Raw, "\r");
-	for (i=0; i<37; ++i)
+	for (int i=0; i<37; ++i)
 		{
 		test_string = strtok(NULL, "\r") + 1;
-		break_loop = false;
-		decode_step=0;
-		do 
-			{
-			c = *(unsigned char*)test_string;
-			temp_str_len = 0;
-			while((c!='\t')&&(c>0))
-				{
-				++temp_str_len;
-				c=test_string[temp_str_len];
-				}		
-			tmp_pos=test_string+temp_str_len;
-			if (*tmp_pos == 0)
-				break_loop = true;
-			*tmp_pos = 0;
-			if (temp_str_len)
-				{
-				switch (decode_step)
-					{
-				case 1:
-					pSkillDesc[i] = RemoveQuotes(test_string);
-					break;
-				case 2:
-					pNormalSkillDesc[i] = RemoveQuotes(test_string);
-					break;
-				case 3:
-					pExpertSkillDesc[i] = RemoveQuotes(test_string);
-					break;
-				case 4:
-					pMasterSkillDesc[i] = RemoveQuotes(test_string);
-					break;
-				case 5:
-					pGrandSkillDesc[i] = RemoveQuotes(test_string);
-					break;	  
-					}
-				}
-			else
-				{ 
-				if (decode_step)
-					break_loop = true;
-				}
-			++decode_step;
-			test_string=tmp_pos+1;
-			} while ((decode_step<6)&&!break_loop);
-		}
+    auto tokens = Tokenize(test_string, '\t');
+    Assert(tokens.size() >= 6, "Invalid number of tokens");
+    pSkillDesc[i] = RemoveQuotes(tokens[1]);
+    pNormalSkillDesc[i] = RemoveQuotes(tokens[2]);
+    pExpertSkillDesc[i] = RemoveQuotes(tokens[3]);
+    pMasterSkillDesc[i] = RemoveQuotes(tokens[4]);
+    pGrandSkillDesc[i] = RemoveQuotes(tokens[5]);
+	}
 
-	pStatsTXT_Raw = 0;
 	pStatsTXT_Raw = (char *)pEvents_LOD->LoadRaw("stats.txt", 0);
 	strtok(pStatsTXT_Raw, "\r");
-	for (i=0; i<26; ++i)
+	for (int i=0; i<26; ++i)
 		{
 		test_string = strtok(NULL, "\r") + 1;
-		break_loop = false;
-		decode_step=0;
-		do 
-			{
-			c = *(unsigned char*)test_string;
-			temp_str_len = 0;
-			while((c!='\t')&&(c>0))
-				{
-				++temp_str_len;
-				c=test_string[temp_str_len];
-				}		
-			tmp_pos=test_string+temp_str_len;
-			if (*tmp_pos == 0)
-				break_loop = true;
-			*tmp_pos = 0;
-			if (temp_str_len)
-				{
-				switch (i)
-					{
-				case 0:
-				case 1:
-				case 2:
-				case 3:
-				case 4:
-				case 5:
-				case 6:
-					pAttributeDescriptions[i] = RemoveQuotes(test_string);
-					break;
-				case 7:
-					pHealthPointsAttributeDescription = RemoveQuotes(test_string);
-					break;
-				case 8:
-					pArmourClassAttributeDescription = RemoveQuotes(test_string);
-					break;
-				case 9:
-					pSpellPointsAttributeDescription = RemoveQuotes(test_string);
-					break;
-				case 10:
-					pPlayerConditionAttributeDescription = RemoveQuotes(test_string);
-					break;
-				case 11:
-					pFastSpellAttributeDescription = RemoveQuotes(test_string);
-					break;
-				case 12:
-					pPlayerAgeAttributeDescription = RemoveQuotes(test_string);
-					break;
-				case 13:
-					pPlayerLevelAttributeDescription = RemoveQuotes(test_string);
-					break;
-				case 14:
-					pPlayerExperienceAttributeDescription = RemoveQuotes(test_string);
-					break;
-				case 15:
-					pAttackBonusAttributeDescription = RemoveQuotes(test_string);
-					break;
-				case 16:
-					pAttackDamageAttributeDescription = RemoveQuotes(test_string);
-					break;
-				case 17:
-					pMissleBonusAttributeDescription = RemoveQuotes(test_string);
-					break;
-				case 18:
-					pMissleDamageAttributeDescription = RemoveQuotes(test_string);
-					break;
-				case 19:
-					pFireResistanceAttributeDescription = RemoveQuotes(test_string);
-					break;
-				case 20:
-					pAirResistanceAttributeDescription = RemoveQuotes(test_string);
-					break;
-				case 21:
-					pWaterResistanceAttributeDescription = RemoveQuotes(test_string);
-					break;
-				case 22:
-					pEarthResistanceAttributeDescription = RemoveQuotes(test_string);
-					break;
-				case 23:
-					pMindResistanceAttributeDescription = RemoveQuotes(test_string);
-					break;
-				case 24:
-					pBodyResistanceAttributeDescription = RemoveQuotes(test_string);
-					break;
-				case 25:
-					pSkillPointsAttributeDescription = RemoveQuotes(test_string);
-					break;  
-					}
-				}
-			else
-				{ 
-				if (decode_step)
-					break_loop = true;
-				}
-			++decode_step;
-			test_string=tmp_pos+1;
-			} while ((decode_step<2)&&!break_loop);
-		}
-
-
+    auto tokens = Tokenize(test_string, '\t');
+    Assert(tokens.size() == 2, "Invalid number of tokens");
+    switch (i)
+    {
+    case 0:
+    case 1:
+    case 2:
+    case 3:
+    case 4:
+    case 5:
+    case 6:
+      pAttributeDescriptions[i] = RemoveQuotes(tokens[1]);
+      break;
+    case 7:
+      pHealthPointsAttributeDescription = RemoveQuotes(tokens[1]);
+      break;
+    case 8:
+      pArmourClassAttributeDescription = RemoveQuotes(tokens[1]);
+      break;
+    case 9:
+      pSpellPointsAttributeDescription = RemoveQuotes(tokens[1]);
+      break;
+    case 10:
+      pPlayerConditionAttributeDescription = RemoveQuotes(tokens[1]);
+      break;
+    case 11:
+      pFastSpellAttributeDescription = RemoveQuotes(tokens[1]);
+      break;
+    case 12:
+      pPlayerAgeAttributeDescription = RemoveQuotes(tokens[1]);
+      break;
+    case 13:
+      pPlayerLevelAttributeDescription = RemoveQuotes(tokens[1]);
+      break;
+    case 14:
+      pPlayerExperienceAttributeDescription = RemoveQuotes(tokens[1]);
+      break;
+    case 15:
+      pAttackBonusAttributeDescription = RemoveQuotes(tokens[1]);
+      break;
+    case 16:
+      pAttackDamageAttributeDescription = RemoveQuotes(tokens[1]);
+      break;
+    case 17:
+      pMissleBonusAttributeDescription = RemoveQuotes(tokens[1]);
+      break;
+    case 18:
+      pMissleDamageAttributeDescription = RemoveQuotes(tokens[1]);
+      break;
+    case 19:
+      pFireResistanceAttributeDescription = RemoveQuotes(tokens[1]);
+      break;
+    case 20:
+      pAirResistanceAttributeDescription = RemoveQuotes(tokens[1]);
+      break;
+    case 21:
+      pWaterResistanceAttributeDescription = RemoveQuotes(tokens[1]);
+      break;
+    case 22:
+      pEarthResistanceAttributeDescription = RemoveQuotes(tokens[1]);
+      break;
+    case 23:
+      pMindResistanceAttributeDescription = RemoveQuotes(tokens[1]);
+      break;
+    case 24:
+      pBodyResistanceAttributeDescription = RemoveQuotes(tokens[1]);
+      break;
+    case 25:
+      pSkillPointsAttributeDescription = RemoveQuotes(tokens[1]);
+      break;  
+    }
+  }
+  
 	pClassTXT_Raw = 0;
 	pClassTXT_Raw = (char *)pEvents_LOD->LoadRaw("class.txt", 0);
 	strtok(pClassTXT_Raw, "\r");
-	for (i=0; i<36; ++i)
+	for (int i=0; i<36; ++i)
 		{
 		test_string = strtok(NULL, "\r") + 1;
-		break_loop = false;
-		decode_step=0;
-		do 
-			{
-			c = *(unsigned char*)test_string;
-			temp_str_len = 0;
-			while((c!='\t')&&(c>0))
-				{
-				++temp_str_len;
-				c=test_string[temp_str_len];
-				}		
-			tmp_pos=test_string+temp_str_len;
-			if (*tmp_pos == 0)
-				break_loop = true;
-			*tmp_pos = 0;
-			if (temp_str_len)
-				{
-				//if(i) 
-					pClassDescriptions[i]=RemoveQuotes(test_string);
-				}
-			else
-				{ 
-				if (decode_step)
-					break_loop = true;
-				}
-			++decode_step;
-			test_string=tmp_pos+1;
-			} while ((decode_step<2)&&!break_loop);
-		}
+    auto tokens = Tokenize(test_string, '\t');
+    Assert(tokens.size() == 3, "Invalid number of tokens");
+    pClassDescriptions[i]=RemoveQuotes(tokens[1]);
+	}
 
 
   
@@ -1283,161 +748,118 @@ bool ItemsTable::IsMaterialNonCommon(ItemGen *pItem)
 
 //----- (00453B3C) --------------------------------------------------------
 void ItemsTable::LoadPotions()
-	{
+{
 
-	CHAR Text[90]; // [sp+Ch] [bp-6Ch]@26
-	char* test_string;
-	unsigned int uRow;
-	unsigned int uColumn;
-	unsigned __int8 potion_value;
+  CHAR Text[90]; 
+  char* test_string;
+  unsigned int uRow;
+  unsigned int uColumn;
+  unsigned __int8 potion_value;
 
-	if ( pPotionsTXT_Raw )
-		free(pPotionsTXT_Raw);
-	pPotionsTXT_Raw = NULL;
-	pPotionsTXT_Raw = (char *)pEvents_LOD->LoadRaw("potion.txt", 0);
-	test_string = strtok(pPotionsTXT_Raw,"\t\r\n");
-	while ( 1 )
-		{
-		if ( !test_string )
-			{
-			MessageBoxA(0, "Error Pre-Parsing Potion Table", "Load Error", MB_ICONHAND|MB_CANCELTRYCONTINUE);
-			return;
-			}
-		if ( !strcmp(test_string, "222") )
-			break;
+  free(pPotionNotesTXT_Raw);
+  auto tokens = Tokenize("", '\t');
+  char* pPotionsTXT_Raw = (char *)pEvents_LOD->LoadRaw("potion.txt", 0);
+  test_string = strtok(pPotionsTXT_Raw ,"\r") + 1;
+  while (test_string)
+  {
+    tokens = Tokenize(test_string, '\t');
+    if (!strcmp(tokens[0], "222"))    
+      break;
+    test_string = strtok(NULL ,"\r") + 1;
+  }
+  if (!test_string)
+  {
+    MessageBoxA(0, "Error Pre-Parsing Potion Table", "Load Error", MB_ICONHAND|MB_CANCELTRYCONTINUE);
+    return;
+  }
 
-		test_string = strtok(NULL, "\t\r\n");
-		}
-	while ( 1 )
-		{
-		test_string = strtok(NULL, "\t\r\n");
+  for (uRow = 0;uRow < 50; ++uRow)
+  {
+    if (tokens.size() < 50)
+    {
+      wsprintfA(Text, "Error Parsing Potion Table at Row: %d Column: %d", uRow, tokens.size());
+      MessageBoxA(0, Text, "Parsing Error", MB_ICONHAND|MB_CANCELTRYCONTINUE);
+      return;
+    }
+    for (uColumn = 0; uColumn < 50; ++uColumn)
+    {
+      char* currValue = tokens[uColumn + 7];
+      potion_value = atoi(currValue);
+      if ( !potion_value && tolower(currValue[0]) == 'e')
+      {
+        potion_value = atoi(currValue + 1);
+      }      
+      this->potion_data[uRow][uColumn]=potion_value;
+    }
 
-		if ( !test_string )
-			{
-			MessageBoxA(0, "Error Pre-Parsing Potion Table", "Load Error", MB_ICONHAND|MB_CANCELTRYCONTINUE);
-			return;
-			}
-		if ( !strcmp(test_string, "222") )
-			break;
-		}
-
-	for (uRow = 0;uRow < 50; ++uRow)
-		{
-		int skip_count;
-		for (skip_count = 0;skip_count < 6; ++skip_count)
-			{
-			if ( !strtok(NULL, "\r\t\n") )
-				break;
-			}
-		if ( skip_count != 6 )
-			break;
-		for (uColumn = 0; uColumn < 50; ++uColumn)
-			{
-			test_string = strtok(NULL, "\r\t\n");   
-			if ( !test_string )
-				break;
-			potion_value = atoi(test_string);
-			unsigned char c=*test_string;
-			if ( !potion_value )
-				{
-				if ( tolower(c) == 'e' )
-					potion_value = atoi(test_string + 1);
-				else
-					potion_value = 0;
-				}
-			this->potion_data[uRow][uColumn]=potion_value;
-			}
-		if ( uColumn != 50 )
-			break;
-		strtok(NULL, "\r\t\n");
-		}
-
-	if ( uRow != 50 )
-		{
-		wsprintfA(Text, "Error Parsing Potion Table at Row: %d Column: %d", uRow, uColumn);
-		MessageBoxA(0, Text, "Parsing Error", MB_ICONHAND|MB_CANCELTRYCONTINUE);
-		}
-	if ( pPotionsTXT_Raw )
-		{
-		free(pPotionsTXT_Raw);
-		pPotionsTXT_Raw = 0;
-		}
-	}
+    test_string = strtok(NULL ,"\r") + 1;
+    if (!test_string)
+    {
+      wsprintfA(Text, "Error Parsing Potion Table at Row: %d Column: %d", uRow, 0);
+      MessageBoxA(0, Text, "Parsing Error", MB_ICONHAND|MB_CANCELTRYCONTINUE);
+      return;
+    }
+    tokens = Tokenize(test_string, '\t');
+  }
+}
 
 //----- (00453CE5) --------------------------------------------------------
 void ItemsTable::LoadPotionNotes()
-	{
+{
 
-	CHAR Text[90]; 
-	char* test_string;
-	unsigned int uRow;
-	unsigned int uColumn;
-	unsigned __int8 potion_note;
+  CHAR Text[90]; 
+  char* test_string;
+  unsigned int uRow;
+  unsigned int uColumn;
+  unsigned __int8 potion_note;
 
-	if ( pPotionNotesTXT_Raw )
-		free(pPotionNotesTXT_Raw);
-	pPotionNotesTXT_Raw = NULL;
-	pPotionNotesTXT_Raw = (char *)pEvents_LOD->LoadRaw("potnotes.txt", 0);
-	test_string = strtok(pPotionNotesTXT_Raw ,"\t\r\n");
-	while ( 1 )
-		{
-		if ( !test_string )
-			{
-			MessageBoxA(0, "Error Pre-Parsing Potion Table", "Load Error", MB_ICONHAND|MB_CANCELTRYCONTINUE);
-			return;
-			}	
-		if ( !strcmp(test_string, "222") )
-			break;
-		test_string = strtok(NULL, "\t\r\n");
-		}
-	while ( 1 )
-		{
-		test_string = strtok(NULL, "\t\r\n");
+	free(pPotionNotesTXT_Raw);
+  auto tokens = Tokenize("", '\t');
+  char* pPotionNotesTXT_Raw = (char *)pEvents_LOD->LoadRaw("potnotes.txt", 0);
+  test_string = strtok(pPotionNotesTXT_Raw ,"\r") + 1;
+  while (test_string)
+  {
+    tokens = Tokenize(test_string, '\t');
+    if (!strcmp(tokens[0], "222"))    
+      break;
+    test_string = strtok(NULL ,"\r") + 1;
+  }
+  if (!test_string)
+  {
+    MessageBoxA(0, "Error Pre-Parsing Potion Table", "Load Error", MB_ICONHAND|MB_CANCELTRYCONTINUE);
+    return;
+  }
 
-		if ( !test_string )
-			{
-			MessageBoxA(0, "Error Pre-Parsing Potion Table", "Load Error", MB_ICONHAND|MB_CANCELTRYCONTINUE);
-			return;
-			}
-		if ( !strcmp(test_string, "222") )
-			break;
-		}
+  for (uRow = 0;uRow < 50; ++uRow)
+  {
+    if (tokens.size() < 50)
+    {
+      wsprintfA(Text, "Error Parsing Potion Table at Row: %d Column: %d", uRow, tokens.size());
+      MessageBoxA(0, Text, "Parsing Error", MB_ICONHAND|MB_CANCELTRYCONTINUE);
+      return;
+    }
+    for (uColumn = 0; uColumn < 50; ++uColumn)
+    {
+      char* currValue = tokens[uColumn + 7];
+      potion_note = atoi(currValue);
+      if ( !potion_note && tolower(currValue[0]) == 'e')
+      {
+          potion_note = atoi(currValue + 1);
+      }      
+      this->potion_note[uRow][uColumn]=potion_note;
+    }
 
-	for (uRow = 0;uRow < 50; ++uRow)
-		{
-		int skip_count;
-		for (skip_count = 0;skip_count < 6; ++skip_count)
-			{
-			if ( !strtok(NULL, "\r\t\n") )
-				break;
-			}
-		if ( skip_count != 6 )
-			break;
-		for (uColumn = 0; uColumn < 50; ++uColumn)
-			{
-			test_string = strtok(NULL, "\r\t\n");   
-			if ( !test_string )
-				break;
-			potion_note = atoi(test_string);
-			unsigned char c=*test_string;
-			if ( !potion_note )
-				{
-				if ( tolower(c) == 'e' )
-					potion_note = atoi(test_string + 1);
-				else
-					potion_note = 0;
-				}
-			this->potion_note[uRow][uColumn]=potion_note;
-			}
-		if ( uColumn != 50 )
-			break;
-		strtok(NULL, "\r\t\n");
-		}
-	if ( uRow != 50 )
-		{
-		wsprintfA(Text, "Error Parsing Potion Table at Row: %d Column: %d", uRow, uColumn);
-		MessageBoxA(0, Text, "Parsing Error", MB_ICONHAND|MB_CANCELTRYCONTINUE);
-		}
+    test_string = strtok(NULL ,"\r") + 1;
+    if (!test_string)
+    {
+      wsprintfA(Text, "Error Parsing Potion Table at Row: %d Column: %d", uRow, 0);
+      MessageBoxA(0, Text, "Parsing Error", MB_ICONHAND|MB_CANCELTRYCONTINUE);
+      return;
+    }
+    tokens = Tokenize(test_string, '\t');
+  }
+
+
 	}
 
 
@@ -1492,7 +914,6 @@ const char *ItemGen::GetIdentifiedName()
     if ( (uHolderPlayer >0 )&& (uHolderPlayer <= 4) )
       {
         player_name = pPlayers[uHolderPlayer]->pName;
-        strlen(player_name);
         if ( player_name[strlen(player_name) - 1] == 's' )
           format_str = pGlobalTXT_LocalizationStrings[655]; //"%s' Jar"
         else
@@ -1543,77 +964,34 @@ const char *ItemGen::GetIdentifiedName()
 
 //----- (00456620) --------------------------------------------------------
 void ItemsTable::GenerateItem(int treasure_level, unsigned int uTreasureType, ItemGen *out_item)
-    {
-
-    ItemsTable *v5; // edi@1
-    int v6; // ebx@3
-    int *v7; // ecx@33
-    //int v8; // eax@34
-    //int v9; // eax@39
+  {
+    int treasureLevelMinus1; // ebx@3
     int current_chance; // ebx@43
     int tmp_chance; // ecx@47
-    unsigned int *v12; // edx@48
-    unsigned int v13; // eax@49
-    signed int v14; // ebx@52
-    int v15; // eax@53
-    signed int v16; // eax@55
     int v17; // ebx@57
     int v18; // edx@62
-    signed int v19; // ebx@70
-    unsigned __int8 v20; // al@81
-    int v21; // eax@84
-    int v22; // ebx@85
-    int v23; // eax@86
-    int v24; // ebx@86
-    int special_chance; // edx@86
-    int v26; // edx@89
+    unsigned int special_chance; // edx@86
+    unsigned int v26; // edx@89
     unsigned int v27; // eax@89
-    int i; // ebx@89
-    unsigned int v29; // ecx@90
-    int v30; // ebx@91
-    int v31; // eax@91
     int v32; // ecx@91
     int v33; // eax@91
-    int v34; // eax@97
-    unsigned __int8 v35; // sf@97
-    unsigned __int8 v36; // of@97
-    int v37; // ebx@98
-    int v38; // edx@99
-    signed int v39; // ebx@101
-    int v40; // ecx@102
-    char v41; // zf@107
-    char v42; // al@108
-    char v43; // al@111
-    int *v44; // edx@118
+//    unsigned int v34; // eax@97
     int v45; // eax@120
     int v46; // edx@120
     int j; // eax@121
-    unsigned int v48; // ecx@123
-    int v49; // eax@123
-    int v50; // eax@123
     int val_list[800]; // [sp+Ch] [bp-C88h]@33
     int total_chance; // [sp+C8Ch] [bp-8h]@33
-    int v53; // [sp+C90h] [bp-4h]@1
-    int v54; // [sp+C9Ch] [bp+8h]@3
-    //int v55; // [sp+CA0h] [bp+Ch]@34
     signed int v56; // [sp+CA0h] [bp+Ch]@55
     int v57; // [sp+CA0h] [bp+Ch]@62
-    int *v58; // [sp+CA0h] [bp+Ch]@102
-    int v59; // [sp+CA0h] [bp+Ch]@123
-    //signed int a2a; // [sp+CA4h] [bp+10h]@33
-    int a2b; // [sp+CA4h] [bp+10h]@101
-    int a2c; // [sp+CA4h] [bp+10h]@120
 
-    v5 = this;
     if (!out_item)
         out_item = (ItemGen *)malloc(sizeof(ItemGen));
     memset(out_item, 0, sizeof(*out_item));
 
 
-    v6 = treasure_level - 1;
-    v54 = treasure_level - 1;
+    treasureLevelMinus1 = treasure_level - 1;
     if ( uTreasureType ) //generate known treasure type
-        {
+    {
         ITEM_EQUIP_TYPE   requested_equip;
         PLAYER_SKILL_TYPE requested_skill = PLAYER_SKILL_INVALID;
         switch (uTreasureType)
@@ -1681,82 +1059,61 @@ void ItemsTable::GenerateItem(int treasure_level, unsigned int uTreasureType, It
 
         current_chance = 0;
         if ( total_chance )
-            current_chance = rand() % total_chance;
-
-        out_item->uItemID = val_list[0];
-        if (!out_item->uItemID)
-            out_item->uItemID = 1;
-
-        if ( pItems[out_item->uItemID].uChanceByTreasureLvl[treasure_level - 1] < current_chance )
-            {
-            j=0;
-            tmp_chance=pItems[out_item->uItemID].uChanceByTreasureLvl[treasure_level - 1];
-            do
-                {
-                ++j;
-                out_item->uItemID = val_list[j];
-                tmp_chance += pItems[val_list[j]].uChanceByTreasureLvl[treasure_level - 1];
-                }
-                while ( tmp_chance < current_chance );
-            }
-
-        if (out_item->GetItemEquipType() == EQUIP_POTION && out_item->uItemID != ITEM_POTION_BOTTLE )
-            {// if it potion set potion spec
-            out_item->uEnchantmentType = 0;
-            for (int i=0; i<2; ++i)
-                out_item->uEnchantmentType += rand() % 4 + 1;
-            out_item->uEnchantmentType = out_item->uEnchantmentType * treasure_level; 
-            }
-        }
-    else
         {
+          current_chance = rand() % total_chance + 1;
+          tmp_chance = 0;
+          j=0;
+          while(tmp_chance < current_chance)
+          {
+            out_item->uItemID = val_list[j];
+            tmp_chance += pItems[val_list[j]].uChanceByTreasureLvl[treasure_level - 1];
+            ++j;
+          }
+        }
+        else
+        {
+          out_item->uItemID = 1;
+        }
+    }
+    else
+    {
    //artifact
-        v56 = 0;
-        for(int i=0; i<29; ++i) 
+        if ( treasureLevelMinus1 == 5 )
+        {
+          v56 = 0;
+          for(int i=0; i<29; ++i) 
             v56 += pParty->pIsArtifactFound[i];
-
-        v17 = rand() % 29;
-
-        if ( v6 == 5 && (rand() % 100 < 5) && !pParty->pIsArtifactFound[v17] && v56 < 13 )
-            {
+          v17 = rand() % 29;
+          if ((rand() % 100 < 5) && !pParty->pIsArtifactFound[v17] && v56 < 13)
+          {
             pParty->pIsArtifactFound[v17] = 1;
             out_item->uAttributes = 0;
             out_item->uItemID = v17 + 500;
             SetSpecialBonus(out_item);
             return;
-            }
-
-        v57 = 0;
-        v18 = rand() % v5->uChanceByTreasureLvlSumm[treasure_level - 1];
-        out_item->uItemID = 0;
-        if ( v18 > 0 )
-            {
-            do
-                {      
-            v57 += pItems[out_item->uItemID + 1].uChanceByTreasureLvl[v6];
-            ++out_item->uItemID;
-                }
-            while ( v57 < v18 );
-            }
-
-        if ( !v18 )
-            out_item->uItemID = 1;
-        if ( !out_item->uItemID )
-            out_item->uItemID = 1;
-        if (out_item->GetItemEquipType() == EQUIP_POTION && out_item->uItemID != ITEM_POTION_BOTTLE )
-            {// if it potion set potion spec
-            out_item->uEnchantmentType = 0;
-            for (int i=0; i<2; ++i)
-                out_item->uEnchantmentType += rand() % 4 + 1;
-            out_item->uEnchantmentType = out_item->uEnchantmentType * treasure_level; 
-            }
-        out_item->uEnchantmentType = out_item->uEnchantmentType * treasure_level; 
+          }
         }
+        
+        v57 = 0;
+        v18 = rand() % this->uChanceByTreasureLvlSumm[treasure_level - 1] + 1;
+        while (v57 < v18)
+        {
+          ++out_item->uItemID;
+          v57 += pItems[out_item->uItemID].uChanceByTreasureLvl[treasureLevelMinus1];
+        }
+    }
+    if (out_item->GetItemEquipType() == EQUIP_POTION && out_item->uItemID != ITEM_POTION_BOTTLE )
+    {// if it potion set potion spec
+      out_item->uEnchantmentType = 0;
+      for (int i=0; i<2; ++i)
+        out_item->uEnchantmentType += rand() % 4 + 1;
+      out_item->uEnchantmentType = out_item->uEnchantmentType * treasure_level; 
+    }
 
     if ( out_item->uItemID == ITEM_SPELLBOOK_LIGHT_DIVINE_INTERVENTION
         && !(unsigned __int16)_449B57_test_bit(pParty->_quest_bits, 239) )
         out_item->uItemID = ITEM_SPELLBOOK_LIGHT_SUN_BURST;
-    if ( pItemsTable->pItems[out_item->uItemID + 1].uItemID_Rep_St )
+    if ( pItemsTable->pItems[out_item->uItemID].uItemID_Rep_St )
         out_item->uAttributes = 0;
     else
         out_item->uAttributes = 1;
@@ -1772,9 +1129,9 @@ void ItemsTable::GenerateItem(int treasure_level, unsigned int uTreasureType, It
     case EQUIP_SINGLE_HANDED:
     case EQUIP_TWO_HANDED :   
     case EQUIP_BOW :    
-        if ( !uBonusChanceWpSpecial[v6] )
+        if ( !uBonusChanceWpSpecial[treasureLevelMinus1] )
             return;
-        if ((rand() % 100)>=uBonusChanceWpSpecial[v6])
+        if ((uint)(rand() % 100)>=uBonusChanceWpSpecial[treasureLevelMinus1])
             return;
         break;
     case      EQUIP_ARMOUR :        
@@ -1786,26 +1143,21 @@ void ItemsTable::GenerateItem(int treasure_level, unsigned int uTreasureType, It
     case      EQUIP_BOOTS  :        
     case      EQUIP_RING   : 
         
-        if ( !uBonusChanceStandart[v6] )
+        if ( !uBonusChanceStandart[treasureLevelMinus1] )
             return;
         special_chance = rand() % 100;
-        if ( special_chance < uBonusChanceStandart[v6])
+        if ( special_chance < uBonusChanceStandart[treasureLevelMinus1])
             {
-              v26 = rand() %pEnchantmentsSumm[out_item->GetItemEquipType()-3]; 
-            out_item->uEnchantmentType = 0;
-            v27=pEnchantments[out_item->uEnchantmentType].to_item[out_item->GetItemEquipType()-3];
-            if (v26>v27 )
-                {
-                do 
-                {
+              v26 = rand() %pEnchantmentsSumm[out_item->GetItemEquipType()-3] + 1; 
+              v27 = 0;
+              while(v27 < v26)
+              {
                 ++out_item->uEnchantmentType;
                 v27+=pEnchantments[out_item->uEnchantmentType].to_item[out_item->GetItemEquipType()-3];
-                } while (v26>v27);
-            }
-            ++out_item->uEnchantmentType;
+              }
 
-            v33 = rand() % (bonus_ranges[v6].maxR - bonus_ranges[v6].minR + 1);
-            out_item->m_enchantmentStrength = v33 + bonus_ranges[v6].minR;
+            v33 = rand() % (bonus_ranges[treasureLevelMinus1].maxR - bonus_ranges[treasureLevelMinus1].minR + 1);
+            out_item->m_enchantmentStrength = v33 + bonus_ranges[treasureLevelMinus1].minR;
             v32 = out_item->uEnchantmentType - 1;
             if ( v32 == 21 || v32 == 22 || v32 == 23 ) //Armsmaster skill, Dodge skill, Unarmed skill 
                 out_item->m_enchantmentStrength = out_item->m_enchantmentStrength/2;
@@ -1814,15 +1166,13 @@ void ItemsTable::GenerateItem(int treasure_level, unsigned int uTreasureType, It
             return;
             
             }
-        if ( !uBonusChanceSpecial[v6])
-            return;
-        v34 = uBonusChanceStandart[v6] + uBonusChanceSpecial[v6];
-        if ( special_chance>v34 )
-            return;
+        else if ( special_chance >= uBonusChanceStandart[treasureLevelMinus1] + uBonusChanceSpecial[treasureLevelMinus1] )
+          return;
         break;
     case EQUIP_WAND:
         out_item->uNumCharges = rand() % 6 + out_item->GetDamageMod() + 1;
         out_item->uMaxCharges = out_item->uNumCharges;
+        return;
     default:
         return;
         }
@@ -1831,72 +1181,33 @@ void ItemsTable::GenerateItem(int treasure_level, unsigned int uTreasureType, It
     int spc_sum=0;
     int spc;
     memset(&val_list, 0, 3200);
-    for (int i=0; i<pSpecialEnchantments_count;++i)
+    for (unsigned int i=0; i<pSpecialEnchantments_count;++i)
+    {
+      int tr_lv= pSpecialEnchantments[i].iTreasureLevel;
+      if ((treasure_level - 1 == 2) && ( tr_lv == 1 || tr_lv == 0 ) ||
+        (treasure_level - 1 == 3) && (tr_lv == 2 || tr_lv == 1 || tr_lv == 0) ||
+        (treasure_level - 1 == 4) && (tr_lv == 3 || tr_lv == 2 || tr_lv == 1) ||
+        (treasure_level - 1 == 5) && (tr_lv == 3)
+        )
+      {
+        spc=pSpecialEnchantments[i].to_item_apply[out_item->GetItemEquipType()];
+        spc_sum+=spc;
+        if(spc)
         {
-        int tr_lv= pSpecialEnchantments[i].iTreasureLevel;
-        switch ( treasure_level - 1 )
-            {
-        case 2:
-            if ((tr_lv==1)||(tr_lv==0))
-                {
-                spc=pSpecialEnchantments[i].to_item_apply[out_item->GetItemEquipType()];
-                spc_sum+=spc;
-                if(spc)
-                    {
-                    val_list[j++]=i;  
-                    }
-                }
-            break;
-        case 3:
-            if ((tr_lv==2)||(tr_lv==1)||(tr_lv==0))
-                {
-                spc=pSpecialEnchantments[i].to_item_apply[out_item->GetItemEquipType()];
-                spc_sum+=spc;
-                if(spc)
-                    {
-                    val_list[j++]=i;  
-                    }
-                }
-            break;
-        case 4:
-            if ((tr_lv==3)||(tr_lv==2)||(tr_lv==1))
-                {
-                spc=pSpecialEnchantments[i].to_item_apply[out_item->GetItemEquipType()];
-                spc_sum+=spc;
-                if(spc)
-                    {
-                    val_list[j++]=i;  
-                    }
-                }
-            break;
-        case 5:
-            if (tr_lv==3)
-                {
-                spc=pSpecialEnchantments[i].to_item_apply[out_item->GetItemEquipType()];
-                spc_sum+=spc;     
-                if(spc)
-                    {
-                    val_list[j++]=i;  
-                    }
-                }
-            break;
-            }
+          val_list[j++]=i;  
         }
+      }
+    }
 
-    v46 = rand()%spc_sum+1;
+    v46 = rand()%spc_sum+1;//случайные значения от 1 до spc_sum
     j=0;
-    out_item->uSpecEnchantmentType =val_list[j];
-    v45=pSpecialEnchantments[val_list[j]].to_item_apply[out_item->GetItemEquipType()];
-    if (v45<v46)
-        {
-        do 
-            {
-            ++j;
-            out_item->uSpecEnchantmentType=val_list[j];
-            v45+=pSpecialEnchantments[val_list[j]].to_item_apply[out_item->GetItemEquipType()];
-            } while (v45<v46);
-        }
-    ++out_item->uSpecEnchantmentType;
+    v45 = 0;
+    while (v45<v46)
+    {
+      ++j;
+      out_item->uSpecEnchantmentType=val_list[j];
+      v45+=pSpecialEnchantments[val_list[j]].to_item_apply[out_item->GetItemEquipType()];
+    }
 }
 
 //----- (004505CC) --------------------------------------------------------
@@ -2537,160 +1848,100 @@ void  GenerateSpecialShopItems()
 //----- (00450218) --------------------------------------------------------
 void GenerateItemsInChest()
     {
-    unsigned int v0; // eax@1
-    Chest *v1; // ebx@1
-    MapInfo *v2; // esi@1
-    ItemGen *v3; // ebx@2
-    int v4; // ebp@4
-    int v5; // edi@4
-    int v6; // esi@4
-    int v7; // eax@4
-    signed int v8; // esi@4
-    int v9; // edx@4
-    int v10; // esi@8
+    unsigned int mapType; // eax@1
+    MapInfo *currMapInfo; // esi@1
+    ItemGen *currItem; // ebx@2
+    int additionaItemCount; // ebp@4
+    int treasureLevelBot; // edi@4
+    int treasureLevelTop; // esi@4
+    signed int treasureLevelRange; // esi@4
+    int resultTreasureLevel; // edx@4
+    int goldAmount; // esi@8
     int v11; // ebp@25
     int v12; // esi@25
-    signed int v13; // ebp@27
-    ItemGen *v14; // edi@28
-    signed int v15; // edx@32
-    signed __int64 v16; // qtt@32
-    int v17; // esi@34
-    signed int v18; // [sp+10h] [bp-18h]@1
-    int v19; // [sp+14h] [bp-14h]@4
-    MapInfo *v20; // [sp+18h] [bp-10h]@1
-    Chest *v21; // [sp+1Ch] [bp-Ch]@1
-    int v22; // [sp+20h] [bp-8h]@26
-    signed int v23; // [sp+24h] [bp-4h]@2
+    signed int whatToGenerateProb; // [sp+10h] [bp-18h]@1
 
-    v18 = rand() % 100;  //main random
-    v0 = pMapStats->GetMapInfo(pCurrentMapName);
-    //	v1 = pChests;
-    v2 = &pMapStats->pInfos[v0];
-    //v21 = pChests;
-    //v20 = &pMapStats->pInfos[v0];
+    mapType = pMapStats->GetMapInfo(pCurrentMapName);
+    currMapInfo = &pMapStats->pInfos[mapType];
     for(int i=1; i<20;++i)
-        {
+    {
         for(int j=0; j<140;++j)
+        {
+
+            currItem = &pChests[i].igChestItems[j];
+            if ( currItem->uItemID < 0 )
             {
-
-            v3 = &pChests[i].igChestItems[j];
-            if ( v3->uItemID < 0 )
+                additionaItemCount = rand() % 5; //additional items in chect
+                treasureLevelBot = byte_4E8168[abs(currItem->uItemID)-1][2*currMapInfo->Treasure_prob];
+                treasureLevelTop = byte_4E8168[abs(currItem->uItemID)-1][2*currMapInfo->Treasure_prob+1];
+                treasureLevelRange = treasureLevelTop - treasureLevelBot + 1;
+                resultTreasureLevel = treasureLevelBot + rand() % treasureLevelRange;  //treasure level 
+                if (resultTreasureLevel<7)
                 {
-                v4 = rand() % 5; //additional items in chect
-                v5 = (unsigned __int8)byte_4E8168[abs((int)v3->uItemID)-1][2*v2->Treasure_prob];
-                v6 = (unsigned __int8)byte_4E8168[abs((int)v3->uItemID)-1][2*v2->Treasure_prob+1];
-                v8 = v6 - v5 + 1;
-                v9 = v5 + rand() % v8;  //treasure level 
-                if (v9<7)
+                  v11 = 0;
+                  do 
+                  {
+                    whatToGenerateProb = rand() % 100;
+                    if (whatToGenerateProb<20)
                     {
-                    if (v18<20)
-                        {
-                        v3->Reset();
-                        }
-                    else if (v18<60) //generate gold
-                        {
-                        v10=0;
-                        v3->Reset();
-                        switch (v9)
-                            {
-                        case 1: //small gold
-                            v10 = rand() % 51 + 50;
-                            v3->uItemID = 197;
-                            break;
-                        case 2://small gold
-                            v10 = rand() % 101 + 100;
-                            v3->uItemID = 197;
-                            break;
-                        case 3:  //medium
-                            v10 = rand() % 301 + 200;
-                            v3->uItemID = 198;
-                            break;
-                        case 4: //medium
-                            v10 = rand() % 501 + 500;
-                            v3->uItemID = 198;
-                            break;
-                        case 5: //big
-                            v10 = rand() % 1001 + 1000;
-                            v3->uItemID = 199;
-                            break;
-                        case 6: //big
-                            v10 = rand() % 3001 + 2000;
-                            v3->uItemID = 199;
-                            break;
-                            }
-                        v3->SetIdentified();
-                        v3->uSpecEnchantmentType = v10;
-                        }
-                    else
-                        {
-                        pItemsTable->GenerateItem(v9, 0, v3);
-                        }
-
-                    v12 = 0;
-                    //generate more items
-                    for (v11=0; v11<v4; ++v11)
-                        {
-
-                        if ( v12 >= 140 )
-                            break;
-                        while ( !(pChests[i].igChestItems[v12].uItemID==0) &&(v12<140))
-                            {
-                            ++v12;
-                            }
-                        v14=&pChests[i].igChestItems[v12];
-                        v18 = rand() % 100;
-                        if (v18<20)
-                            {
-                            v3->Reset();
-                            }
-                        else if (v18<60) //generate gold
-                            {
-                            v10=0;
-                            v3->Reset();
-                            switch (v9)
-                                {
-                            case 1: //small gold
-                                v10 = rand() % 51 + 50;
-                                v14->uItemID = 197;
-                                break;
-                            case 2://small gold
-                                v10 = rand() % 101 + 100;
-                                v14->uItemID = 197;
-                                break;
-                            case 3:  //medium
-                                v10 = rand() % 301 + 200;
-                                v14->uItemID = 198;
-                                break;
-                            case 4: //medium
-                                v10 = rand() % 501 + 500;
-                                v14->uItemID = 198;
-                                break;
-                            case 5: //big
-                                v10 = rand() % 1001 + 1000;
-                                v14->uItemID = 199;
-                                break;
-                            case 6: //big
-                                v10 = rand() % 3001 + 2000;
-                                v14->uItemID = 199;
-                                break;
-                                }
-                            v14->SetIdentified();
-                            v14->uSpecEnchantmentType = v10;
-                            }
-                        else
-                            {
-                            pItemsTable->GenerateItem(v9, 0, v14);
-                            }                       
-                        ++v12;
-                        }
+                      currItem->Reset();
                     }
-                else
-                    v3->GenerateArtifact();
+                    else if (whatToGenerateProb<60) //generate gold
+                    {
+                      goldAmount=0;
+                      currItem->Reset();
+                      switch (resultTreasureLevel)
+                      {
+                      case 1: //small gold
+                        goldAmount = rand() % 51 + 50;
+                        currItem->uItemID = 197;
+                        break;
+                      case 2://small gold
+                        goldAmount = rand() % 101 + 100;
+                        currItem->uItemID = 197;
+                        break;
+                      case 3:  //medium
+                        goldAmount = rand() % 301 + 200;
+                        currItem->uItemID = 198;
+                        break;
+                      case 4: //medium
+                        goldAmount = rand() % 501 + 500;
+                        currItem->uItemID = 198;
+                        break;
+                      case 5: //big
+                        goldAmount = rand() % 1001 + 1000;
+                        currItem->uItemID = 199;
+                        break;
+                      case 6: //big
+                        goldAmount = rand() % 3001 + 2000;
+                        currItem->uItemID = 199;
+                        break;
+                      }
+                      currItem->SetIdentified();
+                      currItem->uSpecEnchantmentType = goldAmount;
+                    }
+                    else
+                    {
+                      pItemsTable->GenerateItem(resultTreasureLevel, 0, currItem);
+                    }
+                    v12 = 0;
+                    while ( !(pChests[i].igChestItems[v12].uItemID==0) &&(v12<140))
+                    {
+                      ++v12;
+                    }
+                    if (v12 >= 140)
+                      break;
+                    currItem=&pChests[i].igChestItems[v12];
+                    v11++;
+                  } while (v11 < additionaItemCount + 1); // + 1 because it's the item at pChests[i].igChestItems[j] and the additional ones
                 }
-            }			
-        }
-
+                else
+                    currItem->GenerateArtifact();
+            }
+        }			
     }
+
+}
 
 
 	
@@ -2709,7 +1960,7 @@ void FillAviableSkillsToTeach( int _this )
 	int v37=0; // [sp+24h] [bp-4h]@1*
 	int i=0;
 
-	dword_F8B1DC = 0;
+	dword_F8B1DC_currentShopOption = 0;
 
 	switch (_this)
 		{
@@ -2735,7 +1986,7 @@ void FillAviableSkillsToTeach( int _this )
 				default:
 					continue;
 					}	
-				v37 = sub_4BE571(v34, v35, v37, 5);
+				v37 = sub_4BE571_AddItemToSet(v34, v35, v37, 5);
 				}
 			}
 		break;
@@ -2760,7 +2011,7 @@ void FillAviableSkillsToTeach( int _this )
 					default:
 						continue;
 						}
-					v37 = sub_4BE571(v33, v35, v37, 5);
+					v37 = sub_4BE571_AddItemToSet(v33, v35, v37, 5);
 					}
 				}
 			}
@@ -2824,8 +2075,8 @@ void FillAviableSkillsToTeach( int _this )
 		default:
 			v30 = pGlobalTXT_LocalizationStrings[127]; //"No Text!"
 			}
-		pShopOptions[dword_F8B1DC] = const_cast<char *>(v30);
-		++dword_F8B1DC;
+		pShopOptions[dword_F8B1DC_currentShopOption] = const_cast<char *>(v30);
+		++dword_F8B1DC_currentShopOption;
 		CreateButtonInColumn(i+1, v29);
 		}
 	pDialogueWindow->_41D08F_set_keyboard_control_group(i, 1, 0, 2);
@@ -2833,203 +2084,166 @@ void FillAviableSkillsToTeach( int _this )
 	}
 
 	//----- (004BE571) --------------------------------------------------------
-int  sub_4BE571(int a1, int *a2, int a3, int a4)
-	{
-	int result; // eax@1
+int sub_4BE571_AddItemToSet(int valueToAdd, int *outPutSet, int elemsAlreadyPresent, int elemsNeeded)
+{
 	int i; // esi@3
 
-	result = a3;
-	if ( a3 < a4 )
-		{
-		for ( i = 0; i < a3; ++i )
-			{
-			if ( a1 == a2[i] )
-				break;
-			}
-		if ( i == a3 )
-			{
-			a2[a3] = a1;
-			result = a3 + 1;
-			}
-		return result;
-		}
-	else
-		{
-		return  a4;
-		}
+	if ( elemsAlreadyPresent < elemsNeeded )
+	{
+		for ( i = 0; i < elemsAlreadyPresent; ++i )
+    {
+      if ( valueToAdd == outPutSet[i] )
+        return elemsAlreadyPresent;
+    }
+    outPutSet[elemsAlreadyPresent] = valueToAdd;
+    return elemsAlreadyPresent + 1;
 	}
+  return  elemsNeeded;
+}
 //----- (0043C91D) --------------------------------------------------------
-int __fastcall GetItemTextureFilename(char *pOut, signed int item_id, int index, int shoulder)
+int GetItemTextureFilename(char *pOut, signed int item_id, int index, int shoulder)
 {
   int result; // eax@2
-  char v5; // zf@3
-  const char *v6; // [sp-Ch] [bp-18h]@88
-  signed int v7; // [sp-8h] [bp-14h]@61
-  int v8; // [sp-4h] [bp-10h]@61
-  signed int v9; // [sp-4h] [bp-10h]@69
 
   result = 0; //BUG   fn is void
-  if ( item_id <= 500 )
+  if ( item_id > 500 )
   {
-    //v5 = *((char *)&pBloodsplatContainer->std__vector_pBloodsplats[62].field_20 + a2 + 2) == 0;
-    v5 = party_has_equipment[(item_id - 100) + 32 + 2] == 0;
     switch ( item_id )
     {
-      case 516:
-        v5 = byte_5111F6[2] == 0;
-        break;
-      case 505:
-        v5 = byte_5111F6[1] == 0;
-        break;
-      case 504:
-        v5 = byte_5111F6[0] == 0;
-        break;
-      case 533:
-        v5 = byte_5111F6[16] == 0;
-        break;
-      case 512:
-        v5 = byte_5111F6[3] == 0;
-        break;
-      case 521:
-        v5 = byte_5111F6[4] == 0;
-        break;
-      case 522:
-        v5 = byte_5111F6[5] == 0;
-        break;
-      case 523:
-        v5 = byte_5111F6[6] == 0;
-        break;
-      case 532:
-        v5 = byte_5111F6[7] == 0;
-        break;
-      case 544:
-        v5 = byte_5111F6[8] == 0;
-        break;
-      case 524:
-        v5 = byte_5111F6[9] == 0;
-        break;
-      case 535:
-        v5 = byte_5111F6[10] == 0;
-        break;
-      case 525:
-        v5 = byte_5111F6[11] == 0;
-        break;
-      case 530:
-        v5 = byte_5111F6[12] == 0;
-        break;
-      case 547:
-        v5 = byte_5111F6[13] == 0;
-        break;
-      case 548:
-        v5 = byte_5111F6[14] == 0;
-        break;
-      case 550:
-        v5 = byte_5111F6[15] == 0;
-        break;
-      default:
-        break;
+    case ITEM_RELIC_HARECS_LEATHER:
+      if (byte_5111F6_OwnedArtifacts[2] != 0)
+        item_id = 234;
+      break;
+    case ITEM_ARTIFACT_YORUBA:
+      if (byte_5111F6_OwnedArtifacts[1] != 0)
+        item_id = 236;
+      break;
+    case ITEM_ARTIFACT_GOVERNORS_ARMOR:
+      if (byte_5111F6_OwnedArtifacts[0] != 0)
+        item_id = 235;
+      break;
+    case ITEM_ELVEN_CHAINMAIL:
+      if (byte_5111F6_OwnedArtifacts[16] != 0)
+        item_id = 73;
+      break;
+    case ITEM_ARTIFACT_LEAGUE_BOOTS:
+      if (byte_5111F6_OwnedArtifacts[3] != 0)
+        item_id = 312;
+      break;
+    case ITEM_RELIC_TALEDONS_HELM:
+      if (byte_5111F6_OwnedArtifacts[4] != 0)
+        item_id = 239;
+      break;
+    case ITEM_RELIC_SCHOLARS_CAP:
+      if (byte_5111F6_OwnedArtifacts[5] != 0)
+        item_id = 240;
+      break;
+    case ITEM_RELIC_PHYNAXIAN_CROWN:
+      if (byte_5111F6_OwnedArtifacts[6] != 0)
+        item_id = 241;
+      break;
+    case ITEM_ARTIFACT_MINDS_EYE:
+      if (byte_5111F6_OwnedArtifacts[7] != 0)
+        item_id = 93;
+      break;
+    case ITEM_RARE_SHADOWS_MASK:
+      if (byte_5111F6_OwnedArtifacts[8] != 0)
+        item_id = 344;
+      break;
+    case ITEM_RILIC_TITANS_BELT:
+      if (byte_5111F6_OwnedArtifacts[9] != 0)
+        item_id = 324;
+      break;
+    case ITEM_ARTIFACT_HEROS_BELT:
+      if (byte_5111F6_OwnedArtifacts[10] != 0)
+        item_id = 104;
+      break;
+    case ITEM_RELIC_TWILIGHT:
+      if (byte_5111F6_OwnedArtifacts[11] != 0)
+        item_id = 325;
+      break;
+    case ITEM_ARTIFACT_CLOAK_OF_THE_SHEEP:
+      if (byte_5111F6_OwnedArtifacts[12] != 0)
+        item_id = 330;
+      break;
+    case ITEM_RARE_SUN_CLOAK:
+      if (byte_5111F6_OwnedArtifacts[13] != 0)
+        item_id = 347;
+      break;
+    case ITEM_RARE_MOON_CLOAK:
+      if (byte_5111F6_OwnedArtifacts[14] != 0)
+        item_id = 348;
+      break;
+    case ITEM_RARE_VAMPIRES_CAPE:
+      if (byte_5111F6_OwnedArtifacts[15] != 0)
+        item_id = 350;
+      break;
+    default:
+      return 0;
     }
-    if ( v5 )
-      return result;
-    result = 516;
-    if ( item_id < 66 || item_id > 78 )
-    {
-      if ( item_id == 516 )
-      {
-        if ( !shoulder )
-          return sprintf(pOut, "item%3.3dv%d", 234, index);
-        if ( shoulder == 1 )
-          return sprintf(pOut, "item%3.3dv%da1", 234, index);
-        if ( shoulder == 2 )
-          return sprintf(pOut, "item%3.3dv%da2", 234, index);
-      }
-      if ( item_id != 504 && item_id != 505 && item_id != 533 )
-      {
-        if ( (item_id < 100 || item_id > 104) && item_id != 524 && item_id != 535 )
-        {
-          if ( item_id >= 115 && item_id <= 119 || item_id == 512 )
-          {
-            if ( item_id == 512 )
-              item_id = 312;
-            return sprintf(pOut, "item%3.3dv%d", item_id, index);
-          }
-          if ( (item_id < 89 || item_id > 99) && item_id != 521 && item_id != 522 && item_id != 523 && item_id != 532 && item_id != 544 )
-          {
-            result = 525;
-            if ( (item_id < 105 || item_id > 109) && item_id != 525 && item_id != 530 && item_id != 547 && item_id != 548 && item_id != 550 )
-              return result;
-            switch ( item_id )
-            {
-              case 525:
-                item_id = 325;
-                break;
-              case 530:
-                item_id = 330;
-                break;
-              case 547:
-                item_id = 347;
-                break;
-              case 548:
-                item_id = 348;
-                break;
-              case 550:
-                item_id = 350;
-                break;
-            }
-            if ( !shoulder )
-              return sprintf(pOut, "item%3.3dv%d", item_id, index);
-            return sprintf(pOut, "item%3.3dv%da1", item_id, index);
-          }
-          if ( item_id == 521 )
-            return sprintf(pOut, "item%3.3dv%d", 239, index);
-          if ( item_id == 522 )
-            return sprintf(pOut, "item%3.3dv%d", 240, index);
-          if ( item_id == 523 )
-            return sprintf(pOut, "item%3.3dv%d", 241, index);
-          if ( item_id != 532 )
-          {
-            if ( item_id == 544 )
-              item_id = 344;
-            return sprintf(pOut, "item%3.3dv%d", item_id, index);
-          }
-          return sprintf(pOut, "item%3.3dv%d", 93, index);
-        }
-        if ( item_id == 524 )
-          return sprintf(pOut, "item%3.3dv%d", 324, index);
-        if ( item_id == 535 )
-          item_id = 104;
-        return sprintf(pOut, "item%3.3dv%d", item_id, index);
-      }
-    }
-    if ( item_id != 516 )
-    {
-      switch ( item_id )
-      {
-        case 504:
-          item_id = 235;
-          break;
-        case 505:
-          item_id = 236;
-          break;
-        case 533:
-          item_id = 73;
-          break;
-      }
-      if ( !shoulder )
-        return sprintf(pOut, "item%3.3dv%d", item_id, index);
-      if ( shoulder == 1 )
-        return sprintf(pOut, "item%3.3dv%da1", item_id, index);
-      if ( shoulder == 2 )
-        return sprintf(pOut, "item%3.3dv%da2", item_id, index);
-    }
-    if ( !shoulder )
-      return sprintf(pOut, "item%3.3dv%d", 234, index);
-    if ( shoulder == 1 )
-      return sprintf(pOut, "item%3.3dv%da1", 234, index);
-    if ( shoulder == 2 )
-      return sprintf(pOut, "item%3.3dv%da2", 234, index);
   }
+
+  switch (pItemsTable->pItems[item_id].uEquipType)
+  {
+  case EQUIP_ARMOUR:
+    if ( !shoulder )
+      return sprintf(pOut, "item%3.3dv%d", item_id, index);
+    else if ( shoulder == 1 )
+      return sprintf(pOut, "item%3.3dv%da1", item_id, index);
+    else if ( shoulder == 2 )
+      return sprintf(pOut, "item%3.3dv%da2", item_id, index);
+    break;
+  case EQUIP_CLOAK:
+    if ( !shoulder )
+      return sprintf(pOut, "item%3.3dv%d", item_id, index);
+    else
+      return sprintf(pOut, "item%3.3dv%da1", item_id, index);
+  default:
+    return sprintf(pOut, "item%3.3dv%d", item_id, index);
+  }
+
   result = item_id - 504;
   return result;
 }
 
+
+//----- (004BDAAF) --------------------------------------------------------
+bool ItemGen::MerchandiseTest(int _2da_idx)
+{
+  bool test;
+
+  if ( (p2DEvents[_2da_idx - 1].uType != 4 || (signed int)this->uItemID < 740 || (signed int)this->uItemID > 771)
+    && ((signed int)this->uItemID >= 600 || (signed int)this->uItemID >= 529 && (signed int)this->uItemID <= 599) || this->IsStolen())
+    return false;
+  switch( p2DEvents[_2da_idx - 1].uType )
+  {
+  case BuildingType_WeaponShop:
+    {
+      test = this->GetItemEquipType() <= EQUIP_BOW;
+      break;
+    }
+  case BuildingType_ArmorShop:
+    {
+      test = this->GetItemEquipType() >= EQUIP_ARMOUR && this->GetItemEquipType() <= EQUIP_BOOTS;
+      break;
+    }
+  case BuildingType_MagicShop:
+    {
+      test = this->GetPlayerSkillType() == PLAYER_SKILL_MISC || this->GetItemEquipType() == EQIUP_ANY;
+      break;
+    }
+  case BuildingType_AlchemistShop:
+    {
+      test = this->GetItemEquipType() == EQUIP_REAGENT || this->GetItemEquipType() == EQUIP_POTION 
+        || (this->GetItemEquipType() > EQUIP_POTION && !(this->GetItemEquipType() != EQUIP_MESSAGE_SCROLL 
+        || (signed int)this->uItemID < 740) && this->uItemID != 771);
+      break;
+    }
+  default:
+    {
+      test = false;
+      break;
+    }
+  }
+  return test;
+}

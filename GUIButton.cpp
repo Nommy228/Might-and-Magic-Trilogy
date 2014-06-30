@@ -1,10 +1,12 @@
+#define _CRT_SECURE_NO_WARNINGS
+#include "GUIButton.h"
 #include "GUIWindow.h"
 #include "GUIFont.h"
 
 #include "mm7_data.h"
 #include "LOD.h"
 #include "Texts.h"
-
+#include "OSWindow.h"
 
 
 
@@ -55,6 +57,13 @@ struct GUIButton *pBtn_Calendar;
 struct GUIButton *pBtn_Maps;
 struct GUIButton *pBtn_Autonotes;
 struct GUIButton *pBtn_Quests;
+
+
+struct GUIButton *pMMT_MainMenu_BtnMM6;
+struct GUIButton *pMMT_MainMenu_BtnMM7;
+struct GUIButton *pMMT_MainMenu_BtnMM8;
+struct GUIButton *pMMT_MainMenu_BtnContinue;
+struct GUIButton *pMMT_MainMenu_BtnExit;
 
 
 struct GUIButton *pMainMenu_BtnExit;
@@ -113,73 +122,51 @@ std::array<GUIButton*, 4> pCreationUI_BtnPressRight;
 //----- (0041D0D8) --------------------------------------------------------
 void GUIButton::Release()
 {
-  GUIWindow *v1; // eax@2
-  GUIButton *v2; // edx@2
-  GUIButton *v3; // eax@6
-  GUIButton *ptr;
-
-  ptr=this;
-  if ( ptr )
+  if ( this )
   {
-    v1 = ptr->pParent;
-    v2 = ptr->pNext;
-    if ( ptr == v1->pControlsHead )
+    if ( this == this->pParent->pControlsHead )
     {
-      if ( v2 )
+      if ( this->pNext )
       {
-        v1->pControlsHead = v2;
-        ptr->pNext->pPrev = 0;
+        this->pParent->pControlsHead = this->pNext;
+        this->pNext->pPrev = 0;
       }
       else
       {
-        v1->pControlsHead = 0;
-        ptr->pParent->pControlsTail = 0;
+        this->pParent->pControlsHead = 0;
+        this->pParent->pControlsTail = 0;
       }
     }
     else
     {
-      v3 = ptr->pPrev;
-      if ( v2 )
+      if ( this->pNext )
       {
-        v3->pNext = v2;
-        ptr->pNext->pPrev = v3;
+        this->pPrev->pNext = this->pNext;
+        this->pNext->pPrev = this->pPrev;
       }
       else
       {
-        v3->pNext = 0;
-        ptr->pParent->pControlsTail = v3;
+        this->pPrev->pNext = 0;
+        this->pParent->pControlsTail = this->pPrev;
       }
     }
-    --ptr->pParent->uNumControls;
+    --this->pParent->uNumControls;
   }
 }
 
-
 //----- (00415180) --------------------------------------------------------
 void GUIButton::DrawLabel( const char *label_text, struct GUIFont *pFont, int a5, int uFontShadowColor )
-    {
-  const char *v5; // ebx@1
-  GUIButton *v6; // esi@1
-  int v7; // eax@1
-
-  v5 = label_text;
-  v6 = this;
+{
   //strlen(edx0);
-  v7 = pFont->GetLineWidth(label_text);
-  return pParent->DrawText(
-           pFont,
-           v6->uX + (signed int)(v6->uWidth - v7) / 2,
-           v6->uY + (signed int)(v6->uHeight - pFont->uFontHeight) / 2,
-           a5,
-           label_text,
-           0,
-           0,
-           uFontShadowColor);
+  return pParent->DrawText(pFont,
+           this->uX + (signed int)(this->uWidth - pFont->GetLineWidth(label_text)) / 2,
+           this->uY + (signed int)(this->uHeight - pFont->uFontHeight) / 2,
+           a5, label_text, 0, 0, uFontShadowColor);
 }
 //----- (004B36CC) --------------------------------------------------------
 void CreateButtonInColumn( int column_pos, unsigned int control_id )
 {
-     pDialogueWindow->CreateButton( 480, 30 * column_pos + 146, 140, 30,  1,  0, UIMSG_SelectShopDialogueOption,  control_id,  0,   "",   0);
+  pDialogueWindow->CreateButton( 480, 30 * column_pos + 146, 140, 30,  1,  0, UIMSG_SelectShopDialogueOption,  control_id,  0,   "",   0);
 }
 //----- (00419379) --------------------------------------------------------
 void ReleaseAwardsScrollBar()
@@ -248,7 +235,7 @@ void CreateAwardsScrollBar()
 void UI_CreateEndConversationButton()
 {
   pDialogueWindow->Release();
-  pDialogueWindow = GUIWindow::Create(0, 0, 640, 345, WINDOW_MainMenu, 0, 0);
+  pDialogueWindow = GUIWindow::Create(0, 0, window->GetWidth(), 345, WINDOW_MainMenu, 0, 0);
   pBtn_ExitCancel = pDialogueWindow->CreateButton( 471, 445,  169, 35, 1, 0, UIMSG_Escape,  0,  0,
                  pGlobalTXT_LocalizationStrings[74],  //"End Conversation"
                  pIcons_LOD->GetTexture(uExitCancelTextureId), 0);

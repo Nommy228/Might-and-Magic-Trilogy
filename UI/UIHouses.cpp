@@ -1,9 +1,13 @@
-#ifdef _MSC_VER
 #define _CRT_SECURE_NO_WARNINGS
-#endif
-
+#include "UIGuilds.h"
+#include "UIPartyCreation.h"
+#include "UIShops.h"
+#include "..\GUIButton.h"
+#include "..\mm7_unsorted_subs.h"
+#include "..\SaveLoad.h"
 #include "..\Texture.h"
 #include "..\mm7_data.h"
+#include "..\ErrorHandling.h"
 #include "UIHouses.h"
 #include "..\Party.h"
 #include "..\texts.h"
@@ -24,6 +28,9 @@
 #include "..\MapInfo.h"
 #include "..\Log.h"
 #include "..\Game.h"
+#include "..\CastSpellInfo.h"
+
+#include "../Level/Decoration.h"
 
 #include "..\stru159.h"
 int uHouse_ExitPic; // weak
@@ -768,19 +775,19 @@ bool EnterHouse(enum HOUSE_ID uHouseID)
 {
 	signed int uOpenTime; // eax@5
 	signed int uCloseTime; // esi@5
-	unsigned int v5; // esi@5
-	int v6; // edx@5
+//	unsigned int v5; // esi@5
+//	int v6; // edx@5
 	signed int am_pm_flag_open; // ecx@10
 	signed int am_pm_flag_close; // eax@10
-	int v9; // esi@10
-	int v11; // ecx@17
-	unsigned int v12; // kr00_4@25
-	int v14; // eax@25
+//	int v9; // esi@10
+//	int v11; // ecx@17
+//	unsigned int v12; // kr00_4@25
+//	int v14; // eax@25
 	unsigned int v17; // eax@37
 	signed int v18; // edi@37
 	signed int v19; // edi@41
 	char pContainer[40]; // [sp+Ch] [bp-30h]@32
-	unsigned int v24; // [sp+34h] [bp-8h]@5
+//	unsigned int v24; // [sp+34h] [bp-8h]@5
 
 	GameUI_Footer_TimedString[0] = 0;
 	pFooterString[0] = 0;
@@ -800,7 +807,6 @@ bool EnterHouse(enum HOUSE_ID uHouseID)
 	uCloseTime = p2DEvents[uHouseID - 1].uCloseTime;
 	current_npc_text = 0;
 	dword_F8B1E4 = 0;
-	dword_F8B1F4 = 0;
 	memset(byte_F8B1F0.data(), 0, 4);
 	memset(player_levels.data(), 0, 16);
 	pRenderer->ClearZBuffer(0, 479);
@@ -883,7 +889,7 @@ bool EnterHouse(enum HOUSE_ID uHouseID)
 		uTextureID_right_panel_loop = uTextureID_right_panel;
 		if ( uNumDialogueNPCPortraits == 1 )
 			pDialogueNPCCount = 1;
-		pVideoPlayer->OpenHouseMovie(pAnimatedRooms[uCurrentHouse_Animation].video_name, 1u);  
+		pVideoPlayer->OpenHouseMovie(pAnimatedRooms[uCurrentHouse_Animation].video_name, 1u);
 		dword_5C35D4 = 1;
 		if ( (signed int)uHouseID < 139 || (signed int)uHouseID > 172 )
         {
@@ -897,7 +903,7 @@ bool EnterHouse(enum HOUSE_ID uHouseID)
 			v19 = guild_mambership_flags[uHouseID - HOUSE_FIRE_GUILD_INITIATE_EMERALD_ISLE]; //guilds flags 
 			//v20 = uHouseID;
 			//if ( !((unsigned __int8)(0x80u >> v19 % 8) & pPlayers[uActiveCharacter]->_guilds_member_bits[v19 /8]) )
-			if(_449B57_test_bit(pPlayers[uActiveCharacter]->_achieved_awards_bits,v19))
+			if(!_449B57_test_bit(pPlayers[uActiveCharacter]->_achieved_awards_bits,v19))
             {
 				PlayHouseSound(uHouseID, HouseSound_Greeting_2);
 				return 1;
@@ -913,8 +919,8 @@ bool EnterHouse(enum HOUSE_ID uHouseID)
 void PrepareHouse(HOUSE_ID house)
 {
   __int16 uExitMapID; // ax@2
-  int v7; // ebx@11
-  int v13; // [sp+30h] [bp-30h]@11
+//  int v7; // ebx@11
+//  int v13; // [sp+30h] [bp-30h]@11
   int npc_id_arr[6]; // [sp+34h] [bp-2Ch]@1
   int uAnimationID; // [sp+50h] [bp-10h]@1
 
@@ -961,7 +967,7 @@ void PrepareHouse(HOUSE_ID house)
 
   }
 
-  for (uint i = 0; i < uNumDialogueNPCPortraits; ++i)
+  for (int i = 0; i < uNumDialogueNPCPortraits; ++i)
   {
    
     char icon_name[128];
@@ -1013,7 +1019,7 @@ void __fastcall OnSelectShopDialogueOption(signed int uMessageParam)
         return;
       }
       pDialogueWindow->Release();
-      pDialogueWindow = GUIWindow::Create(0, 0, 640, 345, WINDOW_MainMenu, 0, 0);
+      pDialogueWindow = GUIWindow::Create(0, 0, window->GetWidth(), 345, WINDOW_MainMenu, 0, 0);
       pBtn_ExitCancel = pDialogueWindow->CreateButton(526, 445, 75, 33, 1, 0, UIMSG_Escape, 0, 0, pGlobalTXT_LocalizationStrings[74],// "End Conversation"
                                                        pIcons_LOD->GetTexture(uTextureID_BUTTDESC2), 0);
       pDialogueWindow->CreateButton(8, 8, 450, 320, 1, 0, UIMSG_BuyInShop_Identify_Repair, 0, 0, "", nullptr);
@@ -1025,7 +1031,7 @@ void __fastcall OnSelectShopDialogueOption(signed int uMessageParam)
           || in_current_building_type != BuildingType_Temple || uMessageParam != BuildingType_MindGuild )
       {
         pDialogueWindow->Release();
-        pDialogueWindow = GUIWindow::Create(0, 0, 640, 345, WINDOW_MainMenu, 0, 0);
+        pDialogueWindow = GUIWindow::Create(0, 0, window->GetWidth(), 345, WINDOW_MainMenu, 0, 0);
         pBtn_ExitCancel = pDialogueWindow->CreateButton(526, 445, 75, 33, 1, 0, UIMSG_Escape, 0, 0, pGlobalTXT_LocalizationStrings[74],// "End Conversation"
                                                          pIcons_LOD->GetTexture(uTextureID_BUTTDESC2), 0);
         pDialogueWindow->CreateButton(8, 8, 450, 320, 1, 0, UIMSG_BuyInShop_Identify_Repair, 0, 0, "", nullptr);
@@ -1459,9 +1465,9 @@ void  TravelByTransport()
         {
   //get color for current string(определение цвета текущей строки)----------
           if ( pDialogueWindow->pCurrentPosActiveItem == pCurrentButton )
-            sprintf(pTopicArray[index], "\f%05d", TargetColor(255, 255, 155));
+            sprintf(pTopicArray[index], "\f%05d", Color16(255, 255, 155));
           else
-            sprintf(pTopicArray[index], "\f%05d", TargetColor(255, 255, 255));
+            sprintf(pTopicArray[index], "\f%05d", Color16(255, 255, 255));
   //hired NPC premium(премия наёмного НПС)----------------------------------
           travel_time = transport_schedule[schedule_id].uTravelTime;
           if ( (unsigned int)window_SpeakInHouse->ptr_1C >= HOUSE_BOATS_EMERALD_ISLE )
@@ -1517,7 +1523,7 @@ void  TravelByTransport()
       else
       {
         travel_window.DrawTitleText(pFontArrus, 0, (174 - pFontArrus->CalcTextHeight(pGlobalTXT_LocalizationStrings[561], &travel_window, 0, 0)) / 2 + 138,//"Извините, приходите в другой день"
-                          TargetColor(255, 255, 255), pGlobalTXT_LocalizationStrings[561], 3);
+                          Color16(255, 255, 255), pGlobalTXT_LocalizationStrings[561], 3);
         pAudioPlayer->StopChannels(-1, -1);
       }
     }
@@ -1544,11 +1550,11 @@ void  TravelByTransport()
           SaveGame(1, 0);
           strcpy(pCurrentMapName, pMapStats->pInfos[pTravel->uMapInfoID].pFilename);
 
-          dword_6BE364_game_settings_1 |= 1u;
+          dword_6BE364_game_settings_1 |= GAME_SETTINGS_0001;
           _5B65B8_npcdata_hiword_house_or_other = 0;
           dword_5B65BC = 0;
           _5B65B4_npcdata_loword_house_or_other = pTravel->arrival_rot_y;
-          uGameState = GAME_STATE_2;
+          uGameState = GAME_STATE_CHANGE_LOCATION;
           _5B65A8_npcdata_uflags_or_other = pTravel->arrival_x;
           _5B65AC_npcdata_fame_or_other = pTravel->arrival_y;
           _5B65B0_npcdata_rep_or_other = pTravel->arrival_z;
@@ -1647,7 +1653,7 @@ void  TownHallDialog()
   townHall_window.uFrameWidth = 148;
   townHall_window.uFrameZ = 334;
   sprintf(pTmpBuf.data(), "%s: %d", pGlobalTXT_LocalizationStrings[605], pParty->uFine);//Текущий штраф
-  townHall_window.DrawTitleText(pFontArrus, 0, 260, TargetColor(0xFFu, 0xFFu, 0x9Bu), pTmpBuf.data(), 3);
+  townHall_window.DrawTitleText(pFontArrus, 0, 260, Color16(0xFFu, 0xFFu, 0x9Bu), pTmpBuf.data(), 3);
   switch(dialog_menu_id)
   {
     case HOUSE_DIALOGUE_MAIN:
@@ -1678,9 +1684,9 @@ void  TownHallDialog()
           pButton->uHeight = pTextHeight;
           v17 = pButton->uY + pTextHeight - 1;
           pButton->uW = v17;
-          pTextColor = TargetColor(0xFFu, 0xFFu, 0x9Bu);
+          pTextColor = Color16(0xFFu, 0xFFu, 0x9Bu);
           if ( pDialogueWindow->pCurrentPosActiveItem != v31 )
-            pTextColor = TargetColor(0xFFu, 0xFFu, 0xFFu);
+            pTextColor = Color16(0xFFu, 0xFFu, 0xFFu);
           townHall_window.DrawTitleText(pFontArrus, 0, pButton->uY, pTextColor, pShopOptions[j], 3);
           ++v31;
           ++j;
@@ -1690,8 +1696,8 @@ void  TownHallDialog()
     }
     case HOUSE_DIALOGUE_TOWNHALL_MESSAGE:
     {
-      sprintf(pTmpBuf.data(), "\f%05d%s\f%05d", TargetColor(0xFFu, 0xFFu, 0x9Bu),
-      pMonsterStats->pInfos[bountyHunting_monster_id_for_hunting].pName, TargetColor(0xFFu, 0xFFu, 0xFFu));
+      sprintf(pTmpBuf.data(), "\f%05d%s\f%05d", Color16(0xFFu, 0xFFu, 0x9Bu),
+      pMonsterStats->pInfos[bountyHunting_monster_id_for_hunting].pName, Color16(0xFFu, 0xFFu, 0xFFu));
       sprintf(pTmpBuf2.data(), bountyHunting_text, pTmpBuf.data(), 100 * pMonsterStats->pInfos[bountyHunting_monster_id_for_hunting].uLevel);
       current_npc_text = pTmpBuf2.data();
       memcpy(&window, pDialogueWindow, sizeof(window));
@@ -1714,8 +1720,8 @@ void  TownHallDialog()
       if ( window_SpeakInHouse->receives_keyboard_input_2 == WINDOW_INPUT_IN_PROGRESS)
       {
         sprintfex(pTmpBuf.data(), "%s\n%s", pGlobalTXT_LocalizationStrings[606], pGlobalTXT_LocalizationStrings[112]); // "Pay"   "How Much?"
-        townHall_window.DrawTitleText(pFontArrus, 0, 146, TargetColor(0xFFu, 0xFFu, 0x9Bu), pTmpBuf.data(), 3);
-        townHall_window.DrawTitleText(pFontArrus, 0, 186, TargetColor(0xFFu, 0xFFu, 0xFFu), (const char *)pKeyActionMap->pPressedKeysBuffer, 3);
+        townHall_window.DrawTitleText(pFontArrus, 0, 146, Color16(0xFFu, 0xFFu, 0x9Bu), pTmpBuf.data(), 3);
+        townHall_window.DrawTitleText(pFontArrus, 0, 186, Color16(0xFFu, 0xFFu, 0xFFu), (const char *)pKeyActionMap->pPressedKeysBuffer, 3);
         townHall_window.DrawFlashingInputCursor(pFontArrus->GetLineWidth((const char *)pKeyActionMap->pPressedKeysBuffer) / 2 + 80, 185, pFontArrus);
         return;
       }
@@ -1768,18 +1774,18 @@ void  BankDialog()
   bank_window.uFrameWidth = 148;
   bank_window.uFrameZ = 334;
   sprintf(pTmpBuf.data(), "%s: %d", pGlobalTXT_LocalizationStrings[25], pParty->uNumGoldInBank);//Баланс
-  bank_window.DrawTitleText(pFontArrus, 0, 220, TargetColor(0xFFu, 0xFFu, 0x9Bu), pTmpBuf.data(), 3);
+  bank_window.DrawTitleText(pFontArrus, 0, 220, Color16(0xFFu, 0xFFu, 0x9Bu), pTmpBuf.data(), 3);
   switch(dialog_menu_id)
   {
     case HOUSE_DIALOGUE_MAIN:
     {
-      pColorText = TargetColor(0xFFu, 0xFFu, 0x9Bu);
+      pColorText = Color16(0xFFu, 0xFFu, 0x9Bu);
       if ( pDialogueWindow->pCurrentPosActiveItem != 2 )
-        pColorText = TargetColor(0xFFu, 0xFFu, 0xFFu);
+        pColorText = Color16(0xFFu, 0xFFu, 0xFFu);
       bank_window.DrawTitleText(pFontArrus, 0, 146, pColorText, pGlobalTXT_LocalizationStrings[60], 3);
-      pColorText = TargetColor(0xFFu, 0xFFu, 0x9Bu);
+      pColorText = Color16(0xFFu, 0xFFu, 0x9Bu);
       if ( pDialogueWindow->pCurrentPosActiveItem != 3 )
-        pColorText = TargetColor(0xFFu, 0xFFu, 0xFFu);
+        pColorText = Color16(0xFFu, 0xFFu, 0xFFu);
       bank_window.DrawTitleText(pFontArrus, 0, 176, pColorText, pGlobalTXT_LocalizationStrings[244], 3);
       break;
     }
@@ -1788,8 +1794,8 @@ void  BankDialog()
       if ( window_SpeakInHouse->receives_keyboard_input_2 == WINDOW_INPUT_IN_PROGRESS)
       {
         sprintf(pTmpBuf.data(), "%s\n%s", pGlobalTXT_LocalizationStrings[60], pGlobalTXT_LocalizationStrings[112]);//"Положить" "Сколько?"
-        bank_window.DrawTitleText(pFontArrus, 0, 146, TargetColor(0xFFu, 0xFFu, 0x9Bu), pTmpBuf.data(), 3);
-        bank_window.DrawTitleText(pFontArrus, 0, 186, TargetColor(0xFFu, 0xFFu, 0xFFu), (const char *)pKeyActionMap->pPressedKeysBuffer, 3);
+        bank_window.DrawTitleText(pFontArrus, 0, 146, Color16(0xFFu, 0xFFu, 0x9Bu), pTmpBuf.data(), 3);
+        bank_window.DrawTitleText(pFontArrus, 0, 186, Color16(0xFFu, 0xFFu, 0xFFu), (const char *)pKeyActionMap->pPressedKeysBuffer, 3);
         bank_window.DrawFlashingInputCursor(pFontArrus->GetLineWidth((const char *)pKeyActionMap->pPressedKeysBuffer) / 2 + 80, 185, pFontArrus);
         return;
       }
@@ -1830,8 +1836,8 @@ void  BankDialog()
       if ( window_SpeakInHouse->receives_keyboard_input_2 == WINDOW_INPUT_IN_PROGRESS)
       {
         sprintfex(pTmpBuf.data(), "%s\n%s", pGlobalTXT_LocalizationStrings[244], pGlobalTXT_LocalizationStrings[112]);//"Снять" "Сколько?"
-        bank_window.DrawTitleText(pFontArrus, 0, 146, TargetColor(0xFFu, 0xFFu, 0x9Bu), pTmpBuf.data(), 3);
-        bank_window.DrawTitleText(pFontArrus, 0, 186, TargetColor(0xFFu, 0xFFu, 0xFFu), (const char *)pKeyActionMap->pPressedKeysBuffer, 3);
+        bank_window.DrawTitleText(pFontArrus, 0, 146, Color16(0xFFu, 0xFFu, 0x9Bu), pTmpBuf.data(), 3);
+        bank_window.DrawTitleText(pFontArrus, 0, 186, Color16(0xFFu, 0xFFu, 0xFFu), (const char *)pKeyActionMap->pPressedKeysBuffer, 3);
         bank_window.DrawFlashingInputCursor(pFontArrus->GetLineWidth((const char *)pKeyActionMap->pPressedKeysBuffer) / 2 + 80, 185, pFontArrus);
         return;
       }
@@ -1887,7 +1893,7 @@ void  TavernDialog()
   int pSkillCount;
   signed int pOptionsCount; // edi@77
   signed int i; // esi@79
-  signed int v53; // edi@81
+//  signed int v53; // edi@81
   int v54; // edi@81
   const char *pText; // [sp-4h] [bp-278h]@93
   char pTopic1[100]; // [sp+Ch] [bp-268h]@55
@@ -1930,27 +1936,27 @@ void  TavernDialog()
       if ( !HouseUI_CheckIfPlayerCanInteract() )
           return;
 
-      sprintf(pTopic1, "\f%05d", pDialogueWindow->pCurrentPosActiveItem == 2 ? TargetColor(0xFFu, 0xFFu, 0x9Bu) : TargetColor(0xFFu, 0xFFu, 0xFFu));
+      sprintf(pTopic1, "\f%05d", pDialogueWindow->pCurrentPosActiveItem == 2 ? Color16(0xFFu, 0xFFu, 0x9Bu) : Color16(0xFFu, 0xFFu, 0xFFu));
       sprintfex(pTmpBuf2.data(), pGlobalTXT_LocalizationStrings[178], pPriceRoom); // Rent room for %d gold
       strcat(pTopic1, pTmpBuf2.data());
       pTopic1Height = pFontArrus->CalcTextHeight(pTopic1, &dialog_window, 0, 0);
       strcat(pTopic1, "\n \n");
 
-      sprintf(pTopic2, "\f%05d", pDialogueWindow->pCurrentPosActiveItem == 3 ? TargetColor(0xFFu, 0xFFu, 0x9Bu) : TargetColor(0xFFu, 0xFFu, 0xFFu));
+      sprintf(pTopic2, "\f%05d", pDialogueWindow->pCurrentPosActiveItem == 3 ? Color16(0xFFu, 0xFFu, 0x9Bu) : Color16(0xFFu, 0xFFu, 0xFFu));
       sprintfex(pTmpBuf2.data(), pGlobalTXT_LocalizationStrings[86], // Buy food for %d days for %d gold
         (unsigned int)p2DEvents[(unsigned int)window_SpeakInHouse->ptr_1C - 1].fPriceMultiplier, pPriceFood);
       strcat(pTopic2, pTmpBuf2.data());
       pTopic2Height = pFontArrus->CalcTextHeight(pTopic2, &dialog_window, 0, 0);
       strcat(pTopic2, "\n \n");
 
-      sprintf(pTopic3, "\f%05d", pDialogueWindow->pCurrentPosActiveItem == 4 ? TargetColor(0xFFu, 0xFFu, 0x9Bu) : TargetColor(0xFFu, 0xFFu, 0xFFu));
+      sprintf(pTopic3, "\f%05d", pDialogueWindow->pCurrentPosActiveItem == 4 ? Color16(0xFFu, 0xFFu, 0x9Bu) : Color16(0xFFu, 0xFFu, 0xFFu));
       strcat(pTopic3, pGlobalTXT_LocalizationStrings[160]); // Learn Skills
       pTopic3Height = pFontArrus->CalcTextHeight(pTopic3, &dialog_window, 0, 0);
       strcat(pTopic3, "\n \n");
       pTopic4[0] = 0;
       if ( (signed int)window_SpeakInHouse->par1C >= 108 && (signed int)window_SpeakInHouse->par1C <= 120 )
       {
-        sprintf(pTopic4, "\f%05d", pDialogueWindow->pCurrentPosActiveItem == 5 ? TargetColor(0xFFu, 0xFFu, 0x9Bu) : TargetColor(0xFFu, 0xFFu, 0xFFu));
+        sprintf(pTopic4, "\f%05d", pDialogueWindow->pCurrentPosActiveItem == 5 ? Color16(0xFFu, 0xFFu, 0x9Bu) : Color16(0xFFu, 0xFFu, 0xFFu));
         strcat(pTopic4, pGlobalTXT_LocalizationStrings[611]); // Play Arcomage
         pTopic4Height = pFontArrus->CalcTextHeight(pTopic4, &dialog_window, 0, 0);
       }
@@ -2024,9 +2030,9 @@ void  TavernDialog()
     {
       if ( pArcomageGame->bGameInProgress == 1 )
         return;
-      if ( pArcomageGame->uGameResult )
+      if ( pArcomageGame->uGameWinner )
       {
-        if ( pArcomageGame->uGameResult == 1 )
+        if ( pArcomageGame->uGameWinner == 1 )
           pText = pGlobalTXT_LocalizationStrings[640];// You won!
         else
           pText = pGlobalTXT_LocalizationStrings[641];// You lost!
@@ -2037,7 +2043,7 @@ void  TavernDialog()
       }
       strcpy(pTmpBuf.data(), pText);
       dialog_window.DrawTitleText(pFontArrus, 0, (174 - pFontArrus->CalcTextHeight(pTmpBuf.data(), &dialog_window, 0, 0)) / 2 + 138,
-                                  TargetColor(0xFFu, 0xFFu, 0x9Bu), pTmpBuf.data(), 3);
+                                  Color16(0xFFu, 0xFFu, 0x9Bu), pTmpBuf.data(), 3);
       break;
     }
     case HOUSE_DIALOGUE_TAVERN_REST:
@@ -2046,16 +2052,17 @@ void  TavernDialog()
       {
         Party::TakeGold(pPriceRoom);
         PlayHouseSound((unsigned int)window_SpeakInHouse->ptr_1C, HouseSound_NotEnoughMoney_TrainingSuccessful);
-        //dialog_menu_id = HOUSE_DIALOGUE_NULL;
+        dialog_menu_id = HOUSE_DIALOGUE_NULL;
         HouseDialogPressCloseBtn();
         GetHouseGoodbyeSpeech();
         pVideoPlayer->Unload();
-        if ( pMessageQueue_50CBD0->uNumMessages )
+        /*if ( pMessageQueue_50CBD0->uNumMessages )
           pMessageQueue_50CBD0->uNumMessages = pMessageQueue_50CBD0->pMessages[0].field_8 != 0;
         pMessageQueue_50CBD0->pMessages[0].eType = UIMSG_RentRoom;
         pMessageQueue_50CBD0->pMessages[0].param = (int)window_SpeakInHouse->ptr_1C;//107
         pMessageQueue_50CBD0->pMessages[0].field_8 = 1;
-        ++pMessageQueue_50CBD0->uNumMessages;
+        ++pMessageQueue_50CBD0->uNumMessages;*/
+        pMessageQueue_50CBD0->AddMessage(UIMSG_RentRoom, (int)window_SpeakInHouse->ptr_1C, 1);
         window_SpeakInHouse->Release();
         window_SpeakInHouse = 0;
         return;
@@ -2112,9 +2119,9 @@ void  TavernDialog()
             pButton->uHeight = pTextHeight;
             v54 = pTextHeight + pButton->uY - 1;
             pButton->uW = v54;
-            pColorText = TargetColor(0xFFu, 0xFFu, 0x9Bu);
+            pColorText = Color16(0xFFu, 0xFFu, 0x9Bu);
             if ( pDialogueWindow->pCurrentPosActiveItem != i )
-              pColorText = TargetColor(0xFFu, 0xFFu, 0xFFu);
+              pColorText = Color16(0xFFu, 0xFFu, 0xFFu);
             dialog_window.DrawTitleText(pFontArrus, 0, pButton->uY, pColorText, pSkillNames[pButton->msg_param - 36], 3);
           }
         }
@@ -2125,7 +2132,7 @@ void  TavernDialog()
       strcat(pTmpBuf.data(), "\n \n");
       strcat(pTmpBuf.data(), pGlobalTXT_LocalizationStrings[528]);//Больше ничего не могу предложить.
       pTextHeight = (174 - pFontArrus->CalcTextHeight(pTmpBuf.data(), &dialog_window, 0, 0)) / 2 + 138;
-      dialog_window.DrawTitleText(pFontArrus, 0, pTextHeight, TargetColor(0xFFu, 0xFFu, 0x9Bu), pTmpBuf.data(), 3);
+      dialog_window.DrawTitleText(pFontArrus, 0, pTextHeight, Color16(0xFFu, 0xFFu, 0x9Bu), pTmpBuf.data(), 3);
       return;
     }
 
@@ -2180,9 +2187,9 @@ void  TavernDialog()
           pButton->uHeight = pTextHeight;
           v54 = pButton->uY + pTextHeight - 1;
           pButton->uW = v54;
-          pColorText = TargetColor(0xFFu, 0xFFu, 0x9Bu);
+          pColorText = Color16(0xFFu, 0xFFu, 0x9Bu);
           if ( pDialogueWindow->pCurrentPosActiveItem != pItemNum )
-            pColorText = TargetColor(0xFFu, 0xFFu, 0xFFu);
+            pColorText = Color16(0xFFu, 0xFFu, 0xFFu);
           dialog_window.DrawTitleText(pFontArrus, 0, pButton->uY, pColorText, (const char *)pShopOptions[pNumString], 3);
           ++pNumString;
         }
@@ -2206,7 +2213,7 @@ void TempleDialog()
   unsigned int v30; // edx@36
   int v35; // edi@50
   GUIButton *pButton; // edi@64
-  int v47; // edi@71
+//  int v47; // edi@71
   GUIWindow tample_window; // [sp+13Ch] [bp-88h]@1
   unsigned __int8 index; // [sp+1B7h] [bp-Dh]@64
   int v64; // [sp+1B8h] [bp-Ch]@6
@@ -2258,9 +2265,9 @@ void TempleDialog()
         pButton->uHeight = pTextHeight;
         pButton->uW = pButton->uY + pTextHeight - 1;
         all_text_height = pButton->uW;
-        pTextColor = TargetColor(0xFFu, 0xFFu, 0x9Bu);
+        pTextColor = Color16(0xFFu, 0xFFu, 0x9Bu);
         if ( pDialogueWindow->pCurrentPosActiveItem != index + 2 )
-          pTextColor = TargetColor(0xFFu, 0xFFu, 0xFFu);
+          pTextColor = Color16(0xFFu, 0xFFu, 0xFFu);
         tample_window.DrawTitleText(pFontArrus, 0, pButton->uY, pTextColor, pShopOptions[1 * i], 3);
         i++;
         index++;
@@ -2281,13 +2288,13 @@ void TempleDialog()
       return;
     }
     Party::TakeGold(pPrice);
-    v35 = LODWORD(pPlayers[uActiveCharacter]->pConditions[17]);
+    v35 = LODWORD(pPlayers[uActiveCharacter]->pConditions[Condition_Zombie]);
     memset(pPlayers[uActiveCharacter], 0, 0xA0u);
     pPlayers[uActiveCharacter]->sHealth = pPlayers[uActiveCharacter]->GetMaxHealth();
     pPlayers[uActiveCharacter]->sMana = pPlayers[uActiveCharacter]->GetMaxMana();
     if ( (signed int)window_SpeakInHouse->ptr_1C != 78 && ((signed int)window_SpeakInHouse->ptr_1C <= 80 || (signed int)window_SpeakInHouse->ptr_1C > 82) )
     {
-      if ( (unsigned int)pPlayers[uActiveCharacter]->pConditions[17] | v35 )
+      if ( (unsigned int)pPlayers[uActiveCharacter]->pConditions[Condition_Zombie] | v35 )// если состояние зомби
       {
         pPlayers[uActiveCharacter]->uCurrentFace = pPlayers[uActiveCharacter]->uPrevFace;
         pPlayers[uActiveCharacter]->uVoiceID = pPlayers[uActiveCharacter]->uPrevVoiceID;
@@ -2299,14 +2306,12 @@ void TempleDialog()
       pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 1, 0);
       return;
     }
-    if ( (unsigned int)pPlayers[uActiveCharacter]->pConditions[17] | v35 )
-    {
-      LODWORD(pPlayers[uActiveCharacter]->pConditions[17]) = v35;
-    }
+    if ( (unsigned int)pPlayers[uActiveCharacter]->pConditions[Condition_Zombie] | v35 )
+      LODWORD(pPlayers[uActiveCharacter]->pConditions[Condition_Zombie]) = v35;
     else
     {
-      if ( !pPlayers[uActiveCharacter]->pConditions[16]
-        && !pPlayers[uActiveCharacter]->pConditions[15] && !pPlayers[uActiveCharacter]->pConditions[14] )
+      if ( !pPlayers[uActiveCharacter]->pConditions[Condition_Eradicated]
+        && !pPlayers[uActiveCharacter]->pConditions[Condition_Pertified] && !pPlayers[uActiveCharacter]->pConditions[Condition_Dead] )
       {
         pAudioPlayer->PlaySound((SoundID)(SOUND_GoldReceived|0x2), -1, 0, -1, 0, 0, 0, 0);
         pPlayers[uActiveCharacter]->PlaySound(SPEECH_82, 0);
@@ -2316,15 +2321,15 @@ void TempleDialog()
       }
       pPlayers[uActiveCharacter]->uPrevFace = pPlayers[uActiveCharacter]->uCurrentFace;
       pPlayers[uActiveCharacter]->uPrevVoiceID = pPlayers[uActiveCharacter]->uVoiceID;
-      pPlayers[uActiveCharacter]->SetCondition(0x11u, 1);
+      pPlayers[uActiveCharacter]->SetCondition(Condition_Zombie, 1);
       pPlayers[uActiveCharacter]->uVoiceID = (pPlayers[uActiveCharacter]->GetSexByVoice() != 0) + 23;
       pPlayers[uActiveCharacter]->uCurrentFace = (pPlayers[uActiveCharacter]->GetSexByVoice() != 0) + 23;
       ReloadPlayerPortraits(uActiveCharacter - 1, (pPlayers[uActiveCharacter]->GetSexByVoice() != 0) + 23);
-      LODWORD(pPlayers[uActiveCharacter]->pConditions[17]) = LODWORD(pParty->uTimePlayed);
+      pPlayers[uActiveCharacter]->pConditions[Condition_Zombie] = pParty->uTimePlayed;
       //v39 = (GUIWindow *)HIDWORD(pParty->uTimePlayed);
     }
-    //HIDWORD(pPlayers[uActiveCharacter]->pConditions[17]) = (int)v39;
-    pPlayers[uActiveCharacter]->pConditions[17] =pParty->uTimePlayed;
+    //HIDWORD(pPlayers[uActiveCharacter]->pConditions[Condition_Zombie]) = (int)v39;
+    pPlayers[uActiveCharacter]->pConditions[Condition_Zombie] = pParty->uTimePlayed;
     pAudioPlayer->PlaySound((SoundID)(SOUND_GoldReceived|0x2), -1, 0, -1, 0, 0, 0, 0);
     pPlayers[uActiveCharacter]->PlaySound(SPEECH_82, 0);
     pOtherOverlayList->_4418B1(20, uActiveCharacter + 99, 0, 65536);
@@ -2440,9 +2445,9 @@ void TempleDialog()
               pButton->uHeight = pTextHeight;
               pButton->uW = pButton->uY + pTextHeight - 1;
               all_text_height = pButton->uW;
-              pTextColor = TargetColor(0xFFu, 0xFFu, 0x9Bu);
+              pTextColor = Color16(0xFFu, 0xFFu, 0x9Bu);
               if ( pDialogueWindow->pCurrentPosActiveItem != pCurrentItem )
-                pTextColor = TargetColor(0xFFu, 0xFFu, 0xFFu);
+                pTextColor = Color16(0xFFu, 0xFFu, 0xFFu);
               tample_window.DrawTitleText(pFontArrus, 0, pButton->uY, pTextColor, pSkillNames[pButton->msg_param - 36], 3);
             }
             pCurrentItem++;
@@ -2455,7 +2460,7 @@ void TempleDialog()
         strcat(pTmpBuf.data(), "\n \n");
         strcat(pTmpBuf.data(), pGlobalTXT_LocalizationStrings[528]);//"Больше ничего не могу предложить."
         pTextHeight = pFontArrus->CalcTextHeight(pTmpBuf.data(), &tample_window, 0, 0);
-        tample_window.DrawTitleText(pFontArrus, 0, (174 - pTextHeight) / 2 + 138, TargetColor(0xFFu, 0xFFu, 0x9Bu), pTmpBuf.data(), 3);
+        tample_window.DrawTitleText(pFontArrus, 0, (174 - pTextHeight) / 2 + 138, Color16(0xFFu, 0xFFu, 0x9Bu), pTmpBuf.data(), 3);
       }
     }
   }
@@ -2471,7 +2476,7 @@ void TrainingDialog()
   signed int v10; // esi@6
   int pPrice; // ecx@6
   signed int v14; // esi@14
-  int v16; // eax@16
+//  int v16; // eax@16
   int v19; // ecx@24
   int v33; // eax@36
   unsigned int v36; // eax@38
@@ -2549,9 +2554,9 @@ void TrainingDialog()
             pButton->uHeight = pTextHeight;
             pButton->uW = pTextHeight + pButton->uY - 1;
             v49 = pButton->uW;
-            pTextColor = TargetColor(0xE1u, 0xCDu, 0x23u);
+            pTextColor = Color16(0xE1u, 0xCDu, 0x23u);
             if ( pDialogueWindow->pCurrentPosActiveItem != i )
-              pTextColor = TargetColor(255, 255, 255);
+              pTextColor = Color16(255, 255, 255);
             training_dialog_window.DrawTitleText(pFontArrus, 0, pButton->uY, pTextColor, pShopOptions[index], 3);
             ++index;
           }
@@ -2564,7 +2569,7 @@ void TrainingDialog()
       if ( !HouseUI_CheckIfPlayerCanInteract() )
       {
         v33 = pFontArrus->CalcTextHeight(pNPCTopics[122].pText, &training_dialog_window, 0, 0);
-        training_dialog_window.DrawTitleText(pFontArrus, 0, (212 - v33) / 2 + 101, TargetColor(0xE1u, 0xCDu, 0x23u), pNPCTopics[122].pText, 3);
+        training_dialog_window.DrawTitleText(pFontArrus, 0, (212 - v33) / 2 + 101, Color16(0xE1u, 0xCDu, 0x23u), pNPCTopics[122].pText, 3);
         pDialogueWindow->pNumPresenceButton = 0;
         return;
       }
@@ -2621,7 +2626,7 @@ void TrainingDialog()
                                                 // ""Sorry, but we are unable to train you.""
         v36 = (212 - pFontArrus->CalcTextHeight(pTmpBuf.data(), &training_dialog_window, 0, 0)) / 2 + 101;
       }
-      training_dialog_window.DrawTitleText(pFontArrus, 0, v36, TargetColor(0xE1u, 0xCDu, 0x23u), pTmpBuf.data(), 3);
+      training_dialog_window.DrawTitleText(pFontArrus, 0, v36, Color16(0xE1u, 0xCDu, 0x23u), pTmpBuf.data(), 3);
       PlayHouseSound((unsigned int)window_SpeakInHouse->ptr_1C, (HouseSoundID)3);
       pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 1, 0);
       return;
@@ -2673,9 +2678,9 @@ void TrainingDialog()
             pButton->uHeight = pTextHeight;
             pButton->uW = pButton->uY + pTextHeight - 1;
             v19 = pButton->uY + pTextHeight - 1;
-            pTextColor = TargetColor(0xE1u, 0xCDu, 0x23u);
+            pTextColor = Color16(0xE1u, 0xCDu, 0x23u);
             if ( pDialogueWindow->pCurrentPosActiveItem != i )
-              pTextColor = TargetColor(255, 255, 255);
+              pTextColor = Color16(255, 255, 255);
             training_dialog_window.DrawTitleText(pFontArrus, 0, pButton->uY, pTextColor, pSkillNames[pButton->msg_param - 36], 3);
           }
         }
@@ -2687,7 +2692,7 @@ void TrainingDialog()
         strcat(pTmpBuf.data(), "\n \n");
         strcat(pTmpBuf.data(), pGlobalTXT_LocalizationStrings[528]);// "I can offer you nothing further."
         pTextHeight = pFontArrus->CalcTextHeight(pTmpBuf.data(), &training_dialog_window, 0, 0);
-        training_dialog_window.DrawTitleText(pFontArrus, 0, (174 - pTextHeight) / 2 + 138, TargetColor(0xE1u, 0xCDu, 0x23u), pTmpBuf.data(), 3);
+        training_dialog_window.DrawTitleText(pFontArrus, 0, (174 - pTextHeight) / 2 + 138, Color16(0xE1u, 0xCDu, 0x23u), pTmpBuf.data(), 3);
       }
     }
   }
@@ -2702,14 +2707,14 @@ void sub_4B6478()
   int pPrice; // ebx@1
   unsigned int v5; // esi@5
   int v6; // edi@6
-  int result; // eax@13
+//  int result; // eax@13
   int all_text_height; // eax@20
-  int v13; // eax@21
+//  int v13; // eax@21
   GUIButton *pButton; // esi@27
-  unsigned int v16; // eax@28
+//  unsigned int v16; // eax@28
   int pTextHeight; // eax@29
   unsigned __int16 pTextColor; // ax@29
-  unsigned __int16 v22; // ST14_2@36
+//  unsigned __int16 v22; // ST14_2@36
   int v27; // [sp-4h] [bp-80h]@8
   GUIWindow dialog_window; // [sp+Ch] [bp-70h]@1
   int v32; // [sp+6Ch] [bp-10h]@1
@@ -2730,7 +2735,7 @@ void sub_4B6478()
     if ( !(unsigned __int16)_449B57_test_bit((unsigned __int8 *)pPlayers[uActiveCharacter]->_achieved_awards_bits, word_4F0754[2 * (unsigned int)window_SpeakInHouse->ptr_1C]) )
     {
       pTextHeight = pFontArrus->CalcTextHeight(pNPCTopics[171].pText, &dialog_window, 0, 0);//
-      dialog_window.DrawTitleText(pFontArrus, 0, (212 - pTextHeight) / 2 + 101, TargetColor(0xFFu, 0xFFu, 0x9Bu), pNPCTopics[171].pText, 3);
+      dialog_window.DrawTitleText(pFontArrus, 0, (212 - pTextHeight) / 2 + 101, Color16(0xFFu, 0xFFu, 0x9Bu), pNPCTopics[171].pText, 3);
       pDialogueWindow->pNumPresenceButton = 0;
       return;
     }
@@ -2754,7 +2759,7 @@ void sub_4B6478()
       strcat(pTmpBuf.data(), "\n \n");
       strcat(pTmpBuf.data(), pGlobalTXT_LocalizationStrings[528]);//Больше ничего не могу предложить.
       pTextHeight = pFontArrus->CalcTextHeight(pTmpBuf.data(), &dialog_window, 0, 0);
-      dialog_window.DrawTitleText(pFontArrus, 0, (174 - pTextHeight) / 2 + 138, TargetColor(0xFFu, 0xFFu, 0x9Bu), pTmpBuf.data(), 3);
+      dialog_window.DrawTitleText(pFontArrus, 0, (174 - pTextHeight) / 2 + 138, Color16(0xFFu, 0xFFu, 0x9Bu), pTmpBuf.data(), 3);
       return; 
     }
     sprintf(pTmpBuf.data(), pGlobalTXT_LocalizationStrings[401], pPrice);//Стоимость навыка: %lu
@@ -2778,9 +2783,9 @@ void sub_4B6478()
             pButton->uHeight = pTextHeight;
             pButton->uW = pButton->uY + pTextHeight - 1;
             index = pButton->uY + pTextHeight - 1;
-            pTextColor = TargetColor(0xFFu, 0xFFu, 0x9Bu);
+            pTextColor = Color16(0xFFu, 0xFFu, 0x9Bu);
             if ( pDialogueWindow->pCurrentPosActiveItem != i )
-              pTextColor = TargetColor(0xFFu, 0xFFu, 0xFFu);
+              pTextColor = Color16(0xFFu, 0xFFu, 0xFFu);
             dialog_window.DrawTitleText(pFontArrus, 0, pButton->uY, pTextColor, pSkillNames[pButton->msg_param - 36], 3);
           }
         }
@@ -2882,7 +2887,7 @@ void SimpleHouseDialog()
     sprintfex(pTmpBuf.data(), pGlobalTXT_LocalizationStrings[429], pNPC->pName, aNPCProfessionNames[pNPC->uProfession]);//^Pi[%s] %s
   else
     strcpy(pTmpBuf.data(), pNPC->pName);
-  house_window.DrawTitleText(pFontCreate, 483, 113, TargetColor(0x15u, 0x99u, 0xE9u), pTmpBuf.data(), 3);
+  house_window.DrawTitleText(pFontCreate, 483, 113, Color16(0x15u, 0x99u, 0xE9u), pTmpBuf.data(), 3);
   if ( !dword_591080 )
   {
     if ( !uDialogueType )
@@ -2934,7 +2939,7 @@ void SimpleHouseDialog()
           strcpy(pButton->pButtonName, v15);
           continue;
         }
-        sprintf(pTmpBuf.data(), format_4E2D80, TargetColor(0xE1u, 0xCDu, 0x23u), pItemsTable->pItems[contract_approved].pUnidentifiedName);
+        sprintf(pTmpBuf.data(), format_4E2D80, Color16(0xE1u, 0xCDu, 0x23u), pItemsTable->pItems[contract_approved].pUnidentifiedName);
         sprintf(pTmpBuf2.data(), current_npc_text, pTmpBuf.data());
         current_npc_text = pTmpBuf2.data();
         strcpy(pButton->pButtonName, v15);
@@ -2990,7 +2995,7 @@ void SimpleHouseDialog()
       case 83:
         v29 = pMonsterStats->pInfos[bountyHunting_monster_id_for_hunting].pName;
         v31 = *(int *)v29;
-        sprintfex(pTmpBuf.data(), "\f%05d%s\f%05d", TargetColor(0xFFu, 0xFFu, 0x9Bu), v31, TargetColor(0xFFu, 0xFFu, 0xFFu));
+        sprintfex(pTmpBuf.data(), "\f%05d%s\f%05d", Color16(0xFFu, 0xFFu, 0x9Bu), v31, Color16(0xFFu, 0xFFu, 0xFFu));
         sprintfex(pTmpBuf2.data(), bountyHunting_text, pTmpBuf.data(), 100 * (unsigned __int8)v29[8]);
         current_npc_text = pTmpBuf2.data();
         strcpy(pButton->pButtonName, "");
@@ -3035,9 +3040,9 @@ void SimpleHouseDialog()
       pButton->uHeight = pTextHeight;
       v40 = pButton->uY + pTextHeight - 1;
       pButton->uW = v40;
-      pTextColor = TargetColor(0xE1u, 0xCDu, 0x23u);
+      pTextColor = Color16(0xE1u, 0xCDu, 0x23u);
       if ( pDialogueWindow->pCurrentPosActiveItem != i )
-        pTextColor = TargetColor(0xFFu, 0xFFu, 0xFFu);
+        pTextColor = Color16(0xFFu, 0xFFu, 0xFFu);
       right_panel_window.DrawTitleText(pFontArrus, 0, pButton->uY, pTextColor, pButton->pButtonName, 3);
     }
   }
@@ -3068,5 +3073,317 @@ void JailDialog()
   jail_dialogue_window.uFrameWidth = 148;
   jail_dialogue_window.uFrameZ = 334;
   jail_dialogue_window.DrawTitleText(pFontArrus, 0, (310 - pFontArrus->CalcTextHeight(pGlobalTXT_LocalizationStrings[672], &jail_dialogue_window, 0, 0)) / 2 + 18,
-     TargetColor(0xFFu, 0xFFu, 0x9Bu), pGlobalTXT_LocalizationStrings[672], 3);//"За многочисленные преступления и злодеяния вы были приговорены к одному году заключения."
+     Color16(0xFFu, 0xFFu, 0x9Bu), pGlobalTXT_LocalizationStrings[672], 3);//"За многочисленные преступления и злодеяния вы были приговорены к одному году заключения."
+}
+
+
+//----- (00443801) --------------------------------------------------------
+void InitializeBuildingResidents()
+{
+
+  int i;
+  char* test_string;
+  unsigned char c;
+  bool break_loop;
+  unsigned int temp_str_len;
+  char* tmp_pos;
+  int decode_step;
+
+  free(p2DEventsTXT_Raw);
+  p2DEventsTXT_Raw = (char *)pEvents_LOD->LoadRaw("2dEvents.txt", 0);
+  strtok(p2DEventsTXT_Raw, "\r");
+  strtok(NULL, "\r");
+
+  for (i=0;i<525;++i)
+  {
+    test_string = strtok(NULL, "\r") + 1;
+    break_loop = false;
+    decode_step=0;
+    do 
+    {
+      c = *(unsigned char*)test_string;
+      temp_str_len = 0;
+      while((c!='\t')&&(c>0))
+      {
+        ++temp_str_len;
+        c=test_string[temp_str_len];
+      }		
+      tmp_pos=test_string+temp_str_len;
+      if (*tmp_pos == 0)
+        break_loop = true;
+      *tmp_pos = 0;
+      if (temp_str_len)
+      {
+        switch (decode_step)
+        {
+        case 2:
+          {
+            if ( !_strnicmp(test_string, "wea", 3) )
+            {
+              p2DEvents[i].uType = BuildingType_WeaponShop;
+              break;
+            }
+            if ( !_strnicmp(test_string, "arm", 3) )
+            {
+              p2DEvents[i].uType = BuildingType_ArmorShop;
+              break;
+            }
+            if ( !_strnicmp(test_string, "mag", 3) )
+            {
+              p2DEvents[i].uType = BuildingType_MagicShop;
+              break;
+            }
+            if ( !_strnicmp(test_string, "alc", 3) )
+            {
+              p2DEvents[i].uType = BuildingType_AlchemistShop;
+              break;
+            }
+            if ( !_strnicmp(test_string, "sta", 3) )
+            {
+              p2DEvents[i].uType = BuildingType_Stables;
+              break;
+            }
+            if ( !_strnicmp(test_string, "boa", 3) )
+            {
+              p2DEvents[i].uType = BuildingType_Boats;
+              break;
+            }
+            if ( !_strnicmp(test_string, "tem", 3) )
+            {
+              p2DEvents[i].uType = BuildingType_Temple;
+              break;
+            }
+            if ( !_strnicmp(test_string, "tra", 3) )
+            {
+              p2DEvents[i].uType = BuildingType_Training;
+              break;
+            }
+            if ( !_strnicmp(test_string, "tow", 3) )
+            {
+              p2DEvents[i].uType = BuildingType_TownHall;
+              break;
+            }
+
+            if ( !_strnicmp(test_string, "tav", 3) )
+            {
+              p2DEvents[i].uType = BuildingType_Tavern;
+              break;
+            }
+            if ( !_strnicmp(test_string, "ban", 3) )
+            {
+              p2DEvents[i].uType = BuildingType_Bank;
+              break;
+            }
+            if ( !_strnicmp(test_string, "fir", 3) )
+            {
+              p2DEvents[i].uType = BuildingType_FireGuild;
+              break;
+            }
+            if ( !_strnicmp(test_string, "air", 3) )
+            {
+              p2DEvents[i].uType = BuildingType_AirGuild;
+              break;
+            }
+            if ( !_strnicmp(test_string, "wat", 3) )
+            {
+              p2DEvents[i].uType = BuildingType_WaterGuild;
+              break;
+            }
+            if ( !_strnicmp(test_string, "ear", 3) )
+            {
+              p2DEvents[i].uType = BuildingType_EarthGuild;
+              break;
+            }
+            if ( !_strnicmp(test_string, "spi", 3) )
+            {
+              p2DEvents[i].uType = BuildingType_SpiritGuild;
+              break;
+            }
+            if ( !_strnicmp(test_string, "min", 3) )
+            {
+              p2DEvents[i].uType = BuildingType_MindGuild;
+              break;
+            }
+            if ( !_strnicmp(test_string, "bod", 3) )
+            {
+              p2DEvents[i].uType = BuildingType_BodyGuild;
+              break;
+            }
+            if ( !_strnicmp(test_string, "lig", 3) )
+            {
+              p2DEvents[i].uType = BuildingType_LightGuild;
+              break;
+            }
+            if ( !_strnicmp(test_string, "dar", 3) )
+            {
+              p2DEvents[i].uType = BuildingType_DarkGuild;
+              break;
+            }
+            if ( !_strnicmp(test_string, "ele", 3) ) // "Element Guild" from mm6
+            {
+              p2DEvents[i].uType = BuildingType_ElementalGuild;
+              break;
+            }
+            if ( !_strnicmp(test_string, "sel", 3) )
+            {
+              p2DEvents[i].uType = BuildingType_SelfGuild;
+              break;
+            }
+            if ( !_strnicmp(test_string, "mir", 3) )
+            {
+              p2DEvents[i].uType = BuildingType_16;
+              break;
+            }
+            if ( !_strnicmp(test_string, "mer", 3) ) // "Merc Guild" from mm6
+            {
+              p2DEvents[i].uType = BuildingType_TownHall;
+              break;
+            }
+            p2DEvents[i].uType = BuildingType_18;
+          }
+          break;
+
+        case 4:
+          p2DEvents[i].uAnimationID = atoi(test_string);
+          break;
+        case 5:
+          p2DEvents[i].pName = RemoveQuotes(test_string);
+          break;
+        case 6:
+          p2DEvents[i].pProprieterName = RemoveQuotes(test_string);
+          break;
+        case 7:
+          p2DEvents[i].pProprieterTitle = RemoveQuotes(test_string);
+          break;
+        case 8:
+          p2DEvents[i].field_14 = atoi(test_string);
+          break;
+        case 9:
+          p2DEvents[i]._state = atoi(test_string);
+          break;
+        case 10:
+          p2DEvents[i]._rep = atoi(test_string);
+          break;
+        case 11:
+          p2DEvents[i]._per = atoi(test_string);
+          break;
+        case 12:
+          p2DEvents[i].fPriceMultiplier = atof(test_string);
+          break;
+        case 13:
+          p2DEvents[i].flt_24 = atof(test_string);
+          break;
+        case 15:
+          p2DEvents[i].field_1C = atoi(test_string);
+          break;
+        case 18:
+          p2DEvents[i].uOpenTime = atoi(test_string);
+          break;
+        case 19:
+          p2DEvents[i].uCloseTime = atoi(test_string);
+          break;
+        case 20:
+          p2DEvents[i].uExitPicID = atoi(test_string);
+          break;
+        case 21:
+          p2DEvents[i].uExitMapID = atoi(test_string);
+          break;
+        case 22:
+          p2DEvents[i]._quest_related = atoi(test_string);
+          break;
+        case 23:
+          p2DEvents[i].pEnterText = RemoveQuotes(test_string);
+          break;
+        }
+      }
+      ++decode_step;
+      test_string=tmp_pos+1;
+    } while ((decode_step<24)&&!break_loop);
+  }
+
+}
+
+//----- (004BD8B5) --------------------------------------------------------
+int HouseDialogPressCloseBtn()
+{
+  if ( pMessageQueue_50CBD0->uNumMessages )
+    pMessageQueue_50CBD0->uNumMessages = pMessageQueue_50CBD0->pMessages[0].field_8 != 0;
+  pKeyActionMap->SetWindowInputStatus(WINDOW_INPUT_CANCELLED);
+  pKeyActionMap->ResetKeys();
+  activeLevelDecoration = nullptr;
+  current_npc_text = 0;
+  if ( pDialogueNPCCount == 0)
+    return 0;
+
+  if ( dialog_menu_id == HOUSE_DIALOGUE_SHOP_BUY_SPECIAL && ShopTexture )
+  {
+    ShopTexture->Release();
+    ShopTexture = 0;
+  }
+
+  switch(dialog_menu_id)
+  {
+    case -1:
+      _4B4224_UpdateNPCTopics((int)((char *)pDialogueNPCCount - 1));
+      pVideoPlayer->_4BF5B2();
+      break;
+
+    case HOUSE_DIALOGUE_SHOP_DISPLAY_EQUIPMENT:
+    case HOUSE_DIALOGUE_LEARN_SKILLS:
+    case HOUSE_DIALOGUE_TAVERN_ARCOMAGE_MAIN:
+      pVideoPlayer->_4BF5B2();
+      UI_CreateEndConversationButton();
+      dialog_menu_id = HOUSE_DIALOGUE_MAIN;
+      InitializaDialogueOptions(in_current_building_type);
+      break;
+
+    case HOUSE_DIALOGUE_SHOP_SELL:
+    case HOUSE_DIALOGUE_SHOP_IDENTIFY:
+    case HOUSE_DIALOGUE_SHOP_REPAIR:
+      UI_CreateEndConversationButton();
+      dialog_menu_id = HOUSE_DIALOGUE_SHOP_DISPLAY_EQUIPMENT;
+      InitializaDialogueOptions_Shops(in_current_building_type);
+      break;
+
+    case HOUSE_DIALOGUE_TAVERN_ARCOMAGE_RULES:
+    case HOUSE_DIALOGUE_TAVERN_ARCOMAGE_VICTORY_CONDITIONS:
+    case HOUSE_DIALOGUE_TAVERN_ARCOMAGE_RESULT:
+      pVideoPlayer->_4BF5B2();
+      UI_CreateEndConversationButton();
+      dialog_menu_id = HOUSE_DIALOGUE_TAVERN_ARCOMAGE_MAIN;
+      InitializaDialogueOptions_Tavern(in_current_building_type);
+      break;
+
+    case HOUSE_DIALOGUE_NULL:
+    case HOUSE_DIALOGUE_MAIN:
+      pDialogueNPCCount = 0;
+      pDialogueWindow->Release();
+      dialog_menu_id = HOUSE_DIALOGUE_NULL;
+      pDialogueWindow = 0;
+      pIcons_LOD->SyncLoadedFilesCount();
+
+      if ( uNumDialogueNPCPortraits == 1 )
+        return 0;
+
+      pBtn_ExitCancel = window_SpeakInHouse->pControlsHead;
+      if ( uNumDialogueNPCPortraits > 0 )
+      {
+        for ( uint i = 0; i < (unsigned int)uNumDialogueNPCPortraits; ++i )
+        {
+          HouseNPCPortraitsButtonsList[i] = window_SpeakInHouse->CreateButton(pNPCPortraits_x[uNumDialogueNPCPortraits - 1][i],
+                                            pNPCPortraits_y[uNumDialogueNPCPortraits - 1][i],
+                                            63, 73, 1, 0, UIMSG_ClickHouseNPCPortrait, i, 0, byte_591180[i].data(), 0, 0, 0);
+        }
+      }
+
+      pVideoPlayer->_4BF5B2();
+      break;
+
+    default:
+      pVideoPlayer->_4BF5B2();
+      dialog_menu_id = HOUSE_DIALOGUE_MAIN;
+      InitializaDialogueOptions(in_current_building_type);
+      break;
+  }
+  return 1;
 }

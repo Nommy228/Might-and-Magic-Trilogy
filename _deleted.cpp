@@ -1,3 +1,4 @@
+#define _CRT_SECURE_NO_WARNINGS
 /*
 
 
@@ -1489,7 +1490,7 @@ LABEL_73:
           return result;
         ++pODMRenderParams->uNumPolygons;
         ++pODMRenderParams->field_44;
-        if ( !ODMFace::IsBackfaceCulled(v3, array_73D150, v12) )
+        if ( !ODMFace::IsBackfaceCulled(array_73D150, v12) )
         {
 LABEL_71:
           --pODMRenderParams->uNumPolygons;
@@ -2122,13 +2123,13 @@ LABEL_14:
   array_77EC08[1999].Create_48607B(&stru_8019C8);
   array_77EC08[1999].ptr_38->_48694B_frustum_sky();
 
-  if (pOutdoor->uMainTile_BitmapID == -1)
+  if (pOutdoor->sMainTile_BitmapID == -1)
   {
     array_77EC08[1999].pTexture = nullptr;
     return;
   }
   else
-    array_77EC08[1999].pTexture = pBitmaps_LOD->GetTexture(pOutdoor->uMainTile_BitmapID);
+    array_77EC08[1999].pTexture = pBitmaps_LOD->GetTexture(pOutdoor->sMainTile_BitmapID);
   array_77EC08[1999].dimming_level = 23 - (-20 * pOutdoor->vSunlight.z >> 16);
   if ( array_77EC08[1999].dimming_level > 20 )
     array_77EC08[1999].dimming_level = 20;
@@ -2145,13 +2146,13 @@ LABEL_14:
   array_77EC08[1999].Create_48607B(&stru_8019C8);
   array_77EC08[1999].ptr_38->_48694B_frustum_sky();
 
-  if (pOutdoor->uSky_TextureID == -1)
+  if (pOutdoor->sSky_TextureID == -1)
   {
     array_77EC08[1999].pTexture = nullptr;
     return;
   }
   else
-    array_77EC08[1999].pTexture = pBitmaps_LOD->GetTexture(pOutdoor->uSky_TextureID);
+    array_77EC08[1999].pTexture = pBitmaps_LOD->GetTexture(pOutdoor->sSky_TextureID);
   array_77EC08[1999].dimming_level = 0;
   v11 = stru_5C6E00->Sin(pIndoorCamera->sRotationX + 16);
   array_77EC08[1999].v_18.y = 0;
@@ -2425,798 +2426,6 @@ LABEL_15:
   return result;
 }
 
-//----- (0047F5C6) --------------------------------------------------------
-float Render::DrawBezierTerrain()
-{
-  unsigned int pDirectionIndicator1; // ebx@1
-  unsigned int pDirectionIndicator2; // edi@1
-  unsigned int v2; // eax@1
-  int v3; // eax@3
-  int v4; // edi@3
-  int v5; // ebx@3
-  int v6; // esi@3
-  unsigned int v7; // eax@3
-  int v8; // eax@4
-  unsigned int v9; // eax@6
-  int v10; // eax@7
-  //int v11; // ebx@9
-  //int v12; // edi@9
-  int v13; // eax@21
-  int v14; // eax@31
-  int v15; // edi@33
-  int v16; // eax@34
-  int v17; // edx@34
-  int v18; // ebx@34
-  int v19; // eax@36
-  int v20; // eax@39
-  int v21; // ecx@43
-  //char v22; // zf@44
-  int v23; // ecx@47
-  //int v24; // edi@52
-  int v25; // eax@54
-  int v26; // ecx@54
-  int v27; // eax@56
-  int v28; // edx@60
-  int v29; // ecx@61
-  int v30; // ecx@64
-  int v31; // ecx@68
-  int v32; // eax@70
-  //int v33; // ecx@71
-  int v34; // eax@73
-  int v35; // ecx@77
-  int v36; // ecx@81
-  int v37; // ecx@86
-  int v38; // eax@88
-  int v39; // ecx@88
-  int v40; // eax@90
-  int v41; // edx@94
-  //int v42; // ecx@95
-  int v43; // ecx@98
-  int v44; // ecx@102
-  int v45; // eax@104
-  int v46; // eax@107
-  int v47; // ecx@111
-  int v48; // ecx@115
-  int v49; // edi@120
-  int v50; // eax@122
-  int v51; // ecx@122
-  int v52; // eax@124
-  int v53; // edx@128
-  int v54; // ecx@129
-  int v55; // ecx@132
-  int v56; // eax@139
-  int v57; // ecx@140
-  int v58; // eax@142
-  int v59; // ecx@146
-  //int v60; // ecx@147
-  int v61; // ecx@150
-  int v62; // ecx@155
-  int v63; // eax@157
-  int v64; // ecx@157
-  int v65; // eax@159
-  int v66; // edx@163
-  int v67; // ecx@164
-  int v68; // ecx@167
-  //int v69; // eax@173
-  int v70; // edi@178
-  //int v71; // eax@178
-  //int v72; // ecx@178
-  //int x; // ebx@180
-  //int v74; // eax@182
-  //int v75; // eax@184
-  IndoorCameraD3D *pIndoorCameraD3D_3; // ecx@184
-  int uStartZ; // ecx@184
-  int v79; // ebx@185
-  int v127; // esi@185
-  int v86; // edi@196
-  //int v87; // eax@196
-  //int v88; // ecx@196
-  //int v89; // eax@198
-  //int v90; // ecx@200
-  int v92; // ebx@203
-  //int v93; // ST08_4@204
-  int v97; // ST08_4@204
-  float result; // eax@212
-  //struct 
-  //{
-  int v106; // [sp+Ch] [bp-68h]@191
-  int v103; // [sp+10h] [bp-64h]@190
-  int v104; // [sp+12h] [bp-62h]@190
-  //} v102;
-  int v105; // [sp+1Ch] [bp-58h]@1
-  int v107; // [sp+20h] [bp-54h]@3
-  int uEndZ; // [sp+24h] [bp-50h]@3
-  int v108; // [sp+28h] [bp-4Ch]@9
-  int v109; // [sp+2Ch] [bp-48h]@9
-  int v110; // [sp+30h] [bp-44h]@9
-  int v111; // [sp+34h] [bp-40h]@3
-  int v112; // [sp+38h] [bp-3Ch]@6
-  IndoorCameraD3D *pIndoorCameraD3D_4; // [sp+3Ch] [bp-38h]@9
-  int v114; // [sp+40h] [bp-34h]@9
-  int v115; // [sp+44h] [bp-30h]@9
-  int v116; // [sp+48h] [bp-2Ch]@9
-  //int v117; // [sp+4Ch] [bp-28h]@9
-  int v118; // [sp+50h] [bp-24h]@9
-  int v119; // [sp+54h] [bp-20h]@1
-  int v120; // [sp+58h] [bp-1Ch]@1
-  int i; // [sp+5Ch] [bp-18h]@1
-  int v122; // [sp+60h] [bp-14h]@1
-  int v123; // [sp+64h] [bp-10h]@1
-  int v124; // [sp+68h] [bp-Ch]@1
-  int v125; // [sp+6Ch] [bp-8h]@9
-  int v126; // [sp+70h] [bp-4h]@9
-
-  v105 = pIndoorCamera->sRotationY / ((signed int)stru_5C6E00->uIntegerHalfPi / 2);//2
-  pDirectionIndicator1 = stru_5C6E00->uDoublePiMask & (stru_5C6E00->uIntegerDoublePi - pIndoorCamera->sRotationY);//1536
-  pDirectionIndicator2 = stru_5C6E00->uDoublePiMask & (stru_5C6E00->uIntegerPi + pDirectionIndicator1);//512
-  v124 = ((pIndoorCamera->uMapGridCellX << 16) + 3 * stru_5C6E00->Cos(stru_5C6E00->uDoublePiMask & (stru_5C6E00->uIntegerPi + pDirectionIndicator1))) >> 16;//88
-  v123 = ((pIndoorCamera->uMapGridCellZ << 16) + 3 * stru_5C6E00->Sin(pDirectionIndicator2)) >> 16;// 66
-  v120 = pODMRenderParams->outdoor_grid_band_3 + v124;//+- range X
-  v119 = pODMRenderParams->outdoor_grid_band_3 + v123;
-  v2 = pODMRenderParams->uCameraFovInDegrees + 15;//90
-  i = v124 - pODMRenderParams->outdoor_grid_band_3;
-  v122 = v123 - pODMRenderParams->outdoor_grid_band_3;
-
-  if ( v2 > 90 )
-    v2 = 90;
-  v3 = (v2 << 11) / 720;
-  v4 = stru_5C6E00->uDoublePiMask & (pDirectionIndicator1 - v3);
-  v5 = stru_5C6E00->uDoublePiMask & (v3 + pDirectionIndicator1);
-
-  v106 = stru_5C6E00->Cos(v4);
-  uEndZ = stru_5C6E00->Sin(v4);
-
-  v111 = stru_5C6E00->Cos(v5);
-  v6 = stru_5C6E00->Sin(v5);
-
-  v7 = v4 & stru_5C6E00->uPiMask;
-  if ( (v4 & stru_5C6E00->uPiMask) >= stru_5C6E00->uIntegerHalfPi )
-    v8 = -stru_5C6E00->pTanTable[stru_5C6E00->uIntegerPi - v7];
-  else
-    v8 = stru_5C6E00->pTanTable[v7];
-  v112 = abs(v8);
-
-  v9 = v5 & stru_5C6E00->uPiMask;
-  if ( (v5 & stru_5C6E00->uPiMask) >= stru_5C6E00->uIntegerHalfPi )
-    v10 = -stru_5C6E00->pTanTable[stru_5C6E00->uIntegerPi - v9];
-  else
-    v10 = stru_5C6E00->pTanTable[v9];
-  v108 = abs(v10);
-
-  //v11 = v124;
-  //v12 = v123;
-  v114 = 0;
-  v115 = 0;
-  pIndoorCameraD3D_4 = 0;
-  v125 = 0;
-  v126 = v124;
-  v118 = v123;
-
-  v110 = (v106 >= 0 ? 1: -1);//2 * (v106 >= 0) - 1;
-  v109 = (uEndZ >= 0 ? 1: -1);//2 * (v107 >= 0) - 1;
-  uEndZ = (v111 >= 0 ? 1: -1);//2 * (v111 >= 0) - 1;
-  v106 = (v6 >= 0 ? 1: -1);//2 * (v6 >= 0) - 1;
-
-  uint _i = 1;
-  uint j = 1;
-
-  terrain_76DDC8[0] = -1;
-  terrain_76DFC8[0] = -1;
-  terrain_76E1C8[0] = -1;
-  terrain_76E3C8[0] = -1;
-
-  for( uint _i = 1; _i < 128; _i++)
-  {
-    if ( v112 >= 0x10000 )
-    {
-      int v1, v2;
-      //v111 = 4294967296i64 / v112;
-      //v114 += v111;
-      //if ( v114 >= 65536 )
-      //{
-      //  v11 += v110;
-      //  v114 = (unsigned __int16)v114;
-      //}
-      //v12 += v109;
-    }
-    else
-    {
-      v124 += v110;
-      v115 += v112;
-      if ( v112 + v115 >= 65536 )
-      {
-        v123 += v109;
-        v115 = (unsigned __int16)v115;
-      }
-    }
-    if ( v124 < _i || v124 > v120 || v123 < v122 || v123 > v119 )
-      break;
-    //v13 = v116++;
-    terrain_76E3C8[_i] = v124;
-    terrain_76E1C8[_i] = v123;
-  }
-
-  for( j = 1; j < 128; j++ )
-  {
-    if ( v108 >= 65536 )
-    {
-      v111 = 4294967296i64 / v108;
-      v114 += v111;//
-      if ( v111 + v114 >= 65536 )
-      {
-        v126 += uEndZ;
-        v114 = (unsigned __int16)v114;//
-      }
-      v118 += v106;
-    }
-    else
-    {
-      v125 += v108;
-      v126 += uEndZ;
-      if ( v125 >= 65536 )
-      {
-        v118 += v106;
-        v125 = (unsigned __int16)v125;
-      }
-    }
-    //if ( v117 >= 128 )
-      //break;
-    if ( v126 < _i )
-      break;
-    if ( v126 > v120 )
-      break;
-    v14 = v118;
-    if ( v118 < v122 )
-      break;
-    if ( v118 > v119 )
-      break;
-    terrain_76DFC8[j] = v126;
-    terrain_76DDC8[j] = v14;
-  }
-  v16 = 0;
-  v126 = 0;
-  v17 = j - 1;
-  v18 = _i - 1;
-
-  switch ( v105 )
-  {
-    case 0:
-    case 7:
-    {
-      //v116 = terrain_76DFC8[v17];
-      if ( v120 > terrain_76DFC8[v17] )
-      {
-        v125 = v120;
-        memset32(terrain_76D9C8.data(), v119 + 1, 4 * (v120 - terrain_76DFC8[v17] + 1));
-        v19 = v120;
-        do
-          terrain_76DBC8[v126++] = v19--;
-        while ( v19 >= terrain_76DFC8[v17] );
-        if ( terrain_76DFC8[v17] == terrain_76DDC8[v17 + 127] )
-        {
-          do
-            v20 = terrain_76DDC8[v17-- -1];
-          while ( v20 == terrain_76DDC8[v17 -1] );
-        }
-        v16 = v126;
-        --v17;
-      }
-      if ( v17 < 0 )
-        v17 = 0;
-      v21 = terrain_76DFC8[v17];
-      while ( 1 )
-      {
-        v125 = terrain_76DFC8[v17];
-        if ( v21 < v124 )
-          break;
-        terrain_76DBC8[v16] = v21;
-        //v22 = terrain_76DDC8[v17] == 65535;
-        terrain_76D9C8[v16] = terrain_76DDC8[v17] + 1;
-        if ( terrain_76DDC8[v17] == 65535 )
-        {
-          terrain_76D9C8[v16] = v123 + 1;
-          break;
-        }
-        if ( !v17 )
-          break;
-        if ( terrain_76DFC8[v17] == terrain_76DDC8[v17 - 1] )
-        {
-          do
-            v23 = terrain_76DDC8[v17-- -1];
-          while ( v23 == terrain_76DDC8[v17 -1] );
-        }
-        --v17;
-        v21 = v125 - 1;
-        ++v16;
-      }
-      v16 = 0;
-      //v24 = terrain_76E3C8[v18];
-      v126 = 0;
-      if ( v120 > terrain_76E3C8[v18] )
-      {
-        v125 = v120;
-        memset32(terrain_76D5C8.data(), v122, 4 * (v120 - terrain_76E3C8[v18] + 1));
-        do
-        {
-          v25 = v126;
-          v26 = v125--;
-          ++v126;
-          terrain_76D7C8[v25] = v26;
-        }
-        while ( v125 >= terrain_76E3C8[v18] );
-        if ( terrain_76E3C8[v18] == terrain_76E1C8[v18 -1] )
-        {
-          do
-            v27 = terrain_76E1C8[v18-- -1];
-          while ( v27 == terrain_76E1C8[v18 -1] );
-        }
-        v16 = v126;
-        --v18;
-      }
-      if ( v18 < 0 )
-        v18 = 0;
-      v28 = terrain_76E3C8[v18];
-      while ( v28 >= v124 )
-      {
-        v29 = terrain_76E1C8[v18];
-        terrain_76D7C8[v16] = v28;
-        terrain_76D5C8[v16] = v29;
-        if ( v29 == 65535 )
-        {
-          v31 = v123;
-          terrain_76D5C8[v16] = v31;
-          break;
-        }
-        if ( !v18 )
-          break;
-        if ( terrain_76E3C8[v18] == terrain_76E1C8[v18 -1] )
-        {
-          do
-            v30 = terrain_76E1C8[v18-- -1];
-          while ( v30 == terrain_76E1C8[v18 -1] );
-        }
-        --v18;
-        --v28;
-        ++v16;
-      }
-      break;
-    }
-    case 1:
-    case 2:
-    {
-      //v116 = terrain_76DDC8[v17];
-      if ( v122 < terrain_76DDC8[v17] )
-      {
-        v106 = v122;
-        memset32(terrain_76DBC8.data(), v120 + 1, 4 * (terrain_76DDC8[v17] - v122 + 1));
-        for ( v32 = v122; v32 <= terrain_76DDC8[v17]; v32++)
-          terrain_76D9C8[v126++] = v32;
-        if ( terrain_76DDC8[v17] == terrain_76DBC8[v17 -1] )
-        {
-          do
-            v34 = terrain_76DBC8[v17-- -1];
-          while ( v34 == terrain_76DBC8[v17 -1] );
-        }
-        v16 = v126;
-        --v17;
-      }
-      if ( v17 < 0 )
-        v17 = 0;
-      v35 = terrain_76DDC8[v17];
-      v125 = terrain_76DDC8[v17];
-      while ( v35 <= v123 )
-      {
-        //v22 = terrain_76DFC8[v17] == 65535;
-        terrain_76DBC8[v16] = terrain_76DFC8[v17] + 1;
-        terrain_76D9C8[v16] = v125;
-        if ( terrain_76DFC8[v17] == 65535 )
-        {
-          terrain_76DBC8[v16] = v124 + 1;
-          break;
-        }
-        if ( !v17 )
-          break;
-        if ( terrain_76DDC8[v17] == terrain_76DBC8[v17 -1] )
-        {
-          do
-            v36 = terrain_76DBC8[v17-- -1];
-          while ( v36 == terrain_76DBC8[v17 -1] );
-        }
-        --v17;
-        ++v125;
-        v35 = v125;
-        ++v16;
-      }
-      v16 = 0;
-      v126 = 0;
-      v37 = terrain_76E1C8[v18];
-      if ( v122 < v37 )
-      {
-        v114 = v122;
-        memset32(terrain_76D7C8.data(), i, 4 * (v37 - v122 + 1));
-        do
-        {
-          v38 = v126;
-          v39 = v114;
-          ++v126;
-          ++v114;
-          terrain_76D5C8[v38] = v39;
-        }
-        while ( v114 <= terrain_76E1C8[v18] );
-        if ( terrain_76E1C8[v18] == terrain_76DFC8[v18 -1] )
-        {
-          do
-            v40 = terrain_76DFC8[v18-- -1];
-          while ( v40 == terrain_76DFC8[v18 -1] );
-        }
-        v16 = v126;
-        --v18;
-      }
-      if ( v18 < 0 )
-        v18 = 0;
-      v41 = terrain_76E1C8[v18];
-      while ( v41 <= v123 )
-      {
-        terrain_76D5C8[v16] = v41;
-        terrain_76D7C8[v16] = terrain_76E3C8[v18];
-        if ( terrain_76E3C8[v18] == 65535 )
-        {
-          terrain_76D7C8[v16] = v124;
-          break;
-        }
-        if ( !v18 )
-          break;
-        if ( terrain_76E1C8[v18] == terrain_76DFC8[v18 -1] )
-        {
-          do
-            v43 = terrain_76DFC8[v18-- -1];
-          while ( v43 == terrain_76DFC8[v18 -1] );
-        }
-        --v18;
-        ++v41;
-        ++v16;
-      }
-      break;
-    }
-    case 5:
-    case 6:
-    {
-      //v116 = terrain_76DDC8[v17];
-      if ( v119 > terrain_76DDC8[v17] )
-      {
-        v106 = v119;
-        memset32(terrain_76DBC8.data(), i, 4 * (v119 - terrain_76DDC8[v17] + 1));
-        for ( v45 = v119; v45 >= terrain_76DDC8[v17]; v45--)
-          terrain_76D9C8[v126++] = v45;
-        if ( terrain_76DDC8[v17] == terrain_76DBC8[v17 -1] )
-        {
-          do
-            v46 = terrain_76DBC8[v17-- -1];
-          while ( v46 == terrain_76DBC8[v17 -1] );
-        }
-        v16 = v126;
-        --v17;
-      }
-      if ( v17 < 0 )
-        v17 = 0;
-      v47 = terrain_76DDC8[v17];
-      v125 = terrain_76DDC8[v17];
-      while ( v47 >= v123 )
-      {
-        //v22 = terrain_76DFC8[v17] == 65535;
-        terrain_76DBC8[v16] = terrain_76DFC8[v17];
-        terrain_76D9C8[v16] = v125;
-        if ( terrain_76DFC8[v17] == 65535 )
-        {
-          terrain_76DBC8[v16] = v124;
-          break;
-        }
-        if ( !v17 )
-          break;
-        if ( terrain_76DDC8[v17] == terrain_76DBC8[v17 -1] )
-        {
-          do
-            v48 = terrain_76DBC8[v17-- -1];
-          while ( v48 == terrain_76DBC8[v17 -1] );
-        }
-        --v17;
-        --v125;
-        v47 = v125;
-        ++v16;
-      }
-      v16 = 0;
-      v49 = terrain_76E1C8[v18];
-      v126 = 0;
-      if ( v119 > v49 )
-      {
-        v125 = v119;
-        memset32(terrain_76D7C8.data(), v120 + 1, 4 * (v119 - v49 + 1));
-        do
-        {
-          v50 = v126;
-          v51 = v125--;
-          ++v126;
-          terrain_76D5C8[v50] = v51;
-        }
-        while ( v125 >= terrain_76E1C8[v18] );
-        if ( terrain_76E1C8[v18] == terrain_76DFC8[v18 -1] )
-        {
-          do
-            v52 = terrain_76DFC8[v18-- -1];
-          while ( v52 == terrain_76DFC8[v18 -1] );
-        }
-        v16 = v126;
-        --v18;
-      }
-      if ( v18 < 0 )
-        v18 = 0;
-      v53 = terrain_76E1C8[v18];
-      while ( v53 >= v123 )
-      {
-        v54 = terrain_76E3C8[v18];
-        terrain_76D5C8[v16] = v53;
-        terrain_76D7C8[v16] = v54 + 1;
-        if ( v54 == 65535 )
-        {
-          terrain_76D7C8[v16] = v124 + 1;
-          break;
-        }
-        if ( !v18 )
-          break;
-        if ( terrain_76E1C8[v18] == terrain_76DFC8[v18 -1] )
-        {
-          do
-            v55 = terrain_76DFC8[v18-- -1];
-          while ( v55 == terrain_76DFC8[v18 -1] );
-        }
-        --v18;
-        --v53;
-        ++v16;
-      }
-      break;
-    }
-    case 3:
-    case 4:
-    {
-      //v116 = terrain_76DFC8[v17];
-      if ( i < terrain_76DFC8[v17] )
-      {
-        v106 = i;
-        memset32(terrain_76D9C8.data(), v122, 4 * (terrain_76DFC8[v17] - i + 1));
-        v56 = i;
-        do
-        {
-          v57 = v126++;
-          terrain_76DBC8[v57] = v56++;
-        }
-        while ( v56 <= terrain_76DFC8[v17] );
-        if ( terrain_76DFC8[v17] == terrain_76DDC8[v17 -1] )
-        {
-          do
-            v58 = terrain_76DDC8[v17-- -1];
-          while ( v58 == terrain_76DDC8[v17 -1] );
-        }
-        v16 = v126;
-        --v17;
-      }
-      if ( v17 < 0 )
-        v17 = 0;
-      v59 = terrain_76DFC8[v17];
-      while ( 1 )
-      {
-        v125 = v59;
-        if ( v59 > v124 )
-          break;
-        terrain_76DBC8[v16] = v59;
-        //v60 = terrain_76DDC8[v17];
-        terrain_76D9C8[v16] = terrain_76DDC8[v17];
-        if ( terrain_76DDC8[v17] == 65535 )
-        {
-          terrain_76D9C8[v16] = v123;
-          break;
-        }
-        if ( !v17 )
-          break;
-        if ( terrain_76DFC8[v17] == terrain_76DDC8[v17 -1] )
-        {
-          do
-            v61 = terrain_76DDC8[v17-- -1];
-          while ( v61 == terrain_76DDC8[v17 -1] );
-        }
-        --v17;
-        v59 = v125 + 1;
-        ++v16;
-      }
-      v16 = 0;
-      v126 = 0;
-      v62 = terrain_76E3C8[v18];
-      if ( i < v62 )
-      {
-        v114 = i;
-        memset32(terrain_76D5C8.data(), v119 + 1, 4 * (v62 - i + 1));
-        do
-        {
-          v63 = v126;
-          v64 = v114;
-          ++v126;
-          ++v114;
-          terrain_76D7C8[v63] = v64;
-        }
-        while ( v114 <= terrain_76E3C8[v18] );
-        if ( terrain_76E3C8[v18] == terrain_76E1C8[v18 -1] )
-        {
-          do
-            v65 = terrain_76E1C8[v18-- -1];
-          while ( v65 == terrain_76E1C8[v18 -1] );
-        }
-        v16 = v126;
-        --v18;
-      }
-      if ( v18 < 0 )
-        v18 = 0;
-      v66 = terrain_76E3C8[v18];
-      while ( v66 <= v124 )
-      {
-        v67 = terrain_76E1C8[v18];
-        terrain_76D7C8[v16] = v66;
-        terrain_76D5C8[v16] = v67 + 1;
-        if ( terrain_76E1C8[v18] == 65535 )
-        {
-          v31 = v123 + 1;
-          terrain_76D5C8[v16] = v31;
-          break;
-        }
-        if ( !v18 )
-          break;
-        if ( terrain_76E3C8[v18] == terrain_76E1C8[v18 -1] )
-        {
-          do
-            v68 = terrain_76E1C8[v18-- -1];
-          while ( v68 == terrain_76E1C8[v18 -1] );
-        }
-        --v18;
-        ++v66;
-        ++v16;
-      }
-      break;
-    }
-    default:
-      break;
-  }
-  //v69 = v16 - 1;
-  ptr_801A08 = pVerticesSR_806210;
-  ptr_801A04 = pVerticesSR_801A10;
-  //v126 = v69;
-
-  if ( v105 && v105 != 7 && v105 != 3 && v105 != 4 )//блок
-  {
-    for ( i = v16 - 1; i >= 1; --i )
-    {
-      //v70 = i;
-      //v71 = terrain_76D7C8[i];//88
-      //v72 = terrain_76DBC8[i];//0
-      if ( terrain_76D7C8[i] < terrain_76DBC8[i] )//swap
-      {
-        terrain_76DBC8[i] = terrain_76D7C8[i];
-        terrain_76D7C8[i] = terrain_76DBC8[i];
-      }
-      //x = terrain_76DBC8[i];//0
-      v111 = 0;
-      if ( terrain_76DBC8[i] <= 0 )
-        terrain_76DBC8[i] = -terrain_76DBC8[i];
-      //v74 = terrain_76D7C8[i];
-      if ( terrain_76D7C8[i] <= 0 )
-        terrain_76D7C8[i] = -terrain_76D7C8[i];
-      uEndZ = terrain_76D7C8[i] + 2;
-      //pIndoorCameraD3D_3 = pGame->pIndoorCameraD3D;
-      //uEndZ = v75;
-      //pIndoorCameraD3D_4 = pIndoorCameraD3D_3;
-      uStartZ = terrain_76DBC8[i] - 2;
-      if ( terrain_76DBC8[i] - 2 < uEndZ )
-      {
-        v127 = 0;
-        //v79 = (v73 - 66) << 9;
-        //v116 = v77;
-        //pHeight = v79;
-        v111 = uEndZ - uStartZ;
-        for (int z = uStartZ; z < uEndZ; ++z)
-        {
-          ptr_801A08[v127].vWorldPosition.x = (-64 + terrain_76DBC8[i]) * 512;//pTerrainVertices[z * 128 + x].vWorldPosition.x = (-64 + (signed)x) * 512;
-          ptr_801A08[v127].vWorldPosition.y = (64 - terrain_76D9C8[i]) * 512;
-          ptr_801A08[v127].vWorldPosition.z = pOutdoor->GetHeightOnTerrain( z, terrain_76D9C8[i]);
-
-          ptr_801A04[v127].vWorldPosition.x = (-64 + terrain_76DBC8[i]) * 512;
-          ptr_801A04[v127].vWorldPosition.y = (63 - terrain_76D9C8[i]) * 512;
-          ptr_801A04[v127].vWorldPosition.z = pOutdoor->GetHeightOnTerrain( z, terrain_76D9C8[i] + 1);
-
-          if ( !byte_4D864C || !(pGame->uFlags & 0x80) )
-          {
-            pIndoorCameraD3D_4->ViewTransform(&ptr_801A08[v127], 1);
-            pIndoorCameraD3D_4->ViewTransform(&ptr_801A04[v127], 1);
-
-            pIndoorCameraD3D_4->Project(&ptr_801A08[v127], 1, 0);
-            pIndoorCameraD3D_4->Project(&ptr_801A04[v127], 1, 0);
-          }
-          //v79 += 512;
-          v127 ++;
-          //++v116;
-          //pHeight = v79;
-       }
-        //while ( v116 < v107 );
-      }
-      v103 = abs((int)pIndoorCamera->uMapGridCellZ - terrain_76D9C8[i]);
-      v104 = abs((int)pIndoorCamera->uMapGridCellX - terrain_76DBC8[i]);
-      if ( pRenderer->pRenderD3D )//Ritor1: do comment to test
-        Render::DrawTerrainD3D(v111, 0, v103, v104);
-        //Render::RenderTerrainD3D();
-      else
-        Render::DrawTerrainSW(v111, 0, v103, v104);
-    }
-  }
-  else
-  {
-    for ( i = v16 - 1; i >= 1; --i )
-    {
-      //v86 = i;
-      //v87 = terrain_76D5C8[i];
-      //v88 = terrain_76D9C8[i];
-      if ( terrain_76D5C8[i] < terrain_76D9C8[i] )
-      {
-        terrain_76D9C8[i] = terrain_76D5C8[i];
-        terrain_76D5C8[i] = terrain_76D9C8[i];
-      }
-      //v89 = terrain_76D9C8[i];
-      v111 = 0;
-      if ( terrain_76D9C8[i] <= 0 )
-        terrain_76D9C8[i] = -terrain_76D9C8[i];
-      //v90 = terrain_76D5C8[i];
-      if ( terrain_76D5C8[i] <= 0 )
-        terrain_76D5C8[i] = -terrain_76D5C8[i];
-      pIndoorCameraD3D_4 = pGame->pIndoorCameraD3D;
-      v107 = terrain_76D5C8[i] + 2;
-      if ( terrain_76D9C8[i] - 2 < terrain_76D5C8[i] + 2 )
-      {
-        v86 = 0;
-        //v116 = terrain_76D9C8[i] - 2;
-        v92 = (66 - terrain_76D9C8[i]) << 9;
-        //pHeight = (66 - terrain_76D9C8[i]) << 9;
-        v111 = terrain_76D5C8[i] + 2 - (terrain_76D9C8[i] - 2);
-        //do
-        for ( v116 = terrain_76D9C8[i] - 2; v116 < v107; ++v116 )
-        {
-          ptr_801A08[v86].vWorldPosition.x = (terrain_76DBC8[v86] - 64) << 9;
-          ptr_801A08[v86].vWorldPosition.y = v92;
-          ptr_801A08[v86].vWorldPosition.z = pOutdoor->GetHeightOnTerrain(terrain_76DBC8[v86], v116);
-
-          ptr_801A04[v86].vWorldPosition.x = (terrain_76DBC8[v86] - 63) << 9;
-          ptr_801A04[v86].vWorldPosition.y = v92;
-          ptr_801A04[v86].vWorldPosition.z = pOutdoor->GetHeightOnTerrain(terrain_76DBC8[v86] + 1, v116);
-          if ( !byte_4D864C || !(pGame->uFlags & 0x80) )
-          {
-           pIndoorCameraD3D_4->ViewTransform((RenderVertexSoft *)(char *)ptr_801A08 + v86, 1);
-           pIndoorCameraD3D_4->ViewTransform((RenderVertexSoft *)(char *)ptr_801A04 + v86, 1);
-           pIndoorCameraD3D_4->Project((RenderVertexSoft *)(char *)ptr_801A08 + v86, 1, 0);
-           pIndoorCameraD3D_4->Project((RenderVertexSoft *)(char *)ptr_801A04 + v86, 1, 0);
-          }
-          v92 -= 512;
-          v86 += 48;
-          //++v116;
-          //pHeight = v92;
-        }
-        //while ( v116 < v107 );
-      }
-      v103 = abs((int)pIndoorCamera->uMapGridCellX - terrain_76DBC8[v86]);
-	  v104 = abs((int)pIndoorCamera->uMapGridCellZ - terrain_76D9C8[v86]);
-	  if ( pRenderer->pRenderD3D )
-        Render::DrawTerrainD3D(v111, 1, v103, v104);
-      else
-        Render::DrawTerrainSW(v111, 1, v103, v104);
-    }
-  }
-  result = v126;
-  pODMRenderParams->field_40 = v126;
-  return result;
-}
 //----- (00482E07) --------------------------------------------------------
 signed int __fastcall sr_sub_482E07(Span *ecx0, unsigned __int16 *pRenderTarget)
 {
@@ -8528,589 +7737,7 @@ LABEL_112:
   return result;
 }
 
-//----- (0048034E) --------------------------------------------------------
-void Render::DrawTerrainD3D(int a1, int a2, int a3, int unk4)
-{
-  //int v3; // esi@1
-  int v4; // edi@1
-  int v5; // ebx@2
-  int v6; // eax@2
-  int v7; // eax@3
-  RenderVertexSoft *v8; // edi@3
-  RenderVertexSoft *v9; // ebx@4
-  RenderVertexSoft *v10; // ecx@4
-  float v11; // eax@6
-  double v12; // ST5C_8@6
-  double v13; // ST2C_8@6
-  int v14; // eax@6
-  double v15; // st7@6
-  struct Polygon *pTile; // ebx@12
-  unsigned __int16 v17; // ax@12
-  int v18; // eax@13
-  signed int v22; // eax@13
-  Vec3_float_ *norm; // eax@15
-  //double v24; // st6@17
-  double v25; // ST54_8@17
-  unsigned __int8 v26; // sf@17
-  unsigned __int8 v27; // of@17
-  double v28; // st5@19
-  double v29; // st5@19
-  double v30; // st5@19
-  double v31; // st5@19
-  struct struct8 *v32; // esi@21
-  double v3a; // st7@32
-  int v33; // edi@38
-  unsigned int v34; // ecx@47
-  char v35; // zf@47
-  unsigned int v36; // eax@50
-  int v37; // eax@54
-  //Polygon *v38; // ecx@55
-  unsigned int v39; // eax@59
-  struct Polygon *v40; // ebx@62
-  unsigned __int16 pTileBitmapsID; // ax@62
-  int v42; // eax@63
-  LightmapBuilder *v43; // ecx@63
-  int v44; // eax@63
-  int v45; // eax@63
-  int v46; // eax@63
-  signed int v47; // eax@63
-  Vec3_float_ *v48; // eax@65
-  double v49; // st6@67
-  double v50; // ST4C_8@67
-  double v51; // st5@71
-  double v52; // st5@71
-  double v53; // st5@71
-  double v54; // st7@84
-  unsigned int v55; // ecx@98
-  unsigned int v56; // eax@101
-  int v57; // eax@105
-  unsigned int v58; // eax@109
-  struct Polygon *v59; // esi@112
-  unsigned __int16 v60; // ax@112
-  int v61; // eax@113
-  signed int v62; // eax@113
-  Vec3_float_ *v63; // eax@114
-  double v64; // st6@116
-  double v65; // ST3C_8@116
-  double v66; // st5@120
-  double v67; // st5@120
-  double v68; // st5@120
-  double v69; // st7@133
-  int v70; // edi@138
-  struct Polygon *v71; // esi@147
-  unsigned int v72; // ecx@147
-  unsigned int v73; // eax@150
-  int v74; // eax@154
-  unsigned int v75; // eax@158
-  //unsigned int v76; // [sp-10h] [bp-E0h]@61
-  int v77; // [sp-Ch] [bp-DCh]@61
-  IDirect3DTexture2 *v78; // [sp-8h] [bp-D8h]@61
-  //int v79; // [sp-4h] [bp-D4h]@61
-  bool v80; // [sp+0h] [bp-D0h]@59
-  bool v81; // [sp+0h] [bp-D0h]@109
-  int v82; // [sp+54h] [bp-7Ch]@1
-  int v83; // [sp+60h] [bp-70h]@1
-  int v84; // [sp+6Ch] [bp-64h]@1
-  int v85; // [sp+70h] [bp-60h]@63
-  float a4; // [sp+74h] [bp-5Ch]@73
-  float v87; // [sp+78h] [bp-58h]@122
-  int v88; // [sp+7Ch] [bp-54h]@1
-  int v89; // [sp+80h] [bp-50h]@6
-  int v93; // [sp+90h] [bp-40h]@2
-  int X; // [sp+94h] [bp-3Ch]@1
-  float v95; // [sp+98h] [bp-38h]@21
-  LightmapBuilder *v96; // [sp+9Ch] [bp-34h]@73
-  int v97; // [sp+A0h] [bp-30h]@6
-  int sX; // [sp+A4h] [bp-2Ch]@6
-  unsigned int uNumVertices; // [sp+A8h] [bp-28h]@73
-  int v100; // [sp+ACh] [bp-24h]@122
-  int sY; // [sp+B0h] [bp-20h]@6
-  RenderVertexSoft *v102; // [sp+B4h] [bp-1Ch]@3
-  unsigned int a5; // [sp+B8h] [bp-18h]@21
-  RenderVertexSoft *v101; // [sp+BCh] [bp-14h]@6
-  Vec3_float_ *v99; // [sp+C0h] [bp-10h]@17
-  RenderVertexSoft *pVertices; // [sp+C4h] [bp-Ch]@6
-  RenderVertexSoft *pVertices2; // [sp+C8h] [bp-8h]@6
-  char v108; // [sp+CFh] [bp-1h]@36
-  float thisd; // [sp+D8h] [bp+8h]@6
-  float thise; // [sp+D8h] [bp+8h]@6
-  float thisf; // [sp+D8h] [bp+8h]@17
-  IndoorCameraD3D *thisa; // [sp+D8h] [bp+8h]@23
-  float thisg; // [sp+D8h] [bp+8h]@67
-  IndoorCameraD3D *thisb; // [sp+D8h] [bp+8h]@75
-  float thish; // [sp+D8h] [bp+8h]@116
-  IndoorCameraD3D *thisc; // [sp+D8h] [bp+8h]@124
-  char this_3; // [sp+DBh] [bp+Bh]@30
-  char this_3a; // [sp+DBh] [bp+Bh]@82
-  char this_3b; // [sp+DBh] [bp+Bh]@131
 
-  __debugbreak();
-  static stru154 static_sub_0048034E_stru_154;
-  static stru154 stru_76D5A8;
-  //v3 = a1;
-  v82 = a2;
-  v83 = a3;
-  X = abs(unk4);
-  v4 = 0;
-  v88 = 0;
-  v84 = a1 - 1;
-  if ( a1 - 1 > 0 )
-  {
-    while ( 1 )
-    {
-      v5 = abs(X);//v5 = 13108
-      v6 = abs(v83);//v6 = 13108
-      --X;
-      //__debugbreak(); // uncoment & refactor following large if
-      v93 = (int)&terrain_76E5C8[(v5 << 7) + v6];
-      if ( !v93->field_0 || ((v7 = 48 * v4, v8 = &pVerticesSR_806210[v4], a2 = v8, !v82) ? (v9 = (RenderVertexSoft *)((char *)&pVerticesSR_801A10 + v7),
-                                                                       v10 = &pVerticesSR_806210[1] + v7) : (v9 = &pVerticesSR_806210[1] + v7, v10 = (RenderVertexSoft *)((char *)&pVerticesSR_801A10 + v7)),
-             ((a8 = v9,
-               pVertices = &pVerticesSR_801A10[1] + v7,
-               v11 = v8->vWorldPosition.x,
-               v101 = v10,
-               v12 = v11 + 6.755399441055744e15,
-               sX = LODWORD(v12),
-               v13 = v8->vWorldPosition.y + 6.755399441055744e15,
-               sY = LODWORD(v13),
-               thisd = (v10->vWorldPosition.x + v8->vWorldPosition.x) * 0.5,
-               v14 = WorldPosToGridCellX(floorf(thisd + 0.5f)),//maybe current camera position X
-               v15 = v9->vWorldPosition.y + v8->vWorldPosition.y,
-               v89 = v14,
-               thise = v15 * 0.5,
-               _this = (LightmapBuilder *)WorldPosToGridCellZ(floorf(thisd + 0.5f)),//maybe current camera position Z
-               WorldPosToGridCellX(sX),
-               WorldPosToGridCellZ(sY),
-               !byte_4D864C)
-           || !(pGame->uFlags & 0x80))
-          && !_481EFA_clip_terrain_poly(v8, v9, v101, pVertices, 1)) )
-      if ( !&terrain_76E5C8[(v5 << 7) + v6] )
-        goto LABEL_162
-      v8 = &pVerticesSR_806210[v4];
-      //pVertices2 = &pVerticesSR_801A10[v4 + 1];
-      //v102 = v8;
-      if (!v82)
-      {
-        pVertices = &pVerticesSR_801A10[v4];
-        v101 = &pVerticesSR_806210[v4 + 1];
-      }
-      else
-      {
-        pVertices = &pVerticesSR_801A10[v4 + 1];
-        v101 = &pVerticesSR_806210[v4];
-      }
-      sX = floorf(v8->vWorldPosition.x + 0.5f);
-      sY = floorf(v8->vWorldPosition.z + 0.5f);
-      v89 = WorldPosToGridCellX(floorf((v101->vWorldPosition.x + v8->vWorldPosition.x) / 2 + 0.5f));
-      v97 = WorldPosToGridCellZ(floorf((pVertices->vWorldPosition.z + v8->vWorldPosition.z) / 2 + 0.5f));
-      /*WorldPosToGridCellX(sX);
-      WorldPosToGridCellZ(sY);
-      if ((!byte_4D864C || !(pGame->uFlags & 0x80)) && !_481EFA_clip_terrain_poly(v8, pVertices, v101, pVertices2, 1))
-        if ( v8->vWorldPosition.y != pVertices->vWorldPosition.y || pVertices->vWorldPosition.y != pVertices2->vWorldPosition.y 
-             || pVertices2->vWorldPosition.y != v101->vWorldPosition.y )
-          break;
-        pTile = &array_77EC08[pODMRenderParams->uNumPolygons];
-        pTile->uTileBitmapID = pOutdoor->GetTileTexture(sX, sY);
-        if ( pTile->uTileBitmapID != -1 )
-        {
-          pTile->flags = 0x8010 |pOutdoor->GetSomeOtherTileInfo(sX, sY);
-          pTile->field_32 = 0;
-          pTile->field_59 = 1;
-          pTile->terrain_grid_x = (char)v97;
-          __debugbreak(); // warning C4700: uninitialized local variable 'v93' used
-          pTile->field_34 = *(_WORD *)(v93 + 2);
-          pTile->terrain_grid_z = v89;
-          v22 = pTerrainNormalIndices[2 * (v97 + 128 * v89) + 1];
-          if ( v22 < 0 || v22 > uNumTerrainNormals - 1 )
-            norm = 0;
-          else
-            norm = &pTerrainNormals[v22];
-          thisf = 20.0 - ( -(((float)pOutdoor->vSunlight.x / 65536.0) * norm->x) -
-                            (((float)pOutdoor->vSunlight.y / 65536.0) * norm->y) -
-                            (((float)pOutdoor->vSunlight.z / 65536.0) * norm->z)) * 20.0;
-          //v25 = thisf + 6.7553994e15;
-          //v27 = pODMRenderParams->uNumPolygons > 1999;
-          //v26 = pODMRenderParams->uNumPolygons - 1999 < 0;
-          pTile->dimming_level = floorf(thisf + 0.5f);
-          if ( pODMRenderParams->uNumPolygons >= 1999 )
-            return;
-          ++pODMRenderParams->uNumPolygons;
-          //if ( !_481FC9_terrain(v8, pVertices, v101, v16) )//Ritor1: It's temporary
-          //goto LABEL_126;
-          //{
-            //--pODMRenderParams->uNumPolygons;
-            //goto LABEL_162;
-          //}
-          __debugbreak(); // warning C4700: uninitialized local variable 'v102' used
-          memcpy(&array_50AC10[0], v102, 0x30u);
-          array_50AC10[0]._rhw = 1.0 / (v102->vWorldViewPosition.x + 0.0000001000000011686097);
-          array_50AC10[0].u = 0.0;
-          array_50AC10[0].v = 0.0;
-          memcpy(&array_50AC10[1], pVertices, sizeof(array_50AC10[1]));
-          array_50AC10[1]._rhw = 1.0 / (pVertices->vWorldViewPosition.x + 0.0000001000000011686097);
-          array_50AC10[1].u = 0.0;
-          array_50AC10[1].v = 1.0;
-          __debugbreak(); // warning C4700: uninitialized local variable 'pVertices2' used
-          memcpy(&array_50AC10[2], pVertices2, sizeof(array_50AC10[2]));
-          array_50AC10[2]._rhw = 1.0 / (pVertices2->vWorldViewPosition.x + 0.0000001000000011686097);
-          array_50AC10[2].u = 1.0;
-          array_50AC10[2].v = 1.0;
-          memcpy(&array_50AC10[3], v101, sizeof(array_50AC10[3]));
-          array_50AC10[3]._rhw = 1.0 / (v101->vWorldViewPosition.x + 0.0000001000000011686097);
-          array_50AC10[3].u = 1.0;
-          array_50AC10[3].v = 0.0;
-          if ( !(byte_76D5C0 & 1) )
-          {
-            byte_76D5C0 |= 1u;
-            stru154(stru_76D5A8);
-            atexit(loc_481199);
-          }
-          v32 = (struct8 *)array_50AC10;
-          v97 = (int)pGame->pLightmapBuilder;
-          pGame->pLightmapBuilder->StackLights_TerrainFace(norm, &v95, array_50AC10, 4, 1);
-          pDecalBuilder->_49BE8A(pTile, norm, &v95, array_50AC10, 4, 1);
-          a5 = 4;
-          if ( byte_4D864C && pGame->uFlags & 0x80 )
-          {
-            thisa = pGame->pIndoorCameraD3D;
-            if ( pGame->pIndoorCameraD3D->_4371C3(array_50AC10, &a5, 0) == 1 && !a5 )
-              goto LABEL_162;
-            thisa->ViewTransform(array_50AC10, a5);
-            thisa->Project(array_50AC10, a5, 0);
-          }
-          this_3 = v102->vWorldViewPosition.x < 8.0 || pVertices->vWorldViewPosition.x < 8.0
-              || v101->vWorldViewPosition.x < 8.0 || pVertices2->vWorldViewPosition.x < 8.0;
-          v3a = (double)pODMRenderParams->shading_dist_mist;
-          v108 = v3a < v102->vWorldViewPosition.x || v3a < pVertices->vWorldViewPosition.x
-              || v3a < v101->vWorldViewPosition.x || v3a < pVertices2->vWorldViewPosition.x;
-          v33 = 0;
-          pGame->pLightmapBuilder->std__vector_000004_size = 0;
-          if ( stru_F8AD28.uNumLightsApplied > 0 || pDecalBuilder->uNumDecals > 0 )
-          {
-            if ( this_3 )
-              v33 = 3;
-            else
-              v33 = v108 != 0 ? 5 : 0;
-            static_sub_0048034E_stru_154.ClassifyPolygon(norm, v95);
-            if ( pDecalBuilder->uNumDecals > 0 )
-              pDecalBuilder->ApplyDecals(31 - pTile->dimming_level, 4, &static_sub_0048034E_stru_154, a5, array_50AC10, 0, *(float *)&v33, -1);
-          }
-          if ( stru_F8AD28.uNumLightsApplied > 0 )
-            pGame->pLightmapBuilder->ApplyLights(&stru_F8AD28, &static_sub_0048034E_stru_154, a5, array_50AC10, 0, v33);
-          v34 = a5;
-          //v35 = byte_4D864C == 0;
-          pTile->uNumVertices = a5;
-          if ( !byte_4D864C || ~pGame->uFlags & 0x80 )
-          {
-            if ( this_3 )
-            {
-              v36 = ODM_NearClip(v34);
-              pTile->uNumVertices = v36;
-              ODMRenderParams::Project(v36);
-            }
-            if ( v108 )
-            {
-              v36 = sr_424EE0_MakeFanFromTriangle(v34);
-              pTile->uNumVertices = v36;
-              ODMRenderParams::Project(v36);
-            }
-          }
-          //v37 = *(int *)&v16->flags;
-          if ( ~pTile->flags & 1 )
-          {
-            if ( pTile->flags & 2 && pTile->uTileBitmapID == pRenderer->hd_water_tile_id )
-            {
-              v80 = false;
-              v39 = pRenderer->pHDWaterBitmapIDs[pRenderer->hd_water_current_frame];
-            }
-            else
-            {
-              v39 = pTile->uTileBitmapID;
-              v80 = true;
-            }
-            //v79 = 0;
-            //v78 = pBitmaps_LOD->pHardwareTextures[v39];
-            pTile->pTexture = (Texture *)&pBitmaps_LOD->pHardwareTextures[v39];// Ritor1: It's temporary
-            v77 = (int)pTile;
-            //v76 = v16->uNumVertices;
-//LABEL_161:
-            pRenderer->DrawTerrainPolygon(pTile->uNumVertices, pTile, pBitmaps_LOD->pHardwareTextures[v39], false, v80);
-            goto LABEL_162;
-          }
-LABEL_56:
-          pTile->DrawBorderTiles();
-        }
-LABEL_162:
-        v4 = v88 + 1;
-        if ( ++v88 >= v84 )
-          return;
-      }
-      v40 = &array_77EC08[pODMRenderParams->uNumPolygons];
-      v40->uTileBitmapID = pOutdoor->GetTileTexture(sX, sY);
-      if ( v40->uTileBitmapID == -1 )
-        goto LABEL_162;
-      v42 = pOutdoor->GetSomeOtherTileInfo(sX, sY);
-      BYTE1(v42) |= 0x80u;
-      v43 = pGame->pLightmapBuilder;
-      *(int *)&v40->flags = v42;
-      v44 = v93;
-      v40->field_59 = 1;
-      v40->terrain_grid_x = (char)v43;
-      v40->field_34 = *(_WORD *)(v44 + 2);
-      v45 = v89;
-      v40->terrain_grid_z = v89;
-      v46 = 4 * ((char)v43 + (v45 << 7));
-      v85 = v46;
-      v47 = *(unsigned __int16 *)((char *)pTerrainNormalIndices + v46 + 2);//    v47 = pTerrainNormalIndices[v46 + 1];
-      if ( v47 < 0 || v47 > (signed int)(uNumTerrainNormals - 1) )
-        v48 = 0;
-      else
-        v48 = &pTerrainNormals[v47];
-      v49 = v92 * v48->y;
-      //v99 = v48;
-      thisg = 20.0 - (-v49 - v91 * v48->z - v90 * v48->x) * 20.0;
-      v50 = thisg + 6.755399441055744e15;
-      v40->dimming_level = LOBYTE(v50);
-      if ( LOBYTE(v50) < 0 )
-        v40->dimming_level = 0;
-      if ( pODMRenderParams->uNumPolygons >= 1999 )
-        return;
-      ++pODMRenderParams->uNumPolygons;
-      if ( !_481FC9_terrain(pVertices, pVertices2, v8, v40) ) // Ritor1: It's temporary
-        //goto LABEL_77;
-        {
-          --pODMRenderParams->uNumPolygons;
-          goto LABEL_112;
-        }
-      memcpy(&array_50AC10[0], v102, 0x30u);
-      array_50AC10[0]._rhw = 1.0 / (v102->vWorldViewPosition.x + 0.0000001000000011686097);
-      array_50AC10[0].u = 0.0;
-      array_50AC10[0].v = 0.0;
-      memcpy(&array_50AC10[1], pVertices, sizeof(array_50AC10[1]));
-      array_50AC10[1]._rhw = 1.0 / pVertices->vWorldViewPosition.x + 0.0000001000000011686097;
-      array_50AC10[1].u = 0.0;
-      array_50AC10[1].v = 1.0;
-      memcpy(&array_50AC10[2], pVertices2, sizeof(array_50AC10[2]));
-      array_50AC10[2]._rhw = 1.0 / pVertices2->vWorldViewPosition.x + 0.0000001000000011686097;
-      array_50AC10[2].u = 1.0;
-      array_50AC10[2].v = 1.0;
-      static stru154 static_sub_0048034E_stru_76D590;
-      static bool __init_flag2 = false;
-      if (!__init_flag2)
-      {
-        __init_flag2 = true;
-        stru154::stru154(&static_sub_0048034E_stru_76D590);
-      }
-      if ( !(byte_76D5C0 & 2) )
-      {
-        byte_76D5C0 |= 2;
-        Polygon(stru_76D590);
-        atexit(loc_48118F);
-      }
-      v96 = pGame->pLightmapBuilder;
-      pGame->pLightmapBuilder->StackLights_TerrainFace(v48, (float *)&a4, array_50AC10, 3, 0);
-      pDecalBuilder->_49BE8A(v40, v48, &a4, array_50AC10, 3, 0);
-      uNumVertices = 3;
-      if ( byte_4D864C && pGame->uFlags & 0x80 )
-      {
-        thisb = pGame->pIndoorCameraD3D;
-        if ( pGame->pIndoorCameraD3D->_4371C3(array_50AC10, &uNumVertices, 0) == 1 && !uNumVertices )
-        {
-//LABEL_77:
-          --pODMRenderParams->uNumPolygons;
-          goto LABEL_112;
-        }
-        thisb->ViewTransform(array_50AC10, uNumVertices);
-        thisb->Project(array_50AC10, uNumVertices, 0);
-      }
-      this_3a = v102->vWorldViewPosition.x < 8.0 || pVertices->vWorldViewPosition.x < 8.0 || pVertices2->vWorldViewPosition.x < 8.0;
-      v54 = (double)pODMRenderParams->shading_dist_mist;
-      v108 = v54 < v102->vWorldViewPosition.x || v54 < pVertices->vWorldViewPosition.x || v54 < pVertices2->vWorldViewPosition.x;
-      pVertices = 0;
-      v96->std__vector_000004_size = 0;
-      if ( stru_F8AD28.uNumLightsApplied > 0 || pDecalBuilder->uNumDecals > 0 )
-      {
-        if ( this_3a )
-          pVertices = (RenderVertexSoft *)3;
-        else
-          pVertices = (RenderVertexSoft *)(v108 != 0 ? 5 : 0);
-        //a8 = (RenderVertexSoft *)(this_3a ? 3 : v108 != 0 ? 5 : 0);
-        static_sub_0048034E_stru_76D590.ClassifyPolygon(v48, *(float *)&a4);
-        if ( pDecalBuilder->uNumDecals > 0 )
-          pDecalBuilder->ApplyDecals(31 - v40->dimming_level, 4, &static_sub_0048034E_stru_76D590, uNumVertices, array_50AC10, 0, (char)pVertices, -1);
-      }
-      if ( stru_F8AD28.uNumLightsApplied > 0 )
-        v96->ApplyLights(&stru_F8AD28, &static_sub_0048034E_stru_76D590, uNumVertices, array_50AC10, 0, (char)pVertices);
-      v55 = uNumVertices;
-      //v35 = byte_4D864C == 0;
-      v40->uNumVertices = uNumVertices;
-      if ( !byte_76D5C0 || !(pGame->uFlags & 0x80) )
-      {
-        if ( this_3a )
-        {
-          v56 = ODM_NearClip(v55);
-        }
-        else
-        {
-          if ( !v108 )
-            goto LABEL_105;
-          v56 = sr_424EE0_MakeFanFromTriangle(v55);
-        }
-        v40->uNumVertices = v56;
-        ODMRenderParams::Project(v56);
-      }
-LABEL_105:
-      v57 = *(int *)&v40->flags;
-      if ( BYTE1(v57) & 1 )
-      {
-        v40->DrawBorderTiles();
-      }
-      else
-      {
-        if ( v57 & 2 && v40->uTileBitmapID == pRenderer->hd_water_tile_id )
-        {
-          v81 = false;
-          v58 = pRenderer->pHDWaterBitmapIDs[pRenderer->hd_water_current_frame];
-        }
-        else
-        {
-          v58 = v40->uTileBitmapID;
-          v81 = true;
-        }
-        pRenderer->DrawTerrainPolygon(v40->uNumVertices, v40, pBitmaps_LOD->pHardwareTextures[v58], 0, v81);
-      }
-LABEL_112:
-      v59 = &array_77EC08[pODMRenderParams->uNumPolygons];
-      //a8 = (RenderVertexSoft *)&array_77EC08[pODMRenderParams->uNumPolygons];
-      v59->uTileBitmapID = pOutdoor->GetTileTexture(sX, sY);
-      if ( v59->uTileBitmapID  == -1 )
-        goto LABEL_162;
-      *(int *)&v59->flags = pOutdoor->GetSomeOtherTileInfo(sX, sY);
-      v61 = v93;
-      v59->field_59 = 1;
-      v59->field_34 = *(_WORD *)(v61 + 2);
-      v59->terrain_grid_z = v89;
-      v59->terrain_grid_x = v97;
-      v62 = *(unsigned __int16 *)((char *)pTerrainNormalIndices + v85);
-      if ( v62 > (signed int)(uNumTerrainNormals - 1) )
-        v63 = 0;
-      else
-        v63 = &pTerrainNormals[v62];
-      v64 = v92 * v63->y;
-      //v99 = v63;
-      thish = 20.0 - (-v64 - v91 * v63->y - v90 * v63->x) * 20.0;
-      v59->dimming_level = floorf(thish + 0.5f);
-      if ( v59->dimming_level < 0 )
-        v59->dimming_level = 0;
-      if ( pODMRenderParams->uNumPolygons >= 1999 )
-        return;
-      ++pODMRenderParams->uNumPolygons;
-      if ( !_481FC9_terrain(v101, v102, pVertices2, v59) )
-      {
-//LABEL_126:
-        --pODMRenderParams->uNumPolygons;
-        goto LABEL_162;
-      }
-      memcpy(&array_50AC10[0], v102, 0x30u);
-      array_50AC10[0]._rhw = 1.0 / (v102->vWorldViewPosition.x + 0.0000001000000011686097);
-      array_50AC10[0].u = 0.0;
-      array_50AC10[0].v = 0.0;
-      memcpy(&array_50AC10[1], pVertices2, sizeof(array_50AC10[1]));
-      array_50AC10[1]._rhw = 1.0 / pVertices2->vWorldViewPosition.x + 0.0000001000000011686097;
-      array_50AC10[1].u = 1.0;
-      array_50AC10[1].v = 1.0;
-      memcpy(&array_50AC10[2], v101, sizeof(array_50AC10[2]));
-      array_50AC10[2]._rhw = 1.0 / v101->vWorldViewPosition.x + 0.0000001000000011686097;
-      array_50AC10[2].u = 1.0;
-      array_50AC10[2].v = 0.0;
-      static stru154 static_sub_0048034E_stru_76D578;
-      static bool __init_flag1 = false;
-      if (!__init_flag1)
-      {
-        __init_flag1 = true;
-        stru154::stru154(&static_sub_0048034E_stru_76D578);
-      }
-      v96 = pGame->pLightmapBuilder;
-      pGame->pLightmapBuilder->StackLights_TerrainFace(v63, &v87, array_50AC10, 3, 1);
-      pDecalBuilder->_49BE8A(v40, v63, &v87, array_50AC10, 3, 1);
-      v100 = 3;
-      if ( byte_4D864C && pGame->uFlags & 0x80 )
-      {
-        thisc = pGame->pIndoorCameraD3D;
-        if ( pGame->pIndoorCameraD3D->_4371C3(array_50AC10, (unsigned int *)&v100, 0) == 1 && !v100 )
-          //goto LABEL_126;
-        {
-          --pODMRenderParams->uNumPolygons;
-          goto LABEL_162;
-        }
-        thisc->ViewTransform(array_50AC10, v100);
-        thisc->Project(array_50AC10, v100, 0);
-      }
-      this_3b = v102->vWorldViewPosition.x < 8.0 || pVertices2->vWorldViewPosition.x < 8.0
-           || v101->vWorldViewPosition.x < 8.0;
-      v69 = (double)pODMRenderParams->shading_dist_mist;
-      v108 = v69 < v102->vWorldViewPosition.x || v69 < pVertices2->vWorldViewPosition.x || v69 < v101->vWorldViewPosition.x;
-      v70 = 0;
-      v96->std__vector_000004_size = 0;
-      if ( stru_F8AD28.uNumLightsApplied > 0 || pDecalBuilder->uNumDecals > 0 )
-      {
-        if ( this_3b )
-          v70 = 3;
-        else
-          v70 = v108 != 0 ? 5 : 0;
-        static_sub_0048034E_stru_76D578.ClassifyPolygon(v63, v87);
-        if ( pDecalBuilder->uNumDecals > 0 )
-          pDecalBuilder->ApplyDecals(31 - v40->dimming_level, 4, &static_sub_0048034E_stru_76D578, v100, array_50AC10, 0, v70, -1);
-      }
-      if ( stru_F8AD28.uNumLightsApplied > 0 )
-        v96->ApplyLights(&stru_F8AD28, &static_sub_0048034E_stru_76D578, v100, array_50AC10, 0, v70);
-      v71 = v59;
-      v72 = v100;
-      //v35 = byte_4D864C == 0;
-      v59->uNumVertices = v100;//???
-      if ( !byte_4D864C && pGame->uFlags & 0x80 )
-        goto LABEL_154;
-      if ( this_3b )
-      {
-        v73 = ODM_NearClip(v72);
-      }
-      else
-      {
-        if ( !v108 )
-        {
-LABEL_154:
-          v74 = v71->flags;
-          if ( !(BYTE1(v74) & 1) )
-          {
-            if ( v74 & 2 && v71->uTileBitmapID == pRenderer->hd_water_tile_id )
-            {
-              v80 = false;
-              v75 = pRenderer->pHDWaterBitmapIDs[pRenderer->hd_water_current_frame];
-            }
-            else
-            {
-              v75 = v71->uTileBitmapID;
-              v80 = true;
-            }
-            //v79 = 0;
-            v78 = pBitmaps_LOD->pHardwareTextures[v75];
-            v71->pTexture = (Texture *)&pBitmaps_LOD->pHardwareTextures[v75];// Ritor1: It's temporary
-            //v77 = (int)v71;
-            //v76 = v71->uNumVertices;
-            //goto LABEL_161;
-            pRenderer->DrawTerrainPolygon(v71->uNumVertices, (Polygon *)v71, v78, 0, v80);
-            goto LABEL_162;
-          }
-          v38 = (Polygon *)v71;
-          goto LABEL_56;
-        }
-        v73 = sr_424EE0_MakeFanFromTriangle(v72);
-      }
-      v71->uNumVertices = v73;
-      ODMRenderParams::Project(v73);
-      goto LABEL_154;
-    }
-  }
 //----- (00424579) --------------------------------------------------------
 int __fastcall sr_424579(int uFaceID, stru320 *a2)
 {
@@ -12282,7 +10909,7 @@ void Abortf(const char *Format, ...)
     pRenderer->ChangeBetweenWinFullscreenModes();
   vsprintf(pTmpBuf.data(), Format, va);
   if ( pMouse )
-    pMouse->Activate(0);
+    pMouse->ChangeActivation(0);
   ClipCursor(0);
   MessageBoxA(0, pTmpBuf.data(), "Error", 0x30u);
   Game_DeinitializeAndTerminate(1);
@@ -12441,9 +11068,6 @@ struct Allocator
   unsigned int bUseBigBuffer;
   void *pBigBufferAligned;
 };
-#ifdef _MSC_VER
-#define _CRT_SECURE_NO_WARNINGS
-#endif
 
 #include <string.h>
 #include <stdio.h>
@@ -13196,6 +11820,269 @@ bool Render::UsingDirect3D()
   return bUserDirect3D == 0;
 }
 
+
+//----- (004A46E6) --------------------------------------------------------
+int __fastcall sr_4A46E6_draw_particle_segment(unsigned int x, signed int y, signed int _z, int a4, unsigned int lightColor)
+{
+  int v5; // eax@1
+  int z; // eax@1
+  unsigned int v7; // eax@9
+  unsigned int v8; // ecx@9
+  int v9; // eax@9
+  unsigned int v10; // eax@10
+  int *v11; // esi@10
+  int *v12; // edi@10
+  int v13; // ecx@10
+  int v14; // edx@10
+  unsigned int v15; // eax@22
+  int *v16; // esi@22
+  int *v17; // edi@22
+  int v18; // ecx@22
+  int v19; // edx@22
+  unsigned __int16 *pTarget; // [sp+Ch] [bp-8h]@9
+  int *pTargetZ; // [sp+10h] [bp-4h]@9
+  unsigned int v22; // [sp+1Ch] [bp+8h]@9
+  signed int v23; // [sp+20h] [bp+Ch]@1
+
+  v5 = a4;
+  v23 = _z >> 16;
+  z = x + v5;
+  if ( z >= (signed int)pViewport->uViewportTL_X
+    && (signed int)x <= (signed int)pViewport->uViewportBR_X
+    && y >= (signed int)pViewport->uViewportTL_Y
+    && y <= (signed int)pViewport->uViewportBR_Y )
+  {
+    if ( (signed int)x < (signed int)pViewport->uViewportTL_X )
+      x = pViewport->uViewportTL_X;
+    if ( z > (signed int)pViewport->uViewportBR_X )
+      z = pViewport->uViewportBR_X;
+    pTarget = &pRenderer->pTargetSurface[x + y * pRenderer->uTargetSurfacePitch];
+    v22 = z - x;
+    pTargetZ = &pRenderer->pActiveZBuffer[x + 640 * y];
+    v7 = lightColor >> 3;
+    v8 = lightColor & 0xF0;
+    v9 = v7 & 0x1E0000;
+    if ( pRenderer->uTargetGBits == 5 )
+    {
+      v10 = (v8 | (((unsigned __int16)(lightColor & 0xF000) | (unsigned int)v9) >> 3)) >> 4;
+      v11 = (int *)pTarget;
+      v12 = pTargetZ;
+      v13 = v22;
+      v14 = (v10 << 16) | v10;
+      z = (unsigned __int8)pTarget & 2;
+      if ( (unsigned __int8)pTarget & 2 )
+      {
+        z = (unsigned int)*pTargetZ >> 16;
+        if ( z > v23 )
+        {
+          z = v14 + ((*pTarget & 0x7BDEu) >> 1);
+          *pTarget = z;
+        }
+        v13 = v22 - 1;
+        v11 = (int *)(pTarget + 1);
+        v12 = pTargetZ + 1;
+      }
+      while ( v13 != 1 )
+      {
+        if ( v13 < 1 )
+          return z;
+        z = (unsigned int)*v12 >> 16;
+        if ( z <= v23 )
+        {
+          v13 -= 2;
+          ++v11;
+          v12 += 2;
+        }
+        else
+        {
+          v12 += 2;
+          z = v14 + ((*v11 & 0x7BDE7BDEu) >> 1);
+          v13 -= 2;
+          *v11 = z;
+          ++v11;
+        }
+      }
+      z = (unsigned int)*v12 >> 16;
+      if ( z > v23 )
+      {
+        z = v14 + ((*(short *)v11 & 0x7BDEu) >> 1);
+        *(short *)v11 = z;
+      }
+    }
+    else
+    {
+      v15 = (v8 | (((unsigned __int16)(lightColor & 0xF800) | (unsigned int)v9) >> 2)) >> 4;
+      v16 = (int *)pTarget;
+      v17 = pTargetZ;
+      v18 = v22;
+      v19 = (v15 << 16) | v15;
+      z = (unsigned __int8)pTarget & 2;
+      if ( (unsigned __int8)pTarget & 2 )
+      {
+        z = (unsigned int)*pTargetZ >> 16;
+        if ( z > v23 )
+        {
+          z = v19 + ((*pTarget & 0xF7DEu) >> 1);
+          *pTarget = z;
+        }
+        v18 = v22 - 1;
+        v16 = (int *)(pTarget + 1);
+        v17 = pTargetZ + 1;
+      }
+      while ( v18 != 1 )
+      {
+        if ( v18 < 1 )
+          return z;
+        z = (unsigned int)*v17 >> 16;
+        if ( z <= v23 )
+        {
+          v18 -= 2;
+          ++v16;
+          v17 += 2;
+        }
+        else
+        {
+          v17 += 2;
+          z = v19 + ((*v16 & 0xF7DEF7DEu) >> 1);
+          v18 -= 2;
+          *v16 = z;
+          ++v16;
+        }
+      }
+      z = (unsigned int)*v17 >> 16;
+      if ( z > v23 )
+      {
+        z = v19 + ((*(short *)v16 & 0xF7DEu) >> 1);
+        *(short *)v16 = z;
+      }
+    }
+  }
+  return z;
+}
+
+
+//----- (004A57E9) --------------------------------------------------------
+void Present_ColorKey()
+{
+  HRESULT v0; // eax@3
+  HRESULT v1; // eax@3
+  HRESULT v2; // eax@3
+  HRESULT v3; // eax@3
+  HRESULT v4; // eax@3
+  RECT a2; // [sp+4h] [bp-14h]@3
+  //CheckHRESULT_stru0 this; // [sp+14h] [bp-4h]@3
+
+  if ( !pRenderer->uNumSceneBegins )
+  {
+    if ( pRenderer->using_software_screen_buffer )
+    {
+      a2.bottom = pViewport->uViewportTL_Y;
+      a2.left = 0;
+      a2.top = 0;
+      a2.right = 640;
+      ErrD3D(pRenderer->pBackBuffer4->BltFast(0, 0, pRenderer->pColorKeySurface4, &a2, 16u));
+      a2.right = 640;
+      a2.left = 0;
+      a2.top = pViewport->uViewportBR_Y + 1;
+      a2.bottom = 480;
+      ErrD3D(pRenderer->pBackBuffer4->BltFast(
+             0,
+             pViewport->uViewportBR_Y + 1,
+             pRenderer->pColorKeySurface4,
+             &a2,
+             16u));
+      a2.right = pViewport->uViewportTL_X;
+      a2.bottom = pViewport->uViewportBR_Y + 1;
+      a2.left = 0;
+      a2.top = pViewport->uViewportTL_Y;
+      ErrD3D(pRenderer->pBackBuffer4->BltFast(
+             0,
+             pViewport->uViewportTL_Y,
+             pRenderer->pColorKeySurface4,
+             &a2,
+             16u));
+      a2.left = pViewport->uViewportBR_X;
+      a2.top = pViewport->uViewportTL_Y;
+      a2.right = 640;
+      a2.bottom = pViewport->uViewportBR_Y + 1;
+      ErrD3D(pRenderer->pBackBuffer4->BltFast(
+             pViewport->uViewportBR_X,
+             pViewport->uViewportTL_Y,
+             pRenderer->pColorKeySurface4,
+             &a2,
+             16u));
+      a2.right = pViewport->uViewportBR_X;
+      a2.bottom = pViewport->uViewportBR_Y + 1;
+      a2.left = pViewport->uViewportTL_X;
+      a2.top = pViewport->uViewportTL_Y;
+      ErrD3D(pRenderer->pBackBuffer4->BltFast(
+             pViewport->uViewportTL_X,
+             pViewport->uViewportTL_Y,
+             pRenderer->pColorKeySurface4,
+             &a2,
+             17u));
+    }
+  }
+}
+
+
+//----- (004A48E4) --------------------------------------------------------
+int Render::MakeParticleBillboardAndPush_BLV_Software(int screenSpaceX, int screenSpaceY, int z, int lightColor, int a6)
+{
+  int v6; // ecx@1
+  int v7; // ebx@1
+  int v8; // ecx@1
+  int v9; // edx@1
+  int v10; // edi@1
+  unsigned int x; // esi@1
+  int result; // eax@8
+  int v13; // [sp+Ch] [bp-10h]@1
+  int v14; // [sp+10h] [bp-Ch]@1
+  int v15; // [sp+14h] [bp-8h]@1
+  int v16; // [sp+18h] [bp-4h]@1
+  int v17; // [sp+24h] [bp+8h]@1
+  unsigned int v18; // [sp+28h] [bp+Ch]@1
+  int v19; // [sp+34h] [bp+18h]@1
+
+  v6 = screenSpaceX;
+  v7 = (a6 >> 1) + screenSpaceY;
+  v17 = 0;
+  v15 = 0;
+  v8 = (a6 >> 1) + v6;
+  v14 = (a6 >> 1) * (a6 >> 1);
+  v9 = 2 * (a6 >> 1);
+  v10 = (a6 >> 1) * ((a6 >> 1) - 1);
+  x = v8 - (a6 >> 1);
+  v16 = (a6 >> 1) + screenSpaceY - v8;
+  v19 = a6 >> 1;
+  v13 = v9;
+  v18 = v8;
+  do
+  {
+    sr_4A46E6_draw_particle_segment(x, v16 + v18, z, 2 * v19, lightColor);
+    if ( v15 )
+      sr_4A46E6_draw_particle_segment(x, v17 + v7, z, 2 * v19, lightColor);
+    v14 -= v15;
+    if ( v14 <= v10 )
+    {
+      if ( v19 != v17 )
+      {
+        sr_4A46E6_draw_particle_segment(v18, v16 + x, z, 2 * v17, lightColor);
+        sr_4A46E6_draw_particle_segment(v18, v19 + v7, z, 2 * v17, lightColor);
+      }
+      --v19;
+      v13 -= 2;
+      ++x;
+      v10 -= v13;
+    }
+    result = v17++;
+    v15 += 2;
+    --v18;
+  }
+  while ( result < v19 );
+  return result;
+}
+
 //----- (004637EB) --------------------------------------------------------
 int __stdcall aWinProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -13613,8 +12500,8 @@ __handle_mouse_click:
       {
         pArcomageGame->GameOver = 1;
         pArcomageGame->field_F4 = 1;
-        pArcomageGame->uGameResult = 2;
-        pArcomageGame->field_B0 = -2;
+        pArcomageGame->uGameWinner = 2;
+        pArcomageGame->Victory_type = -2;
         return DefWindowProcW(hWnd, uMsg, wParam, lParam);
       }
       if ( wParam != 114 )
@@ -13629,7 +12516,7 @@ __handle_mouse_click:
     case WM_ACTIVATEAPP:
       if ( wParam && (GetForegroundWindow() == hWnd || GetForegroundWindow() == hInsertCDWindow) )
       {
-        if ( BYTE1(dword_6BE364_game_settings_1) & 1 )
+        if (dword_6BE364_game_settings_1 & GAME_SETTINGS_APP_INACTIVE)
         {
           dword_4E98BC_bApplicationActive = 1;
           if ( pRenderer->bWindowMode )
@@ -13641,7 +12528,7 @@ __handle_mouse_click:
             if (bitsPerPixel != 16 || planes != 1)
               Error(pGlobalTXT_LocalizationStrings[62]);
           }
-          BYTE1(dword_6BE364_game_settings_1) &= 0xFEu;
+          dword_6BE364_game_settings_1 &= ~GAME_SETTINGS_APP_INACTIVE;
 
           if ( pArcomageGame->bGameInProgress )
           {
@@ -13649,12 +12536,12 @@ __handle_mouse_click:
           }
           else
           {
-            if ( BYTE1(dword_6BE364_game_settings_1) & 2 )
-              BYTE1(dword_6BE364_game_settings_1) &= 0xFDu;
+            if (dword_6BE364_game_settings_1 & GAME_SETTINGS_0200_EVENT_TIMER)
+              dword_6BE364_game_settings_1 &= ~GAME_SETTINGS_0200_EVENT_TIMER;
             else
               pEventTimer->Resume();
-            if ( BYTE1(dword_6BE364_game_settings_1) & 4 )
-              BYTE1(dword_6BE364_game_settings_1) &= 0xFBu;
+            if (dword_6BE364_game_settings_1 & GAME_SETTINGS_0400_MISC_TIMER)
+              dword_6BE364_game_settings_1 &= ~GAME_SETTINGS_0400_MISC_TIMER;
             else
               pMiscTimer->Resume();
 
@@ -13662,7 +12549,7 @@ __handle_mouse_click:
             if ( pVideoPlayer->pSmackerMovie )
             {
               pRenderer->RestoreFrontBuffer();
-              pRenderer->_4A184C();
+              pRenderer->RestoreBackBuffer();
               pVideoPlayer->_4BF5B2();
             }
           }
@@ -13672,7 +12559,7 @@ __handle_mouse_click:
       }
       else
       {
-        if (!(dword_6BE364_game_settings_1 & 0x100))
+        if (!(dword_6BE364_game_settings_1 & GAME_SETTINGS_APP_INACTIVE))
         {
           dword_4E98BC_bApplicationActive = 0;
           if ( (pVideoPlayer->pSmackerMovie || pVideoPlayer->pBinkMovie) && pVideoPlayer->bPlayingMovie )
@@ -13682,13 +12569,13 @@ __handle_mouse_click:
           if (pRenderer->uAcquiredDirect3DDevice == 1)
             SetWindowPos(hWnd, (HWND)0xFFFFFFFE, 0, 0, 0, 0, 0x18u);
           ClipCursor(0);
-          dword_6BE364_game_settings_1 |= 0x100u;
+          dword_6BE364_game_settings_1 |= GAME_SETTINGS_APP_INACTIVE;
           if ( pEventTimer->bPaused )
-            BYTE1(dword_6BE364_game_settings_1) |= 2u;
+            dword_6BE364_game_settings_1 |= GAME_SETTINGS_0200_EVENT_TIMER;
           else
             pEventTimer->Pause();
           if ( pMiscTimer->bPaused )
-            BYTE1(dword_6BE364_game_settings_1) |= 4u;
+            dword_6BE364_game_settings_1 |= GAME_SETTINGS_0400_MISC_TIMER;
           else
             pMiscTimer->Pause();
 
@@ -13838,4 +12725,1923 @@ const wchar_t *UIMessage2String(UIMessageType msg)
   };
   #undef CASE
 }
+
+//----- (0046A99B) --------------------------------------------------------
+int  sub_46A99B()
+{
+  int v0; // ebx@1
+  signed int v1; // ecx@1
+  signed int v2; // esi@1
+  int v3; // edx@1
+  signed int v4; // eax@1
+  int v5; // ecx@2
+  int *v6; // eax@3
+  int v7; // ecx@3
+  int v8; // edx@5
+  int v9; // edi@6
+  unsigned __int8 v10; // zf@14
+  char v11; // sf@14
+  char v12; // of@14
+  int *v14; // esi@19
+  signed int v15; // ebx@19
+  int i; // edi@20
+  int v17; // ecx@21
+  int v18; // edi@26
+  int v19; // esi@27
+  unsigned int v20; // ecx@27
+  BLVFace *v21; // eax@32
+  unsigned int v22; // ecx@33
+  const char *v23; // eax@35
+  const char *v24; // ecx@36
+  LevelDecoration *v25; // ecx@43
+  LevelDecoration *v26; // edi@43
+  __int16 v27; // ax@43
+  int v28; // [sp+Ch] [bp-18h]@1
+  int v29; // [sp+14h] [bp-10h]@2
+  int v30; // [sp+18h] [bp-Ch]@1
+  signed int v31; // [sp+1Ch] [bp-8h]@3
+  int v32; // [sp+20h] [bp-4h]@1
+
+  v0 = 0;
+  v1 = (signed int)(viewparams->uScreen_BttmR_Y + viewparams->uScreen_topL_Y) >> 1;
+  v2 = (signed int)(viewparams->uScreen_topL_X + viewparams->uScreen_BttmR_X) >> 1;
+  v3 = v1 - 50;
+  v32 = 0;
+  v4 = 100;
+  v30 = v1 - 50;
+  v28 = v1 + 50;
+  if ( v1 - 50 >= v1 + 50 )
+    return 0;
+  v5 = 640 * v3;
+  v29 = 640 * v3;
+  while ( 2 )
+  {
+    v6 = &pRenderer->pActiveZBuffer[v2 + v5 - v4 / 2]-1;
+    v7 = v0;
+    //while ( 1 )
+    for( int i = 0; i < 100; i++)
+	{
+	  ++v6;
+      v8 = *v6;
+      if ( (unsigned int)*v6 <= 0x2000000 )
+      {
+        v9 = 0;
+        if ( v7 > 0 )
+        {
+          do
+          {
+            if ( dword_7201B0_zvalues[v9] == (unsigned __int16)v8 )
+              break;
+            ++v9;
+          }
+          while ( v9 < v0 );
+        }
+        if ( v9 == v0 )
+        {
+          if ( v8 & 7 )
+          {
+            dword_720020_zvalues[v7] = v8;
+            dword_7201B0_zvalues[v7] = (unsigned __int16)v8;
+            ++v7;
+            ++v0;
+            v32 = v0;
+            if ( v7 == 99 )
+            {
+              v12 = 0;
+              v10 = v0 == 0;
+              v11 = v0 < 0;
+              goto LABEL_18;
+            }
+          }
+        }
+      }
+     }
+    v4 = -1;
+    ++v30;
+    v5 = v29 + 640;
+    v29 += 640;
+    if ( v30 >= v28 )
+      break;
+  }
+  v12 = 0;
+  v10 = v0 == 0;
+  v11 = v0 < 0;
+  if ( !v0 )
+    return 0;
+LABEL_18:
+  if ( !((unsigned __int8)(v11 ^ v12) | v10) )
+  {
+    v14 = dword_720020_zvalues.data();
+    v15 = 1;
+    do
+    {
+      for ( i = v15; i < v32; ++i )
+      {
+        v17 = dword_720020_zvalues[i];
+        if ( v17 < *v14 )
+        {
+          dword_720020_zvalues[i] = *v14;
+          *v14 = v17;
+        }
+      }
+      ++v15;
+      ++v14;
+    }
+    while ( v15 - 1 < v32 );
+    v0 = v32;
+  }
+  v18 = 0;
+  if ( v0 <= 0 )
+    return 0;
+  while ( 1 )
+  {
+    v19 = dword_720020_zvalues[v18] & 0xFFFF;
+    v20 = PID_ID(dword_720020_zvalues[v18]);
+    if ( PID_TYPE(dword_720020_zvalues[v18]) == OBJECT_Item)
+    {
+      if ( v20 >= 0x3E8 )
+        return 0;
+      if ( !(pSpriteObjects[v20].uAttributes & 0x10) )
+      {
+        v23 = pSpriteObjects[v20].stru_24.GetDisplayName();
+        v24 = v23;
+	    GameUI_SetFooterString(v24);
+	    return v19;
+      }
+    }
+    else
+	{
+		if ( PID_TYPE(dword_720020_zvalues[v18]) == OBJECT_Actor)
+		{
+		  if ( v20 >= 0xBB8 )
+			return 0;
+		  v24 = (const char *)&pActors[v20];
+		  GameUI_SetFooterString(v24);
+		  return v19;
+		}
+		if ( PID_TYPE(dword_720020_zvalues[v18]) == OBJECT_Decoration)
+		  break;
+		if ( PID_TYPE(dword_720020_zvalues[v18]) == OBJECT_BModel)
+		{
+		  if ( uCurrentlyLoadedLevelType == LEVEL_Indoor )
+		  {
+			v21 = &pIndoor->pFaces[v20];
+			if ( BYTE3(v21->uAttributes) & 2 )
+				v22 = pIndoor->pFaceExtras[v21->uFaceExtraID].uEventID;
+		  }
+		  else
+		  {
+			if ( (dword_720020_zvalues[v18] & 0xFFFFu) >> 9 < pOutdoor->uNumBModels )
+			{
+				v22 = pOutdoor->pBModels[(dword_720020_zvalues[v18] & 0xFFFFu) >> 9].pFaces[v20 & 0x3F].sCogTriggeredID;
+				if ( v22 )
+				{
+					v23 = GetEventHintString(v22);
+					if ( v23 )
+					{
+						v24 = v23;
+						GameUI_SetFooterString(v24);
+						return v19;
+					}
+				}
+			}
+		  }
+		}
+	}
+	++v18;
+    if ( v18 >= v0 )
+      return 0;
+  }
+  v25 = &pLevelDecorations[v20];
+  v26 = v25;
+  v27 = pLevelDecorations[v20].uEventID;
+  if ( v27 )
+  {
+    v23 = GetEventHintString(v27);
+    if ( !v23 )
+      return v19;
+	v24 = v23;
+	GameUI_SetFooterString(v24);
+	return v19;
+  }
+  if ( v25->IsInteractive() )
+    v24 = pNPCTopics[stru_5E4C90_MapPersistVars._decor_events[v26->_idx_in_stru123 - 75] + 379].pTopic;
+  else
+    v24 = pDecorationList->pDecorations[v26->uDecorationDescID].field_20;
+  GameUI_SetFooterString(v24);
+  return v19;
+}
+
+
+//----- (0049EBF1) --------------------------------------------------------
+void Render::_stub_49EBF1()
+{
+  signed int uNumRedBits; // edx@1
+  signed int uNuGreenBits; // edi@1
+  signed int uNumBlueBits; // esi@1
+  unsigned int v4; // edx@4
+  unsigned int v5; // edi@4
+  int v6; // ebx@4
+  int v7; // edx@4
+  signed int v8; // [sp+8h] [bp-24h]@1
+  signed int v9; // [sp+Ch] [bp-20h]@1
+  signed int v10; // [sp+20h] [bp-Ch]@1
+  signed int i; // [sp+24h] [bp-8h]@2
+  signed int v12; // [sp+28h] [bp-4h]@3
+
+  v10 = 0;
+  uNumRedBits = 1 << this->uTargetRBits;
+  uNuGreenBits = 1 << this->uTargetGBits;
+  uNumBlueBits = 1 << this->uTargetBBits;
+  v9 = 1 << this->uTargetRBits;
+  v8 = 1 << this->uTargetGBits;
+  if ( uNumRedBits > 0 )
+  {
+    do
+    {
+      for ( i = 0; i < uNuGreenBits; ++i )
+      {
+        v12 = 0;
+        if ( uNumBlueBits > 0 )
+        {
+          do
+          {
+            v4 = this->uTargetBBits;
+            v5 = v4 + this->uTargetGBits;
+            v6 = (v12 >> 1) + (v10 >> 1 << v5) + (i >> 1 << this->uTargetBBits);
+            v7 = (v10 << v5) + v12++ + (i << v4);
+            this->unused_2C[v7] = v6;
+          }
+          while ( v12 < uNumBlueBits );
+          uNumRedBits = v9;
+          uNuGreenBits = v8;
+        }
+      }
+      ++v10;
+    }
+    while ( v10 < uNumRedBits );
+  }
+}
+
+
+//----- (004B0967) --------------------------------------------------------
+void BspRenderer::DrawFaceOutlines()
+{
+  signed int i; // edi@1
+  int v1; // esi@2
+  unsigned int v2; // ecx@4
+  int v3; // eax@4
+  int v4; // eax@6
+  unsigned __int16 *v5; // edx@6
+  int v6; // ecx@7
+  int v7; // esi@8
+
+  for ( i = 0; i < (signed int)pBspRenderer->num_faces; ++i )
+  {
+    v1 = pBspRenderer->faces[i].uFaceID;
+    if ( v1 >= 0 )
+    {
+      if ( v1 < (signed int)pIndoor->uNumFaces )
+      {
+        v2 = pBspRenderer->faces[i].uFaceID;
+        pBLVRenderParams->field_7C = &pBspRenderer->nodes[pBspRenderer->faces[i].uNodeID].PortalScreenData;
+        v3 = GetPortalScreenCoord(v2);
+        if ( v3 )
+        {
+          if ( PortalFrustrum(v3, &stru_F8A590, pBLVRenderParams->field_7C, v1) )
+          {
+            v4 = stru_F8A590._viewport_space_y;
+            v5 = pBLVRenderParams->pRenderTarget;
+            if ( stru_F8A590._viewport_space_y <= stru_F8A590._viewport_space_w )
+            {
+              v6 = 640 * stru_F8A590._viewport_space_y;
+              do
+              {
+                v5[v6 + stru_F8A590.viewport_left_side[v4]] = -1;
+                v7 = v6 + stru_F8A590.viewport_right_side[v4];
+                v6 += 640;
+                v5[v7] = -1;
+                ++v4;
+              }
+              while ( v4 <= stru_F8A590._viewport_space_w );
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+
+//----- (004A80DC) --------------------------------------------------------
+void stru6::_4A80DC_implosion_particle_sw(SpriteObject *a2)
+{
+  signed int v3; // ebx@1
+  Particle_sw local_0; // [sp+Ch] [bp-68h]@1
+
+  memset(&local_0, 0, 0x68u);
+  local_0.type = ParticleType_Bitmap | ParticleType_Rotating | ParticleType_1;
+  local_0.uDiffuse = 0x7E7E7E;
+  local_0.timeToLive = (rand() & 0x7F) + 128;
+  local_0.uTextureID = uTextureID_effpar1;
+  v3 = 8;
+  local_0.flt_28 = 1.0;
+  do
+  {
+    local_0.x = pRnd->GetRandom() * 40.0 + (double)a2->vPosition.x - 20.0;
+    local_0.y = pRnd->GetRandom() * 40.0 + (double)a2->vPosition.y - 20.0;
+    local_0.z = (double)a2->vPosition.z;
+    local_0.r = pRnd->GetRandom() * 800.0 - 400.0;
+    local_0.g = pRnd->GetRandom() * 800.0 - 400.0;
+    local_0.b = pRnd->GetRandom() * 350.0 + 50.0;
+    pGame->pParticleEngine->AddParticle(&local_0);
+    --v3;
+  }
+  while ( v3 );
+}
+
+
+//----- (004AFB86) --------------------------------------------------------
+void BspRenderer::AddFaceToRenderList_sw(unsigned int node_id, unsigned int uFaceID)
+{
+  BspRenderer *v3; // ebx@1
+  BLVFace *v4; // eax@1
+  char *v5; // ecx@2
+  unsigned __int16 v6; // ax@11
+  int v7; // ecx@13
+  Vec3_short_ *v8; // esi@16
+  int v9; // edx@16
+  signed int v10; // eax@19
+  signed int v11; // edi@20
+  signed int v12; // ecx@20
+  signed int v13; // esi@20
+  int v14; // edx@21
+  int v15; // edx@25
+  unsigned __int16 v16; // ax@35
+  signed int v17; // eax@37
+  int v18; // eax@38
+  signed int v19; // [sp+Ch] [bp-14h]@19
+  char *v20; // [sp+14h] [bp-Ch]@2
+  BLVFace *v21; // [sp+18h] [bp-8h]@1
+  signed int v22; // [sp+1Ch] [bp-4h]@20
+  signed int v23; // [sp+28h] [bp+8h]@20
+
+  v3 = this;
+  v4 = &pIndoor->pFaces[uFaceID];
+  v21 = v4;
+  if (v4->Portal())
+  {
+    v5 = (char *)this + 2252 * node_id;
+    v20 = v5;
+    if ( uFaceID == *((short *)v5 + 2982) )
+      return;
+    if (!node_id
+      && pGame->pIndoorCameraD3D->vPartyPos.x >= v4->pBounding.x1 - 16
+      && pGame->pIndoorCameraD3D->vPartyPos.x <= v4->pBounding.x2 + 16
+      && pGame->pIndoorCameraD3D->vPartyPos.y >= v4->pBounding.y1 - 16
+      && pGame->pIndoorCameraD3D->vPartyPos.y <= v4->pBounding.y2 + 16
+      && pGame->pIndoorCameraD3D->vPartyPos.z >= v4->pBounding.z1 - 16
+      && pGame->pIndoorCameraD3D->vPartyPos.z <= v4->pBounding.z2 + 16 )
+    {
+      if ( abs(v4->pFacePlane_old.dist + pGame->pIndoorCameraD3D->vPartyPos.x * v4->pFacePlane_old.vNormal.x
+                                       + pGame->pIndoorCameraD3D->vPartyPos.y * v4->pFacePlane_old.vNormal.y
+                                       + pGame->pIndoorCameraD3D->vPartyPos.z * v4->pFacePlane_old.vNormal.z) <= 589824 )
+      {
+        v6 = v21->uSectorID;
+        if ( v3->nodes[0].uSectorID == v6 )
+          v6 = v21->uBackSectorID;
+        v3->nodes[v3->num_nodes].uSectorID = v6;
+        v3->nodes[v3->num_nodes].uFaceID = uFaceID;
+        v3->nodes[v3->num_nodes].uViewportX = LOWORD(pBLVRenderParams->uViewportX);
+        v3->nodes[v3->num_nodes].uViewportZ = LOWORD(pBLVRenderParams->uViewportZ);
+        v3->nodes[v3->num_nodes].uViewportY = LOWORD(pBLVRenderParams->uViewportY);
+        v3->nodes[v3->num_nodes].uViewportW = LOWORD(pBLVRenderParams->uViewportW);
+        v3->nodes[v3->num_nodes++].PortalScreenData.GetViewportData(
+          SLOWORD(pBLVRenderParams->uViewportX),
+          pBLVRenderParams->uViewportY,
+          SLOWORD(pBLVRenderParams->uViewportZ),
+          pBLVRenderParams->uViewportW);
+        v7 = v3->num_nodes - 1;
+        goto LABEL_14;
+      }
+      v4 = v21;
+      v5 = v20;
+    }
+    v8 = &pIndoor->pVertices[*v4->pVertexIDs];
+    v9 = v4->pFacePlane_old.vNormal.x * (v8->x - pGame->pIndoorCameraD3D->vPartyPos.x)
+       + v4->pFacePlane_old.vNormal.y * (v8->y - pGame->pIndoorCameraD3D->vPartyPos.y)
+       + v4->pFacePlane_old.vNormal.z * (v8->z - pGame->pIndoorCameraD3D->vPartyPos.z);
+    if ( *((short *)v5 + 2004) != v4->uSectorID )
+      v9 = -v9;
+    if ( v9 < 0 )
+    {
+      v10 = GetPortalScreenCoord(uFaceID);
+      v19 = v10;
+      if ( v10 )
+      {
+        v11 = PortalFace._screen_space_x[0];
+        v12 = PortalFace._screen_space_y[0];
+        v23 = PortalFace._screen_space_x[0];
+        v13 = 1;
+        v22 = PortalFace._screen_space_y[0];
+        if ( v10 > 1 )
+        {
+          do
+          {
+            v14 = PortalFace._screen_space_x[v13];
+            if ( v14 < v23 )
+              v23 = PortalFace._screen_space_x[v13];
+            if ( v14 > v11 )
+              v11 = PortalFace._screen_space_x[v13];
+            v15 = PortalFace._screen_space_y[v13];
+            if ( v15 < v22 )
+              v22 = PortalFace._screen_space_y[v13];
+            if ( v15 > v12 )
+              v12 = PortalFace._screen_space_y[v13];
+            v10 = v19;
+            ++v13;
+          }
+          while ( v13 < v19 );
+        }
+        if ( v11 >= *((short *)v20 + 2005)
+          && v23 <= *((short *)v20 + 2007)
+          && v12 >= *((short *)v20 + 2006)
+          && v22 <= *((short *)v20 + 2008)
+          && PortalFrustrum(v10, &v3->nodes[v3->num_nodes].PortalScreenData, (BspRenderer_PortalViewportData *)(v20 + 4020), uFaceID) )
+        {
+          v16 = v21->uSectorID;
+          if ( *((short *)v20 + 2004) == v16 )
+            v16 = v21->uBackSectorID;
+          v3->nodes[v3->num_nodes].uSectorID = v16;
+          v3->nodes[v3->num_nodes].uFaceID = uFaceID;
+          v3->nodes[v3->num_nodes].uViewportX = LOWORD(pBLVRenderParams->uViewportX);
+          v3->nodes[v3->num_nodes].uViewportZ = LOWORD(pBLVRenderParams->uViewportZ);
+          v3->nodes[v3->num_nodes].uViewportY = LOWORD(pBLVRenderParams->uViewportY);
+          v3->nodes[v3->num_nodes].uViewportW = LOWORD(pBLVRenderParams->uViewportW);
+          v17 = v3->num_nodes;
+          if ( v17 < 150 )
+          {
+            v18 = v17 + 1;
+            v3->num_nodes = v18;
+            v7 = v18 - 1;
+LABEL_14:
+            AddBspNodeToRenderList(v7);
+            return;
+          }
+        }
+      }
+    }
+  }
+  else
+  {
+    if (num_faces < 1000)
+    {
+      faces[num_faces].uFaceID = uFaceID;
+      faces[num_faces++].uNodeID = node_id;
+    }
+  }
+}
+
+
+//----- (0046A6AC) --------------------------------------------------------
+int __fastcall _46A6AC_spell_render(int a1, int a2, int a3)
+{
+  int result; // eax@2
+  int *v5; // esi@6
+  unsigned int v6; // ebx@6
+  signed int v7; // edi@9
+  int i; // eax@14
+  int v10; // ecx@19
+  unsigned int v13; // [sp+8h] [bp-10h]@4
+  int *v15; // [sp+10h] [bp-8h]@4
+  int v16; // [sp+14h] [bp-4h]@3
+
+  if ( pRenderer->pRenderD3D )
+  {
+    result = _46А6АС_GetActorsInViewport(a3);
+  }
+  else
+  {
+    __debugbreak(); // SW render never called
+    v16 = 0;
+    if ( (signed int)viewparams->uScreen_topL_Y < (signed int)viewparams->uScreen_BttmR_Y )
+    {
+      v15 = &pRenderer->pActiveZBuffer[viewparams->uScreen_topL_X + 640 * viewparams->uScreen_topL_Y];
+      v13 = ((viewparams->uScreen_BttmR_Y - viewparams->uScreen_topL_Y - 1) >> 1) + 1;
+      for ( v13; v13; --v13 )
+      {
+        if ( (signed int)viewparams->uScreen_topL_X < (signed int)viewparams->uScreen_BttmR_X )
+        {
+          v5 = v15;
+          v6 = ((viewparams->uScreen_BttmR_X - viewparams->uScreen_topL_X - 1) >> 1) + 1;
+          for ( v6; v6; --v6 )
+          {
+            if ( PID_TYPE(*(char *)v5) == OBJECT_Actor)
+            {
+              if ( *v5 <= a3 << 16 )
+              {
+                v7 = PID_ID((signed int)(unsigned __int16)*v5);
+                if ( pActors[v7].uAIState != Dead && pActors[v7].uAIState != Dying && pActors[v7].uAIState != Removed
+                  && pActors[v7].uAIState != Summoned && pActors[v7].uAIState != Disabled )
+                {
+                  for ( i = 0; i < v16; ++i )
+                  {
+                    if ( *(int *)(a1 + 4 * i) == v7 )
+                      break;
+                  }
+                  if ( i == v16 )
+                  {
+                    if ( i < a2 - 1 )
+                    {
+                      v10 = v16++;
+                      *(int *)(a1 + 4 * v10) = v7;
+                    }
+                  }
+                }
+              }
+            }
+            v5 += 2;
+          }
+        }
+        v15 += 1280;
+      }
+    }
+    result = v16;
+  }
+  return result;
+}
+//----- (0047F5C6) --------------------------------------------------------
+float Render::DrawBezierTerrain()
+{
+  unsigned int pDirectionIndicator1; // ebx@1
+  unsigned int pDirectionIndicator2; // edi@1
+  unsigned int v2; // eax@1
+  int v3; // eax@3
+  int v4; // edi@3
+  int v5; // ebx@3
+  int v6; // esi@3
+  unsigned int v7; // eax@3
+  int v8; // eax@4
+  unsigned int v9; // eax@6
+  int v10; // eax@7
+  //int v11; // ebx@9
+  //int v12; // edi@9
+  int v13; // eax@21
+  int v14; // eax@31
+  int v15; // edi@33
+  int v16; // eax@34
+  int v17; // edx@34
+  int v18; // ebx@34
+  int v19; // eax@36
+  int v20; // eax@39
+  int v21; // ecx@43
+  //char v22; // zf@44
+  int v23; // ecx@47
+  //int v24; // edi@52
+  int v25; // eax@54
+  int v26; // ecx@54
+  int v27; // eax@56
+  int v28; // edx@60
+  int v29; // ecx@61
+  int v30; // ecx@64
+  int v31; // ecx@68
+  int v32; // eax@70
+  //int v33; // ecx@71
+  int v34; // eax@73
+  int v35; // ecx@77
+  int v36; // ecx@81
+  int v37; // ecx@86
+  int v38; // eax@88
+  int v39; // ecx@88
+  int v40; // eax@90
+  int v41; // edx@94
+  //int v42; // ecx@95
+  int v43; // ecx@98
+  int v44; // ecx@102
+  int v45; // eax@104
+  int v46; // eax@107
+  int v47; // ecx@111
+  int v48; // ecx@115
+  int v49; // edi@120
+  int v50; // eax@122
+  int v51; // ecx@122
+  int v52; // eax@124
+  int v53; // edx@128
+  int v54; // ecx@129
+  int v55; // ecx@132
+  int v56; // eax@139
+  int v57; // ecx@140
+  int v58; // eax@142
+  int v59; // ecx@146
+  //int v60; // ecx@147
+  int v61; // ecx@150
+  int v62; // ecx@155
+  int v63; // eax@157
+  int v64; // ecx@157
+  int v65; // eax@159
+  int v66; // edx@163
+  int v67; // ecx@164
+  int v68; // ecx@167
+  //int v69; // eax@173
+  int v70; // edi@178
+  //int v71; // eax@178
+  //int v72; // ecx@178
+  //int x; // ebx@180
+  //int v74; // eax@182
+  //int v75; // eax@184
+  IndoorCameraD3D *pIndoorCameraD3D_3; // ecx@184
+  int uStartZ; // ecx@184
+  int v79; // ebx@185
+  int v127; // esi@185
+  int v86; // edi@196
+  //int v87; // eax@196
+  //int v88; // ecx@196
+  //int v89; // eax@198
+  //int v90; // ecx@200
+  int v92; // ebx@203
+  //int v93; // ST08_4@204
+  int v97; // ST08_4@204
+  float result; // eax@212
+  //struct 
+  //{
+  int v106; // [sp+Ch] [bp-68h]@191
+  int v103; // [sp+10h] [bp-64h]@190
+  int v104; // [sp+12h] [bp-62h]@190
+  //} v102;
+  int v105; // [sp+1Ch] [bp-58h]@1
+  int v107; // [sp+20h] [bp-54h]@3
+  int uEndZ; // [sp+24h] [bp-50h]@3
+  int v108; // [sp+28h] [bp-4Ch]@9
+  int v109; // [sp+2Ch] [bp-48h]@9
+  int v110; // [sp+30h] [bp-44h]@9
+  int v111; // [sp+34h] [bp-40h]@3
+  int v112; // [sp+38h] [bp-3Ch]@6
+  IndoorCameraD3D *pIndoorCameraD3D_4; // [sp+3Ch] [bp-38h]@9
+  int v114; // [sp+40h] [bp-34h]@9
+  int v115; // [sp+44h] [bp-30h]@9
+  int v116; // [sp+48h] [bp-2Ch]@9
+  //int v117; // [sp+4Ch] [bp-28h]@9
+  int v118; // [sp+50h] [bp-24h]@9
+  int v119; // [sp+54h] [bp-20h]@1
+  int v120; // [sp+58h] [bp-1Ch]@1
+  int i; // [sp+5Ch] [bp-18h]@1
+  int v122; // [sp+60h] [bp-14h]@1
+  int v123; // [sp+64h] [bp-10h]@1
+  int v124; // [sp+68h] [bp-Ch]@1
+  int v125; // [sp+6Ch] [bp-8h]@9
+  int v126; // [sp+70h] [bp-4h]@9
+
+  v105 = pGame->pIndoorCameraD3D->sRotationY / ((signed int)stru_5C6E00->uIntegerHalfPi / 2);//2
+  pDirectionIndicator1 = stru_5C6E00->uDoublePiMask & (stru_5C6E00->uIntegerDoublePi - pGame->pIndoorCameraD3D->sRotationY);//1536
+  pDirectionIndicator2 = stru_5C6E00->uDoublePiMask & (stru_5C6E00->uIntegerPi + pDirectionIndicator1);//512
+  v124 = ((pIndoorCamera->uMapGridCellX << 16) + 3 * stru_5C6E00->Cos(stru_5C6E00->uDoublePiMask & (stru_5C6E00->uIntegerPi + pDirectionIndicator1))) >> 16;//88
+  v123 = ((pIndoorCamera->uMapGridCellZ << 16) + 3 * stru_5C6E00->Sin(pDirectionIndicator2)) >> 16;// 66
+  v120 = pODMRenderParams->outdoor_grid_band_3 + v124;//+- range X
+  v119 = pODMRenderParams->outdoor_grid_band_3 + v123;
+  v2 = pODMRenderParams->uCameraFovInDegrees + 15;//90
+  i = v124 - pODMRenderParams->outdoor_grid_band_3;
+  v122 = v123 - pODMRenderParams->outdoor_grid_band_3;
+
+  if ( v2 > 90 )
+    v2 = 90;
+  //v3 = (v2 << 11) / 720;
+  v4 = stru_5C6E00->uDoublePiMask & (pDirectionIndicator1 - ((v2 << 11) / 720));
+  v5 = stru_5C6E00->uDoublePiMask & (((v2 << 11) / 720) + pDirectionIndicator1);
+
+  v106 = stru_5C6E00->Cos(v4);
+  uEndZ = stru_5C6E00->Sin(v4);
+
+  v111 = stru_5C6E00->Cos(v5);
+  v6 = stru_5C6E00->Sin(v5);
+
+  v7 = v4 & stru_5C6E00->uPiMask;
+  if ( (v4 & stru_5C6E00->uPiMask) >= stru_5C6E00->uIntegerHalfPi )
+    v8 = -stru_5C6E00->pTanTable[stru_5C6E00->uIntegerPi - v7];
+  else
+    v8 = stru_5C6E00->pTanTable[v7];
+  v112 = abs(v8);
+
+  v9 = v5 & stru_5C6E00->uPiMask;
+  if ( (v5 & stru_5C6E00->uPiMask) >= stru_5C6E00->uIntegerHalfPi )
+    v10 = -stru_5C6E00->pTanTable[stru_5C6E00->uIntegerPi - v9];
+  else
+    v10 = stru_5C6E00->pTanTable[v9];
+  v108 = abs(v10);
+
+  //v11 = v124;
+  //v12 = v123;
+  v114 = 0;
+  v115 = 0;
+  pIndoorCameraD3D_4 = 0;
+  v125 = 0;
+  v126 = v124;
+  v118 = v123;
+
+  v110 = (v106 >= 0 ? 1: -1);//2 * (v106 >= 0) - 1;
+  v109 = (uEndZ >= 0 ? 1: -1);//2 * (v107 >= 0) - 1;
+  uEndZ = (v111 >= 0 ? 1: -1);//2 * (v111 >= 0) - 1;
+  v106 = (v6 >= 0 ? 1: -1);//2 * (v6 >= 0) - 1;
+
+  uint _i = 1;
+  uint j = 1;
+
+  terrain_76DDC8[0] = -1;
+  terrain_76DFC8[0] = -1;
+  terrain_76E1C8[0] = -1;
+  terrain_76E3C8[0] = -1;
+
+  for( uint _i = 1; _i < 128; _i++)
+  {
+    if ( v112 >= 0x10000 )
+    {
+      int v1, v2;
+      //v111 = 4294967296i64 / v112;
+      //v114 += v111;
+      //if ( v114 >= 65536 )
+      //{
+      //  v11 += v110;
+      //  v114 = (unsigned __int16)v114;
+      //}
+      //v12 += v109;
+    }
+    else
+    {
+      v124 += v110;
+      v115 += v112;
+      if ( v112 + v115 >= 65536 )
+      {
+        v123 += v109;
+        v115 = (unsigned __int16)v115;
+      }
+    }
+    if ( v124 < _i || v124 > v120 || v123 < v122 || v123 > v119 )
+      break;
+    //v13 = v116++;
+    terrain_76E3C8[_i] = v124;
+    terrain_76E1C8[_i] = v123;
+  }
+
+  for( j = 1; j < 128; j++ )
+  {
+    if ( v108 >= 65536 )
+    {
+      v111 = 4294967296i64 / v108;
+      v114 += v111;//
+      if ( v111 + v114 >= 65536 )
+      {
+        v126 += uEndZ;
+        v114 = (unsigned __int16)v114;//
+      }
+      v118 += v106;
+    }
+    else
+    {
+      v125 += v108;
+      v126 += uEndZ;
+      if ( v125 >= 65536 )
+      {
+        v118 += v106;
+        v125 = (unsigned __int16)v125;
+      }
+    }
+    //if ( v117 >= 128 )
+      //break;
+    if ( v126 < _i )
+      break;
+    if ( v126 > v120 )
+      break;
+    v14 = v118;
+    if ( v118 < v122 )
+      break;
+    if ( v118 > v119 )
+      break;
+    terrain_76DFC8[j] = v126;
+    terrain_76DDC8[j] = v14;
+  }
+  v16 = 0;
+  v126 = 0;
+  v17 = j - 1;
+  v18 = _i - 1;
+
+  switch ( v105 )//напрвление камеры
+  {
+    case 0:
+    case 7:
+    {
+      //v116 = terrain_76DFC8[v17];
+      if ( v120 > terrain_76DFC8[v17] )
+      {
+        v125 = v120;
+        memset32(terrain_76D9C8.data(), v119 + 1, 4 * (v120 - terrain_76DFC8[v17] + 1));
+        v19 = v120;
+        do
+          terrain_76DBC8[v126++] = v19--;
+        while ( v19 >= terrain_76DFC8[v17] );
+        if ( terrain_76DFC8[v17] == terrain_76DDC8[v17 + 127] )
+        {
+          do
+            v20 = terrain_76DDC8[v17-- -1];
+          while ( v20 == terrain_76DDC8[v17 -1] );
+        }
+        v16 = v126;
+        --v17;
+      }
+      if ( v17 < 0 )
+        v17 = 0;
+      
+      //while ( 1 )
+	  for ( v21 = terrain_76DFC8[v17]; v21 < v124; v21 = terrain_76DFC8[v17] - 1; )
+      {
+        //v125 = terrain_76DFC8[v17];
+        terrain_76DBC8[v16] = v21;
+        //v22 = terrain_76DDC8[v17] == 65535;
+        terrain_76D9C8[v16] = terrain_76DDC8[v17] + 1;
+        if ( terrain_76DDC8[v17] == 65535 )
+        {
+          terrain_76D9C8[v16] = v123 + 1;
+          break;
+        }
+        if ( !v17 )
+          break;
+        if ( terrain_76DFC8[v17] == terrain_76DDC8[v17 - 1] )
+        {
+          do
+            v23 = terrain_76DDC8[v17-- -1];
+          while ( v23 == terrain_76DDC8[v17 -1] );
+        }
+        --v17;
+        ++v16;
+      }
+      v16 = 0;
+      //v24 = terrain_76E3C8[v18];
+      v126 = 0;
+      if ( v120 > terrain_76E3C8[v18] )
+      {
+        v125 = v120;
+        memset32(terrain_76D5C8.data(), v122, 4 * (v120 - terrain_76E3C8[v18] + 1));
+        do
+        {
+          v25 = v126;
+          v26 = v125--;
+          ++v126;
+          terrain_76D7C8[v25] = v26;
+        }
+        while ( v125 >= terrain_76E3C8[v18] );
+        if ( terrain_76E3C8[v18] == terrain_76E1C8[v18 -1] )
+        {
+          do
+            v27 = terrain_76E1C8[v18-- -1];
+          while ( v27 == terrain_76E1C8[v18 -1] );
+        }
+        v16 = v126;
+        --v18;
+      }
+      if ( v18 < 0 )
+        v18 = 0;
+      v28 = terrain_76E3C8[v18];
+      while ( v28 >= v124 )
+      {
+        v29 = terrain_76E1C8[v18];
+        terrain_76D7C8[v16] = v28;
+        terrain_76D5C8[v16] = v29;
+        if ( v29 == 65535 )
+        {
+          v31 = v123;
+          terrain_76D5C8[v16] = v31;
+          break;
+        }
+        if ( !v18 )
+          break;
+        if ( terrain_76E3C8[v18] == terrain_76E1C8[v18 -1] )
+        {
+          do
+            v30 = terrain_76E1C8[v18-- -1];
+          while ( v30 == terrain_76E1C8[v18 -1] );
+        }
+        --v18;
+        --v28;
+        ++v16;
+      }
+      break;
+    }
+    case 1:
+    case 2:
+    {
+      //v116 = terrain_76DDC8[v17];
+      if ( v122 < terrain_76DDC8[v17] )
+      {
+        v106 = v122;
+        memset32(terrain_76DBC8.data(), v120 + 1, 4 * (terrain_76DDC8[v17] - v122 + 1));
+        for ( v32 = v122; v32 <= terrain_76DDC8[v17]; v32++)
+          terrain_76D9C8[v126++] = v32;
+        if ( terrain_76DDC8[v17] == terrain_76DBC8[v17 -1] )
+        {
+          do
+            v34 = terrain_76DBC8[v17-- -1];
+          while ( v34 == terrain_76DBC8[v17 -1] );
+        }
+        v16 = v126;
+        --v17;
+      }
+      if ( v17 < 0 )
+        v17 = 0;
+      v35 = terrain_76DDC8[v17];
+      v125 = terrain_76DDC8[v17];
+      while ( v35 <= v123 )
+      {
+        //v22 = terrain_76DFC8[v17] == 65535;
+        terrain_76DBC8[v16] = terrain_76DFC8[v17] + 1;
+        terrain_76D9C8[v16] = v125;
+        if ( terrain_76DFC8[v17] == 65535 )
+        {
+          terrain_76DBC8[v16] = v124 + 1;
+          break;
+        }
+        if ( !v17 )
+          break;
+        if ( terrain_76DDC8[v17] == terrain_76DBC8[v17 -1] )
+        {
+          do
+            v36 = terrain_76DBC8[v17-- -1];
+          while ( v36 == terrain_76DBC8[v17 -1] );
+        }
+        --v17;
+        ++v125;
+        v35 = v125;
+        ++v16;
+      }
+      v16 = 0;
+      v126 = 0;
+      v37 = terrain_76E1C8[v18];
+      if ( v122 < v37 )
+      {
+        v114 = v122;
+        memset32(terrain_76D7C8.data(), i, 4 * (v37 - v122 + 1));
+        do
+        {
+          v38 = v126;
+          v39 = v114;
+          ++v126;
+          ++v114;
+          terrain_76D5C8[v38] = v39;
+        }
+        while ( v114 <= terrain_76E1C8[v18] );
+        if ( terrain_76E1C8[v18] == terrain_76DFC8[v18 -1] )
+        {
+          do
+            v40 = terrain_76DFC8[v18-- -1];
+          while ( v40 == terrain_76DFC8[v18 -1] );
+        }
+        v16 = v126;
+        --v18;
+      }
+      if ( v18 < 0 )
+        v18 = 0;
+      v41 = terrain_76E1C8[v18];
+      while ( v41 <= v123 )
+      {
+        terrain_76D5C8[v16] = v41;
+        terrain_76D7C8[v16] = terrain_76E3C8[v18];
+        if ( terrain_76E3C8[v18] == 65535 )
+        {
+          terrain_76D7C8[v16] = v124;
+          break;
+        }
+        if ( !v18 )
+          break;
+        if ( terrain_76E1C8[v18] == terrain_76DFC8[v18 -1] )
+        {
+          do
+            v43 = terrain_76DFC8[v18-- -1];
+          while ( v43 == terrain_76DFC8[v18 -1] );
+        }
+        --v18;
+        ++v41;
+        ++v16;
+      }
+      break;
+    }
+    case 5:
+    case 6:
+    {
+      //v116 = terrain_76DDC8[v17];
+      if ( v119 > terrain_76DDC8[v17] )
+      {
+        v106 = v119;
+        memset32(terrain_76DBC8.data(), i, 4 * (v119 - terrain_76DDC8[v17] + 1));
+        for ( v45 = v119; v45 >= terrain_76DDC8[v17]; v45--)
+          terrain_76D9C8[v126++] = v45;
+        if ( terrain_76DDC8[v17] == terrain_76DBC8[v17 -1] )
+        {
+          do
+            v46 = terrain_76DBC8[v17-- -1];
+          while ( v46 == terrain_76DBC8[v17 -1] );
+        }
+        v16 = v126;
+        --v17;
+      }
+      if ( v17 < 0 )
+        v17 = 0;
+      v47 = terrain_76DDC8[v17];
+      v125 = terrain_76DDC8[v17];
+      while ( v47 >= v123 )
+      {
+        //v22 = terrain_76DFC8[v17] == 65535;
+        terrain_76DBC8[v16] = terrain_76DFC8[v17];
+        terrain_76D9C8[v16] = terrain_76DDC8[v17];
+        if ( terrain_76DFC8[v17] == 65535 )
+        {
+          terrain_76DBC8[v16] = v124;
+          break;
+        }
+        if ( !v17 )
+          break;
+        if ( terrain_76DDC8[v17] == terrain_76DBC8[v17 -1] )
+        {
+          do
+            v48 = terrain_76DBC8[v17-- -1];
+          while ( v48 == terrain_76DBC8[v17 -1] );
+        }
+        --v17;
+        --v125;
+        v47 = v125;
+        ++v16;
+      }
+      v16 = 0;
+      v49 = terrain_76E1C8[v18];
+      v126 = 0;
+      if ( v119 > v49 )
+      {
+        v125 = v119;
+        memset32(terrain_76D7C8.data(), v120 + 1, 4 * (v119 - v49 + 1));
+        do
+        {
+          v50 = v126;
+          v51 = v125--;
+          ++v126;
+          terrain_76D5C8[v50] = v51;
+        }
+        while ( v125 >= terrain_76E1C8[v18] );
+        if ( terrain_76E1C8[v18] == terrain_76DFC8[v18 -1] )
+        {
+          do
+            v52 = terrain_76DFC8[v18-- -1];
+          while ( v52 == terrain_76DFC8[v18 -1] );
+        }
+        v16 = v126;
+        --v18;
+      }
+      if ( v18 < 0 )
+        v18 = 0;
+      v53 = terrain_76E1C8[v18];
+      while ( v53 >= v123 )
+      {
+        v54 = terrain_76E3C8[v18];
+        terrain_76D5C8[v16] = v53;
+        terrain_76D7C8[v16] = v54 + 1;
+        if ( v54 == 65535 )
+        {
+          terrain_76D7C8[v16] = v124 + 1;
+          break;
+        }
+        if ( !v18 )
+          break;
+        if ( terrain_76E1C8[v18] == terrain_76DFC8[v18 -1] )
+        {
+          do
+            v55 = terrain_76DFC8[v18-- -1];
+          while ( v55 == terrain_76DFC8[v18 -1] );
+        }
+        --v18;
+        --v53;
+        ++v16;
+      }
+      break;
+    }
+    case 3:
+    case 4:
+    {
+      //v116 = terrain_76DFC8[v17];
+      if ( i < terrain_76DFC8[v17] )
+      {
+        v106 = i;
+        memset32(terrain_76D9C8.data(), v122, 4 * (terrain_76DFC8[v17] - i + 1));
+        v56 = i;
+        do
+        {
+          v57 = v126++;
+          terrain_76DBC8[v57] = v56++;
+        }
+        while ( v56 <= terrain_76DFC8[v17] );
+        if ( terrain_76DFC8[v17] == terrain_76DDC8[v17 -1] )
+        {
+          do
+            v58 = terrain_76DDC8[v17-- -1];
+          while ( v58 == terrain_76DDC8[v17 -1] );
+        }
+        v16 = v126;
+        --v17;
+      }
+      if ( v17 < 0 )
+        v17 = 0;
+      v59 = terrain_76DFC8[v17];
+      while ( 1 )
+      {
+        v125 = terrain_76DFC8[v17];
+        if ( terrain_76DFC8[v17] > v124 )
+          break;
+        terrain_76DBC8[v16] = terrain_76DFC8[v17];
+        //v60 = terrain_76DDC8[v17];
+        terrain_76D9C8[v16] = terrain_76DDC8[v17];
+        if ( terrain_76DDC8[v17] == 65535 )
+        {
+          terrain_76D9C8[v16] = v123;
+          break;
+        }
+        if ( !v17 )
+          break;
+        if ( terrain_76DFC8[v17] == terrain_76DDC8[v17 -1] )
+        {
+          do
+            v61 = terrain_76DDC8[v17-- -1];
+          while ( v61 == terrain_76DDC8[v17 -1] );
+        }
+        --v17;
+        v59 = v125 + 1;
+        ++v16;
+      }
+      v16 = 0;
+      v126 = 0;
+      v62 = terrain_76E3C8[v18];
+      if ( i < v62 )
+      {
+        v114 = i;
+        memset32(terrain_76D5C8.data(), v119 + 1, 4 * (v62 - i + 1));
+        do
+        {
+          v63 = v126;
+          v64 = v114;
+          ++v126;
+          ++v114;
+          terrain_76D7C8[v63] = v64;
+        }
+        while ( v114 <= terrain_76E3C8[v18] );
+        if ( terrain_76E3C8[v18] == terrain_76E1C8[v18 -1] )
+        {
+          do
+            v65 = terrain_76E1C8[v18-- -1];
+          while ( v65 == terrain_76E1C8[v18 -1] );
+        }
+        v16 = v126;
+        --v18;
+      }
+      if ( v18 < 0 )
+        v18 = 0;
+      v66 = terrain_76E3C8[v18];
+      while ( v66 <= v124 )
+      {
+        v67 = terrain_76E1C8[v18];
+        terrain_76D7C8[v16] = v66;
+        terrain_76D5C8[v16] = terrain_76E1C8[v18] + 1;
+        if ( terrain_76E1C8[v18] == 65535 )
+        {
+          v31 = v123 + 1;
+          terrain_76D5C8[v16] = v31;
+          break;
+        }
+        if ( !v18 )
+          break;
+        if ( terrain_76E3C8[v18] == terrain_76E1C8[v18 -1] )
+        {
+          do
+            v68 = terrain_76E1C8[v18-- -1];
+          while ( v68 == terrain_76E1C8[v18 -1] );
+        }
+        --v18;
+        ++v66;
+        ++v16;
+      }
+      break;
+    }
+    default:
+      break;
+  }
+  //v69 = v16 - 1;
+  ptr_801A08 = pVerticesSR_806210;
+  ptr_801A04 = pVerticesSR_801A10;
+  //v126 = v69;
+
+  if ( v105 && v105 != 7 && v105 != 3 && v105 != 4 )//блок, ориентация камеры 1(СВ), 2(С), 5(ЮЗ), 6(Ю)
+  {
+    for ( i = v16 - 1; i >= 1; --i )
+    {
+      //v70 = i;
+      //v71 = terrain_76D7C8[i];//88
+      //v72 = terrain_76DBC8[i];//0
+      if ( terrain_76D7C8[i] < terrain_76DBC8[i] )//swap
+      {
+        terrain_76DBC8[i] = terrain_76D7C8[i];
+        terrain_76D7C8[i] = terrain_76DBC8[i];
+      }
+      //x = terrain_76DBC8[i];//0
+      v111 = 0;
+      if ( terrain_76DBC8[i] <= 0 )
+        terrain_76DBC8[i] = -terrain_76DBC8[i];
+      //v74 = terrain_76D7C8[i];
+      if ( terrain_76D7C8[i] <= 0 )
+        terrain_76D7C8[i] = -terrain_76D7C8[i];
+      uEndZ = terrain_76D7C8[i] + 2;
+      //pIndoorCameraD3D_3 = pGame->pIndoorCameraD3D;
+      //uEndZ = v75;
+      //pIndoorCameraD3D_4 = pIndoorCameraD3D_3;
+      uStartZ = terrain_76DBC8[i] - 2;
+      if ( terrain_76DBC8[i] - 2 < uEndZ )
+      {
+        v127 = 0;
+        //v79 = (v73 - 66) << 9;
+        //v116 = v77;
+        //pHeight = v79;
+        v111 = uEndZ - uStartZ;
+        for (int z = uStartZ; z < uEndZ; ++z)
+        {
+          ptr_801A08[v127].vWorldPosition.x = (-64 + terrain_76DBC8[i]) * 512;//pTerrainVertices[z * 128 + x].vWorldPosition.x = (-64 + (signed)x) * 512;
+          ptr_801A08[v127].vWorldPosition.y = (64 - terrain_76D9C8[i]) * 512;
+          ptr_801A08[v127].vWorldPosition.z = pOutdoor->GetHeightOnTerrain( z, terrain_76D9C8[i]);
+
+          ptr_801A04[v127].vWorldPosition.x = (-64 + terrain_76DBC8[i]) * 512;
+          ptr_801A04[v127].vWorldPosition.y = (63 - terrain_76D9C8[i]) * 512;
+          ptr_801A04[v127].vWorldPosition.z = pOutdoor->GetHeightOnTerrain( z, terrain_76D9C8[i] + 1);
+
+          if ( !byte_4D864C || !(pGame->uFlags & 0x80) )
+          {
+            pIndoorCameraD3D_4->ViewTransform(&ptr_801A08[v127], 1);
+            pIndoorCameraD3D_4->ViewTransform(&ptr_801A04[v127], 1);
+
+            pIndoorCameraD3D_4->Project(&ptr_801A08[v127], 1, 0);
+            pIndoorCameraD3D_4->Project(&ptr_801A04[v127], 1, 0);
+          }
+          //v79 += 512;
+          v127 ++;
+          //++v116;
+          //pHeight = v79;
+       }
+        //while ( v116 < v107 );
+      }
+      v103 = abs((int)pIndoorCamera->uMapGridCellZ - terrain_76D9C8[i]);
+      v104 = abs((int)pIndoorCamera->uMapGridCellX - terrain_76DBC8[i]);
+      if ( pRenderer->pRenderD3D )//Ritor1: do comment to test
+        Render::DrawTerrainD3D(v111, 0, v103, v104);
+        //Render::RenderTerrainD3D();
+      //else
+        //Render::DrawTerrainSW(v111, 0, v103, v104);
+    }
+  }
+  else//ориентация камеры 0(В), 3(СЗ), 4(З), 7(ЮВ)
+  {
+    for ( i = v16 - 1; i >= 1; --i )
+    {
+      //v86 = i;
+      //v87 = terrain_76D5C8[i];
+      //v88 = terrain_76D9C8[i];
+      if ( terrain_76D5C8[i] < terrain_76D9C8[i] )
+      {
+        terrain_76D9C8[i] = terrain_76D5C8[i];
+        terrain_76D5C8[i] = terrain_76D9C8[i];
+      }
+      //v89 = terrain_76D9C8[i];
+      v111 = 0;
+      if ( terrain_76D9C8[i] <= 0 )
+        terrain_76D9C8[i] = -terrain_76D9C8[i];
+      //v90 = terrain_76D5C8[i];
+      if ( terrain_76D5C8[i] <= 0 )
+        terrain_76D5C8[i] = -terrain_76D5C8[i];
+      pIndoorCameraD3D_4 = pGame->pIndoorCameraD3D;
+      v107 = terrain_76D5C8[i] + 2;
+      if ( terrain_76D9C8[i] - 2 < terrain_76D5C8[i] + 2 )
+      {
+        v86 = 0;
+        //v116 = terrain_76D9C8[i] - 2;
+        v92 = (66 - terrain_76D9C8[i]) << 9;
+        //pHeight = (66 - terrain_76D9C8[i]) << 9;
+        v111 = terrain_76D5C8[i] + 2 - (terrain_76D9C8[i] - 2);
+        //do
+        for ( v116 = terrain_76D9C8[i] - 2; v116 < v107; ++v116 )
+        {
+          ptr_801A08[v86].vWorldPosition.x = (terrain_76DBC8[v86] - 64) << 9;
+          ptr_801A08[v86].vWorldPosition.y = v92;
+          ptr_801A08[v86].vWorldPosition.z = pOutdoor->GetHeightOnTerrain(terrain_76DBC8[v86], v116);
+
+          ptr_801A04[v86].vWorldPosition.x = (terrain_76DBC8[v86] - 63) << 9;
+          ptr_801A04[v86].vWorldPosition.y = v92;
+          ptr_801A04[v86].vWorldPosition.z = pOutdoor->GetHeightOnTerrain(terrain_76DBC8[v86] + 1, v116);
+          if ( !byte_4D864C || !(pGame->uFlags & 0x80) )
+          {
+           pIndoorCameraD3D_4->ViewTransform((RenderVertexSoft *)(char *)ptr_801A08 + v86, 1);
+           pIndoorCameraD3D_4->ViewTransform((RenderVertexSoft *)(char *)ptr_801A04 + v86, 1);
+           pIndoorCameraD3D_4->Project((RenderVertexSoft *)(char *)ptr_801A08 + v86, 1, 0);
+           pIndoorCameraD3D_4->Project((RenderVertexSoft *)(char *)ptr_801A04 + v86, 1, 0);
+          }
+          v92 -= 512;
+          v86 += 48;
+          //++v116;
+          //pHeight = v92;
+        }
+        //while ( v116 < v107 );
+      }
+      v103 = abs((int)pIndoorCamera->uMapGridCellX - terrain_76DBC8[v86]);
+	  v104 = abs((int)pIndoorCamera->uMapGridCellZ - terrain_76D9C8[v86]);
+	  if ( pRenderer->pRenderD3D )
+        Render::DrawTerrainD3D(v111, 1, v103, v104);
+      //else
+        //Render::DrawTerrainSW(v111, 1, v103, v104);
+    }
+  }
+  result = v126;
+  pODMRenderParams->field_40 = v126;
+  return result;
+}
+
+//----- (0048034E) --------------------------------------------------------
+void Render::DrawTerrainD3D(int a1, int a2, int a3, int unk4)
+{
+  //int v3; // esi@1
+  int v4; // edi@1
+  int v5; // ebx@2
+  int v6; // eax@2
+  int v7; // eax@3
+  RenderVertexSoft *v8; // edi@3
+  RenderVertexSoft *v9; // ebx@4
+  RenderVertexSoft *v10; // ecx@4
+  float v11; // eax@6
+  double v12; // ST5C_8@6
+  double v13; // ST2C_8@6
+  int v14; // eax@6
+  double v15; // st7@6
+  struct Polygon *pTile; // ebx@12
+  unsigned __int16 v17; // ax@12
+  int v18; // eax@13
+  signed int v22; // eax@13
+  Vec3_float_ *norm; // eax@15
+  //double v24; // st6@17
+  double v25; // ST54_8@17
+  unsigned __int8 v26; // sf@17
+  unsigned __int8 v27; // of@17
+  double v28; // st5@19
+  double v29; // st5@19
+  double v30; // st5@19
+  double v31; // st5@19
+  struct struct8 *v32; // esi@21
+  double v3a; // st7@32
+  int v33; // edi@38
+  unsigned int v34; // ecx@47
+  char v35; // zf@47
+  unsigned int v36; // eax@50
+  int v37; // eax@54
+  //Polygon *v38; // ecx@55
+  unsigned int v39; // eax@59
+  struct Polygon *v40; // ebx@62
+  unsigned __int16 pTileBitmapsID; // ax@62
+  int v42; // eax@63
+  LightmapBuilder *v43; // ecx@63
+  int v44; // eax@63
+  int v45; // eax@63
+  int v46; // eax@63
+  signed int v47; // eax@63
+  Vec3_float_ *v48; // eax@65
+  double v49; // st6@67
+  double v50; // ST4C_8@67
+  double v51; // st5@71
+  double v52; // st5@71
+  double v53; // st5@71
+  double v54; // st7@84
+  unsigned int v55; // ecx@98
+  unsigned int v56; // eax@101
+  int v57; // eax@105
+  unsigned int v58; // eax@109
+  struct Polygon *v59; // esi@112
+  unsigned __int16 v60; // ax@112
+  int v61; // eax@113
+  signed int v62; // eax@113
+  Vec3_float_ *v63; // eax@114
+  double v64; // st6@116
+  double v65; // ST3C_8@116
+  double v66; // st5@120
+  double v67; // st5@120
+  double v68; // st5@120
+  double v69; // st7@133
+  int v70; // edi@138
+  struct Polygon *v71; // esi@147
+  unsigned int v72; // ecx@147
+  unsigned int v73; // eax@150
+  int v74; // eax@154
+  unsigned int v75; // eax@158
+  //unsigned int v76; // [sp-10h] [bp-E0h]@61
+  int v77; // [sp-Ch] [bp-DCh]@61
+  IDirect3DTexture2 *v78; // [sp-8h] [bp-D8h]@61
+  //int v79; // [sp-4h] [bp-D4h]@61
+  bool v80; // [sp+0h] [bp-D0h]@59
+  bool v81; // [sp+0h] [bp-D0h]@109
+  int v82; // [sp+54h] [bp-7Ch]@1
+  int v83; // [sp+60h] [bp-70h]@1
+  int v84; // [sp+6Ch] [bp-64h]@1
+  int v85; // [sp+70h] [bp-60h]@63
+  float a4; // [sp+74h] [bp-5Ch]@73
+  float v87; // [sp+78h] [bp-58h]@122
+  int v88; // [sp+7Ch] [bp-54h]@1
+  int v89; // [sp+80h] [bp-50h]@6
+  int v93; // [sp+90h] [bp-40h]@2
+  int X; // [sp+94h] [bp-3Ch]@1
+  float v95; // [sp+98h] [bp-38h]@21
+  LightmapBuilder *v96; // [sp+9Ch] [bp-34h]@73
+  int v97; // [sp+A0h] [bp-30h]@6
+  int sX; // [sp+A4h] [bp-2Ch]@6
+  unsigned int uNumVertices; // [sp+A8h] [bp-28h]@73
+  int v100; // [sp+ACh] [bp-24h]@122
+  int sY; // [sp+B0h] [bp-20h]@6
+  RenderVertexSoft *v102; // [sp+B4h] [bp-1Ch]@3
+  unsigned int a5; // [sp+B8h] [bp-18h]@21
+  RenderVertexSoft *v101; // [sp+BCh] [bp-14h]@6
+  Vec3_float_ *v99; // [sp+C0h] [bp-10h]@17
+  RenderVertexSoft *pVertices; // [sp+C4h] [bp-Ch]@6
+  RenderVertexSoft *pVertices2; // [sp+C8h] [bp-8h]@6
+  char v108; // [sp+CFh] [bp-1h]@36
+  float thisd; // [sp+D8h] [bp+8h]@6
+  float thise; // [sp+D8h] [bp+8h]@6
+  float thisf; // [sp+D8h] [bp+8h]@17
+  IndoorCameraD3D *thisa; // [sp+D8h] [bp+8h]@23
+  float thisg; // [sp+D8h] [bp+8h]@67
+  IndoorCameraD3D *thisb; // [sp+D8h] [bp+8h]@75
+  float thish; // [sp+D8h] [bp+8h]@116
+  IndoorCameraD3D *thisc; // [sp+D8h] [bp+8h]@124
+  char this_3; // [sp+DBh] [bp+Bh]@30
+  char this_3a; // [sp+DBh] [bp+Bh]@82
+  char this_3b; // [sp+DBh] [bp+Bh]@131
+
+  __debugbreak();
+  static stru154 static_sub_0048034E_stru_154;
+  static stru154 stru_76D5A8;
+  //v3 = a1;
+  v82 = a2;
+  v83 = a3;
+  X = abs(unk4);
+  v4 = 0;
+  v88 = 0;
+  v84 = a1 - 1;
+  if ( a1 - 1 > 0 )
+  {
+    while ( 1 )
+    {
+      v5 = abs(X);//v5 = 13108
+      v6 = abs(v83);//v6 = 13108
+      --X;
+      //__debugbreak(); // uncoment & refactor following large if
+      v93 = (int)&terrain_76E5C8[(v5 << 7) + v6];
+      if ( !v93->field_0 || ((v7 = 48 * v4, v8 = &pVerticesSR_806210[v4], a2 = v8, !v82) ? (v9 = (RenderVertexSoft *)((char *)&pVerticesSR_801A10 + v7),
+                                                                       v10 = &pVerticesSR_806210[1] + v7) : (v9 = &pVerticesSR_806210[1] + v7, v10 = (RenderVertexSoft *)((char *)&pVerticesSR_801A10 + v7)),
+             ((a8 = v9,
+               pVertices = &pVerticesSR_801A10[1] + v7,
+               v11 = v8->vWorldPosition.x,
+               v101 = v10,
+               v12 = v11 + 6.755399441055744e15,
+               sX = LODWORD(v12),
+               v13 = v8->vWorldPosition.y + 6.755399441055744e15,
+               sY = LODWORD(v13),
+               thisd = (v10->vWorldPosition.x + v8->vWorldPosition.x) * 0.5,
+               v14 = WorldPosToGridCellX(floorf(thisd + 0.5f)),//maybe current camera position X
+               v15 = v9->vWorldPosition.y + v8->vWorldPosition.y,
+               v89 = v14,
+               thise = v15 * 0.5,
+               _this = (LightmapBuilder *)WorldPosToGridCellZ(floorf(thisd + 0.5f)),//maybe current camera position Z
+               WorldPosToGridCellX(sX),
+               WorldPosToGridCellZ(sY),
+               !byte_4D864C)
+           || !(pGame->uFlags & 0x80))
+          && !_481EFA_clip_terrain_poly(v8, v9, v101, pVertices, 1)) )
+      if ( !&terrain_76E5C8[(v5 << 7) + v6] )
+        goto LABEL_162
+      v8 = &pVerticesSR_806210[v4];
+      //pVertices2 = &pVerticesSR_801A10[v4 + 1];
+      //v102 = v8;
+      if (!v82)
+      {
+        pVertices = &pVerticesSR_801A10[v4];
+        v101 = &pVerticesSR_806210[v4 + 1];
+      }
+      else
+      {
+        pVertices = &pVerticesSR_801A10[v4 + 1];
+        v101 = &pVerticesSR_806210[v4];
+      }
+      sX = floorf(v8->vWorldPosition.x + 0.5f);
+      sY = floorf(v8->vWorldPosition.z + 0.5f);
+      v89 = WorldPosToGridCellX(floorf((v101->vWorldPosition.x + v8->vWorldPosition.x) / 2 + 0.5f));
+      v97 = WorldPosToGridCellZ(floorf((pVertices->vWorldPosition.z + v8->vWorldPosition.z) / 2 + 0.5f));
+      WorldPosToGridCellX(sX);
+      WorldPosToGridCellZ(sY);
+      if ((!byte_4D864C || !(pGame->uFlags & 0x80)) && !_481EFA_clip_terrain_poly(v8, pVertices, v101, pVertices2, 1))
+        if ( v8->vWorldPosition.y != pVertices->vWorldPosition.y || pVertices->vWorldPosition.y != pVertices2->vWorldPosition.y 
+             || pVertices2->vWorldPosition.y != v101->vWorldPosition.y )
+          break;
+        pTile = &array_77EC08[pODMRenderParams->uNumPolygons];
+        pTile->uTileBitmapID = pOutdoor->GetTileTexture(sX, sY);
+        if ( pTile->uTileBitmapID != -1 )
+        {
+          pTile->flags = 0x8010 |pOutdoor->GetSomeOtherTileInfo(sX, sY);
+          pTile->field_32 = 0;
+          pTile->field_59 = 1;
+          pTile->terrain_grid_x = (char)v97;
+          __debugbreak(); // warning C4700: uninitialized local variable 'v93' used
+          pTile->field_34 = *(_WORD *)(v93 + 2);
+          pTile->terrain_grid_z = v89;
+          v22 = pTerrainNormalIndices[2 * (v97 + 128 * v89) + 1];
+          if ( v22 < 0 || v22 > uNumTerrainNormals - 1 )
+            norm = 0;
+          else
+            norm = &pTerrainNormals[v22];
+          thisf = 20.0 - ( -(((float)pOutdoor->vSunlight.x / 65536.0) * norm->x) -
+                            (((float)pOutdoor->vSunlight.y / 65536.0) * norm->y) -
+                            (((float)pOutdoor->vSunlight.z / 65536.0) * norm->z)) * 20.0;
+          //v25 = thisf + 6.7553994e15;
+          //v27 = pODMRenderParams->uNumPolygons > 1999;
+          //v26 = pODMRenderParams->uNumPolygons - 1999 < 0;
+          pTile->dimming_level = floorf(thisf + 0.5f);
+          if ( pODMRenderParams->uNumPolygons >= 1999 )
+            return;
+          ++pODMRenderParams->uNumPolygons;
+          //if ( !_481FC9_terrain(v8, pVertices, v101, v16) )//Ritor1: It's temporary
+          //goto LABEL_126;
+          //{
+            //--pODMRenderParams->uNumPolygons;
+            //goto LABEL_162;
+          //}
+          __debugbreak(); // warning C4700: uninitialized local variable 'v102' used
+          memcpy(&array_50AC10[0], v102, 0x30u);
+          array_50AC10[0]._rhw = 1.0 / (v102->vWorldViewPosition.x + 0.0000001000000011686097);
+          array_50AC10[0].u = 0.0;
+          array_50AC10[0].v = 0.0;
+          memcpy(&array_50AC10[1], pVertices, sizeof(array_50AC10[1]));
+          array_50AC10[1]._rhw = 1.0 / (pVertices->vWorldViewPosition.x + 0.0000001000000011686097);
+          array_50AC10[1].u = 0.0;
+          array_50AC10[1].v = 1.0;
+          __debugbreak(); // warning C4700: uninitialized local variable 'pVertices2' used
+          memcpy(&array_50AC10[2], pVertices2, sizeof(array_50AC10[2]));
+          array_50AC10[2]._rhw = 1.0 / (pVertices2->vWorldViewPosition.x + 0.0000001000000011686097);
+          array_50AC10[2].u = 1.0;
+          array_50AC10[2].v = 1.0;
+          memcpy(&array_50AC10[3], v101, sizeof(array_50AC10[3]));
+          array_50AC10[3]._rhw = 1.0 / (v101->vWorldViewPosition.x + 0.0000001000000011686097);
+          array_50AC10[3].u = 1.0;
+          array_50AC10[3].v = 0.0;
+          if ( !(_76D5C0_static_init_flag & 1) )
+          {
+            _76D5C0_static_init_flag |= 1u;
+            stru154(stru_76D5A8);
+            atexit(loc_481199);
+          }
+          v32 = (struct8 *)array_50AC10;
+          v97 = (int)pGame->pLightmapBuilder;
+          pGame->pLightmapBuilder->StackLights_TerrainFace(norm, &v95, array_50AC10, 4, 1);
+          pDecalBuilder->_49BE8A(pTile, norm, &v95, array_50AC10, 4, 1);
+          a5 = 4;
+          if ( byte_4D864C && pGame->uFlags & 0x80 )
+          {
+            thisa = pGame->pIndoorCameraD3D;
+            if ( pGame->pIndoorCameraD3D->_4371C3(array_50AC10, &a5, 0) == 1 && !a5 )
+              goto LABEL_162;
+            thisa->ViewTransform(array_50AC10, a5);
+            thisa->Project(array_50AC10, a5, 0);
+          }
+          this_3 = v102->vWorldViewPosition.x < 8.0 || pVertices->vWorldViewPosition.x < 8.0
+              || v101->vWorldViewPosition.x < 8.0 || pVertices2->vWorldViewPosition.x < 8.0;
+          v3a = (double)pODMRenderParams->shading_dist_mist;
+          v108 = v3a < v102->vWorldViewPosition.x || v3a < pVertices->vWorldViewPosition.x
+              || v3a < v101->vWorldViewPosition.x || v3a < pVertices2->vWorldViewPosition.x;
+          v33 = 0;
+          pGame->pLightmapBuilder->std__vector_000004_size = 0;
+          if ( stru_F8AD28.uNumLightsApplied > 0 || pDecalBuilder->uNumDecals > 0 )
+          {
+            if ( this_3 )
+              v33 = 3;
+            else
+              v33 = v108 != 0 ? 5 : 0;
+            static_sub_0048034E_stru_154.ClassifyPolygon(norm, v95);
+            if ( pDecalBuilder->uNumDecals > 0 )
+              pDecalBuilder->ApplyDecals(31 - pTile->dimming_level, 4, &static_sub_0048034E_stru_154, a5, array_50AC10, 0, *(float *)&v33, -1);
+          }
+          if ( stru_F8AD28.uNumLightsApplied > 0 )
+            pGame->pLightmapBuilder->ApplyLights(&stru_F8AD28, &static_sub_0048034E_stru_154, a5, array_50AC10, 0, v33);
+          v34 = a5;
+          //v35 = byte_4D864C == 0;
+          pTile->uNumVertices = a5;
+          if ( !byte_4D864C || ~pGame->uFlags & 0x80 )
+          {
+            if ( this_3 )
+            {
+              v36 = ODM_NearClip(v34);
+              pTile->uNumVertices = v36;
+              ODMRenderParams::Project(v36);
+            }
+            if ( v108 )
+            {
+              v36 = ODM_FarClip(v34);
+              pTile->uNumVertices = v36;
+              ODMRenderParams::Project(v36);
+            }
+          }
+          //v37 = *(int *)&v16->flags;
+          if ( ~pTile->flags & 1 )
+          {
+            if ( pTile->flags & 2 && pTile->uTileBitmapID == pRenderer->hd_water_tile_id )
+            {
+              v80 = false;
+              v39 = pRenderer->pHDWaterBitmapIDs[pRenderer->hd_water_current_frame];
+            }
+            else
+            {
+              v39 = pTile->uTileBitmapID;
+              v80 = true;
+            }
+            //v79 = 0;
+            //v78 = pBitmaps_LOD->pHardwareTextures[v39];
+            pTile->pTexture = (Texture *)&pBitmaps_LOD->pHardwareTextures[v39];// Ritor1: It's temporary
+            v77 = (int)pTile;
+            //v76 = v16->uNumVertices;
+//LABEL_161:
+            pRenderer->DrawTerrainPolygon(pTile->uNumVertices, pTile, pBitmaps_LOD->pHardwareTextures[v39], false, v80);
+            goto LABEL_162;
+          }
+LABEL_56:
+          pTile->DrawBorderTiles();
+        }
+LABEL_162:
+        v4 = v88 + 1;
+        if ( ++v88 >= v84 )
+          return;
+      }
+      v40 = &array_77EC08[pODMRenderParams->uNumPolygons];
+      v40->uTileBitmapID = pOutdoor->GetTileTexture(sX, sY);
+      if ( v40->uTileBitmapID == -1 )
+        goto LABEL_162;
+      v42 = pOutdoor->GetSomeOtherTileInfo(sX, sY);
+      BYTE1(v42) |= 0x80u;
+      v43 = pGame->pLightmapBuilder;
+      *(int *)&v40->flags = v42;
+      v44 = v93;
+      v40->field_59 = 1;
+      v40->terrain_grid_x = (char)v43;
+      v40->field_34 = *(_WORD *)(v44 + 2);
+      v45 = v89;
+      v40->terrain_grid_z = v89;
+      v46 = 4 * ((char)v43 + (v45 << 7));
+      v85 = v46;
+      v47 = *(unsigned __int16 *)((char *)pTerrainNormalIndices + v46 + 2);//    v47 = pTerrainNormalIndices[v46 + 1];
+      if ( v47 < 0 || v47 > (signed int)(uNumTerrainNormals - 1) )
+        v48 = 0;
+      else
+        v48 = &pTerrainNormals[v47];
+      v49 = v92 * v48->y;
+      //v99 = v48;
+      thisg = 20.0 - (-v49 - v91 * v48->z - v90 * v48->x) * 20.0;
+      v50 = thisg + 6.755399441055744e15;
+      v40->dimming_level = LOBYTE(v50);
+      if ( LOBYTE(v50) < 0 )
+        v40->dimming_level = 0;
+      if ( pODMRenderParams->uNumPolygons >= 1999 )
+        return;
+      ++pODMRenderParams->uNumPolygons;
+      if ( !_481FC9_terrain(pVertices, pVertices2, v8, v40) ) // Ritor1: It's temporary
+        //goto LABEL_77;
+        {
+          --pODMRenderParams->uNumPolygons;
+          goto LABEL_112;
+        }
+      memcpy(&array_50AC10[0], v102, 0x30u);
+      array_50AC10[0]._rhw = 1.0 / (v102->vWorldViewPosition.x + 0.0000001000000011686097);
+      array_50AC10[0].u = 0.0;
+      array_50AC10[0].v = 0.0;
+      memcpy(&array_50AC10[1], pVertices, sizeof(array_50AC10[1]));
+      array_50AC10[1]._rhw = 1.0 / pVertices->vWorldViewPosition.x + 0.0000001000000011686097;
+      array_50AC10[1].u = 0.0;
+      array_50AC10[1].v = 1.0;
+      memcpy(&array_50AC10[2], pVertices2, sizeof(array_50AC10[2]));
+      array_50AC10[2]._rhw = 1.0 / pVertices2->vWorldViewPosition.x + 0.0000001000000011686097;
+      array_50AC10[2].u = 1.0;
+      array_50AC10[2].v = 1.0;
+      static stru154 static_sub_0048034E_stru_76D590;
+      static bool __init_flag2 = false;
+      if (!__init_flag2)
+      {
+        __init_flag2 = true;
+        stru154::stru154(&static_sub_0048034E_stru_76D590);
+      }
+      if ( !(_76D5C0_static_init_flag & 2) )
+      {
+        _76D5C0_static_init_flag |= 2;
+        Polygon(stru_76D590);
+        atexit(loc_48118F);
+      }
+      v96 = pGame->pLightmapBuilder;
+      pGame->pLightmapBuilder->StackLights_TerrainFace(v48, (float *)&a4, array_50AC10, 3, 0);
+      pDecalBuilder->_49BE8A(v40, v48, &a4, array_50AC10, 3, 0);
+      uNumVertices = 3;
+      if ( byte_4D864C && pGame->uFlags & 0x80 )
+      {
+        thisb = pGame->pIndoorCameraD3D;
+        if ( pGame->pIndoorCameraD3D->_4371C3(array_50AC10, &uNumVertices, 0) == 1 && !uNumVertices )
+        {
+//LABEL_77:
+          --pODMRenderParams->uNumPolygons;
+          goto LABEL_112;
+        }
+        thisb->ViewTransform(array_50AC10, uNumVertices);
+        thisb->Project(array_50AC10, uNumVertices, 0);
+      }
+      this_3a = v102->vWorldViewPosition.x < 8.0 || pVertices->vWorldViewPosition.x < 8.0 || pVertices2->vWorldViewPosition.x < 8.0;
+      v54 = (double)pODMRenderParams->shading_dist_mist;
+      v108 = v54 < v102->vWorldViewPosition.x || v54 < pVertices->vWorldViewPosition.x || v54 < pVertices2->vWorldViewPosition.x;
+      pVertices = 0;
+      v96->std__vector_000004_size = 0;
+      if ( stru_F8AD28.uNumLightsApplied > 0 || pDecalBuilder->uNumDecals > 0 )
+      {
+        if ( this_3a )
+          pVertices = (RenderVertexSoft *)3;
+        else
+          pVertices = (RenderVertexSoft *)(v108 != 0 ? 5 : 0);
+        //a8 = (RenderVertexSoft *)(this_3a ? 3 : v108 != 0 ? 5 : 0);
+        static_sub_0048034E_stru_76D590.ClassifyPolygon(v48, *(float *)&a4);
+        if ( pDecalBuilder->uNumDecals > 0 )
+          pDecalBuilder->ApplyDecals(31 - v40->dimming_level, 4, &static_sub_0048034E_stru_76D590, uNumVertices, array_50AC10, 0, (char)pVertices, -1);
+      }
+      if ( stru_F8AD28.uNumLightsApplied > 0 )
+        v96->ApplyLights(&stru_F8AD28, &static_sub_0048034E_stru_76D590, uNumVertices, array_50AC10, 0, (char)pVertices);
+      v55 = uNumVertices;
+      //v35 = byte_4D864C == 0;
+      v40->uNumVertices = uNumVertices;
+      if ( !_76D5C0_static_init_flag || !(pGame->uFlags & 0x80) )
+      {
+        if ( this_3a )
+        {
+          v56 = ODM_NearClip(v55);
+        }
+        else
+        {
+          if ( !v108 )
+            goto LABEL_105;
+          v56 = sr_424EE0_MakeFanFromTriangle(v55);
+        }
+        v40->uNumVertices = v56;
+        ODMRenderParams::Project(v56);
+      }
+LABEL_105:
+      v57 = *(int *)&v40->flags;
+      if ( BYTE1(v57) & 1 )
+      {
+        v40->DrawBorderTiles();
+      }
+      else
+      {
+        if ( v57 & 2 && v40->uTileBitmapID == pRenderer->hd_water_tile_id )
+        {
+          v81 = false;
+          v58 = pRenderer->pHDWaterBitmapIDs[pRenderer->hd_water_current_frame];
+        }
+        else
+        {
+          v58 = v40->uTileBitmapID;
+          v81 = true;
+        }
+        pRenderer->DrawTerrainPolygon(v40->uNumVertices, v40, pBitmaps_LOD->pHardwareTextures[v58], 0, v81);
+      }
+LABEL_112:
+      v59 = &array_77EC08[pODMRenderParams->uNumPolygons];
+      //a8 = (RenderVertexSoft *)&array_77EC08[pODMRenderParams->uNumPolygons];
+      v59->uTileBitmapID = pOutdoor->GetTileTexture(sX, sY);
+      if ( v59->uTileBitmapID  == -1 )
+        goto LABEL_162;
+      *(int *)&v59->flags = pOutdoor->GetSomeOtherTileInfo(sX, sY);
+      v61 = v93;
+      v59->field_59 = 1;
+      v59->field_34 = *(_WORD *)(v61 + 2);
+      v59->terrain_grid_z = v89;
+      v59->terrain_grid_x = v97;
+      v62 = *(unsigned __int16 *)((char *)pTerrainNormalIndices + v85);
+      if ( v62 > (signed int)(uNumTerrainNormals - 1) )
+        v63 = 0;
+      else
+        v63 = &pTerrainNormals[v62];
+      v64 = v92 * v63->y;
+      //v99 = v63;
+      thish = 20.0 - (-v64 - v91 * v63->y - v90 * v63->x) * 20.0;
+      v59->dimming_level = floorf(thish + 0.5f);
+      if ( v59->dimming_level < 0 )
+        v59->dimming_level = 0;
+      if ( pODMRenderParams->uNumPolygons >= 1999 )
+        return;
+      ++pODMRenderParams->uNumPolygons;
+      if ( !_481FC9_terrain(v101, v102, pVertices2, v59) )
+      {
+//LABEL_126:
+        --pODMRenderParams->uNumPolygons;
+        goto LABEL_162;
+      }
+      memcpy(&array_50AC10[0], v102, 0x30u);
+      array_50AC10[0]._rhw = 1.0 / (v102->vWorldViewPosition.x + 0.0000001000000011686097);
+      array_50AC10[0].u = 0.0;
+      array_50AC10[0].v = 0.0;
+      memcpy(&array_50AC10[1], pVertices2, sizeof(array_50AC10[1]));
+      array_50AC10[1]._rhw = 1.0 / pVertices2->vWorldViewPosition.x + 0.0000001000000011686097;
+      array_50AC10[1].u = 1.0;
+      array_50AC10[1].v = 1.0;
+      memcpy(&array_50AC10[2], v101, sizeof(array_50AC10[2]));
+      array_50AC10[2]._rhw = 1.0 / v101->vWorldViewPosition.x + 0.0000001000000011686097;
+      array_50AC10[2].u = 1.0;
+      array_50AC10[2].v = 0.0;
+      static stru154 static_sub_0048034E_stru_76D578;
+      static bool __init_flag1 = false;
+      if (!__init_flag1)
+      {
+        __init_flag1 = true;
+        stru154::stru154(&static_sub_0048034E_stru_76D578);
+      }
+      v96 = pGame->pLightmapBuilder;
+      pGame->pLightmapBuilder->StackLights_TerrainFace(v63, &v87, array_50AC10, 3, 1);
+      pDecalBuilder->_49BE8A(v40, v63, &v87, array_50AC10, 3, 1);
+      v100 = 3;
+      if ( byte_4D864C && pGame->uFlags & 0x80 )
+      {
+        thisc = pGame->pIndoorCameraD3D;
+        if ( pGame->pIndoorCameraD3D->_4371C3(array_50AC10, (unsigned int *)&v100, 0) == 1 && !v100 )
+          //goto LABEL_126;
+        {
+          --pODMRenderParams->uNumPolygons;
+          goto LABEL_162;
+        }
+        thisc->ViewTransform(array_50AC10, v100);
+        thisc->Project(array_50AC10, v100, 0);
+      }
+      this_3b = v102->vWorldViewPosition.x < 8.0 || pVertices2->vWorldViewPosition.x < 8.0
+           || v101->vWorldViewPosition.x < 8.0;
+      v69 = (double)pODMRenderParams->shading_dist_mist;
+      v108 = v69 < v102->vWorldViewPosition.x || v69 < pVertices2->vWorldViewPosition.x || v69 < v101->vWorldViewPosition.x;
+      v70 = 0;
+      v96->std__vector_000004_size = 0;
+      if ( stru_F8AD28.uNumLightsApplied > 0 || pDecalBuilder->uNumDecals > 0 )
+      {
+        if ( this_3b )
+          v70 = 3;
+        else
+          v70 = v108 != 0 ? 5 : 0;
+        static_sub_0048034E_stru_76D578.ClassifyPolygon(v63, v87);
+        if ( pDecalBuilder->uNumDecals > 0 )
+          pDecalBuilder->ApplyDecals(31 - v40->dimming_level, 4, &static_sub_0048034E_stru_76D578, v100, array_50AC10, 0, v70, -1);
+      }
+      if ( stru_F8AD28.uNumLightsApplied > 0 )
+        v96->ApplyLights(&stru_F8AD28, &static_sub_0048034E_stru_76D578, v100, array_50AC10, 0, v70);
+      v71 = v59;
+      v72 = v100;
+      //v35 = byte_4D864C == 0;
+      v59->uNumVertices = v100;//???
+      if ( !byte_4D864C && pGame->uFlags & 0x80 )
+        goto LABEL_154;
+      if ( this_3b )
+      {
+        v73 = ODM_NearClip(v72);
+      }
+      else
+      {
+        if ( !v108 )
+        {
+LABEL_154:
+          v74 = v71->flags;
+          if ( !(BYTE1(v74) & 1) )
+          {
+            if ( v74 & 2 && v71->uTileBitmapID == pRenderer->hd_water_tile_id )
+            {
+              v80 = false;
+              v75 = pRenderer->pHDWaterBitmapIDs[pRenderer->hd_water_current_frame];
+            }
+            else
+            {
+              v75 = v71->uTileBitmapID;
+              v80 = true;
+            }
+            //v79 = 0;
+            v78 = pBitmaps_LOD->pHardwareTextures[v75];
+            v71->pTexture = (Texture *)&pBitmaps_LOD->pHardwareTextures[v75];// Ritor1: It's temporary
+            //v77 = (int)v71;
+            //v76 = v71->uNumVertices;
+            //goto LABEL_161;
+            pRenderer->DrawTerrainPolygon(v71->uNumVertices, (Polygon *)v71, v78, 0, v80);
+            goto LABEL_162;
+          }
+          v38 = (Polygon *)v71;
+          goto LABEL_56;
+        }
+        v73 = sr_424EE0_MakeFanFromTriangle(v72);
+      }
+      v71->uNumVertices = v73;
+      ODMRenderParams::Project(v73);
+      goto LABEL_154;
+    }
+  }
 */

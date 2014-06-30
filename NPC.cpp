@@ -1,7 +1,5 @@
-#ifdef _MSC_VER
 #define _CRT_SECURE_NO_WARNINGS
-#endif
-
+#include "mm7_unsorted_subs.h"
 #include "texts.h"
 #include "LOD.h"
 #include "Autonotes.h"
@@ -17,11 +15,18 @@
 #include "Indoor.h"
 #include "MapInfo.h"
 #include "Level/Decoration.h"
+#include "Actor.h"
+#include "AudioPlayer.h"
+#include "CastSpellInfo.h"
+#include "Overlays.h"
 
 int pDialogueNPCCount;
 std::array<struct Texture *, 6> pDialogueNPCPortraits;
 int uNumDialogueNPCPortraits; // weak
 struct NPCStats *pNPCStats = nullptr;
+
+int NPCStats::dword_AE336C_LastMispronouncedNameFirstLetter = -1;
+int NPCStats::dword_AE3370_LastMispronouncedNameResult = -1;
 
 void  InitializeAwards();
 void  InitializeScrolls();
@@ -40,18 +45,18 @@ NPCData *__fastcall GetNPCData(signed int npcid)
   int v4; // ecx@9
   //int v5; // edx@9
   //NPCData *v6; // eax@9
-  char *v7; // ebx@14
-  NPCData *v8; // edi@14
+//  char *v7; // ebx@14
+//  NPCData *v8; // edi@14
   char v9; // al@22
-  char v10;
+//  char v10;
   //std::string v10; // [sp-18h] [bp-2Ch]@4
-  int v11;
+//  int v11;
   //const char *v11; // [sp-8h] [bp-1Ch]@4
-  int v12; // [sp-4h] [bp-18h]@4
-  int v13; 
-  char *v14;
+//  int v12; // [sp-4h] [bp-18h]@4
+//  int v13; 
+//  char *v14;
   //std::string *v13; // [sp+Ch] [bp-8h]@4
-  int a3; // [sp+13h] [bp-1h]@4
+//  int a3; // [sp+13h] [bp-1h]@4
   int i;
 
   /*v1 = npcid;
@@ -199,7 +204,7 @@ struct NPCData * GetNewNPCData( signed int npcid, int* npc_indx )
   if ( sDialogue_SpeakingActorNPC_ID >= 0 )
   {
     *npc_indx = 0;
-    result = NULL;
+    result = nullptr;
   }
   else
   {
@@ -247,9 +252,7 @@ void NPCStats::InitializeNPCText()
 	char* tmp_pos;
 	int decode_step;
 
-	if (pNPCTextTXT_Raw)
-		free(pNPCTextTXT_Raw);
-	pNPCTextTXT_Raw =NULL;
+	free(pNPCTextTXT_Raw);
 	pNPCTextTXT_Raw = (char *)pEvents_LOD->LoadRaw("npctext.txt", 0);
 	strtok(pNPCTextTXT_Raw, "\r");
 
@@ -285,9 +288,7 @@ void NPCStats::InitializeNPCText()
 			} while ((decode_step<2)&&!break_loop);
 		}
 
-	if (pNPCTopicTXT_Raw)
-		free(pNPCTopicTXT_Raw);
-	pNPCTopicTXT_Raw =NULL;
+	free(pNPCTopicTXT_Raw);
 	pNPCTopicTXT_Raw = (char *)pEvents_LOD->LoadRaw("npctopic.txt", 0);
 	strtok(pNPCTopicTXT_Raw, "\r");
 
@@ -323,9 +324,7 @@ void NPCStats::InitializeNPCText()
 			} while ((decode_step<2)&&!break_loop);
 		}
 
-	if (pNPCDistTXT_Raw)
-		free(pNPCDistTXT_Raw);
-	pNPCDistTXT_Raw = NULL;
+	free(pNPCDistTXT_Raw);
 	pNPCDistTXT_Raw = (char *)pEvents_LOD->LoadRaw("npcdist.txt", 0);
 	strtok(pNPCDistTXT_Raw, "\r");
 	strtok(NULL, "\r");
@@ -379,11 +378,8 @@ void NPCStats::InitializeNPCText()
 		pProfessionChance[i].professionChancePerArea[59]=0;
 		}
 
-	if (pNPCDistTXT_Raw)
-		{
-		free(pNPCDistTXT_Raw);
-		pNPCDistTXT_Raw = NULL;
-		}
+	free(pNPCDistTXT_Raw);
+	pNPCDistTXT_Raw = nullptr;
 	}
 
 //----- (00476C60) --------------------------------------------------------
@@ -602,7 +598,6 @@ void NPCStats::Initialize()
 		InitializeMerchants();
 		InitializeScrolls();
 
-		pNPCNamesTXT_Raw = NULL;
 		pNPCNamesTXT_Raw = (char *)pEvents_LOD->LoadRaw("npcnames.txt", 0);
 		strtok(pNPCNamesTXT_Raw, "\r");
 
@@ -653,7 +648,6 @@ void NPCStats::Initialize()
 			}
 		uNumNPCNames[0] = i;
 
-		pNPCProfTXT_Raw = NULL;
 		pNPCProfTXT_Raw = (char *)pEvents_LOD->LoadRaw("npcprof.txt", 0);
 		strtok(pNPCProfTXT_Raw, "\r");
 		strtok(NULL, "\r");
@@ -717,23 +711,23 @@ void NPCStats::Initialize()
 void NPCStats::Release()
 	{
 	free(pNPCTopicTXT_Raw);
-	pNPCTopicTXT_Raw = NULL;
+	pNPCTopicTXT_Raw = nullptr;
 	free(pNPCTextTXT_Raw);
-	pNPCTextTXT_Raw = NULL;
+	pNPCTextTXT_Raw = nullptr;
 	free(pNPCNewsTXT_Raw);
-	pNPCNewsTXT_Raw = NULL;
+	pNPCNewsTXT_Raw = nullptr;
 	free(pNPCProfTXT_Raw);
-	pNPCProfTXT_Raw = NULL;
+	pNPCProfTXT_Raw = nullptr;
 	free(pNPCNamesTXT_Raw);
-	pNPCNamesTXT_Raw = NULL;
+	pNPCNamesTXT_Raw = nullptr;
 	free(pNPCDataTXT_Raw);
-	pNPCDataTXT_Raw = NULL;
+	pNPCDataTXT_Raw = nullptr;
 	free(pNPCDistTXT_Raw);
-	pNPCDistTXT_Raw = NULL;
+	pNPCDistTXT_Raw = nullptr;
 	free(pNPCGreetTXT_Raw);
-	pNPCGreetTXT_Raw = NULL;
+	pNPCGreetTXT_Raw = nullptr;
 	free(pNCPGroupTXT_Raw);
-	pNCPGroupTXT_Raw = NULL;
+	pNCPGroupTXT_Raw = nullptr;
 	}
 
 //----- (0047730C) --------------------------------------------------------
@@ -752,7 +746,7 @@ void NPCStats::InitializeAdditionalNPCs(NPCData *pNPCDataBuff, int npc_uid, int 
 	int test_prof_summ; // ecx@37
 	int gen_profession; // eax@37
 	int max_prof_cap; // edx@37
-	signed int result; // eax@39
+//	signed int result; // eax@39
 	int uRace; // [sp+Ch] [bp-Ch]@1
 	bool break_gen; // [sp+10h] [bp-8h]@1
 	signed int gen_attempts; // [sp+14h] [bp-4h]@1
@@ -895,6 +889,43 @@ void NPCStats::InitializeAdditionalNPCs(NPCData *pNPCDataBuff, int npc_uid, int 
 		pNPCDataBuff->evt_F = 0;
 	}
 
+
+//----- (00495366) --------------------------------------------------------
+char *NPCStats::sub_495366_MispronounceName(unsigned __int8 firstLetter, unsigned __int8 genderId)
+{
+  int pickedName; // edx@2
+
+  if ( firstLetter == dword_AE336C_LastMispronouncedNameFirstLetter)
+    pickedName = dword_AE3370_LastMispronouncedNameResult;
+  else
+  {
+    dword_AE336C_LastMispronouncedNameFirstLetter = firstLetter;
+    if ( this->uNumNPCNames[genderId] == 0 )
+      pickedName = rand() % this->uNumNPCNames[(genderId + 1) % 2];  //originally without " + 1) % 2", but that would yield a div by zero
+    else
+    {
+      int rangeBottom = 0;
+      int rangeTop = 0;
+      for ( uint i = 0; i < this->uNumNPCNames[genderId]; ++i )
+      {
+        if (tolower(this->pNPCNames[i][genderId][0]))
+        {
+          if ( rangeBottom )
+            rangeTop = i;
+          else
+            rangeBottom = i;
+        }
+      }
+      if ( rangeTop != 0 )
+        pickedName = rangeBottom + rand() % (rangeTop - rangeBottom);
+      else
+        pickedName = rand() % this->uNumNPCNames[genderId];
+    }
+  }
+  dword_AE3370_LastMispronouncedNameResult = pickedName;
+  return this->pNPCNames[pickedName][genderId];
+}
+
 //----- (00476387) --------------------------------------------------------
 bool PartyHasDragon()
 {
@@ -909,7 +940,7 @@ bool  CheckHiredNPCSpeciality(unsigned int uProfession)
     if ( bNoNPCHiring == 1 )
         return 0;
 
-    for (int i=0; i<pNPCStats->uNumNewNPCs; ++i )
+    for (uint i=0; i<pNPCStats->uNumNewNPCs; ++i )
         {
         if ( pNPCStats->pNewNPCData[i].uProfession == uProfession && 
             (pNPCStats->pNewNPCData[i].uFlags & 0x80) )
@@ -922,7 +953,6 @@ bool  CheckHiredNPCSpeciality(unsigned int uProfession)
         return false;
 
     }
-// 6BE3C5: using guessed type char bNoNPCHiring;
 
 //----- (004763E0) --------------------------------------------------------
 void  InitializeAwards()
@@ -935,9 +965,7 @@ void  InitializeAwards()
 	char* tmp_pos;
 	int decode_step;
 
-	if ( pAwardsTXT_Raw )
-		free(pAwardsTXT_Raw);
-	pAwardsTXT_Raw = NULL;
+	free(pAwardsTXT_Raw);
 	pAwardsTXT_Raw = (char *)pEvents_LOD->LoadRaw("awards.txt", 0);
 	strtok(pAwardsTXT_Raw, "\r");
 
@@ -989,9 +1017,7 @@ void  InitializeScrolls()
 	char* tmp_pos;
 	int decode_step;
 
-	if ( pScrollsTXT_Raw )
-		free(pScrollsTXT_Raw);
-	pScrollsTXT_Raw = NULL;
+	free(pScrollsTXT_Raw);
 	pScrollsTXT_Raw = (char *)pEvents_LOD->LoadRaw("scroll.txt", 0);
 	strtok(pScrollsTXT_Raw, "\r");
 	for (i=0; i<82; ++i)
@@ -1038,9 +1064,7 @@ void  InitializeMerchants()
 	char* tmp_pos;
 	int decode_step;
 
-	if ( pMerchantsTXT_Raw )
-		free(pMerchantsTXT_Raw);
-	pMerchantsTXT_Raw = NULL;
+	free(pMerchantsTXT_Raw);
 	pMerchantsTXT_Raw = (char *)pEvents_LOD->LoadRaw("merchant.txt", 0);
 	strtok(pMerchantsTXT_Raw, "\r");
 
@@ -1102,9 +1126,7 @@ void InitializeTransitions()
 	char* tmp_pos;
 	int decode_step;
 
-	if ( pTransitionsTXT_Raw )
-		free(pTransitionsTXT_Raw);
-	pTransitionsTXT_Raw = NULL;
+	free(pTransitionsTXT_Raw);
 	pTransitionsTXT_Raw = (char *)pEvents_LOD->LoadRaw("trans.txt", 0);
 	strtok(pTransitionsTXT_Raw, "\r");
 
@@ -1152,9 +1174,7 @@ void  InitializeAutonotes()
 	char* tmp_pos;
 	int decode_step;
 
-	if ( pAutonoteTXT_Raw )
-		free(pAutonoteTXT_Raw);
-	pAutonoteTXT_Raw = 0;
+	free(pAutonoteTXT_Raw);
 	pAutonoteTXT_Raw = (char *)pEvents_LOD->LoadRaw("autonote.txt", 0);
 	strtok(pAutonoteTXT_Raw, "\r");
 
@@ -1237,9 +1257,7 @@ void  InitializeQuests()
 	char* tmp_pos;
 	int decode_step;
 
-	if ( pQuestsTXT_Raw )
-		free(pQuestsTXT_Raw);
-	pQuestsTXT_Raw = NULL;
+	free(pQuestsTXT_Raw);
 	pQuestsTXT_Raw = (char *)pEvents_LOD->LoadRaw("quests.txt", 0);
 	strtok(pQuestsTXT_Raw, "\r");
     memset(pQuestTable.data(),0, sizeof(pQuestTable));
@@ -1296,7 +1314,7 @@ void __fastcall ClickNPCTopic(signed int uMessageParam)
   //unsigned int v16; // ebp@62
   char *v17; // ecx@63
   char *v18; // eax@65
-  const char *v19; // ecx@68
+//  const char *v19; // ecx@68
   //unsigned int v20; // eax@69
   signed int pPrice; // ecx@70
   char *v22; // [sp-Ch] [bp-18h]@73
@@ -1365,7 +1383,7 @@ void __fastcall ClickNPCTopic(signed int uMessageParam)
             current_npc_text = 0;
             activeLevelDecoration = (LevelDecoration*)1;
             EventProcessor(pEventNumber, 0, 1);
-            activeLevelDecoration = NULL;
+            activeLevelDecoration = nullptr;
           }
         }
       }
@@ -1386,10 +1404,11 @@ void __fastcall ClickNPCTopic(signed int uMessageParam)
     if ( uMessageParam == 77 )
     {
       //v16 = pCurrentNPCInfo->uProfession;
+    __debugbreak();  // probably hirelings found in buildings, not present in MM7, changed "pCurrentNPCInfo->uProfession - 1" to "pCurrentNPCInfo->uProfession", have to check in other versions whether it's ok
       if (dialogue_show_profession_details)
-        v17 = pNPCStats->pProfessions[pCurrentNPCInfo->uProfession - 1].pJoinText;
+        v17 = pNPCStats->pProfessions[pCurrentNPCInfo->uProfession].pJoinText;
       else
-        v17 = pNPCStats->pProfessions[pCurrentNPCInfo->uProfession - 1].pBenefits;
+        v17 = pNPCStats->pProfessions[pCurrentNPCInfo->uProfession].pBenefits;
       current_npc_text = v17;
       v18 = BuildDialogueString(v17, uActiveCharacter - 1, 0, 0, 0, 0);
       dialogue_show_profession_details = ~dialogue_show_profession_details;
@@ -1406,7 +1425,7 @@ void __fastcall ClickNPCTopic(signed int uMessageParam)
           {
             v12 = (char *)&pPlayers[uActiveCharacter]->pActiveSkills[dword_F8B1AC_award_bit_number];
             *(short *)v12 &= 0x3Fu;
-            switch ( dword_F8B1B0 )
+            switch ( dword_F8B1B0_MasteryBeingTaught )
             {
               case 2:
                 v15 = (char *)&pPlayers[uActiveCharacter]->pActiveSkills[dword_F8B1AC_award_bit_number];
@@ -1502,15 +1521,16 @@ void __fastcall ClickNPCTopic(signed int uMessageParam)
     ShowStatusBarString(pGlobalTXT_LocalizationStrings[533], 2);// ""I cannot join you, you're party is full""
     goto _return;
   }
-  if ( pCurrentNPCInfo->uProfession != 51 )
+  if ( pCurrentNPCInfo->uProfession != 51 ) //burglars have no hiring price
   {
-    pPrice = pNPCStats->pProfessions[pCurrentNPCInfo->uProfession - 1].uHirePrice;
-    if ( pParty->uNumGold < pPrice )
+    __debugbreak();  // probably hirelings found in buildings, not present in MM7, changed "pCurrentNPCInfo->uProfession - 1" to "pCurrentNPCInfo->uProfession", have to check in other versions whether it's ok
+    pPrice = pNPCStats->pProfessions[pCurrentNPCInfo->uProfession].uHirePrice;
+    if ( pParty->uNumGold < (unsigned int)pPrice )
     {
       ShowStatusBarString(pGlobalTXT_LocalizationStrings[155], 2);
       dialogue_show_profession_details = false;
       uDialogueType = 13;
-      current_npc_text = pNPCStats->pProfessions[pCurrentNPCInfo->uProfession - 1].pJoinText;
+      current_npc_text = pNPCStats->pProfessions[pCurrentNPCInfo->uProfession].pJoinText;
       current_npc_text = BuildDialogueString(current_npc_text, uActiveCharacter - 1, 0, 0, 0, 0);
       if ( uActiveCharacter )
         pPlayers[uActiveCharacter]->PlaySound(SPEECH_NotEnoughGold, 0);
@@ -1564,26 +1584,20 @@ const char * ContractSelectText( int pEventCode )
   if ( pPlayers[uActiveCharacter]->CanAct() )
   {
     if ( (unsigned __int16)_449B57_test_bit((unsigned __int8 *)pPlayers[uActiveCharacter]->_achieved_awards_bits, dword_F8B1AC_award_bit_number) )
-    {
       return pNPCTopics[dialogue_base+13].pText;
-    }
     else
     {
-      if ( gold_transaction_amount <= pParty->uNumGold )
+      if ( (unsigned int)gold_transaction_amount <= pParty->uNumGold )
       {
         contract_approved = 1;
         return pNPCTopics[pEventCode + dialogue_base].pText;
       }
       else
-      {
         return pNPCTopics[dialogue_base+14].pText; 
-      }
     }
   }
   else
-  {
     return pNPCTopics[dialogue_base+12].pText; 
-  }
 }
 //----- (004B40E6) --------------------------------------------------------
 void NPCHireableDialogPrepare()
@@ -1594,15 +1608,15 @@ void NPCHireableDialogPrepare()
   v0 = 0;
   v1 = HouseNPCData[(unsigned int)((char *)pDialogueNPCCount + -(dword_591080 != 0) )];//- 1
   pDialogueWindow->Release();
-  pDialogueWindow = GUIWindow::Create(0, 0, 640, 0x15Eu, WINDOW_MainMenu, 0, 0);
-  pBtn_ExitCancel = pDialogueWindow->CreateButton( 0x1D7u, 0x1BDu,  0xA9u,   0x23u,  1,  0,  UIMSG_Escape,  0,   0,
+  pDialogueWindow = GUIWindow::Create(0, 0, window->GetWidth(), 350, WINDOW_MainMenu, 0, 0);
+  pBtn_ExitCancel = pDialogueWindow->CreateButton( 471, 0x1BDu,  0xA9u,   0x23u,  1,  0,  UIMSG_Escape,  0,   0,
                  pGlobalTXT_LocalizationStrings[34], //"Cancel"
                  pIcons_LOD->GetTexture(uExitCancelTextureId),
                  0);
   pDialogueWindow->CreateButton(0, 0, 0, 0, 1, 0, UIMSG_BuyInShop_Identify_Repair, 0, 0, "", 0);
   if ( pNPCStats->pProfessions[v1->uProfession].pBenefits)//*(&pNPCStats->field_13A5C + 5 * v1->uProfession) )
   {
-    pDialogueWindow->CreateButton( 0x1E0u,  0xA0u,  0x8Cu,  0x1Eu,   1,  0,  UIMSG_ClickNPCTopic,  0x4Du,   0,
+    pDialogueWindow->CreateButton( 480,  0xA0u,  0x8Cu,  0x1Eu,   1,  0,  UIMSG_ClickNPCTopic,  0x4Du,   0,
       pGlobalTXT_LocalizationStrings[407], 0);//"More Information"   
     v0 = 1;
   }
@@ -1631,7 +1645,7 @@ void _4B4224_UpdateNPCTopics( int _this )
   if ( _this + 1 == uNumDialogueNPCPortraits && uHouse_ExitPic )
   {
     pDialogueWindow->Release();
-    pDialogueWindow = GUIWindow::Create(0, 0, 640, 480, WINDOW_MainMenu, 0, 0);
+    pDialogueWindow = GUIWindow::Create(0, 0, window->GetWidth(), window->GetHeight(), WINDOW_MainMenu, 0, 0);
     sprintfex(sHouseName.data(), pGlobalTXT_LocalizationStrings[LOCSTR_ENTER_S], pMapStats->pInfos[uHouse_ExitPic].pName);
     pBtn_ExitCancel = pDialogueWindow->CreateButton(566, 445, 75, 33, 1, 0, UIMSG_Escape, 0, 'N', pGlobalTXT_LocalizationStrings[34], pIcons_LOD->GetTexture(uTextureID_BUTTDESC2), 0);// "Cancel"
     pBtn_YES        = pDialogueWindow->CreateButton(486, 445, 75, 33, 1, 0, UIMSG_BF,     1, 'Y', sHouseName.data(), pIcons_LOD->GetTexture(uTextureID_BUTTYES2), 0);
@@ -1650,11 +1664,11 @@ void _4B4224_UpdateNPCTopics( int _this )
       for ( i = 0; i < uNumDialogueNPCPortraits; ++i )
         HouseNPCPortraitsButtonsList[i]->Release();
     }
-    pDialogueWindow = GUIWindow::Create(0, 0, 640, 0x159u, WINDOW_MainMenu, 0, 0);
-    pBtn_ExitCancel = pDialogueWindow->CreateButton(  471u,  445u,  169u, 35u,  1,   0, UIMSG_Escape,  0,  0,
+    pDialogueWindow = GUIWindow::Create(0, 0, window->GetWidth(), 345, WINDOW_MainMenu, 0, 0);
+    pBtn_ExitCancel = pDialogueWindow->CreateButton(  471,  445,  169, 35,  1,   0, UIMSG_Escape,  0,  0,
                    pGlobalTXT_LocalizationStrings[74],// "End Conversation"
                    pIcons_LOD->GetTexture(uExitCancelTextureId),   0);
-    pDialogueWindow->CreateButton(8u, 8u, 0x1C2u, 0x140u, 1, 0, UIMSG_BuyInShop_Identify_Repair, 0, 0, "", 0);
+    pDialogueWindow->CreateButton(8, 8, 450, 320, 1, 0, UIMSG_BuyInShop_Identify_Repair, 0, 0, "", 0);
     if ( pDialogueNPCCount == 1 && dword_591080 )
     {
       InitializaDialogueOptions(in_current_building_type);
@@ -1878,4 +1892,153 @@ const char *GetProfessionActionText(int a1)
     return pNPCStats->pProfessions[a1 - 1].pActionText;
   else
     return pNPCTopics[407].pTopic;
+}
+
+//----- (004BB756) --------------------------------------------------------
+int UseNPCSkill(NPCProf profession)
+{
+  switch (profession)
+  {
+    case Healer:
+    {
+      for (int i = 0; i < 4; ++i)
+        pParty->pPlayers[i].sHealth = pParty->pPlayers[i].GetMaxHealth();
+    }
+    break;
+
+    case ExpertHealer:
+    {
+      for (int i = 0; i < 4; ++i)
+      {
+        __debugbreak();
+        pParty->pPlayers[i].sHealth = pParty->pPlayers[i].GetMaxHealth();
+
+        for (int j = 0; j < 14; ++j)
+          pParty->pPlayers[i].pConditions[j] = 0;
+        pParty->pPlayers[i].pConditions[Condition_Good] = 0;
+      }
+    }
+    break;
+
+    case MasterHealer:
+    {
+      for (int i = 0; i < 4; ++i)
+      {
+        __debugbreak();	//Ritor1:needed cleaned(Необходимо почистить)
+        Player* player = &pParty->pPlayers[i];
+        pParty->pPlayers[i].sHealth = pParty->pPlayers[i].GetMaxHealth();
+
+        int v5 = LODWORD(player->pConditions[19]);//*((int *)v4 - 32);
+        int v6 = HIDWORD(player->pConditions[19]);//*((int *)v4 - 31);
+        memset(&pParty->pPlayers[i].pConditions, 0, sizeof(pParty->pPlayers[i].pConditions));
+
+        *(int *)&player->pActiveSkills[PLAYER_SKILL_SHIELD] = v5;
+        *(int *)&player->pActiveSkills[PLAYER_SKILL_CHAIN] = v6;
+      }
+    }
+    break;
+
+    case Cook://Повар
+    {
+      if (pParty->uNumFoodRations >= 13)
+        return 1;
+
+      Party::GiveFood(1);
+    }
+    break;
+
+    case Chef:
+    {
+      if (pParty->uNumFoodRations >= 13)
+        return 1;
+
+      if (pParty->uNumFoodRations == 13)
+        Party::GiveFood(1);
+      else
+        Party::GiveFood(2);
+    }
+    break;
+
+    case WindMaster:
+    {
+      if (uCurrentlyLoadedLevelType == LEVEL_Indoor)
+      {
+        ShowStatusBarString(pGlobalTXT_LocalizationStrings[494], 2);//Нельзя применить знание Полет в помещении!
+        pAudioPlayer->PlaySound(SOUND_203, 0, 0, -1, 0, 0, 0, 0);
+      }
+      else
+      {
+        int v19 = pOtherOverlayList->_4418B1(10008, 203, 0, 65536);
+        pParty->pPartyBuffs[PARTY_BUFF_FLY].Apply(pParty->uTimePlayed + 60 * (256 * 2), 3, 1, v19, 0);
+        pParty->pPartyBuffs[PARTY_BUFF_FLY].uFlags |= 1;
+        pAudioPlayer->PlaySound(SOUND_11090, 0, 0, -1, 0, 0, 0, 0);
+      }
+    }
+    break;
+
+    case WaterMaster:
+    {
+      int v20 = pOtherOverlayList->_4418B1(10005, 201, 0, 65536);
+      pParty->pPartyBuffs[PARTY_BUFF_WATER_WALK].Apply(pParty->uTimePlayed + 60 * (256 * (2 + 1)), 3, 0, v20, 0);
+      pParty->pPartyBuffs[PARTY_BUFF_WATER_WALK].uFlags |= 1;
+      pAudioPlayer->PlaySound(SOUND_12040, 0, 0, -1, 0, 0, 0, 0);
+    }
+    break;
+
+    case GateMaster:
+    {
+      pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 0, 0);
+      dword_50C9DC = 195;
+      ptr_50C9E0 = GetNPCData(sDialogue_SpeakingActorNPC_ID);
+    }
+    break;
+
+    case Acolyte:      _42777D_CastSpell_UseWand_ShootArrow(46, 0, 133, 0, 0); break;
+    case Piper:        _42777D_CastSpell_UseWand_ShootArrow(51, 0, 133, 0, 0); break;
+    case FallenWizard: _42777D_CastSpell_UseWand_ShootArrow(86, 0, 133, 0, 0); break;
+      
+    case Teacher:
+    case Instructor:
+    case Armsmaster:
+    case Weaponsmaster:
+    case Apprentice:
+    case Mystic:
+    case Spellmaster:
+    case Trader:
+    case Merchant:
+    case Scout:
+    case Herbalist:
+    case Apothecary:
+    case Tinker:
+    case Locksmith:
+    case Fool:
+    case ChimneySweep:
+    case Porter:
+    case QuarterMaster:
+    case Factor:
+    case Banker:
+    case Horseman:
+    case Bard:
+    case Enchanter:
+    case Cartographer:
+    case Explorer:
+    case Pirate:
+    case Squire:
+    case Psychic:
+    case Gypsy:
+    case Diplomat:
+    case Duper:
+    case Burglar:
+    case Acolyte2:
+    case Initiate:
+    case Prelate:
+    case Monk:
+    case Sage:
+    case Hunter:
+      break;
+
+    default:
+      assert(false && "Invalid enum value");
+  }
+  return 0;
 }

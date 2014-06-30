@@ -1,8 +1,6 @@
-#ifdef _MSC_VER
 #define _CRT_SECURE_NO_WARNINGS
-#endif
-
 #include <string>
+#include "ErrorHandling.h"
 
 #include "LOD.h"
 #include "GUIFont.h"
@@ -58,8 +56,6 @@ GUIFont *LoadFont(const char *pFontFile, const char *pFontPalette, ...)
     return pFont;
 }
 
-
-
 //----- (0044D2FD) --------------------------------------------------------
 void GUIFont::_44D2FD_prolly_draw_credits_entry( GUIFont *pSecondFont, int uFrameX, int uFrameY, unsigned int w, unsigned int h, 
                                                  unsigned __int16 firstColor, unsigned __int16 secondColor, const char *pString, 
@@ -112,8 +108,6 @@ void GUIFont::_44D2FD_prolly_draw_credits_entry( GUIFont *pSecondFont, int uFram
     }
   }
 }
-
-
 
 //----- (0044D1E7) --------------------------------------------------------
 void GUIFont::DrawTextLine( unsigned int uDefaultColor, signed int uX, signed int uY, 
@@ -192,7 +186,7 @@ void DrawCharToBuff( unsigned short* uXpos,unsigned char* pCharPixels, int uChar
             if ( char_pxl )
                 {
                 if ( char_pxl == 1 )
-                    *draw_buff = pFontPalette[1];         
+                    *draw_buff = pFontPalette[1];     
                 else         
                     *draw_buff = draw_color;         
                 }
@@ -646,11 +640,11 @@ char * FitTextInAWindow( const char *pInString, GUIFont *pFont, GUIWindow *pWind
 //----- (00414162) --------------------------------------------------------
 void uGameUIFontMain_initialize()
 {
-  uGameUIFontMain = TargetColor(0xAu, 0, 0);
+  uGameUIFontMain = Color16(0xAu, 0, 0);
 }
 
 //----- (00414174) --------------------------------------------------------
 void uGameUIFontShadow_initialize()
 {
-  uGameUIFontShadow = TargetColor(0xE6u, 214u, 193u);
+  uGameUIFontShadow = Color16(0xE6u, 214, 193);
 }

@@ -1,11 +1,12 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include "ParticleEngine.h"
-#include "Time.h"
+#include "Timer.h"
 #include "Render.h"
 #include "Viewport.h"
 #include "Outdoor.h"
 #include "Game.h"
 #include "Outdoor_stuff.h"
-#include "Math.h"
+#include "OurMath.h"
 #include "LOD.h"
 
 #include "Sprites.h"
@@ -140,17 +141,18 @@ void ParticleEngine::Draw()
   else
     DrawParticles_ODM();
 
-  if (pRenderer->pRenderD3D)
+  //if (pRenderer->pRenderD3D)
   {
     if (pLines.uNumLines)
     {
-      pRenderer->pRenderD3D->pDevice->SetTexture(0, 0);
+      pRenderer->DrawLines(pLines.pLineVertices, pLines.uNumLines);
+      /*pRenderer->pRenderD3D->pDevice->SetTexture(0, 0);
       pRenderer->pRenderD3D->pDevice->DrawPrimitive(
         D3DPT_LINELIST,
         D3DFVF_XYZRHW | D3DFVF_DIFFUSE | D3DFVF_SPECULAR | D3DFVF_TEX1,
         pLines.pLineVertices,
         pLines.uNumLines,
-        D3DDP_DONOTLIGHT);
+        D3DDP_DONOTLIGHT);*/
     }
   }
 }
@@ -242,53 +244,53 @@ bool ParticleEngine::ViewProject_TrueIfStillVisible_BLV(unsigned int uParticleID
   signed __int64 v6; // qtt@4
   //double v7; // st7@4
   //float v8; // ST18_4@4
-  int v9; // ecx@4
+//  int v9; // ecx@4
   //int v10; // eax@4
   //double v11; // ST44_8@7
   //double v12; // ST4C_8@7
-  double v13; // ST4C_8@7
-  int v14; // ecx@7
+//  double v13; // ST4C_8@7
+//  int v14; // ecx@7
   //signed __int64 v15; // qtt@7
-  int v16; // eax@7
-  int v17; // edx@7
-  float v18; // edx@7
-  int v19; // eax@7
-  int v20; // edx@7
-  int v21; // ST50_4@8
-  int v22; // ebx@8
-  int v23; // ecx@10
-  int v24; // edi@10
+//  int v16; // eax@7
+//  int v17; // edx@7
+//  float v18; // edx@7
+//  int v19; // eax@7
+//  int v20; // edx@7
+//  int v21; // ST50_4@8
+//  int v22; // ebx@8
+//  int v23; // ecx@10
+//  int v24; // edi@10
   //double v25; // ST44_8@12
   //double v26; // ST4C_8@12
-  int v27; // edi@12
-  int v28; // ST40_4@12
-  int v29; // ecx@12
+//  int v27; // edi@12
+//  int v28; // ST40_4@12
+//  int v29; // ecx@12
   //signed __int64 v30; // qtt@12
-  int v31; // eax@12
-  int v32; // edx@12
-  float v33; // edx@12
+//  int v31; // eax@12
+//  int v32; // edx@12
+//  float v33; // edx@12
   //int v34; // eax@12
-  int v35; // ecx@12
-  int v36; // ST38_4@13
-  int v37; // ST30_4@15
-  int v38; // eax@16
+//  int v35; // ecx@12
+//  int v36; // ST38_4@13
+//  int v37; // ST30_4@15
+//  int v38; // eax@16
   //signed __int64 v40; // qtt@18
-  int v41; // eax@18
-  int v42; // ecx@18
-  int v43; // eax@18
-  unsigned __int64 v44; // qax@18
+//  int v41; // eax@18
+//  int v42; // ecx@18
+//  int v43; // eax@18
+//  unsigned __int64 v44; // qax@18
   //double v45; // st7@18
   //int v46; // ecx@18
   //float v47; // ST18_4@18
   //unsigned __int64 v48; // qax@18
   int y_int_; // [sp+10h] [bp-40h]@2
-  int a2; // [sp+18h] [bp-38h]@10
+//  int a2; // [sp+18h] [bp-38h]@10
   int x_int; // [sp+20h] [bp-30h]@2
   int z_int_; // [sp+24h] [bp-2Ch]@2
-  int z_int_4; // [sp+28h] [bp-28h]@8
+//  int z_int_4; // [sp+28h] [bp-28h]@8
   int z; // [sp+3Ch] [bp-14h]@3
-  double a5; // [sp+40h] [bp-10h]@4
-  int a6; // [sp+48h] [bp-8h]@4
+//  double a5; // [sp+40h] [bp-10h]@4
+//  int a6; // [sp+48h] [bp-8h]@4
   int y; // [sp+4Ch] [bp-4h]@3
 
   pParticle = &this->pParticles[uParticleID];
@@ -453,186 +455,113 @@ bool ParticleEngine::ViewProject_TrueIfStillVisible_BLV(unsigned int uParticleID
 //----- (0048B5B3) --------------------------------------------------------
 bool ParticleEngine::ViewProject_TrueIfStillVisible_ODM(unsigned int uID)
 {
-  //ParticleEngine *v2; // ST18_4@1
   int v3; // ebx@1
   int v4; // edi@1
   int v5; // ecx@1
-  Particle *v6; // esi@1
-  //double v7; // ST14_8@2
-  //double v8; // ST34_8@4
-  //double v9; // ST3C_8@4
-  //int v10; // ST50_4@4
   int v11; // ST44_4@4
-  //double v12; // ST48_8@4
   signed __int64 v13; // qtt@4
-  //int v14; // eax@4
-  //int v15; // ST28_4@4
   int v16; // edi@6
   int v17; // eax@6
-  //double v18; // ST2C_8@8
-  //double v19; // ST34_8@8
-  //int v20; // ST50_4@8
-  //double v21; // ST34_8@8
   signed __int64 v22; // qtt@8
-  //int v23; // eax@8
-  //int v24; // ST28_4@8
-  //int v25; // edx@8
   int v26; // edx@9
-  //int v27; // eax@9
   int v28; // ebx@12
   signed __int64 v29; // qtt@13
-  //int v30; // eax@13
-  //int v31; // ST1C_4@13
-  //double v32; // st7@13
-  signed int v33; // eax@13
-  //int v34; // ecx@13
-  //float v35; // ST04_4@13
-  int v36; // eax@13
-  int v37; // esi@15
-  //double v39; // [sp+10h] [bp-40h]@2
   int v40; // [sp+14h] [bp-3Ch]@12
-  //int v41; // [sp+1Ch] [bp-34h]@2
-  //double v42; // [sp+20h] [bp-30h]@2
-  //int v43; // [sp+24h] [bp-2Ch]@5
   int v44; // [sp+2Ch] [bp-24h]@1
   int v45; // [sp+40h] [bp-10h]@5
   int X_4; // [sp+48h] [bp-8h]@5
-  //int v47; // [sp+4Ch] [bp-4h]@5
-  //int v48; // [sp+4Ch] [bp-4h]@9
-  //int uIDc; // [sp+58h] [bp+8h]@4
-  //int uIDd; // [sp+58h] [bp+8h]@4
-  //int uIDe; // [sp+58h] [bp+8h]@5
-  //int uIDa; // [sp+58h] [bp+8h]@5
-  //int uIDf; // [sp+58h] [bp+8h]@8
-  //int uIDb; // [sp+58h] [bp+8h]@9
 
   v3 = stru_5C6E00->Cos(pGame->pIndoorCameraD3D->sRotationX);
   v44 = stru_5C6E00->Sin(pGame->pIndoorCameraD3D->sRotationX);
   v4 = stru_5C6E00->Cos(pGame->pIndoorCameraD3D->sRotationY);
   v5 = stru_5C6E00->Sin(pGame->pIndoorCameraD3D->sRotationY);
 
-  v6 = &pParticles[uID];
-  if (v6->type == ParticleType_Invalid)
+  if (pParticles[uID].type == ParticleType_Invalid)
     return false;
 
-    //v7 = v6->x + 6.7553994e15;
-    //v41 = LODWORD(v7);
-    //v39 = v6->y + 6.7553994e15;
-    //v42 = v6->z + 6.7553994e15;
-    if ( v3 )
+  if ( v3 )
+  {
+    if (pParticles[uID].type & ParticleType_Line)
     {
-      if (v6->type & ParticleType_Line)
-      {
-        //v8 = v6->_x + 6.7553994e15;
-        //uIDc = (LODWORD(v8) - pIndoorCamera->pos.x) << 16;
-        //v9 = v6->_y + 6.7553994e15;
-        //v10 = (LODWORD(v9) - pIndoorCamera->pos.y) << 16;
-        v11 = fixpoint_sub_unknown(v6->x - pGame->pIndoorCameraD3D->vPartyPos.x, v4) + fixpoint_sub_unknown(v6->y - pGame->pIndoorCameraD3D->vPartyPos.y, v5);
-        //HIDWORD(v8) = fixpoint_sub_unknown(v6->x - pIndoorCamera->pos.x, v5);
-        //v12 = v6->_z + 6.7553994e15;
-        //uIDd = (LODWORD(v12) - pIndoorCamera->pos.z) << 16;
-        long long _hidword_v12 = fixpoint_mul(v11, v3) + fixpoint_sub_unknown(v6->z - pGame->pIndoorCameraD3D->vPartyPos.z, v44);
-        LODWORD(v13) = 0;
-        HIDWORD(v13) = SLOWORD(pODMRenderParams->int_fov_rad);
-        //v14 = v13 / _hidword_v12;
-        v6->_screenspace_scale = v13 / _hidword_v12;
-        //v15 = v6->_screenspace_scale;
-        v6->uScreenSpaceX = pViewport->uScreenCenterX
-                          - ((signed int)((unsigned __int64)(v6->_screenspace_scale
-                                                           * (signed __int64)(fixpoint_sub_unknown(v6->y - pGame->pIndoorCameraD3D->vPartyPos.y, v4)
-                                                                                        - fixpoint_sub_unknown(v6->x - pGame->pIndoorCameraD3D->vPartyPos.x, v5))) >> 16) >> 16);
-        v6->uScreenSpaceY = pViewport->uScreenCenterY
-                          - ((signed int)((unsigned __int64)(v6->_screenspace_scale
-                                                           * (signed __int64)(fixpoint_sub_unknown(v6->z - pGame->pIndoorCameraD3D->vPartyPos.z, v3)
-                                                                                        - ((unsigned __int64)(v11 * (signed __int64)v44) >> 16))) >> 16) >> 16);
-        v6->sZValue = _hidword_v12;
-      }
-      //uIDe = (v41 - pIndoorCamera->pos.x) << 16;
-      //v47 = (LODWORD(v39) - pIndoorCamera->pos.y) << 16;
-      v45 = fixpoint_sub_unknown(v6->x - pGame->pIndoorCameraD3D->vPartyPos.x, v4) + fixpoint_sub_unknown(v6->y - pGame->pIndoorCameraD3D->vPartyPos.y, v5);
-      //HIDWORD(v42) = fixpoint_sub_unknown(v6->x - pIndoorCamera->pos.x, v5);
-      //uIDa = (LODWORD(v42) - pIndoorCamera->pos.z) << 16;
-      X_4 = fixpoint_sub_unknown(v6->z - pGame->pIndoorCameraD3D->vPartyPos.z, v44) + fixpoint_mul(v45, v3);
-      if ( X_4 < 0x40000 )
-        return 0;
-      v16 = fixpoint_sub_unknown(v6->y - pGame->pIndoorCameraD3D->vPartyPos.y, v4) - fixpoint_sub_unknown(v6->x - pGame->pIndoorCameraD3D->vPartyPos.x, v5);
-      v17 = fixpoint_sub_unknown(v6->z - pGame->pIndoorCameraD3D->vPartyPos.z, v3) - fixpoint_mul(v45, v44);
+      v11 = fixpoint_sub_unknown(pParticles[uID].x - pGame->pIndoorCameraD3D->vPartyPos.x, v4)
+          + fixpoint_sub_unknown(pParticles[uID].y - pGame->pIndoorCameraD3D->vPartyPos.y, v5);
+      long long _hidword_v12 = fixpoint_mul(v11, v3) + fixpoint_sub_unknown(pParticles[uID].z - pGame->pIndoorCameraD3D->vPartyPos.z, v44);
+      LODWORD(v13) = 0;
+      HIDWORD(v13) = SLOWORD(pODMRenderParams->int_fov_rad);
+      pParticles[uID]._screenspace_scale = v13 / _hidword_v12;
+      pParticles[uID].uScreenSpaceX = pViewport->uScreenCenterX
+                                    - ((signed int)fixpoint_mul(pParticles[uID]._screenspace_scale, (fixpoint_sub_unknown(pParticles[uID].y
+                                    - pGame->pIndoorCameraD3D->vPartyPos.y, v4)
+                                    - fixpoint_sub_unknown(pParticles[uID].x - pGame->pIndoorCameraD3D->vPartyPos.x, v5))) >> 16);
+      pParticles[uID].uScreenSpaceY = pViewport->uScreenCenterY
+                                    - ((signed int)fixpoint_mul(pParticles[uID]._screenspace_scale, (fixpoint_sub_unknown(pParticles[uID].z
+                                    - pGame->pIndoorCameraD3D->vPartyPos.z, v3)
+                                    - fixpoint_mul(v11, v44))) >> 16);
+      pParticles[uID].sZValue = _hidword_v12;
     }
-    else
+    v45 = fixpoint_sub_unknown(pParticles[uID].x - pGame->pIndoorCameraD3D->vPartyPos.x, v4) + fixpoint_sub_unknown(pParticles[uID].y
+                                                 - pGame->pIndoorCameraD3D->vPartyPos.y, v5);
+    X_4 = fixpoint_sub_unknown(pParticles[uID].z - pGame->pIndoorCameraD3D->vPartyPos.z, v44) + fixpoint_mul(v45, v3);
+    if ( X_4 < 0x40000 )
+      return 0;
+    v16 = fixpoint_sub_unknown(pParticles[uID].y - pGame->pIndoorCameraD3D->vPartyPos.y, v4)
+        - fixpoint_sub_unknown(pParticles[uID].x - pGame->pIndoorCameraD3D->vPartyPos.x, v5);
+    v17 = fixpoint_sub_unknown(pParticles[uID].z - pGame->pIndoorCameraD3D->vPartyPos.z, v3) - fixpoint_mul(v45, v44);
+  }
+  else
+  {
+    if (pParticles[uID].type & ParticleType_Line)
     {
-      if (v6->type & ParticleType_Line)
-      {
-        //v18 = v6->_x + 6.7553994e15;
-        //uIDf = (LODWORD(v18) - pIndoorCamera->pos.x) << 16;
-        //v19 = v6->_y + 6.7553994e15;
-        //v20 = (LODWORD(v19) - pIndoorCamera->pos.y) << 16;
-        //v21 = v6->_z + 6.7553994e15;
-        LODWORD(v22) = 0;
-        HIDWORD(v22) = SLOWORD(pODMRenderParams->int_fov_rad);
-        long long _var_123 = fixpoint_sub_unknown(v6->x - pGame->pIndoorCameraD3D->vPartyPos.x, v4) + fixpoint_sub_unknown(v6->y - pGame->pIndoorCameraD3D->vPartyPos.y, v5);
-        //v23 = v22 / _var_123;
-        v6->_screenspace_scale = v22 / _var_123;
-        //v24 = v6->_screenspace_scale;
-        v6->uScreenSpaceX = pViewport->uScreenCenterX
-                          - ((signed int)((unsigned __int64)(v6->_screenspace_scale
-                                                           * (signed __int64)(fixpoint_sub_unknown(v6->y - pGame->pIndoorCameraD3D->vPartyPos.y, v4)
-                                                                                        - fixpoint_sub_unknown(v6->x - pGame->pIndoorCameraD3D->vPartyPos.x, v5))) >> 16) >> 16);
-        v6->uScreenSpaceY = pViewport->uScreenCenterY - (fixpoint_sub_unknown(v6->z, v6->_screenspace_scale) >> 16);
-        v6->sZValue = _var_123;
-      }
-      //uIDb = (v41 - pIndoorCamera->pos.x) << 16;
-      //v48 = (LODWORD(v39) - pIndoorCamera->pos.y) << 16;
-      v26 = fixpoint_sub_unknown(v6->y - pGame->pIndoorCameraD3D->vPartyPos.y, v5);
-      //v27 = v26 + ((unsigned __int64)(uIDb * (signed __int64)v4) >> 16);
-      X_4 = v26 + fixpoint_sub_unknown(v6->x - pGame->pIndoorCameraD3D->vPartyPos.x, v4);
-      if ( X_4 < 0x40000 || X_4 > (pODMRenderParams->uPickDepth - 1000) << 16 )
-        return 0;
-      v17 = v6->z;
-      v16 = fixpoint_sub_unknown(v6->y - pGame->pIndoorCameraD3D->vPartyPos.y, v4) - fixpoint_sub_unknown(v6->x - pGame->pIndoorCameraD3D->vPartyPos.x, v5);
+      LODWORD(v22) = 0;
+      HIDWORD(v22) = SLOWORD(pODMRenderParams->int_fov_rad);
+      long long _var_123 = fixpoint_sub_unknown(pParticles[uID].x - pGame->pIndoorCameraD3D->vPartyPos.x, v4)
+                         + fixpoint_sub_unknown(pParticles[uID].y - pGame->pIndoorCameraD3D->vPartyPos.y, v5);
+      pParticles[uID]._screenspace_scale = v22 / _var_123;
+      pParticles[uID].uScreenSpaceX = pViewport->uScreenCenterX
+                        - ((signed int)fixpoint_mul(pParticles[uID]._screenspace_scale, (fixpoint_sub_unknown(pParticles[uID].y
+                        - pGame->pIndoorCameraD3D->vPartyPos.y, v4)
+                        - fixpoint_sub_unknown(pParticles[uID].x - pGame->pIndoorCameraD3D->vPartyPos.x, v5))) >> 16);
+      pParticles[uID].uScreenSpaceY = pViewport->uScreenCenterY - (fixpoint_sub_unknown(pParticles[uID].z, pParticles[uID]._screenspace_scale) >> 16);
+      pParticles[uID].sZValue = _var_123;
     }
-    v40 = v17;
-    v28 = abs(v16);
-    if ( abs(X_4) >= v28 )
-    {
-      LODWORD(v29) = 0;
-      HIDWORD(v29) = SLOWORD(pODMRenderParams->int_fov_rad);
-      //v30 = v29 / X_4;
-      v6->_screenspace_scale = v29 / X_4;
-      //v31 = v6->_screenspace_scale;
-      v6->uScreenSpaceX = pViewport->uScreenCenterX
-                        - ((signed int)((unsigned __int64)(v6->_screenspace_scale * (signed __int64)v16) >> 16) >> 16);
-      v33 = (signed int)((unsigned __int64)(v6->_screenspace_scale * (signed __int64)v40) >> 16) >> 16;
-      //v34 = pViewport->uScreenCenterY - v33;
-      v6->uScreenSpaceY = pViewport->uScreenCenterY - v33;
-      v6->_screenspace_scale = fixpoint_mul(fixpoint_from_float(v6->flt_28), v6->_screenspace_scale);
-      v6->sZValue = X_4;
-      v36 = v6->uScreenSpaceX;
-      if ( v36 >= (signed int)pViewport->uViewportTL_X )
-      {
-        if ( v36 < (signed int)pViewport->uViewportBR_X )
-        {
-          v37 = v6->uScreenSpaceY;
-          if ( v37 >= (signed int)pViewport->uViewportTL_Y )
-          {
-            if ( v37 < (signed int)pViewport->uViewportBR_Y )
-              return 1;
-          }
-        }
-      }
-    }
-    return false;
+    v26 = fixpoint_sub_unknown(pParticles[uID].y - pGame->pIndoorCameraD3D->vPartyPos.y, v5);
+    X_4 = v26 + fixpoint_sub_unknown(pParticles[uID].x - pGame->pIndoorCameraD3D->vPartyPos.x, v4);
+    if ( X_4 < 0x40000 || X_4 > (pODMRenderParams->uPickDepth - 1000) << 16 )
+      return 0;
+    v17 = pParticles[uID].z;
+    v16 = fixpoint_sub_unknown(pParticles[uID].y - pGame->pIndoorCameraD3D->vPartyPos.y, v4)
+        - fixpoint_sub_unknown(pParticles[uID].x - pGame->pIndoorCameraD3D->vPartyPos.x, v5);
+  }
+  v40 = v17;
+  v28 = abs(v16);
+  if ( abs(X_4) >= v28 )
+  {
+    LODWORD(v29) = 0;
+    HIDWORD(v29) = SLOWORD(pODMRenderParams->int_fov_rad);
+    pParticles[uID]._screenspace_scale = v29 / X_4;
+    pParticles[uID].uScreenSpaceX = pViewport->uScreenCenterX - ((signed int)fixpoint_mul(pParticles[uID]._screenspace_scale, v16) >> 16);
+    pParticles[uID].uScreenSpaceY = pViewport->uScreenCenterY - ((signed int)fixpoint_mul(pParticles[uID]._screenspace_scale, v40) >> 16);
+    pParticles[uID]._screenspace_scale = fixpoint_mul(fixpoint_from_float(pParticles[uID].flt_28), pParticles[uID]._screenspace_scale);
+    pParticles[uID].sZValue = X_4;
+    if ( pParticles[uID].uScreenSpaceX >= (signed int)pViewport->uViewportTL_X
+      && pParticles[uID].uScreenSpaceX < (signed int)pViewport->uViewportBR_X
+      && pParticles[uID].uScreenSpaceY >= (signed int)pViewport->uViewportTL_Y
+      && pParticles[uID].uScreenSpaceY < (signed int)pViewport->uViewportBR_Y )
+      return true;
+  }
+  return false;
 }
 
 //----- (0048BBA6) --------------------------------------------------------
 void ParticleEngine::DrawParticles_BLV()
 {
-  int v11; // eax@18
-  int v12; // ecx@20
-  int v13; // edx@20
+//  int v11; // eax@18
+//  int v12; // ecx@20
+//  int v13; // edx@20
   //Particle *v14; // eax@28
   RenderBillboardTransform_local0 v15; // [sp+Ch] [bp-58h]@1
 
-  v15.uParentBillboardID = -1;
+  v15.sParentBillboardID = -1;
 
   for (uint i = uStartParticle; i < uEndParticle; ++i)
   {
@@ -649,8 +578,28 @@ void ParticleEngine::DrawParticles_BLV()
         p->uScreenSpaceY >= pBLVRenderParams->uViewportY &&
         p->uScreenSpaceY < pBLVRenderParams->uViewportW)
     {
-      if (pRenderer->pRenderD3D)
+      /*if (!pRenderer->pRenderD3D)
       {
+        __debugbreak();
+                    v11 = 13 * p->_screenspace_scale >> 16;
+                     if ( v11 > 30 )
+                       v11 = 30;
+                    v12 = p->uScreenSpaceY - v11;
+                    v13 = p->uScreenSpaceX - (v11 >> 1);
+                     if ( v13 + v11 < (signed int)pViewport->uViewportTL_X
+                       || v13 >= (signed int)pViewport->uViewportBR_X
+                       || v12 + v11 < (signed int)pViewport->uViewportTL_Y
+                       || v12 >= (signed int)pViewport->uViewportBR_Y )
+                     {
+                      ;
+                     }
+                     else
+                     {
+                       pRenderer->MakeParticleBillboardAndPush_BLV_Software(v13, v12, p->sZValue, p->uLightColor_bgr, v11);
+                     }
+      }
+      else*/
+
         if (p->type & ParticleType_Diffuse)
         {
           //v14 = &pParticles[i];
@@ -703,26 +652,6 @@ void ParticleEngine::DrawParticles_BLV()
           v15.sZValue = p->sZValue;
           pRenderer->MakeParticleBillboardAndPush_BLV(&v15, pSprites_LOD->pHardwareSprites[p->uTextureID].pTexture, p->uLightColor_bgr, p->angle);
         }
-      }
-      else
-      {
-                    v11 = 13 * p->_screenspace_scale >> 16;
-                     if ( v11 > 30 )
-                       v11 = 30;
-                    v12 = p->uScreenSpaceY - v11;
-                    v13 = p->uScreenSpaceX - (v11 >> 1);
-                     if ( v13 + v11 < (signed int)pViewport->uViewportTL_X
-                       || v13 >= (signed int)pViewport->uViewportBR_X
-                       || v12 + v11 < (signed int)pViewport->uViewportTL_Y
-                       || v12 >= (signed int)pViewport->uViewportBR_Y )
-                     {
-                      ;
-                     }
-                     else
-                     {
-                       pRenderer->MakeParticleBillboardAndPush_BLV_Software(v13, v12, p->sZValue, p->uLightColor_bgr, v11);
-                     }
-      }
     }
   }
 }
@@ -732,21 +661,21 @@ void ParticleEngine::DrawParticles_ODM()
 {
   ParticleEngine *pParticleEngine; // esi@1
   //int pParticleNum; // eax@1
-  unsigned __int8 v3; // zf@1
-  char v4; // sf@1
-  unsigned __int8 v5; // of@1
+//  unsigned __int8 v3; // zf@1
+//  char v4; // sf@1
+//  unsigned __int8 v5; // of@1
   //char *v7; // edi@2
   //int v8; // eax@6
   //signed int pNumLines; // eax@8
-  int v10; // eax@14
-  int v11; // ecx@16
-  int v12; // edx@16
+//  int v10; // eax@14
+//  int v11; // ecx@16
+//  int v12; // edx@16
   //Particle *pParticle; // eax@24
   RenderBillboardTransform_local0 pBillboard; // [sp+Ch] [bp-58h]@1
   //int v15; // [sp+5Ch] [bp-8h]@9
-  int v16; // [sp+60h] [bp-4h]@1
+//  int v16; // [sp+60h] [bp-4h]@1
 
-  pBillboard.uParentBillboardID = -1;
+  pBillboard.sParentBillboardID = -1;
   pParticleEngine = this;
   //v2 = this->uStartParticle;
   //v5 = v2 > this->uEndParticle;//  v5 = __OFSUB__(v2, this->uEndParticle);
@@ -759,8 +688,28 @@ void ParticleEngine::DrawParticles_ODM()
     if (particle->type == ParticleType_Invalid || !ViewProject_TrueIfStillVisible_ODM(i))
       continue;
 
-        if ( pRenderer->pRenderD3D )
+        /*if ( !pRenderer->pRenderD3D )
         {
+          __debugbreak();
+          v10 = 13 * particle->_screenspace_scale >> 16;
+          if ( v10 > 30 )
+            v10 = 30;
+          v11 = particle->uScreenSpaceX - (v10 >> 1);
+          v12 = particle->uScreenSpaceY - v10;
+          if ( v11 + v10 < pViewport->uViewportTL_X
+            || v11 >= pViewport->uViewportBR_X
+            || particle->uScreenSpaceY < pViewport->uViewportTL_Y
+            || v12 >= (signed int)pViewport->uViewportBR_Y )
+          {
+            ;
+          }
+          else
+          {
+            pRenderer->MakeParticleBillboardAndPush_BLV_Software(v11, v12, particle->sZValue, particle->uLightColor_bgr, v10);
+          }
+        }
+        else*/
+
           //v8 = *(_DWORD *)(v7 - 82);
           if (particle->type & ParticleType_Diffuse)
           {
@@ -813,26 +762,6 @@ void ParticleEngine::DrawParticles_ODM()
             pBillboard.uScreenSpaceY = particle->uScreenSpaceY;
             pBillboard.sZValue = particle->sZValue;
             pRenderer->MakeParticleBillboardAndPush_ODM(&pBillboard, pSprites_LOD->pHardwareSprites[particle->uTextureID].pTexture, particle->uLightColor_bgr, particle->angle);
-          }
-        }
-        else
-        {
-          v10 = 13 * particle->_screenspace_scale >> 16;
-          if ( v10 > 30 )
-            v10 = 30;
-          v11 = particle->uScreenSpaceX - (v10 >> 1);
-          v12 = particle->uScreenSpaceY - v10;
-          if ( v11 + v10 < pViewport->uViewportTL_X
-            || v11 >= pViewport->uViewportBR_X
-            || particle->uScreenSpaceY < pViewport->uViewportTL_Y
-            || v12 >= (signed int)pViewport->uViewportBR_Y )
-          {
-            ;
-          }
-          else
-          {
-            pRenderer->MakeParticleBillboardAndPush_BLV_Software(v11, v12, particle->sZValue, particle->uLightColor_bgr, v10);
-          }
-        }      
+          }   
   }
 }

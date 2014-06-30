@@ -1,10 +1,9 @@
 #pragma once
 #include <stdio.h>
 #include <memory.h>
+#include <cstdint>
 
-#include "Log.h"
 #include "Texture.h"
-#include "ErrorHandling.h"
 
 class Sprite;
 
@@ -91,7 +90,7 @@ namespace LOD
 
     FILE *pFile;
     char pLODName[256];
-    unsigned int isFileOpened;
+    bool isFileOpened;
     unsigned __int8 *pIOBuffer;
     unsigned int uIOBufferSize;
     struct FileHeader header;
@@ -177,16 +176,7 @@ struct LODFile_IconsBitmaps: public LOD::File
     return LoadTextureFromLOD(&pTextures[uNumLoadedFiles], "pending", TEXTURE_16BIT_PALETTE);
   }
 
-  inline Texture *GetTexture(int idx)
-  {
-    Assert(idx < MAX_LOD_TEXTURES, "Texture index out of bounds (%u)", idx);
-    if (idx == -1) 
-    {
-      //Log::Warning(L"Texture id = %d missing", idx);
-      return pTextures + LoadDummyTexture();
-    }
-    return pTextures + idx;
-  }
+  Texture *GetTexture(int idx);
 
 
   /*FILE *pFile;
@@ -215,7 +205,7 @@ struct LODFile_IconsBitmaps: public LOD::File
   int uTexturePacksCount;
   int pFacesLock;
   int dword_011BA4;
-  int dword_011BA8;
+  //int can_load_hardware_sprites;
   struct IDirectDrawSurface **pHardwareSurfaces;
   struct IDirect3DTexture2 **pHardwareTextures;
   char *ptr_011BB4;
@@ -299,7 +289,7 @@ struct LODFile_Sprites: public LOD::File
   int field_ECA0;
   int field_ECA4;
   int field_ECA8;
-  int field_ECAC;
+  //int can_load_hardware_sprites;
   Sprite *pHardwareSprites;
   int field_ECB4;
 };
@@ -309,8 +299,9 @@ struct LODFile_Sprites: public LOD::File
 #pragma pack(push, 1)
 struct LODSprite_stru0
 {
-  int dword_0;
-  void *ptr_4;
+  int16_t a1;
+  int16_t a2;
+  char* pos;
 };
 #pragma pack(pop)
 

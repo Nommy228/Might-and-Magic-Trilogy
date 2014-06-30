@@ -1,3 +1,4 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include "..\MM7.h"
 
 #include "..\Keyboard.h"
@@ -42,7 +43,7 @@ static unsigned int GameMenuUI_GetKeyBindingColor(int key_index)
     else
       intensity = + 70 - 70 * time / 800;
 
-    return TargetColor(185 + intensity, 40 + intensity / 4, 40 + intensity / 4);
+    return Color16(185 + intensity, 40 + intensity / 4, 40 + intensity / 4);
   }
 
   return ui_gamemenu_keys_key_default_color;
@@ -153,7 +154,7 @@ void GameMenuUI_DrawVideoOptions()
   GUIWindow msg_window; // [sp+8h] [bp-54h]@3
 
   pRenderer->DrawTextureIndexed(8, 8, pIcons_LOD->GetTexture(optvid_base_texture_id));//draw base texture
-  if ( !pRenderer->bWindowMode && GammaController::IsGammaSupported() )
+  //if ( !pRenderer->bWindowMode && pRenderer->IsGammaSupported() )
   {
     pRenderer->DrawTextureIndexed(17 * uGammaPos + 42, 162, pIcons_LOD->GetTexture(pTextureIDs_GammaPositions[uGammaPos]));
     pRenderer->DrawTextureRGB(274, 169, &stru_506E40);//review_window
@@ -166,13 +167,13 @@ void GameMenuUI_DrawVideoOptions()
     msg_window.DrawTitleText(pFontSmallnum, 0, 0, ui_gamemenu_video_gamma_title_color, pGlobalTXT_LocalizationStrings[226], 3); // "Gamma controls the relative ""brightness"" of the game.  May vary depending on your monitor."
   }
 
-  if (!pRenderer->pRenderD3D)//if software
+  /*if (!pRenderer->pRenderD3D)
   {
     pRenderer->DrawTextureIndexed(20, 281, pIcons_LOD->GetTexture(not_available_bloodsplats_texture_id));
     pRenderer->DrawTextureIndexed(20, 303, pIcons_LOD->GetTexture(not_available_us_colored_lights_texture_id));
     pRenderer->DrawTextureIndexed(20, 325, pIcons_LOD->GetTexture(not_available_tinting_texture_id));
   }
-  else
+  else*/
   {
     if (pGame->uFlags2 & GAME_FLAGS_2_DRAW_BLOODSPLATS)
       pRenderer->DrawTextureIndexed(20, 281, pIcons_LOD->GetTexture(bloodsplats_texture_id));

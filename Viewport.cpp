@@ -1,8 +1,10 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include "Viewport.h"
 
+#include "mm7_unsorted_subs.h"
 #include "Party.h"
 #include "Indoor.h"
-#include "Math.h"
+#include "OurMath.h"
 #include "mm7_data.h"
 #include "Actor.h"
 #include "Outdoor.h"
@@ -34,19 +36,17 @@ void Viewport::SetScreen( signed int sTL_X, signed int sTL_Y, signed int sBR_X, 
     tl_x = sTL_X;
     br_x = sBR_X;
     if ( sTL_X > sBR_X )
-        {
-          __debugbreak(); // check this code
-        br_x = sBR_X ^ sTL_X ^ sBR_X;                           // swap x's
-        tl_x = br_x ^ sBR_X ^ sTL_X;
-        }
+    {
+      br_x = sTL_X;                           // swap x's
+      tl_x = sBR_X;
+    }
     tl_y = sTL_Y;
     br_y = sBR_Y;
     if ( sTL_Y > sBR_Y )
-        {
-          __debugbreak(); // check this code
-        br_y = sBR_Y ^ sTL_Y ^ sBR_Y;                           // swap y's 
-        tl_y = br_y ^ sBR_Y ^ sTL_Y;
-        }
+    {
+      br_y = sTL_Y;                           // swap y's 
+      tl_y = sBR_Y;
+    }
     this->uScreen_TL_X = tl_x;
     this->uScreen_TL_Y = tl_y;
     this->uScreen_BR_X = br_x;
@@ -54,18 +54,18 @@ void Viewport::SetScreen( signed int sTL_X, signed int sTL_Y, signed int sBR_X, 
     this->uScreenWidth = br_x - tl_x + 1;
     this->uScreenHeight = br_y - tl_y + 1;
     this->uScreenCenterX = (signed int)(br_x + tl_x) /2;
-    if ( pRenderer->pRenderD3D == 0 )
-        this->uScreenCenterY = this->uScreen_BR_Y - fixpoint_mul(field_30, uScreenHeight);
-    else
+    //if ( pRenderer->pRenderD3D == 0 )
+    //    this->uScreenCenterY = this->uScreen_BR_Y - fixpoint_mul(field_30, uScreenHeight);
+    //else
         this->uScreenCenterY = (br_y + tl_y)/2;
     SetViewport(this->uScreen_TL_X, this->uScreen_TL_Y, this->uScreen_BR_X, this->uScreen_BR_Y);
     }
 
 //----- (004C02F8) --------------------------------------------------------
-void Viewport::_4C02F8(int a2)
+void Viewport::SetFOV(int field_of_view)
 {
-    this->field_30 = a2;
-    SetScreen(this->uScreen_TL_X, this->uScreen_TL_Y, this->uScreen_BR_X, this->uScreen_BR_Y);
+  this->field_of_view = field_of_view;
+  SetScreen(uScreen_TL_X, uScreen_TL_Y, uScreen_BR_X, uScreen_BR_Y);
 }
 
 //----- (004C0312) --------------------------------------------------------
@@ -129,7 +129,7 @@ void ViewingParams::_44323D()
 //----- (00443249) --------------------------------------------------------
 void ViewingParams::CenterOnParty()
 {
-  this->uMapBookMapZoom = (32768 * (__int64)this->uMapBookMapZoom) >> 16;
+  this->uMapBookMapZoom = fixpoint_mul(0x8000, this->uMapBookMapZoom);
   if (this->uMapBookMapZoom < 384)
     this->uMapBookMapZoom = 384;
 
@@ -195,7 +195,7 @@ void ViewingParams::AdjustPosition()
 void ViewingParams::InitGrayPalette()
     {
     for  (unsigned short i=0; i<256; ++i)
-        pPalette[i]=TargetColor(i, i, i);
+        pPalette[i]=Color16(i, i, i);
     }
 
 //----- (00443365) --------------------------------------------------------
@@ -267,44 +267,44 @@ void OnGameViewportClick()
   unsigned int pTextureID; // eax@19
   int pEventID; // ecx@21
   int v15; // ecx@29
-  signed int v16; // edx@30
-  int v18; // ebx@47
-  signed int v21; // eax@58
+//  signed int v16; // edx@30
+//  int v18; // ebx@47
+//  signed int v21; // eax@58
   SpriteObject a1; // [sp+Ch] [bp-80h]@1
   POINT a2; // [sp+84h] [bp-8h]@3
 
   int clickable_distance = 512;
 
   v1 = pMouse->GetCursorPos(&a2);
-  if ( pRenderer->pRenderD3D )
+  //if ( pRenderer->pRenderD3D )
     v0 = pGame->pVisInstance->get_picked_object_zbuf_val();
-  else
-    v0 = pRenderer->pActiveZBuffer[v1->x + pSRZBufferLineOffsets[v1->y]];
+  //else
+  //  v0 = pRenderer->pActiveZBuffer[v1->x + pSRZBufferLineOffsets[v1->y]];
 
   if ( PID_TYPE(v0) == OBJECT_Item)
   {
-    a2.y = (signed int)(unsigned __int16)v0 >> 3;
-    v21 = (signed int)(unsigned __int16)v0 >> 3;
-    if ( !(pObjectList->pObjects[pSpriteObjects[v21].uObjectDescID].uFlags & 0x10) && a2.y < 1000 && pSpriteObjects[v21].uObjectDescID
+    int item_id = PID_ID(v0);
+    //v21 = (signed int)(unsigned __int16)v0 >> 3;
+    if ( !(pObjectList->pObjects[pSpriteObjects[item_id].uObjectDescID].uFlags & 0x10) && item_id < 1000 && pSpriteObjects[item_id].uObjectDescID
       && (unsigned int)v0 < 0x2000000 )
     {
-      if ( pSpriteObjects[v21].stru_24.GetItemEquipType() == 18 )
+      if ( pSpriteObjects[item_id].stru_24.GetItemEquipType() == 18 )
       {
-        pParty->PartyFindsGold(pSpriteObjects[v21].stru_24.uSpecEnchantmentType, 0);
+        pParty->PartyFindsGold(pSpriteObjects[item_id].stru_24.uSpecEnchantmentType, 0);
         viewparams->bRedrawGameUI = 1;
       }
       else
       {
-        sprintfex(pTmpBuf2.data(), pGlobalTXT_LocalizationStrings[471], pItemsTable->pItems[pSpriteObjects[v21].stru_24.uItemID].pUnidentifiedName);
-        ShowStatusBarString(pTmpBuf2.data(), 2u);
-        if ( pSpriteObjects[v21].stru_24.uItemID == ITEM_ARTIFACT_SPLITTER )
+        sprintfex(pTmpBuf2.data(), pGlobalTXT_LocalizationStrings[471], pItemsTable->pItems[pSpriteObjects[item_id].stru_24.uItemID].pUnidentifiedName);//You found an item (%s)!
+        ShowStatusBarString(pTmpBuf2.data(), 2);
+        if ( pSpriteObjects[item_id].stru_24.uItemID == ITEM_ARTIFACT_SPLITTER )
           _449B7E_toggle_bit(pParty->_quest_bits, 184, 1);
-        if ( pSpriteObjects[v21].stru_24.uItemID == 455 )
+        if ( pSpriteObjects[item_id].stru_24.uItemID == 455 )
           _449B7E_toggle_bit(pParty->_quest_bits, 185, 1);
-        if ( !pParty->AddItemToParty(&pSpriteObjects[v21].stru_24) )
-          pParty->SetHoldingItem(&pSpriteObjects[v21].stru_24);
+        if ( !pParty->AddItemToParty(&pSpriteObjects[item_id].stru_24) )
+          pParty->SetHoldingItem(&pSpriteObjects[item_id].stru_24);
       }
-      SpriteObject::OnInteraction(a2.y);
+      SpriteObject::OnInteraction(item_id);
       return;
     }
     if ( !pParty->pPickedItem.uItemID )
@@ -341,8 +341,8 @@ void OnGameViewportClick()
     memcpy(&a1.stru_24, &pParty->pPickedItem, 0x24u);
 
     extern int UnprojectX(int);
-    v9 = UnprojectX(v1->x);
-    a1.Create(pParty->sRotationY + v9, 184, 200, 0);
+    //v9 = UnprojectX(v1->x);
+    a1.Create(pParty->sRotationY + UnprojectX(v1->x), 184, 200, 0);
     pTextureID = pIcons_LOD->LoadTexture(pParty->pPickedItem.GetIconName(), TEXTURE_16BIT_PALETTE);
     if (pTextureID != -1)
       pIcons_LOD->pTextures[pTextureID].Release();
@@ -352,13 +352,13 @@ void OnGameViewportClick()
   }
   if ( PID_TYPE(v0) == OBJECT_Actor)
   {
-    v16 = (signed int)(unsigned __int16)v0 >> 3;
-    a2.y = v16;
-    if ( pActors[v16].uAIState == 5 )
+    int mon_id = PID_ID(v0);
+    //a2.y = v16;
+    if ( pActors[mon_id].uAIState == Dead )
     {
       if ( (unsigned int)v0 < 0x2000000 )
       {
-        pActors[v16].LootActor();
+        pActors[mon_id].LootActor();
         return;
       }
       if ( !pParty->pPickedItem.uItemID )
@@ -395,8 +395,8 @@ void OnGameViewportClick()
       memcpy(&a1.stru_24, &pParty->pPickedItem, 0x24u);
 
       extern int UnprojectX(int);
-      v9 = UnprojectX(v1->x);
-      a1.Create(pParty->sRotationY + v9, 184, 200, 0);
+      //v9 = UnprojectX(v1->x);
+      a1.Create(pParty->sRotationY + UnprojectX(v1->x), 184, 200, 0);
       pTextureID = pIcons_LOD->LoadTexture(pParty->pPickedItem.GetIconName(), TEXTURE_16BIT_PALETTE);
       if (pTextureID != -1)
         pIcons_LOD->pTextures[pTextureID].Release();
@@ -406,7 +406,7 @@ void OnGameViewportClick()
     }
     if ( GetAsyncKeyState(VK_SHIFT) >= 0 )
     {
-      if ( !pActors[v16].GetActorsRelation(0) && !(BYTE2(pActors[v16].uAttributes) & 8) )
+      if ( !pActors[mon_id].GetActorsRelation(0) && !(pActors[mon_id].uAttributes & 0x80000) )
       {
         if ( HIWORD(v0) >= clickable_distance)
         {
@@ -444,8 +444,8 @@ void OnGameViewportClick()
           memcpy(&a1.stru_24, &pParty->pPickedItem, 0x24u);
 
           extern int UnprojectX(int);
-          v9 = UnprojectX(v1->x);
-          a1.Create(pParty->sRotationY + v9, 184, 200, 0);
+          //v9 = UnprojectX(v1->x);
+          a1.Create(pParty->sRotationY + UnprojectX(v1->x), 184, 200, 0);
           pTextureID = pIcons_LOD->LoadTexture(pParty->pPickedItem.GetIconName(), TEXTURE_16BIT_PALETTE);
           if (pTextureID != -1)
             pIcons_LOD->pTextures[pTextureID].Release();
@@ -453,27 +453,27 @@ void OnGameViewportClick()
           pIcons_LOD->SyncLoadedFilesCount();
           return;
         }
-        if ( !pActors[v16].CanAct() )
+        if ( !pActors[mon_id].CanAct() )
           return;
-        v18 = a2.y;
-        Actor::AI_FaceObject(a2.y, 4, 0, 0);
-        if ( !pActors[v16].sNPC_ID )
+        //v18 = mon_id;
+        Actor::AI_FaceObject(mon_id, 4, 0, 0);
+        if ( !pActors[mon_id].sNPC_ID )
         {
-          if ( pNPCStats->pGroups_copy[pActors[v16].uGroup] )
+          if ( pNPCStats->pGroups_copy[pActors[mon_id].uGroup] )
           {
-            if ( pNPCStats->pCatchPhrases[pNPCStats->pGroups_copy[pActors[v16].uGroup]] )
+            if ( pNPCStats->pCatchPhrases[pNPCStats->pGroups_copy[pActors[mon_id].uGroup]] )
             {
-              pParty->uFlags |= 2u;
-              strcpy(byte_5B0938.data(), pNPCStats->pCatchPhrases[pNPCStats->pGroups_copy[pActors[v16].uGroup]]);
+              pParty->uFlags |= 2;
+              strcpy(byte_5B0938.data(), pNPCStats->pCatchPhrases[pNPCStats->pGroups_copy[pActors[mon_id].uGroup]]);
               sub_4451A8_press_any_key(0, 0, 0);
             }
           }
           return;
         }
-        pMessageQueue_50CBD0->AddMessage(UIMSG_StartNPCDialogue, v18, 0);
+        pMessageQueue_50CBD0->AddMessage(UIMSG_StartNPCDialogue, mon_id, 0);
         return;
       }
-      if ( pParty->bTurnBasedModeOn == 1 && pTurnEngine->turn_stage == 3 )
+      if ( pParty->bTurnBasedModeOn == true && pTurnEngine->turn_stage == TE_MOVEMENT )
       {
         pTurnEngine->field_18 |= TE_FLAG_8;
         return;
@@ -482,12 +482,12 @@ void OnGameViewportClick()
     }
     else
     {
-      if ( pParty->bTurnBasedModeOn == 1 && pTurnEngine->turn_stage == 3 )
+      if ( pParty->bTurnBasedModeOn == true && pTurnEngine->turn_stage == TE_MOVEMENT )
       {
         pParty->uFlags |= PARTY_FLAGS_1_FALLING;
         return;
       }
-      if ( uActiveCharacter && sub_427769_spell(pPlayers[uActiveCharacter]->uQuickSpell))
+      if ( uActiveCharacter && sub_427769_isSpellQuickCastableOnShiftClick(pPlayers[uActiveCharacter]->uQuickSpell))
         pMessageQueue_50CBD0->AddMessage(UIMSG_CastQuickSpell, 0, 0);
     }
     return;
@@ -530,8 +530,8 @@ void OnGameViewportClick()
       memcpy(&a1.stru_24, &pParty->pPickedItem, 0x24u);
 
       extern int UnprojectX(int);
-      v9 = UnprojectX(v1->x);
-      a1.Create(pParty->sRotationY + v9, 184, 200, 0);
+      //v9 = UnprojectX(v1->x);
+      a1.Create(pParty->sRotationY + UnprojectX(v1->x), 184, 200, 0);
       pTextureID = pIcons_LOD->LoadTexture(pParty->pPickedItem.GetIconName(), TEXTURE_16BIT_PALETTE);
       if (pTextureID != -1)
         pIcons_LOD->pTextures[pTextureID].Release();
@@ -546,7 +546,7 @@ void OnGameViewportClick()
         v15 = stru_5E4C90_MapPersistVars._decor_events[pLevelDecorations[(signed int)(unsigned __int16)v0 >> 3]._idx_in_stru123 - 75] + 380;
         activeLevelDecoration = &pLevelDecorations[(signed int)(unsigned __int16)v0 >> 3];
         EventProcessor(v15, 0, 1);
-        activeLevelDecoration = NULL;
+        activeLevelDecoration = nullptr;
       }
       return;
     }
@@ -558,7 +558,7 @@ void OnGameViewportClick()
   {
     if ( uCurrentlyLoadedLevelType == LEVEL_Indoor)
     {
-      if ( !(pIndoor->pFaces[PID_ID(v0)].uAttributes & 0x2000000) )
+      if ( !pIndoor->pFaces[PID_ID(v0)].Clickable() )
       {
         if ( !pParty->pPickedItem.uItemID )
         {
@@ -669,7 +669,7 @@ void OnGameViewportClick()
   {
     if ( !pParty->pPickedItem.uItemID )
       return;
-	__debugbreak();//no checker
+	//__debugbreak();//no checker
     v6 = 0;
     a1.uType = pItemsTable->pItems[pParty->pPickedItem.uItemID].uSpriteID;
     if ( (signed int)pObjectList->uNumObjects <= 0 )
@@ -701,8 +701,8 @@ void OnGameViewportClick()
     memcpy(&a1.stru_24, &pParty->pPickedItem, 0x24u);
 
     extern int UnprojectX(int);
-    v9 = UnprojectX(v1->x);
-    a1.Create(pParty->sRotationY + v9, 184, 200, 0);
+    //v9 = UnprojectX(v1->x);
+    a1.Create(pParty->sRotationY + UnprojectX(v1->x), 184, 200, 0);
     pTextureID = pIcons_LOD->LoadTexture(pParty->pPickedItem.GetIconName(), TEXTURE_16BIT_PALETTE);
     if (pTextureID != -1)
       pIcons_LOD->pTextures[pTextureID].Release();

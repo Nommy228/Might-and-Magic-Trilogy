@@ -1,7 +1,4 @@
-#ifdef _MSC_VER
 #define _CRT_SECURE_NO_WARNINGS
-#endif
-
 #include <stdlib.h>
 
 #include "Texture.h"
@@ -9,6 +6,8 @@
 #include "LOD.h"
 #include "PaletteManager.h"
 #include "Render.h"
+#include "ErrorHandling.h"
+#include "ZlibWrapper.h"
 
 #include "mm7_data.h"
 
@@ -284,22 +283,22 @@ void TextureFrameTable::FromFile(void *data_mm6, void *data_mm7, void *data_mm8)
 
 //----- (0044E0ED) --------------------------------------------------------
 void TextureFrameTable::LoadAnimationSequenceAndPalettes( signed int uIconID )
-    {
-  TextureFrameTable *v3; // ebx@1
+{
+  //TextureFrameTable *v3; // ebx@1
   unsigned int i; // edi@3
 
-  v3 = this;
+  //v3 = this;
   if ( (uIconID <= this->sNumTextures) && uIconID >= 0 )
   {
     for ( i = uIconID; ; ++i )
     {
-      v3->pTextures[i].uTextureID = pBitmaps_LOD->LoadTexture(v3->pTextures[i].pTextureName, TEXTURE_DEFAULT);
+      this->pTextures[i].uTextureID = pBitmaps_LOD->LoadTexture(this->pTextures[i].pTextureName, TEXTURE_DEFAULT);
 
-      if (v3->pTextures[i].uTextureID != -1)
-        pBitmaps_LOD->pTextures[v3->pTextures[i].uTextureID].palette_id2 = pPaletteManager->LoadPalette(pBitmaps_LOD->pTextures[v3->pTextures[i].uTextureID].palette_id1);
+      if (this->pTextures[i].uTextureID != -1)
+        pBitmaps_LOD->pTextures[this->pTextures[i].uTextureID].palette_id2 = pPaletteManager->LoadPalette(pBitmaps_LOD->pTextures[this->pTextures[i].uTextureID].palette_id1);
       //result = (unsigned int)v3->pTextures;
       //if ( !(*(char *)(result + i * 20 + 18) & 1) )
-      if( v3->pTextures[i].uFlags & 1)
+      if( this->pTextures[i].uFlags & 1)
         break;
     }
   }
@@ -431,7 +430,7 @@ void Texture::Release()
 //----- (0040F5F5) --------------------------------------------------------
 int RGBTexture::Reload(const char *pContainer)
 {
-  RGBTexture *v2; // esi@1
+  //RGBTexture *v2; // esi@1
   FILE *v3; // eax@3
   FILE *v4; // edi@3
   void *v5; // ebx@7
@@ -447,8 +446,8 @@ int RGBTexture::Reload(const char *pContainer)
   size_t Count; // [sp+9Ch] [bp-4h]@6
   void *uSourceLena; // [sp+A8h] [bp+8h]@7
 
-  v2 = this;
-  if ( !v2->pPixels )
+ // v2 = this;
+  if ( !this->pPixels )
     return 2;
   v3 = pIcons_LOD->FindContainer(pContainer, 0);
   v4 = v3;
@@ -456,13 +455,13 @@ int RGBTexture::Reload(const char *pContainer)
   if ( !v3 )
     Error("Unable to load %s", pContainer);
 
-  fread(&DstBuf, 1u, 0x30u, v3);
+  fread(&DstBuf, 1, 0x30, v3);
   Count = DstBuf.uTextureSize;
   if ( DstBuf.uDecompressedSize )
   {
     v5 = malloc(DstBuf.uDecompressedSize);
     uSourceLena = malloc(DstBuf.uTextureSize);
-    fread(uSourceLena, 1u, Count, File);
+    fread(uSourceLena, 1, Count, File);
     zlib::MemUnzip(v5, &DstBuf.uDecompressedSize, uSourceLena, DstBuf.uTextureSize);
     DstBuf.uTextureSize = DstBuf.uDecompressedSize;
     free(uSourceLena);
@@ -470,22 +469,22 @@ int RGBTexture::Reload(const char *pContainer)
   else
   {
     v5 = malloc(DstBuf.uTextureSize);
-    fread(v5, 1u, Count, v4);
+    fread(v5, 1, Count, v4);
   }
   memcpy(&header1, v5, 0x10u);
-  memcpy(color_map, (char *)v5 + 16, 0x30u);
-  memcpy(&header2, (char *)v5 + 64, 6u);
+  memcpy(color_map, (char *)v5 + 16, 0x30);
+  memcpy(&header2, (char *)v5 + 64, 6);
   if ( header1.bpp != 8 )
     return 3;
   v7 = (signed __int16)(header1.right - header1.left + 1);
-  if ( (signed int)(v7 * (signed __int16)(header1.bottom - header1.up + 1)) <= (signed int)v2->uNumPixels )
+  if ( (signed int)(v7 * (signed __int16)(header1.bottom - header1.up + 1)) <= (signed int)this->uNumPixels )
   {
-    v2->uWidth = header1.right - header1.left + 1;
-    v8 = v2->pPixels;
-    v9 = v7 * v2->uHeight;
-    v2->uNumPixels = v9;
-    v2->uHeight = v9;
-    v2->DecodePCX((char *)v5, v8, v7);
+    this->uWidth = header1.right - header1.left + 1;
+    v8 = this->pPixels;
+    v9 = v7 * this->uHeight;
+    this->uNumPixels = v9;
+    this->uHeight = v9;
+    this->DecodePCX((char *)v5, v8, v7);
     free(v5);
     result = 0;
   }
@@ -508,18 +507,18 @@ Texture::Texture()
   uWidthLn2 = 0;
   palette_id1 = 0;
   palette_id2 = 0;
-  pLevelOfDetail0_prolly_alpha_mask = 0;
-  pLevelOfDetail3 = 0;
-  pLevelOfDetail2 = 0;
-  pLevelOfDetail1 = 0;
-  pPalette16 = 0;
-  pPalette24 = 0;
+  pLevelOfDetail0_prolly_alpha_mask = nullptr;
+  pLevelOfDetail3 = nullptr;
+  pLevelOfDetail2 = nullptr;
+  pLevelOfDetail1 = nullptr;
+  pPalette16 = nullptr;
+  pPalette24 = nullptr;
 }
 
 //----- (0040F414) --------------------------------------------------------
 int RGBTexture::Load(const char *pContainer, int mode)
 {
-  FILE *v4; // eax@1
+  FILE *file; // eax@1
   void *v6; // ebx@5
   char color_map[48]; // [sp+Ch] [bp-98h]@7
   Texture DstBuf; // [sp+3Ch] [bp-68h]@1
@@ -528,18 +527,17 @@ int RGBTexture::Load(const char *pContainer, int mode)
   size_t Count; // [sp+A0h] [bp-4h]@4
   char *Str1a; // [sp+ACh] [bp+8h]@5
 
-
-  v4 = pIcons_LOD->FindContainer(pContainer, 0);
-  if ( !v4 )
+  file = pIcons_LOD->FindContainer(pContainer, 0);
+  if ( !file )
     Error("Unable to load %s", pContainer);
 
-  fread(&DstBuf, 1u, 0x30u, v4);
+  fread(&DstBuf, 1, 0x30u, file);
   Count = DstBuf.uTextureSize;
   if ( DstBuf.uDecompressedSize )
   {
     Str1a = (char *)malloc(DstBuf.uDecompressedSize);
     v6 = malloc(DstBuf.uTextureSize);
-    fread(v6, 1, Count, v4);
+    fread(v6, 1, Count, file);
     zlib::MemUnzip(Str1a, &DstBuf.uDecompressedSize, v6, DstBuf.uTextureSize);
     DstBuf.uTextureSize = DstBuf.uDecompressedSize;
     free(v6);
@@ -547,7 +545,7 @@ int RGBTexture::Load(const char *pContainer, int mode)
   else
   {
     Str1a = (char *)malloc(DstBuf.uTextureSize);
-    fread(Str1a, 1, Count, v4);
+    fread(Str1a, 1, Count, file);
   }
   memcpy(&header1, Str1a, 0x10u);
   memcpy(color_map, Str1a + 16, 0x30u);
@@ -561,7 +559,7 @@ int RGBTexture::Load(const char *pContainer, int mode)
   if ( this->pPixels )
   {
     if ( mode )
-	{
+	  {
       if ( mode != 2 )
       {
         if ( !this->pPixels )
@@ -577,7 +575,7 @@ int RGBTexture::Load(const char *pContainer, int mode)
       this->DecodePCX(Str1a, this->pPixels, this->uWidth);
       free(Str1a);
       return 0;	
-	}
+	  }
     free(this->pPixels);
   }
   if ( !mode )
@@ -609,7 +607,7 @@ int RGBTexture::Load(const char *pContainer, int mode)
 //----- (0040F037) --------------------------------------------------------
 signed int RGBTexture::DecodePCX(char *pPcx, unsigned __int16 *pOutPixels, unsigned int uNumPixels)
 {
-  signed int result; // eax@2
+//  signed int result; // eax@2
   unsigned char test_byte; // edx@3
   unsigned int read_offset; // ebx@37
   unsigned int row_position; // edi@40
@@ -620,7 +618,7 @@ signed int RGBTexture::DecodePCX(char *pPcx, unsigned __int16 *pOutPixels, unsig
   unsigned short *temp_dec_position; 
   PCXHeader1 psx_head1;
   PCXHeader2 psx_head2;
-	short int width, height;
+//	short int width, height;
 	BYTE  color_map[48];	// Colormap for 16-color images
 
  
@@ -684,7 +682,14 @@ signed int RGBTexture::DecodePCX(char *pPcx, unsigned __int16 *pOutPixels, unsig
   case 12:  field_1E = 4095; break;
 	  }
 
- 
+  unsigned int r_mask = 0xF800;
+  unsigned int num_r_bits = 5;
+  unsigned int g_mask = 0x07E0;
+  unsigned int num_g_bits = 6;
+  unsigned int b_mask = 0x001F;
+  unsigned int num_b_bits = 5;
+  //При сохранении изображения подряд идущие пиксели одинакового цвета объединяются и вместо указания цвета для каждого пикселя
+  //указывается цвет группы пикселей и их количество.
  read_offset = 128;
  if (psx_head2.planes != 3)
  	  return 0;
@@ -703,28 +708,23 @@ signed int RGBTexture::DecodePCX(char *pPcx, unsigned __int16 *pOutPixels, unsig
      {
       test_byte = pPcx[read_offset];
       ++read_offset;
-      if ((test_byte & 0xC0) == 0xC0)
+      if ((test_byte & 0xC0) == 0xC0)//имеется ли объединение
       {	
 	    value = pPcx[read_offset];
        	++read_offset; 
       
        if ((test_byte & 0x3F) > 0)
        {
-        count = test_byte & 0x3F;
+        count = test_byte & 0x3F;//количество одинаковых пикселей
         do
         {
-
          ++row_position;
           //*temp_dec_position =0xFF000000;
-		  //*temp_dec_position|=(unsigned long)value<<16;
-         *temp_dec_position |= LOWORD(pRenderer->uTargetRMask) & ((unsigned __int8)value << (LOBYTE(pRenderer->uTargetGBits)
-                                                                                    + LOBYTE(pRenderer->uTargetRBits)
-                                                                                    + LOBYTE(pRenderer->uTargetBBits)
-                                                                                    - 8));
-
-		   temp_dec_position++;
-       if (row_position == psx_head2.pitch)
-			 break;
+          //*temp_dec_position|=(unsigned long)value<<16;
+         *temp_dec_position |= r_mask & ((unsigned __int8)value << (num_g_bits + num_r_bits + num_b_bits - 8));
+         temp_dec_position++;
+         if (row_position == psx_head2.pitch)
+           break;
         }
         while (count-- != 1);
        }
@@ -735,10 +735,7 @@ signed int RGBTexture::DecodePCX(char *pPcx, unsigned __int16 *pOutPixels, unsig
 	   //*temp_dec_position =0xFF000000; 
 	  //*temp_dec_position|= (unsigned long)test_byte<<16;
        
-       *temp_dec_position |= LOWORD(pRenderer->uTargetRMask) & ((unsigned __int8)test_byte << (LOBYTE(pRenderer->uTargetGBits)
-                                                                                    + LOBYTE(pRenderer->uTargetRBits)
-                                                                                    + LOBYTE(pRenderer->uTargetBBits)
-                                                                                    - 8));
+       *temp_dec_position |= r_mask & ((unsigned __int8)test_byte << (num_g_bits + num_r_bits + num_b_bits - 8));
 
        temp_dec_position++;
       }
@@ -766,9 +763,7 @@ signed int RGBTexture::DecodePCX(char *pPcx, unsigned __int16 *pOutPixels, unsig
         //*temp_dec_position|= (unsigned int)value<<8;
 		//temp_dec_position++;
          
-         *temp_dec_position|= pRenderer->uTargetGMask & (unsigned __int16)((unsigned __int8)value << (LOBYTE(pRenderer->uTargetGBits)
-                                                                                             + LOBYTE(pRenderer->uTargetBBits)
-                                                                                             - 8));
+         *temp_dec_position|= g_mask & (unsigned __int16)((unsigned __int8)value << (num_g_bits + num_b_bits - 8));
          
        temp_dec_position++;
         ++row_position;
@@ -784,9 +779,7 @@ signed int RGBTexture::DecodePCX(char *pPcx, unsigned __int16 *pOutPixels, unsig
       //*temp_dec_position |=(unsigned int) test_byte<<8;
 	  //temp_dec_position++;
        
-         *temp_dec_position|= pRenderer->uTargetGMask & (unsigned __int16)((unsigned __int8)test_byte << (LOBYTE(pRenderer->uTargetGBits)
-                                                                                             + LOBYTE(pRenderer->uTargetBBits)
-                                                                                             - 8));
+         *temp_dec_position|= g_mask & (unsigned __int16)((unsigned __int8)test_byte << (num_g_bits + num_b_bits - 8));
        temp_dec_position++;
       ++row_position;
      }
@@ -811,7 +804,7 @@ signed int RGBTexture::DecodePCX(char *pPcx, unsigned __int16 *pOutPixels, unsig
         //*temp_dec_position|= value;
 		 //temp_dec_position++;
 
-         *temp_dec_position |= value >> (8 - LOBYTE(pRenderer->uTargetBBits));
+         *temp_dec_position |= value >> (8 - num_b_bits);
        temp_dec_position++;
 
         ++row_position;
@@ -825,7 +818,7 @@ signed int RGBTexture::DecodePCX(char *pPcx, unsigned __int16 *pOutPixels, unsig
      {
       //*temp_dec_position|= test_byte;
 	   //temp_dec_position++;
-         *temp_dec_position |= test_byte >> (8 - LOBYTE(pRenderer->uTargetBBits));
+         *temp_dec_position |= test_byte >> (8 - num_b_bits);
        temp_dec_position++;
 
       ++row_position;
@@ -1119,19 +1112,27 @@ LABEL_13:
 //----- (0040EAD8) --------------------------------------------------------
 unsigned int RGBTexture::LoadFromFILE(FILE *pFile, unsigned int mode, unsigned int bCloseFile)
 {
-  signed int result; // eax@2
-  unsigned char test_byte; // edx@3
+//  signed int result; // eax@2
+//  unsigned char test_byte; // edx@3
   //unsigned int read_offset; // ebx@37
-  unsigned int row_position; // edi@40
-  unsigned char value; // cl@63
-  char count; // [sp+50h] [bp-Ch]@43
-  unsigned short current_line; // [sp+54h] [bp-8h]@38
-  unsigned short *dec_position; 
-  unsigned short *temp_dec_position; 
+//  unsigned int row_position; // edi@40
+//  unsigned char value; // cl@63
+//  char count; // [sp+50h] [bp-Ch]@43
+//  unsigned short current_line; // [sp+54h] [bp-8h]@38
+//  unsigned short *dec_position; 
+//  unsigned short *temp_dec_position; 
   PCXHeader1 psx_head1;
   PCXHeader2 psx_head2;
-	short int width, height;
+//	short int width, height;
 	BYTE  color_map[48];	// Colormap for 16-color images
+
+  unsigned int num_r_bits = 5;
+  unsigned int num_g_bits = 6;
+  unsigned int num_b_bits = 5;
+
+  unsigned int r_mask = 0xF800;
+  unsigned int g_mask = 0x07E0;
+  unsigned int b_mask = 0x001F;
 
   if (!pFile)
     return 1;
@@ -1152,11 +1153,7 @@ unsigned int RGBTexture::LoadFromFILE(FILE *pFile, unsigned int mode, unsigned i
 
       if ( mode == 0 )
       {
-        if ( pPixels )
-        {
-          free(pPixels);
-          pPixels = 0;
-        }
+        free(pPixels);
         pPixels = (unsigned __int16 *)malloc(2 * uNumPixels + 4);
       }
       else
@@ -1167,9 +1164,6 @@ unsigned int RGBTexture::LoadFromFILE(FILE *pFile, unsigned int mode, unsigned i
           _allocation_flags |= 1;
         }
       }
-
-
-
 
       ushort* pOutPixels = pPixels;
  
@@ -1221,7 +1215,6 @@ unsigned int RGBTexture::LoadFromFILE(FILE *pFile, unsigned int mode, unsigned i
   case 12:  field_1E = 4095; break;
 	  }
 
-
   fseek(pFile, 128 - 70, SEEK_CUR);
 
 
@@ -1240,21 +1233,13 @@ unsigned int RGBTexture::LoadFromFILE(FILE *pFile, unsigned int mode, unsigned i
         uint clr = 0;
         fread(&clr, 1, 1, pFile);
         for (uint i = 0; i < uNumPixels; ++i)
-          pDst[x++] = pRenderer->uTargetRMask & (clr << (pRenderer->uTargetGBits +
-                                                         pRenderer->uTargetRBits +
-                                                         pRenderer->uTargetBBits - 8));
+          pDst[x++] = r_mask & (clr << (num_g_bits + num_r_bits + num_b_bits - 8));
       }
       else
       {
-        pDst[x++] = pRenderer->uTargetRMask & (ctrl << (pRenderer->uTargetGBits +
-                                                        pRenderer->uTargetRBits +
-                                                        pRenderer->uTargetBBits - 8));
+        pDst[x++] = r_mask & (ctrl << (num_g_bits + num_r_bits + num_b_bits - 8));
       }
     } while (x < psx_head2.pitch);
-
-
-
-
 
     x = 0;
     do
@@ -1267,19 +1252,13 @@ unsigned int RGBTexture::LoadFromFILE(FILE *pFile, unsigned int mode, unsigned i
         uint clr = 0;
         fread(&clr, 1, 1, pFile);
         for (uint i = 0; i < uNumPixels; ++i)
-          pDst[x++] |= pRenderer->uTargetGMask & (clr << (pRenderer->uTargetGBits +
-                                                         pRenderer->uTargetBBits - 8));
+          pDst[x++] |= g_mask & (clr << (num_g_bits + num_b_bits - 8));
       }
       else
       {
-        pDst[x++] |= pRenderer->uTargetGMask & (ctrl << (pRenderer->uTargetGBits +
-                                                        pRenderer->uTargetBBits - 8));
+        pDst[x++] |= g_mask & (ctrl << (num_g_bits + num_b_bits - 8));
       }
     } while (x < psx_head2.pitch);
- 
-
-
-
 
     x = 0;
     do
@@ -1292,11 +1271,11 @@ unsigned int RGBTexture::LoadFromFILE(FILE *pFile, unsigned int mode, unsigned i
         uint clr = 0;
         fread(&clr, 1, 1, pFile);
         for (uint i = 0; i < uNumPixels; ++i)
-          pDst[x++] |= pRenderer->uTargetBMask & (clr >> (8 - pRenderer->uTargetBBits));
+          pDst[x++] |= b_mask & (clr >> (8 - num_b_bits));
       }
       else
       {
-        pDst[x++] |= pRenderer->uTargetBMask & (ctrl >> (8 - pRenderer->uTargetRBits));
+        pDst[x++] |= b_mask & (ctrl >> (8 - num_b_bits));
       }
     } while (x < psx_head2.pitch);
   }
@@ -1309,59 +1288,53 @@ unsigned int RGBTexture::LoadFromFILE(FILE *pFile, unsigned int mode, unsigned i
 //----- (0040E51F) --------------------------------------------------------
 void RGBTexture::Release()
 {
-  RGBTexture *v1; // esi@1
-  char v2; // zf@1
-  void *v3; // [sp-4h] [bp-Ch]@1
-
-  v1 = this;
-  v2 = (this->_allocation_flags & 1) == 0;
-  v3 = this->pPixels;
   this->pName[0] = 0;
-  if ( v2 )
-    free(v3);
-  else
-    free(v3);
-  v1->_allocation_flags = 0;
-  v1->pPixels = 0;
-  v1->uNumPixels = 0;
-  v1->uHeight = 0;
-  v1->uWidth = 0;
-  v1->field_1A = 0;
-  v1->field_18 = 0;
+  //if ( !(this->_allocation_flags & 1) )
+    //free(this->pPixels);
+  //else
+    free(this->pPixels);
+  this->_allocation_flags = 0;
+  this->pPixels = 0;
+  this->uNumPixels = 0;
+  this->uHeight = 0;
+  this->uWidth = 0;
+  this->field_1A = 0;
+  this->field_18 = 0;
 }
 
 //----- (0040E55E) --------------------------------------------------------
-int RGBTexture::_40E55E(const char *Filename, unsigned int a3)
+int RGBTexture::LoadPCXFile(const char *Filename, unsigned int a3)
 {
-  RGBTexture *v3; // esi@1
   signed int result; // eax@2
   char *v6; // eax@3
   int v7; // edx@3
   char v8; // cl@4
-  unsigned __int16 v9; // cx@9
-  unsigned __int16 v10; // ax@9
-  int v11; // eax@9
-  char v12; // zf@9
-  void *v13; // eax@12
   signed int v14; // ecx@19
   signed int v15; // ecx@24
-  int v16; // eax@57
-  unsigned __int16 *v17; // ecx@57
-  unsigned __int16 *v18; // edi@57
-  signed int v19; // eax@59
-  unsigned __int16 *v20; // edi@64
-  signed int v21; // eax@66
-  unsigned __int16 *v22; // edi@71
-  signed int v23; // eax@73
-  int v24; // eax@78
+//  int v16; // eax@57
+//  unsigned __int16 *v17; // ecx@57
+//  unsigned __int16 *v18; // edi@57
+//  signed int x; // eax@59
+//  unsigned __int16 *v20; // edi@64
+//  signed int v21; // eax@66
+//  unsigned __int16 *v22; // edi@71
+//  signed int v23; // eax@73
+//  int v24; // eax@78
   char v25[48]; // [sp+Ch] [bp-54h]@3
   PCXHeader1 pcx_header1;
   PCXHeader2 pcx_header2;
-  int v37; // [sp+54h] [bp-Ch]@3
-  int v38; // [sp+58h] [bp-8h]@57
+  int y; // [sp+54h] [bp-Ch]@3
   FILE *File; // [sp+5Ch] [bp-4h]@1
 
-  v3 = this;
+  unsigned int num_r_bits = 5;
+  unsigned int num_g_bits = 6;
+  unsigned int num_b_bits = 5;
+
+  unsigned int r_mask = 0xF800;
+  unsigned int g_mask = 0x07E0;
+  unsigned int b_mask = 0x001F;
+
+
   File = fopen(Filename, "rb");
   if ( !File )
     return 1;
@@ -1371,257 +1344,140 @@ int RGBTexture::_40E55E(const char *Filename, unsigned int a3)
   fread(&pcx_header2, 4, 1, File);
 
   v6 = (char *)Filename;
-  v37 = 0;
-  v7 = (char *)v3 - Filename;
-  do
+  v7 = (char *)this - Filename;
+  uint i = 0;
+  for ( i; i < 15; ++i )
   {
     v8 = *v6;
     if ( !*v6 )
       break;
     if ( v8 == 46 )
       break;
-    ++v37;
     (v6++)[v7] = v8;
   }
-  while ( v37 < 15 );
-  v3->pName[v37] = 0;
+  this->pName[i] = 0;
   if ( pcx_header1.bpp != 8 )
     return 3;
-  v9 = pcx_header1.right - pcx_header1.left + 1;
-  v10 = pcx_header1.bottom - pcx_header1.up;
-  v3->uWidth = v9;
-  ++v10;
-  v3->uHeight = v10;
-  v11 = (signed __int16)v9 * (signed __int16)v10;
-  v12 = a3 == 0;
-  v3->uNumPixels = v11;
-  if ( v12 )
+  this->uWidth = pcx_header1.right - pcx_header1.left + 1;
+  this->uHeight = pcx_header1.bottom - pcx_header1.up + 1;
+  this->uNumPixels = (signed __int16)this->uWidth * (signed __int16)this->uHeight;
+  if ( !a3 )
   {
-    if ( v3->pPixels )
-      free(v3->pPixels);
-    v13 = malloc(2 * v3->uNumPixels + 4);
-    goto LABEL_16;
+    free(this->pPixels);
+    this->pPixels = (unsigned __int16 *)malloc(2 * this->uNumPixels + 4);
   }
-  if ( a3 != 1 && a3 == 2 )
+  if ( a3 == 2 )
   {
-    v13 = malloc(4 * v11 + 8);
-    v3->_allocation_flags |= 1u;
-LABEL_16:
-    v3->pPixels = (unsigned __int16 *)v13;
+    this->_allocation_flags |= 1;
+    this->pPixels = (unsigned __int16 *)malloc((uNumPixels + 2) * sizeof(unsigned __int16));
   }
-  if ( v3->pPixels )
+  if ( this->pPixels )
   {
-    v14 = 1;
-    while ( 1 << v14 != v3->uWidth )
+    for ( v14 = 1; v14 < 15; ++v14 )
     {
-      ++v14;
-      if ( v14 >= 15 )
-        goto LABEL_24;
+      if ( 1 << v14 == this->uWidth )
+        this->field_18 = v14;
     }
-    v3->field_18 = v14;
-LABEL_24:
-    v15 = 1;
-    while ( 1 << v15 != v3->uHeight )
+    for ( v15 = 1; v15 < 15; ++v15 )
     {
-      ++v15;
-      if ( v15 >= 15 )
-        goto LABEL_29;
+      if ( 1 << v15 == this->uHeight  )
+        this->field_1A = v15;
     }
-    v3->field_1A = v15;
-LABEL_29:
-    switch ( v3->field_18 )
+    switch ( this->field_18 )
     {
-      case 2:
-        v3->field_1C = 3;
-        break;
-      case 3:
-        v3->field_1C = 7;
-        break;
-      case 4:
-        v3->field_1C = 15;
-        break;
-      case 5:
-        v3->field_1C = 31;
-        break;
-      case 6:
-        v3->field_1C = 63;
-        break;
-      case 7:
-        v3->field_1C = 127;
-        break;
-      case 8:
-        v3->field_1C = 255;
-        break;
-      case 9:
-        v3->field_1C = 511;
-        break;
-      case 10:
-        v3->field_1C = 1023;
-        break;
-      case 11:
-        v3->field_1C = 2047;
-        break;
-      case 12:
-        v3->field_1C = 4095;
-        break;
-      default:
-        break;
+      case 2: this->field_1C = 3; break;
+      case 3: this->field_1C = 7; break;
+      case 4: this->field_1C = 15; break;
+      case 5: this->field_1C = 31; break;
+      case 6: this->field_1C = 63; break;
+      case 7: this->field_1C = 127; break;
+      case 8: this->field_1C = 255; break;
+      case 9: this->field_1C = 511; break;
+      case 10: this->field_1C = 1023; break;
+      case 11: this->field_1C = 2047; break;
+      case 12: this->field_1C = 4095; break;
+      default: break;
     }
-    switch ( v3->field_1A )
+    switch ( this->field_1A )
     {
-      case 2:
-        v3->field_1E = 3;
-        break;
-      case 3:
-        v3->field_1E = 7;
-        break;
-      case 4:
-        v3->field_1E = 15;
-        break;
-      case 5:
-        v3->field_1E = 31;
-        break;
-      case 6:
-        v3->field_1E = 63;
-        break;
-      case 7:
-        v3->field_1E = 127;
-        break;
-      case 8:
-        v3->field_1E = 255;
-        break;
-      case 9:
-        v3->field_1E = 511;
-        break;
-      case 10:
-        v3->field_1E = 1023;
-        break;
-      case 11:
-        v3->field_1E = 2047;
-        break;
-      case 12:
-        v3->field_1E = 4095;
-        break;
-      default:
-        break;
+      case 2: this->field_1E = 3; break;
+      case 3: this->field_1E = 7; break;
+      case 4: this->field_1E = 15; break;
+      case 5: this->field_1E = 31; break;
+      case 6: this->field_1E = 63; break;
+      case 7: this->field_1E = 127; break;
+      case 8: this->field_1E = 255; break;
+      case 9: this->field_1E = 511; break;
+      case 10: this->field_1E = 1023; break;
+      case 11: this->field_1E = 2047; break;
+      case 12: this->field_1E = 4095; break;
+      default: break;
     }
     fseek(File, 128, 0);
     ftell(File);
-	if ( pcx_header2.planes == 1 )
+    if ( pcx_header2.planes == 1 )
       Error("24bit PCX Only!");
 
     if ( pcx_header2.planes == 3 )
     {
-      v37 = 0;
-      if ( v3->uHeight > 0 )
+      for ( y = 0; y < this->uHeight; ++y )
       {
+        unsigned __int16 *pDst = pPixels + y * uWidth;
+        uint x = 0;
         do
         {
-          v16 = v37 * v3->uWidth;
-          v17 = v3->pPixels;
-          v38 = 0;
-          v18 = &v17[v16];
-		  if ( pcx_header2.pitch )
+          uint ctrl = 0;
+          fread(&ctrl, 1, 1, File);
+          if ( (ctrl & 0xC0) == 0xC0 )
           {
-            do
-            {
-              fread((char *)&Filename + 3, 1u, 1u, File);
-              if ( (BYTE3(Filename) & 0xC0) == -64 )
-              {
-                BYTE3(Filename) &= 0x3Fu;
-                fread((char *)&a3 + 3, 1u, 1u, File);
-                v19 = 0;
-                if ( BYTE3(Filename) )
-                {
-                  do
-                  {
-                    ++v38;
-                    *v18 = LOWORD(pRenderer->uTargetRMask) & (BYTE3(a3) << (LOBYTE(pRenderer->uTargetGBits)
-                                                                         + LOBYTE(pRenderer->uTargetRBits)
-                                                                         + LOBYTE(pRenderer->uTargetBBits)
-                                                                         - 8));
-                    ++v18;
-                    ++v19;
-                  }
-                  while ( v19 < BYTE3(Filename) );
-                }
-              }
-              else
-              {
-                ++v38;
-                *v18 = LOWORD(pRenderer->uTargetRMask) & (BYTE3(Filename) << (LOBYTE(pRenderer->uTargetGBits)
-                                                                           + LOBYTE(pRenderer->uTargetRBits)
-                                                                           + LOBYTE(pRenderer->uTargetBBits)
-                                                                           - 8));
-                ++v18;
-              }
-            }
-			while ( v38 < (unsigned __int16)pcx_header2.pitch);
+            uint uNumPixels = ctrl & 0x3F;
+            uint clr = 0;
+            ctrl &= 0x3F;
+            fread(&clr, 1, 1, File);
+            for ( uint i = 0; i < uNumPixels; ++i )
+              pDst[x++] = r_mask & (clr << (num_r_bits + num_g_bits + num_b_bits - 8));
           }
-          v20 = &v3->pPixels[v37 * v3->uWidth];
-		  while ( v38 < 2 * (unsigned __int16)pcx_header2.pitch )
-          {
-            fread((char *)&Filename + 3, 1u, 1u, File);
-            if ( (BYTE3(Filename) & 0xC0) == -64 )
-            {
-              BYTE3(Filename) &= 0x3Fu;
-              fread((char *)&a3 + 3, 1u, 1u, File);
-              v21 = 0;
-              if ( BYTE3(Filename) )
-              {
-                do
-                {
-                  *v20 |= pRenderer->uTargetGMask & (unsigned __int16)(BYTE3(a3) << (LOBYTE(pRenderer->uTargetGBits)
-                                                                                  + LOBYTE(pRenderer->uTargetBBits)
-                                                                                  - 8));
-                  ++v38;
-                  ++v20;
-                  ++v21;
-                }
-                while ( v21 < BYTE3(Filename) );
-              }
-            }
-            else
-            {
-              *v20 |= pRenderer->uTargetGMask & (unsigned __int16)(BYTE3(Filename) << (LOBYTE(pRenderer->uTargetGBits)
-                                                                                    + LOBYTE(pRenderer->uTargetBBits)
-                                                                                    - 8));
-              ++v38;
-              ++v20;
-            }
-          }
-          v22 = &v3->pPixels[v37 * v3->uWidth];
-		  while ( v38 < 3 * (unsigned __int16)pcx_header2.pitch )
-          {
-            fread((char *)&Filename + 3, 1u, 1u, File);
-            if ( (BYTE3(Filename) & 0xC0) == -64 )
-            {
-              BYTE3(Filename) &= 0x3Fu;
-              fread((char *)&a3 + 3, 1u, 1u, File);
-              v23 = 0;
-              if ( BYTE3(Filename) )
-              {
-                do
-                {
-                  *v22 |= BYTE3(a3) >> (8 - LOBYTE(pRenderer->uTargetBBits));
-                  ++v38;
-                  ++v22;
-                  ++v23;
-                }
-                while ( v23 < BYTE3(Filename) );
-              }
-            }
-            else
-            {
-              *v22 |= BYTE3(Filename) >> (8 - LOBYTE(pRenderer->uTargetBBits));
-              ++v38;
-              ++v22;
-            }
-          }
-          v24 = v3->uHeight;
-          ++v37;
+          else
+            pDst[x++] = r_mask & (ctrl << (num_g_bits + num_r_bits + num_b_bits - 8));
         }
-        while ( v37 < v24 );
+        while ( x < pcx_header2.pitch );
+
+        x = 0;
+        do
+        {
+          uint ctrl = 0;
+          fread(&ctrl, 1, 1, File);
+          if ( (ctrl & 0xC0) == 0xC0 )
+          {
+            uint uNumPixels = ctrl & 0x3F;
+            uint clr = 0;
+            ctrl &= 0x3F;
+            fread(&clr, 1, 1, File);
+            for ( uint i = 0; i < uNumPixels; ++i )
+              pDst[x++] |= g_mask & (clr << (num_g_bits + num_b_bits - 8));
+          }
+          else
+            pDst[x++] |= g_mask & (ctrl << (num_g_bits + num_b_bits - 8));
+        }
+        while (x < pcx_header2.pitch);
+
+        x = 0;
+        do
+        {
+          uint ctrl = 0;
+          fread(&ctrl, 1, 1, File);
+          if ( (ctrl & 0xC0) == 0xC0 )
+          {
+            uint uNumPixels = ctrl & 0x3F;
+            uint clr = 0;
+            fread(&clr, 1, 1, File);
+            for ( uint i = 0; i < uNumPixels; ++i )
+              pDst[x++] |= b_mask & (clr >> (8 - num_b_bits));
+          }
+          else
+            pDst[x++] |= b_mask & (ctrl >> (8 - num_b_bits));
+        }
+        while (x < pcx_header2.pitch);
       }
     }
     fclose(File);
@@ -1633,7 +1489,6 @@ LABEL_29:
   }
   return result;
 }
-
 
 //----- (0040D73D) --------------------------------------------------------
 RGBTexture::RGBTexture()
@@ -1726,8 +1581,8 @@ int TextureFrameTable::FromFileTxt(const char *Args)
       {
         if ( !_stricmp((&Str1)[4 * v9], "New") )
         {
-          v10 = (int)&v2->pTextures[v2->sNumTextures].uFlags;
-          *(char *)v10 |= 2u;
+          //v10 = (int)&v2->pTextures[v2->sNumTextures].uFlags;
+          v2->pTextures[v2->sNumTextures].uFlags |= 2;
         }
       }
       ++v2->sNumTextures;

@@ -1,11 +1,11 @@
-#ifdef _MSC_VER
 #define _CRT_SECURE_NO_WARNINGS
-#endif
-
+#include "ErrorHandling.h"
 #include "LOD.h"
 #include "Render.h"
 #include "PaletteManager.h"
 #include "Viewport.h"
+#include "mm7_data.h"
+#include "ZlibWrapper.h"
 
 #include "mm7_data.h"
 
@@ -185,6 +185,7 @@ int LODFile_Sprites::LoadSpriteFromFile(LODSprite *pSpriteHeader, const char *pC
     v8 = 8 * pSpriteHeader->uHeight;
     pSpriteHeader->pSpriteLines = v7;
     fread(v7, 1u, v8, v4);
+
     v9 = &pSpriteHeader->uDecompressedSize;
     v10 = pSpriteHeader->uDecompressedSize;
     if ( v10 )
@@ -206,7 +207,7 @@ int LODFile_Sprites::LoadSpriteFromFile(LODSprite *pSpriteHeader, const char *pC
     v13 = v6->pDecompressedBytes;
     for ( i = &v12[v6->uHeight]; v12 < i; i = &v6->pSpriteLines[v6->uHeight] )
     {
-      v12->ptr_4 = (char *)v12->ptr_4 + (unsigned int)v13;
+      v12->pos = (char *)v12->pos + (unsigned int)v13;
       ++v12;
     }
     result = 1;
@@ -233,10 +234,10 @@ int LODFile_Sprites::LoadSprite(const char *pContainerName, unsigned int uPalett
 
     FILE *sprite_file; // eax@12
     LODSprite temp_sprite_hdr; // [sp+Ch] [bp-3Ch]@12
-    int i, sprite_indx;
+    int i;//, sprite_indx;
 
     //find if already loaded
-    if ( pRenderer->pRenderD3D )
+    //if ( pRenderer->pRenderD3D )
         {
         for (i=0; i<uNumLoadedSprites;++i)
             {
@@ -244,36 +245,36 @@ int LODFile_Sprites::LoadSprite(const char *pContainerName, unsigned int uPalett
                 return i;
             } 
         }
-    else
+    /*else
         {
         for (i=0; i<uNumLoadedSprites;++i)
             {
             if (!(_stricmp(pSpriteHeaders[i].pName, pContainerName)))
                 return i;
             } 
-        }
+        }*/
 
     if (uNumLoadedSprites >= 1500 )
         return -1;
     //if not loaded - load from file   
 
-    if ( pRenderer->pRenderD3D && field_ECAC )
+    //if ( pRenderer->pRenderD3D && can_load_hardware_sprites )
         {
         if ( !pHardwareSprites )
             {
             pHardwareSprites = (Sprite *)malloc(1500*sizeof(Sprite));//0xEA60u
             for (i=0; i<1500;++i)
                 {
-                pHardwareSprites[i].pName=NULL;
-                pHardwareSprites[i].pTextureSurface=NULL;
-                pHardwareSprites[i].pTexture=NULL;
+                pHardwareSprites[i].pName=nullptr;
+                pHardwareSprites[i].pTextureSurface=nullptr;
+                pHardwareSprites[i].pTexture=nullptr;
                 } 
             }
         temp_sprite_hdr.uHeight = 0;
         temp_sprite_hdr.uPaletteId = 0;
         temp_sprite_hdr.word_1A = 0;
-        temp_sprite_hdr.pSpriteLines = 0;
-        temp_sprite_hdr.pDecompressedBytes = 0;
+        temp_sprite_hdr.pSpriteLines = nullptr;
+        temp_sprite_hdr.pDecompressedBytes = nullptr;
         sprite_file = FindContainer(pContainerName, 0);
         if ( !sprite_file )
             return -1;
@@ -283,8 +284,9 @@ int LODFile_Sprites::LoadSprite(const char *pContainerName, unsigned int uPalett
         pHardwareSprites[uNumLoadedSprites].uBufferHeight = temp_sprite_hdr.uHeight;
         pSpriteHeaders[uNumLoadedSprites].uWidth = temp_sprite_hdr.uWidth;
         pSpriteHeaders[uNumLoadedSprites].uHeight = temp_sprite_hdr.uHeight;
+        LoadSpriteFromFile( &pSpriteHeaders[uNumLoadedSprites], pContainerName);        //this line is not present here in the original. necessary for Grayface's mouse picking fix
         }
-    else
+    /*else
         {
         sprite_indx = LoadSpriteFromFile( &pSpriteHeaders[uNumLoadedSprites], pContainerName);
         pSpriteHeaders[uNumLoadedSprites].word_1A = 0;
@@ -309,9 +311,9 @@ int LODFile_Sprites::LoadSprite(const char *pContainerName, unsigned int uPalett
                 return -1;
             pSpriteHeaders[uNumLoadedSprites].uPaletteId = pPaletteManager->LoadPalette(pSpriteHeaders[uNumLoadedSprites].uPaletteId);
             }
-        }
+        }*/
 
-    if ( pRenderer->pRenderD3D )
+    //if ( pRenderer->pRenderD3D )
         {
         pHardwareSprites[uNumLoadedSprites].pName = (const char *)malloc(20);
         strcpy((char *)pHardwareSprites[uNumLoadedSprites].pName, pContainerName);
@@ -349,11 +351,11 @@ void LODFile_Sprites::ReleaseLostHardwareSprites()
           if ( v5 )
           {
             v5->Release();
-            v1->pHardwareSprites[v3].pTexture = 0;
+            v1->pHardwareSprites[v3].pTexture = nullptr;
           }
           v6 = (IDirectDrawSurface *)v1->pHardwareSprites[v3].pTextureSurface;
           v6->Release();
-          v1->pHardwareSprites[v3].pTextureSurface = 0;
+          v1->pHardwareSprites[v3].pTextureSurface = nullptr;
           pRenderer->MoveSpriteToDevice(&v1->pHardwareSprites[v3]);
         }
         ++v2;
@@ -391,7 +393,7 @@ void LODFile_Sprites::ReleaseAll()
           if ( v5 )
           {
             v5->Release();
-            v1->pHardwareSprites[v3].pTexture = 0;
+            v1->pHardwareSprites[v3].pTexture = nullptr;
           }
           v6 = v1->pHardwareSprites;
           if ( v6 )
@@ -400,7 +402,7 @@ void LODFile_Sprites::ReleaseAll()
             if ( v7 )
             {
               v7->Release();
-              v1->pHardwareSprites[v3].pTextureSurface = 0;
+              v1->pHardwareSprites[v3].pTextureSurface = nullptr;
             }
           }
         }
@@ -484,7 +486,7 @@ int LODSprite::DrawSprite_sw(RenderBillboardTransform_local0 *a2, char a3)
   LODSprite_stru0 *v44; // ecx@66
   int v45; // edx@69
   int v46; // edx@77
-  unsigned __int16 *pTarget; // [sp+Ch] [bp-50h]@2
+  //unsigned __int16 *pTarget; // [sp+Ch] [bp-50h]@2
   signed int v48; // [sp+10h] [bp-4Ch]@2
   signed int v49; // [sp+14h] [bp-48h]@2
   int v50; // [sp+14h] [bp-48h]@19
@@ -515,7 +517,7 @@ int LODSprite::DrawSprite_sw(RenderBillboardTransform_local0 *a2, char a3)
   int v75; // [sp+48h] [bp-14h]@4
   int v76; // [sp+48h] [bp-14h]@22
   int v77; // [sp+48h] [bp-14h]@59
-  LODSprite *v78; // [sp+4Ch] [bp-10h]@1
+  //LODSprite *v78; // [sp+4Ch] [bp-10h]@1
   int v79; // [sp+50h] [bp-Ch]@4
   int v80; // [sp+50h] [bp-Ch]@21
   int v81; // [sp+50h] [bp-Ch]@62
@@ -529,7 +531,7 @@ int LODSprite::DrawSprite_sw(RenderBillboardTransform_local0 *a2, char a3)
   int v89; // [sp+68h] [bp+Ch]@56
 
   v3 = a2;
-  v78 = this;
+  //v78 = this;
   result = a2->_screenspace_x_scaler_packedfloat;
   v58 = a2->_screenspace_x_scaler_packedfloat;
   if ( result <= 0 )
@@ -545,17 +547,19 @@ int LODSprite::DrawSprite_sw(RenderBillboardTransform_local0 *a2, char a3)
   v70 = (this->uHeight << 16) - v8;
   v49 = v7;
   v69 = v3->uTargetPitch;
-  pTarget = v3->pTarget;
+
+  __debugbreak(); // target surface  will most likely be 32bit, but this sub awaits 16bits
+  auto pTarget = (unsigned __int16 *)v3->pTarget;
   v57 = v3->sZValue;
   v61 = v3->pPalette;
-  v9 = (v6 * this->uWidth + 32768) >> 16;
+  v9 = (v6 * this->uWidth + 0x8000) >> 16;
   v72 = v3->uScreenSpaceY;
-  result = (v5 * v7 + 32768) >> 16;
+  result = (v5 * v7 + 0x8000) >> 16;
   v10 = (int *)(v72 - result + 1);
   v11 = v3->uScreenSpaceX - (v9 >> 1) + 1;
   v65 = v72 - result + 1;
   v59 = v11 + v9 - 1;
-  if ( BYTE1(v3->uFlags) & 8 )
+  if ( v3->uFlags & 0x800 )
   {
     v10 = (int *)((char *)v10 + (v49 >> 1));
     v72 += v49 >> 1;
@@ -608,7 +612,7 @@ int LODSprite::DrawSprite_sw(RenderBillboardTransform_local0 *a2, char a3)
     while ( 1 )
     {
       v35 = v71 >> 16;
-      v36 = LOWORD(v78->pSpriteLines[v35].dword_0);
+      v36 = this->pSpriteLines[v35].a1;
       if ( v36 == -1 )
       {
         v34 -= v69;
@@ -616,23 +620,20 @@ int LODSprite::DrawSprite_sw(RenderBillboardTransform_local0 *a2, char a3)
         goto LABEL_84;
       }
       v37 = v9 - ((unsigned __int64)(v36 * (signed __int64)v58) >> 16);
-      v67 = v87 * ((unsigned __int64)(LOWORD(v78->pSpriteLines[v35].dword_0) * (signed __int64)v58) >> 16);
+      v67 = v87 * ((unsigned __int64)(this->pSpriteLines[v35].a2 * (signed __int64)v58) >> 16);
       v38 = v9 - v60;
       v77 = v9 - v60;
-      if ( v9 - v60 <= (signed int)(v9
-                                  - ((unsigned __int64)(HIWORD(v78->pSpriteLines[v35].dword_0) * (signed __int64)v58) >> 16))
+      if ( v9 - v60 <= (signed int)(v9 - ((unsigned __int64)(this->pSpriteLines[v35].a2 * (signed __int64)v58) >> 16))
         || v68 >= v37 )
       {
         v89 -= v69;
         v34 = v89;
 LABEL_84:
-        v86 -= 640;
+        v86 -= window->GetWidth();
         goto LABEL_85;
       }
       if ( v38 < v37 )
-      {
         v81 = (v87 >> 1) + v87 * (v37 - v38);
-      }
       else
       {
         v77 = v37;
@@ -641,20 +642,20 @@ LABEL_84:
         v89 += v39 + v60;
         v86 += v60 + v39;
       }
-      v40 = ((HIWORD(v78->pSpriteLines[v35].dword_0) + 1) << 16) - v81 - v67;
+      v40 = ((this->pSpriteLines[v35].a2 + 1) << 16) - v81 - v67;
       LODWORD(v41) = v40 << 16;
       HIDWORD(v41) = v40 >> 16;
-      v42 = v77 - (((signed int)((unsigned __int64)(v41 / v48) - 32768) >> 16) + 1);
+      v42 = v77 - (((signed int)((unsigned __int64)(v41 / v48) - 0x8000) >> 16) + 1);
       if ( v68 >= v42 )
         v42 = v68;
       v43 = &pTarget[v89];
       v74 = &v43[v42 - v77 + 1];
-      v44 = &v78->pSpriteLines[v35];
-      v64 = v44->ptr_4;
+      v44 = &this->pSpriteLines[v35];
+      v64 = v44->pos;
       if ( !v57 )
       {
         v83 = v67 + v81;
-        if ( ((v83 - (LOWORD(v44->dword_0) << 16)) & 0xFFFF0000) < 0 )
+        if ( ((v83 - (v44->a1 << 16)) & 0xFFFF0000) < 0 )
         {
           v83 += v87;
           --v43;
@@ -662,7 +663,7 @@ LABEL_84:
         }
         while ( v43 >= v74 )
         {
-          v46 = (v83 - ((signed int)LOWORD(v78->pSpriteLines[v35].dword_0) << 16)) >> 16;
+          v46 = (v83 - ((signed int)this->pSpriteLines[v35].a1 << 16)) >> 16;
           if ( *((char *)v64 + v46) )
             *v43 = v61[*((char *)v64 + v46)];
           v83 += v87;
@@ -672,7 +673,7 @@ LABEL_84:
       }
       pTargetZ = &v3->pTargetZ[v86];
       v82 = v67 + v81;
-      if ( ((v82 - (LOWORD(v44->dword_0) << 16)) & 0xFFFF0000) < 0 )
+      if ( ((v82 - (v44->a1 << 16)) & 0xFFFF0000) < 0 )
         goto LABEL_72;
 LABEL_73:
       if ( v43 >= v74 )
@@ -680,7 +681,7 @@ LABEL_73:
 LABEL_81:
       v89 += v9 - v77 - v60 - v69;
       v34 = v89;
-      v86 = v86 + v9 - v77 - v60 - 640;
+      v86 = v86 + v9 - v77 - v60 - window->GetWidth();
 LABEL_85:
       result = v52;
       v71 += v52;
@@ -688,7 +689,7 @@ LABEL_85:
       if ( !v51 )
         return result;
     }
-    v45 = (v82 - ((signed int)LOWORD(v78->pSpriteLines[v35].dword_0) << 16)) >> 16;
+    v45 = (v82 - ((signed int)this->pSpriteLines[v35].a1 << 16)) >> 16;
     v56 = *((char *)v64 + v45);
     if ( *((char *)v64 + v45) && v57 <= (unsigned int)*pTargetZ )
     {
@@ -710,12 +711,12 @@ LABEL_72:
     v50 = result - (int)v16 + 1;
     while ( 1 )
     {
-      v20 = &v78->pSpriteLines[v71 >> 16];
+      v20 = &this->pSpriteLines[v71 >> 16];
       v80 = v71 >> 16;
-      if ( LOWORD(v20->dword_0) != -1 )
+      if ( v20->a1 != -1 )
         break;
       v18 -= v69;
-      v85 = v19 - 640;
+      v85 = v19 - window->GetWidth();
       v88 = v18;
 LABEL_54:
       result = v52;
@@ -725,15 +726,15 @@ LABEL_54:
         return result;
       v19 = v85;
     }
-    v21 = (v58 * LOWORD(v20->dword_0) + 32768) >> 16;
+    v21 = (v58 * v20->a1 + 32768) >> 16;
     v66 = v21 * v87;
     v76 = v68;
-    v54 = HIWORD(v20->dword_0);
+    v54 = v20->a2;
     v22 = v9 - v60;
     if ( v68 >= (v58 * v54 + 32768) >> 16 || v22 <= v21 )
     {
       v88 -= v69;
-      v85 -= 640;
+      v85 -= window->GetWidth();
       goto LABEL_51;
     }
     if ( v68 > v21 )
@@ -742,7 +743,7 @@ LABEL_54:
     }
     else
     {
-      v76 = (v58 * LOWORD(v20->dword_0) + 32768) >> 16;
+      v76 = (v58 * v20->a1 + 0x8000) >> 16;
       v23 = v21 - v68;
       v88 += v23;
       v24 = v87 >> 1;
@@ -755,12 +756,12 @@ LABEL_54:
       v22 = v26;
     v27 = &pTarget[v88];
     v73 = &v27[v22 - v76 - 1];
-    v28 = &v78->pSpriteLines[v80];
-    v63 = v28->ptr_4;
+    v28 = &this->pSpriteLines[v80];
+    v63 = v28->pos;
     if ( v57 )
     {
       pTargetZ = &v3->pTargetZ[v85];
-      v29 = v66 - (LOWORD(v28->dword_0) << 16) + v24;
+      v29 = v66 - (v28->a1 << 16) + v24;
       if ( (v29 & 0xFFFF0000) >= 0 )
         goto LABEL_36;
       while ( 1 )
@@ -779,7 +780,7 @@ LABEL_36:
         }
       }
       v30 = v29 >> 16;
-      if ( v30 > HIWORD(v78->pSpriteLines[v80].dword_0) - (signed int)LOWORD(v78->pSpriteLines[v80].dword_0)
+      if ( v30 > this->pSpriteLines[v80].a2 - (signed int)this->pSpriteLines[v80].a1
         || (v31 = *((char *)v63 + v30)) == 0
         || v57 > (unsigned int)*pTargetZ )
         goto LABEL_50;
@@ -787,7 +788,7 @@ LABEL_36:
     }
     else
     {
-      v32 = v66 - (LOWORD(v28->dword_0) << 16) + v24;
+      v32 = v66 - (v28->a1 << 16) + v24;
       if ( (v32 & 0xFFFF0000) < 0 )
       {
         v32 += v87;
@@ -802,14 +803,14 @@ LABEL_36:
         ++v27;
       }
       v33 = v32 >> 16;
-      if ( v33 > HIWORD(v78->pSpriteLines[v80].dword_0) - (signed int)LOWORD(v78->pSpriteLines[v80].dword_0)
+      if ( v33 > this->pSpriteLines[v80].a2 - (signed int)this->pSpriteLines[v80].a1
         || (v31 = *((char *)v63 + v33)) == 0 )
         goto LABEL_50;
     }
     *v27 = v61[v31];
 LABEL_50:
     v88 += v68 - v76 - v69;
-    v85 = v85 + v68 - v76 - 640;
+    v85 = v85 + v68 - v76 - window->GetWidth();
 LABEL_51:
     v18 = v88;
     goto LABEL_54;
@@ -839,19 +840,21 @@ int LODSprite::_4AD2D1(struct RenderBillboardTransform_local0 *a2, int a3)
   result = (int)a2;
   v14 = this;
   v4 = a2->uTargetPitch;
-  v16 = a2->pTarget;
+
+  __debugbreak(); // sub expects 16bit target surface, we may have 32bit
+  v16 = (unsigned short *)a2->pTarget;
   v15 = a2->pPalette;
   v5 = this->uHeight - 1;
   for ( i = v4 * a2->uScreenSpaceY - (this->uWidth >> 1) + a2->uScreenSpaceX + 1; v5 >= 0; --v5 )
   {
     v6 = &this->pSpriteLines[v5];
-    v7 = LOWORD(v6->dword_0);
-    if ( LOWORD(v6->dword_0) != -1 )
+    v7 = v6->a1;
+    if ( v6->a1 != -1 )
     {
       v8 = v7;
       v9 = &v16[v7 + i];
-      v10 = HIWORD(v6->dword_0);
-      v11 = v6->ptr_4;
+      v10 = v6->a2;
+      v11 = v6->pos;
       v12 = &v9[v10 - v8];
       while ( v9 <= v12 )
       {
@@ -942,10 +945,10 @@ void LOD::File::Close()
     this->uCurrentIndexDir = 0;
     free(pSubIndices);
     free(pRoot);
-    pSubIndices = NULL;
-    pRoot = NULL;
+    pSubIndices = nullptr;
+    pRoot = nullptr;
     fclose(pFile);
-    isFileOpened = 0;
+    isFileOpened = false;
     _6A0CA8_lod_unused = 0;
   }
 }
@@ -973,7 +976,7 @@ int LODWriteableFile::CreateNewLod(LOD::FileHeader *pHeader, LOD::Directory *pDi
   fwrite(pHeader,sizeof(LOD::FileHeader), 1, pFile);
   fwrite(pDir, sizeof(LOD::Directory), 1, pFile);
   fclose(pFile);
-  pFile = 0;
+  pFile = nullptr;
   return 0;
 }
 
@@ -988,7 +991,7 @@ void LOD::File::ResetSubIndices()
     uNumSubDirs = 0;
     uLODDataSize = 0;
     free(pSubIndices);
-    pSubIndices = NULL;
+    pSubIndices = nullptr;
   }
 }
 
@@ -1062,8 +1065,8 @@ void LODSprite::Release()
     free(v1->pSpriteLines);
   }
   v1->word_1A = 0;
-  v1->pDecompressedBytes = 0;
-  v1->pSpriteLines = 0;
+  v1->pDecompressedBytes = nullptr;
+  v1->pSpriteLines = nullptr;
   v1->pName[0] = 0;
   v1->word_16 = 0;
   v1->uPaletteId = 0;
@@ -1076,8 +1079,7 @@ void LODSprite::Release()
 //----- (00450D68) --------------------------------------------------------
 void Sprite::Release()
 {
-  if (pName)
-    free((void *)pName);
+  free((void *)pName);
   pName = nullptr;
 
   if (pTextureSurface)
@@ -1266,8 +1268,8 @@ LODSprite::~LODSprite()
     free(pDecompressedBytes);
     free(pSpriteLines);
   }
-  pDecompressedBytes = NULL;
-  pSpriteLines = NULL;
+  pDecompressedBytes = nullptr;
+  pSpriteLines = nullptr;
 }
 
 //----- (004623E5) --------------------------------------------------------
@@ -1283,7 +1285,7 @@ LODFile_Sprites::LODFile_Sprites():
   field_ECA4 = 0;
   field_ECA0 = 0;
   pHardwareSprites = 0;
-  field_ECAC = 0;
+  //can_load_hardware_sprites = 0;
   field_ECB4 = 0;
   uNumLoadedSprites = 0;
 }
@@ -1332,12 +1334,9 @@ LODFile_IconsBitmaps::~LODFile_IconsBitmaps()
     }
     while ( (v2 & 0x80000000u) == 0 );
   }
-  if ( v1->pHardwareSurfaces )
-    free(v1->pHardwareSurfaces);
-  if ( v1->pHardwareTextures )
-    free(v1->pHardwareTextures);
-  if ( v1->ptr_011BB4 )
-    free(v1->ptr_011BB4);
+  free(v1->pHardwareSurfaces);
+  free(v1->pHardwareTextures);
+  free(v1->ptr_011BB4);
   //LOD::File::vdtor((LOD::File *)v1);
 }
 
@@ -1346,8 +1345,8 @@ LODFile_IconsBitmaps::LODFile_IconsBitmaps():
   LOD::File()
 {
   LODFile_IconsBitmaps *v1; // esi@1
-  Texture *v2; // ebx@1
-  signed int v3; // [sp+4h] [bp-10h]@1
+//  Texture *v2; // ebx@1
+//  signed int v3; // [sp+4h] [bp-10h]@1
 
   v1 = this;
   /*v2 = v1->pTextures;
@@ -1365,7 +1364,7 @@ LODFile_IconsBitmaps::LODFile_IconsBitmaps():
   v1->dword_11B80 = 0;
   v1->uNumLoadedFiles = 0;
   v1->dword_011BA4 = 0;
-  v1->dword_011BA8 = 0;
+  //v1->can_load_hardware_sprites = 0;
   v1->pHardwareSurfaces = 0;
   v1->pHardwareTextures = 0;
   v1->ptr_011BB4 = 0;
@@ -1373,7 +1372,7 @@ LODFile_IconsBitmaps::LODFile_IconsBitmaps():
 
 
 //----- (004621A7) --------------------------------------------------------
-bool LODWriteableFile::_4621A7()
+bool LODWriteableFile::_4621A7()//закрыть и загрузить записываемый ф-л(при сохранении)
 {
   CloseWriteFile();
   return LoadFile(pLODName, 0);
@@ -1382,72 +1381,70 @@ bool LODWriteableFile::_4621A7()
 //----- (00461FD4) ---LODFile_sub_461FD4---text:004632EA  --------------------------------------------------
 int LODWriteableFile::FixDirectoryOffsets()
 {
-    int total_size; // edi@1
-    int temp_offset; // ecx@5
-    FILE *tmp_file; // eax@9
-    size_t write_size; // edi@12
-    int result;
-    char Filename[256]; // [sp+Ch] [bp-228h]@9
-    char NewFilename[256]; // [sp+10Ch] [bp-128h]@15
-    int i;
+  int total_size; // edi@1
+  int temp_offset; // ecx@5
+  FILE *tmp_file; // eax@9
+  size_t write_size; // edi@12
+  int result;
+  char Filename[256]; // [sp+Ch] [bp-228h]@9
+  char NewFilename[256]; // [sp+10Ch] [bp-128h]@15
+  int i;
 
-    total_size = 0;
-    for (i=0;i<uNumSubDirs;i++)
-         total_size+=pSubIndices[i].uDataSize;
-    //fix offsets
-     temp_offset = sizeof(LOD::Directory) * uNumSubDirs;
-     for (i=0;i<uNumSubDirs;i++)
-            {
-            pSubIndices[i].uOfsetFromSubindicesStart=temp_offset;
-            temp_offset+=pSubIndices[i].uDataSize;
-         }
-    strcpy(Filename, "lod.tmp");
-    tmp_file = fopen(Filename, "wb+");
+  total_size = 0;
+  for ( i = 0; i < uNumSubDirs; i++ )
+    total_size += pSubIndices[i].uDataSize;
+  //fix offsets
+  temp_offset = sizeof(LOD::Directory) * uNumSubDirs;
+  for ( i = 0; i < uNumSubDirs; i++ )
+  {
+    pSubIndices[i].uOfsetFromSubindicesStart=temp_offset;
+    temp_offset+=pSubIndices[i].uDataSize;
+  }
+  strcpy(Filename, "lod.tmp");
+  tmp_file = fopen(Filename, "wb+");
 
-    if ( tmp_file )
+  if ( tmp_file )
+  {
+    fwrite((const void *)&header, sizeof(LOD::FileHeader), 1, tmp_file);
+
+    LOD::Directory Lindx;
+    strcpy(Lindx.pFilename, "chapter");
+    Lindx.uOfsetFromSubindicesStart = uOffsetToSubIndex; //10h 16
+    Lindx.uDataSize = sizeof(LOD::Directory) * uNumSubDirs + total_size;		   //14h 20
+    Lindx.dword_000018 = 0;		   //18h 24 
+    Lindx.uNumSubIndices = uNumSubDirs;		   //1ch 28
+    Lindx.word_00001E = 0;		   // 1Eh 30
+    fwrite(&Lindx, sizeof(LOD::Directory), 1, tmp_file);
+    fwrite(pSubIndices, sizeof(LOD::Directory), uNumSubDirs, tmp_file);
+    fseek(pOutputFileHandle, 0, 0);
+    if ( total_size > 0 )
     {
-        fwrite((const void *)&header, sizeof(LOD::FileHeader), 1, tmp_file);
-
-        LOD::Directory Lindx;
-        strcpy(Lindx.pFilename, "chapter");
-        Lindx.uOfsetFromSubindicesStart=uOffsetToSubIndex; //10h 16
-        Lindx.uDataSize=sizeof(LOD::Directory) * uNumSubDirs + total_size;		   //14h 20
-        Lindx.dword_000018=0;		   //18h 24 
-        Lindx.uNumSubIndices=uNumSubDirs;		   //1ch 28
-        Lindx.word_00001E=0;		   // 1Eh 30
-        fwrite(&Lindx, sizeof(LOD::Directory), 1, tmp_file);
-        fwrite(pSubIndices, sizeof(LOD::Directory), uNumSubDirs, tmp_file);
-        fseek(pOutputFileHandle, 0, 0);
-        if ( total_size > 0 )
-            {
-            do
-                {
-                write_size = uIOBufferSize;
-                if ( total_size <= (signed int)uIOBufferSize )
-                    write_size =total_size;
-                fread(pIOBuffer, 1,  write_size,  pOutputFileHandle);
-                fwrite(pIOBuffer, 1,  write_size, tmp_file);
-                total_size -=  write_size;
-                }
-                while ( total_size > 0 );
-            }
-        strcpy(NewFilename, (const char *)&pLODName);
-        fclose(tmp_file);
-        fclose(pOutputFileHandle);
-        CloseWriteFile();
-        remove("lodapp.tmp");
-        remove(NewFilename);
-        rename(Filename, NewFilename);
-        CloseWriteFile();
-        LoadFile( (const char *)&pLODName, 0);
-        result = 0;
-        }
-    else
-        {
-        result = 5;
-        }
-    return result;
+      do
+      {
+        write_size = uIOBufferSize;
+        if ( total_size <= (signed int)uIOBufferSize )
+          write_size =total_size;
+        fread(pIOBuffer, 1,  write_size,  pOutputFileHandle);
+        fwrite(pIOBuffer, 1,  write_size, tmp_file);
+        total_size -=  write_size;
+      }
+      while ( total_size > 0 );
     }
+    strcpy(NewFilename, (const char *)&pLODName);
+    fclose(tmp_file);
+    fclose(pOutputFileHandle);
+    CloseWriteFile();
+    remove("lodapp.tmp");
+    remove(NewFilename);
+    rename(Filename, NewFilename);
+    CloseWriteFile();
+    LoadFile( (const char *)&pLODName, 0);
+    result = 0;
+  }
+  else
+    result = 5;
+  return result;
+}
 
 //----- (00461F71) --------------------------------------------------------
 bool LOD::File::AppendDirectory(LOD::Directory *pDir, const void *pData)
@@ -1458,7 +1455,6 @@ bool LOD::File::AppendDirectory(LOD::Directory *pDir, const void *pData)
   fwrite(pData, 1, pDir->uDataSize, pOutputFileHandle);
   return true;
 }
-
 
 //----- (00461F1E) --------------------------------------------------------
 int LODWriteableFile::CreateTempFile()
@@ -1477,8 +1473,6 @@ int LODWriteableFile::CreateTempFile()
     return 5;
 }
 
-
-
 //----- (00461EE9) --------------------------------------------------------
 void LODWriteableFile::CloseWriteFile()
 {
@@ -1491,8 +1485,10 @@ void LODWriteableFile::CloseWriteFile()
     isFileOpened = false;
     fflush(pFile);
     fclose(pFile);
-    pFile = 0;
+    pFile = nullptr;
   }
+  //else 
+    //__debugbreak();
 }
 // 6A0CA8: using guessed type int 6A0CA8_lod_unused;
 
@@ -1500,162 +1496,160 @@ void LODWriteableFile::CloseWriteFile()
 //----- (00461B48) --------------------------------------------------------
 unsigned int LODWriteableFile::Write(const LOD::Directory *pDir, const void *pDirData, int a4)
 {
-    char Filename[256]; 
-    char NewFilename[256];
-    FILE *tmp_file; 
-    int comp_res;
-    bool bRewrite_data;
-    int offset_to_data;
-    int total_data_size;
-    int size_correction;
-    int to_copy_size;
-    int read_size;
-    int curr_position;
-    int insert_index;
+  char Filename[256]; 
+  char NewFilename[256];
+  FILE *tmp_file; 
+  int comp_res;
+  bool bRewrite_data;
+  int offset_to_data;
+  int total_data_size;
+  int size_correction;
+  int to_copy_size;
+  int read_size;
+  int curr_position;
+  int insert_index;
 
-    //insert new data in sorted index lod file
-    bRewrite_data = false;
-    insert_index=-1;
-    if (!isFileOpened)
-        return 1;
-    if ( !pSubIndices)
-        return 2;
-    if (!pIOBuffer||!uIOBufferSize)
-        return 3;
+  //insert new data in sorted index lod file
+  bRewrite_data = false;
+  insert_index = -1;
+  if ( !isFileOpened )//sometimes gives crash
+    return 1;
+  if ( !pSubIndices )
+    return 2;
+  if ( !pIOBuffer || !uIOBufferSize )
+    return 3;
 
-        for (int i=0;i<uNumSubDirs; i++)
-            {
-            comp_res=_stricmp(pSubIndices[i].pFilename,pDir->pFilename);
-            if(comp_res==0)
-                {
-                insert_index=i;
-                if (a4==0)
-                    {
-                    bRewrite_data=true;
-
-                    break;
-                    }
-                if (a4==1)
-                    { 
-                    if(pSubIndices[i].uNumSubIndices<pDir->uNumSubIndices)
-                        {
-                        if (pSubIndices[i].word_00001E<pDir->word_00001E)
-                            return 4;
-                        }
-                    else
-                        bRewrite_data=true;	  
-                    break;
-                    }
-                if (a4==2)
-                    return 4;
-                }
-            else if (comp_res>0)
-                {
-                if (insert_index==-1)
-                  {
-                     insert_index=i;
-                     break;
-                  }
-                }
-            }
-    strcpy(Filename, "lod.tmp");
-    tmp_file = fopen(Filename, "wb+");
-    if ( !tmp_file )
-        return 5;
-    if (!bRewrite_data)
-        size_correction=0;
-    else
-        size_correction=pSubIndices[insert_index].uDataSize;
-
-    //create chapter index
-    LOD::Directory Lindx;
-    strcpy(Lindx.pFilename, "chapter");
-    Lindx.dword_000018=0;
-    Lindx.word_00001E=0;
-    Lindx.uNumSubIndices= uNumSubDirs;
-    Lindx.uOfsetFromSubindicesStart=sizeof(LOD::FileHeader)+sizeof(LOD::Directory);
-    total_data_size=uLODDataSize+pDir->uDataSize-size_correction;
-    if (!bRewrite_data)
+  for ( int i = 0; i < uNumSubDirs; i++ )
+  {
+    comp_res = _stricmp(pSubIndices[i].pFilename, pDir->pFilename);
+    if( comp_res == 0 )
+    {
+      insert_index = i;
+      if ( a4 == 0 )
+      {
+        bRewrite_data = true;
+        break;
+      }
+      if ( a4 == 1 )
+      {
+        if ( pSubIndices[i].uNumSubIndices < pDir->uNumSubIndices )
         {
-        total_data_size+=sizeof(LOD::Directory);
-        Lindx.uNumSubIndices++;
+          if ( pSubIndices[i].word_00001E < pDir->word_00001E )
+            return 4;
         }
-
-    Lindx.uDataSize=total_data_size;
-    uNumSubDirs= Lindx.uNumSubIndices;
-    //move indexes +1 after insert point
-    if  (!bRewrite_data&&(insert_index<uNumSubDirs))
-        {
-        for(int i=uNumSubDirs;i>insert_index; --i)
-            memcpy(&pSubIndices[i],&pSubIndices[i-1],sizeof(LOD::Directory));
-
-        }
-    //insert
-    memcpy(&pSubIndices[insert_index],pDir,sizeof(LOD::Directory));
-    //correct offsets to data
-    if (uNumSubDirs>0)
-        {
-        offset_to_data=sizeof(LOD::Directory)*uNumSubDirs;
-        for (int i=0;i<uNumSubDirs; i++)
-            {
-            pSubIndices[i].uOfsetFromSubindicesStart=offset_to_data;
-            offset_to_data+=pSubIndices[i].uDataSize;
-            }
-        }
-
-    //construct  lod file	with added data
-    fwrite( &header, sizeof(LOD::FileHeader), 1, tmp_file);
-    fwrite(&Lindx, sizeof(LOD::Directory), 1, tmp_file);
-    fseek(pFile,Lindx.uOfsetFromSubindicesStart, SEEK_SET);
-    fwrite(pSubIndices, sizeof(LOD::Directory), uNumSubDirs, tmp_file);
-
-    offset_to_data = sizeof(LOD::Directory) * uNumSubDirs;
-    if ( !bRewrite_data )
-        offset_to_data -= sizeof(LOD::Directory);
-
-    fseek(pFile, offset_to_data, SEEK_CUR);
-    //copy from open lod to temp 	lod	  first half
-    to_copy_size=pSubIndices[insert_index].uOfsetFromSubindicesStart-pSubIndices[0].uOfsetFromSubindicesStart;
-    while(to_copy_size>0)
-        {
-        read_size = uIOBufferSize;
-        if ( to_copy_size <= uIOBufferSize )
-            read_size = to_copy_size;
-        fread(pIOBuffer, 1, read_size, pFile);
-        fwrite(pIOBuffer, 1, read_size, tmp_file);
-        to_copy_size-=read_size;
-        }
-    // add container data
-    fwrite(pDirData, 1, pDir->uDataSize, tmp_file);
-    if ( bRewrite_data )
-        fseek(pFile,size_correction , SEEK_CUR);
-
-    //add remainng data  last half
-    curr_position = ftell(pFile);
-    fseek(pFile, 0, SEEK_END);
-    to_copy_size = ftell(pFile) - curr_position;
-    fseek(pFile, curr_position, SEEK_SET);
-    while ( to_copy_size > 0 )
-        {
-        read_size = uIOBufferSize;
-        if ( to_copy_size <= uIOBufferSize )
-            read_size = to_copy_size;
-        fread(pIOBuffer, 1, read_size, pFile);
-        fwrite(pIOBuffer, 1, read_size, tmp_file);
-        to_copy_size-=read_size;
-        }
-    //replace	  old file by new with added  data
-    strcpy(NewFilename, pLODName);
-    fclose(tmp_file);
-    CloseWriteFile();
-    remove(NewFilename);
-    rename(Filename, NewFilename);
-    CloseWriteFile();
-    //reload new
-    LoadFile(pLODName, 0);
-    return 0;
+        else
+          bRewrite_data = true;
+        break;
+      }
+      if ( a4 == 2 )
+        return 4;
     }
+    else if ( comp_res > 0 )
+    {
+      if ( insert_index == -1 )
+      {
+        insert_index=i;
+        break;
+      }
+    }
+  }
+  strcpy(Filename, "lod.tmp");
+  tmp_file = fopen(Filename, "wb+");
+  if ( !tmp_file )
+    return 5;
+  if (!bRewrite_data)
+    size_correction = 0;
+  else
+    size_correction = pSubIndices[insert_index].uDataSize;
 
+  //create chapter index
+  LOD::Directory Lindx;
+  strcpy(Lindx.pFilename, "chapter");
+  Lindx.dword_000018 = 0;
+  Lindx.word_00001E = 0;
+  Lindx.uNumSubIndices = uNumSubDirs;
+  Lindx.uOfsetFromSubindicesStart = sizeof(LOD::FileHeader) + sizeof(LOD::Directory);
+  total_data_size = uLODDataSize + pDir->uDataSize-size_correction;
+  if (!bRewrite_data)
+  {
+    total_data_size += sizeof(LOD::Directory);
+    Lindx.uNumSubIndices++;
+  }
+
+  Lindx.uDataSize = total_data_size;
+  uNumSubDirs = Lindx.uNumSubIndices;
+  //move indexes +1 after insert point
+  if ( !bRewrite_data && (insert_index < uNumSubDirs) )//перезаписывание файлов дл€ освобождени€ места дл€ нового ф-ла
+  {
+    for( int i = uNumSubDirs; i > insert_index; --i )
+      memcpy(&pSubIndices[i], &pSubIndices[i - 1], sizeof(LOD::Directory));
+  }
+  //insert
+  memcpy(&pSubIndices[insert_index], pDir, sizeof(LOD::Directory));//записать текущий файл
+  //correct offsets to data
+  if (uNumSubDirs > 0)
+  {
+    offset_to_data = sizeof(LOD::Directory) * uNumSubDirs;
+    for ( int i = 0; i < uNumSubDirs; i++ )
+    {
+      pSubIndices[i].uOfsetFromSubindicesStart = offset_to_data;
+      offset_to_data += pSubIndices[i].uDataSize;
+    }
+  }
+
+  //construct  lod file	with added data
+  fwrite(&header, sizeof(LOD::FileHeader), 1, tmp_file);
+  fwrite(&Lindx, sizeof(LOD::Directory), 1, tmp_file);
+  fseek(pFile,Lindx.uOfsetFromSubindicesStart, SEEK_SET);
+  fwrite(pSubIndices, sizeof(LOD::Directory), uNumSubDirs, tmp_file);
+
+  offset_to_data = sizeof(LOD::Directory) * uNumSubDirs;
+  if ( !bRewrite_data )
+    offset_to_data -= sizeof(LOD::Directory);
+
+  fseek(pFile, offset_to_data, SEEK_CUR);
+  //copy from open lod to temp 	lod	  first half
+  to_copy_size = pSubIndices[insert_index].uOfsetFromSubindicesStart - pSubIndices[0].uOfsetFromSubindicesStart;
+  while(to_copy_size > 0)
+  {
+    read_size = uIOBufferSize;
+    if ( to_copy_size <= uIOBufferSize )
+      read_size = to_copy_size;
+    fread(pIOBuffer, 1, read_size, pFile);
+    fwrite(pIOBuffer, 1, read_size, tmp_file);
+    to_copy_size -= read_size;
+  }
+  // add container data
+  fwrite(pDirData, 1, pDir->uDataSize, tmp_file);
+  if ( bRewrite_data )
+    fseek(pFile,size_correction , SEEK_CUR);
+
+  //add remainng data  last half
+  curr_position = ftell(pFile);
+  fseek(pFile, 0, SEEK_END);
+  to_copy_size = ftell(pFile) - curr_position;
+  fseek(pFile, curr_position, SEEK_SET);
+  while ( to_copy_size > 0 )
+  {
+    read_size = uIOBufferSize;
+    if ( to_copy_size <= uIOBufferSize )
+      read_size = to_copy_size;
+    fread(pIOBuffer, 1, read_size, pFile);
+    fwrite(pIOBuffer, 1, read_size, tmp_file);
+    to_copy_size -= read_size;
+  }
+  //replace	  old file by new with added  data
+  strcpy(NewFilename, (const char *)&pLODName);
+  fclose(tmp_file);
+  fclose(pFile);
+  CloseWriteFile();
+  remove(NewFilename);
+  rename(Filename, NewFilename);
+  CloseWriteFile();
+  //reload new
+  LoadFile((const char *)&pLODName, 0);//isFileOpened == true, next file
+  return 0;
+}
 
 //----- (00461A43) --------------------------------------------------------
 bool LODWriteableFile::LoadFile(const char *pFilename, bool bWriting)
@@ -1665,7 +1659,10 @@ bool LODWriteableFile::LoadFile(const char *pFilename, bool bWriting)
   else
     pFile = fopen(pFilename, "rb+");
   if (!pFile)
-    return false;
+  {
+	  __debugbreak();
+    return false;// возможно файл не закрыт, поэтому не открываетс€
+  }
 
   strcpy(pLODName, pFilename);
   fread(&header, sizeof(LOD::FileHeader), 1, pFile);
@@ -1713,7 +1710,7 @@ void LOD::File::AllocSubIndicesAndIO(unsigned int uNumSubIndices, unsigned int u
   {
     MessageBoxA(0, "Attempt to reset a LOD IObuffer!", "MM6", MB_ICONEXCLAMATION);
     free(pIOBuffer);
-    pIOBuffer = NULL;
+    pIOBuffer = nullptr;
     uIOBufferSize = 0;
   }
   if ( uBufferSize )
@@ -1771,13 +1768,13 @@ bool LOD::File::LoadHeader(const char *pFilename, bool bWriting)
   if ( pFile )
   {
     strcpy(pLODName, pFilename);
-    fread(&header, sizeof(LOD::FileHeader), 1u, pFile);
+    fread(&header, sizeof(LOD::FileHeader), 1, pFile);
     pRoot = (LOD::Directory *)malloc(160);
     if ( pRoot )
     {
       fread(pRoot, sizeof(LOD::Directory), header.uNumIndices, pFile);
       fseek(pFile, 0, SEEK_SET);
-      isFileOpened = 1;
+      isFileOpened = true;
       return false;
     }
     else
@@ -1809,16 +1806,13 @@ LOD::File::File():
   pRoot(nullptr),
   isFileOpened(false)
 {
-  LOD::File *v1; // esi@1
-
   memset(pLODName, 0, 256);
   memset(pContainerName, 0, 16);
-  v1 = this;
-  v1->pFile = 0;
-  v1->pSubIndices = 0;
-  v1->pIOBuffer = 0;
-  v1->isFileOpened = 0;
-  v1->uIOBufferSize = 0;
+  this->pFile = nullptr;
+  this->pSubIndices = nullptr;
+  this->pIOBuffer = nullptr;
+  this->isFileOpened = false;
+  this->uIOBufferSize = 0;
   Close();
 }
 
@@ -2375,40 +2369,41 @@ void LODFile_IconsBitmaps::_410423_move_textures_to_device()
 //----- (004103BB) --------------------------------------------------------
 void LODFile_IconsBitmaps::ReleaseHardwareTextures()
 {
-  LODFile_IconsBitmaps *v1; // esi@1
-  unsigned int v2; // edi@1
-  struct IDirect3DTexture2 **v3; // eax@2
-  struct IDirect3DTexture2 *v4; // eax@3
-  struct IDirectDrawSurface **v5; // eax@5
-  struct IDirectDrawSurface *v6; // eax@6
+  //LODFile_IconsBitmaps *v1; // esi@1
+//  unsigned int v2; // edi@1
+  //struct IDirect3DTexture2 **v3; // eax@2
+  //struct IDirect3DTexture2 *v4; // eax@3
+  //struct IDirectDrawSurface **v5; // eax@5
+  //struct IDirectDrawSurface *v6; // eax@6
 
-  v1 = this;
-  v2 = this->uNumLoadedFiles;
-  while ( 1 )
+  //v1 = this;
+  
+  //while ( 1 )
+  for ( uint i = 0; i < this->uNumLoadedFiles; i++ )
   {
-    --v2;
-    if ( (v2 & 0x80000000u) != 0 )
-      break;
-    v3 = v1->pHardwareTextures;
-    if ( v3 )
+    
+    //if ( (v2 & 0x80000000u) != 0 )
+      //break;
+    //v3 = this->pHardwareTextures;
+    if ( this->pHardwareTextures )
     {
-      v4 = v3[v2];
-      if ( v4 )
+      //v4 = this->pHardwareTextures[v2];
+      if ( this->pHardwareTextures[i] )
       {
-        v4->Release();
-        v1->pHardwareTextures[v2] = 0;
-        v1->ptr_011BB4[v2] = 1;
+        this->pHardwareTextures[i]->Release();
+        this->pHardwareTextures[i] = 0;
+        this->ptr_011BB4[i] = 1;
       }
     }
-    v5 = v1->pHardwareSurfaces;
-    if ( v5 )
+    //v5 = this->pHardwareSurfaces;
+    if ( this->pHardwareSurfaces )
     {
-      v6 = v5[v2];
-      if ( v6 )
+      //v6 = this->pHardwareSurfaces[v2];
+      if ( this->pHardwareSurfaces[i] )
       {
-        v6->Release();
-        v1->pHardwareSurfaces[v2] = 0;
-        v1->ptr_011BB4[v2] = 1;
+        this->pHardwareSurfaces[i]->Release();
+        this->pHardwareSurfaces[i] = 0;
+        this->ptr_011BB4[i] = 1;
       }
     }
   }
@@ -2541,23 +2536,23 @@ int LODFile_IconsBitmaps::LoadTextureFromLOD(Texture *pOutTex, const char *pCont
   enum TEXTURE_TYPE v12; // eax@14
   signed int v13; // esi@14
   unsigned int v14; // eax@21
-  unsigned int v15; // ecx@25
-  unsigned int *v16; // ebx@25
-  void *v17; // eax@27
-  unsigned int v18; // ST28_4@27
+//  unsigned int v15; // ecx@25
+//  unsigned int *v16; // ebx@25
+//  void *v17; // eax@27
+//  unsigned int v18; // ST28_4@27
   void *v19; // ST3C_4@27
   //Allocator *v20; // ebx@29
   void *v21; // eax@29
   size_t v22; // ST2C_4@29
   const void *v23; // ecx@29
-  unsigned __int16 v24; // ax@29
-  unsigned __int16 v25; // cx@29
-  __int16 v26; // dx@29
-  unsigned int v27; // ecx@29
-  Texture *v28; // eax@29
-  unsigned int v29; // ST28_4@30
+//  unsigned __int16 v24; // ax@29
+//  unsigned __int16 v25; // cx@29
+//  __int16 v26; // dx@29
+//  unsigned int v27; // ecx@29
+//  Texture *v28; // eax@29
+//  unsigned int v29; // ST28_4@30
   void *v30; // eax@30
-  unsigned int v31; // ST2C_4@30
+//  unsigned int v31; // ST2C_4@30
   void *v32; // eax@32
   void *v33; // eax@34
   signed int v34; // eax@37
@@ -2578,9 +2573,9 @@ int LODFile_IconsBitmaps::LoadTextureFromLOD(Texture *pOutTex, const char *pCont
   if (!pFile)
     return -1;
   v8 = pOutTex;
-  fread(pOutTex, 1u, 0x30u, pFile);
-  strcpy(v8->pName, pContainer);
-  if (pRenderer->pRenderD3D && v8->pBits & 2 && dword_011BA8)
+  fread(pOutTex, 1, 0x30, pFile);
+  strcpy(pOutTex->pName, pContainer);
+  if (/*pRenderer->pRenderD3D &&*/ pOutTex->pBits & 2)
   {
     if (!pHardwareSurfaces || !pHardwareTextures)
     {
@@ -2596,19 +2591,13 @@ int LODFile_IconsBitmaps::LoadTextureFromLOD(Texture *pOutTex, const char *pCont
     if (_strnicmp(pContainer, "wtrdr", 5))//*v4 != 'w' || v4[1] != 't' || v4[2] != 'r' || v4[3] != 'd' || v4[4] != 'r' )
     {
       if (_strnicmp(pContainer, "WtrTyl", 6))//if ( *v4 != 'W' || v4[1] != 't' || v4[2] != 'r' || v4[3] != 'T' || v4[4] != 'y' || v4[5] != 'l' )
-      {
         v14 = uNumLoadedFiles;
-      }
       else
       {
         pRenderer->hd_water_tile_id = uNumLoadedFiles;
         v14 = uNumLoadedFiles;
       }
-      v13 = pRenderer->LoadTexture(
-              pContainer,
-              v8->palette_id1,
-              (IDirectDrawSurface4 **)&pHardwareSurfaces[v14],
-              &pHardwareTextures[v14]);
+      v13 = pRenderer->LoadTexture(pContainer, pOutTex->palette_id1, (IDirectDrawSurface4 **)&pHardwareSurfaces[v14], &pHardwareTextures[v14]);
     }
     else
     {
@@ -2617,35 +2606,32 @@ int LODFile_IconsBitmaps::LoadTextureFromLOD(Texture *pOutTex, const char *pCont
       eTextureType = v12;
       *(char *)v12 = 104;
       strcpy((char *)(v12 + 1), pContainer);
-      v13 = pRenderer->LoadTexture(
-              (const char *)eTextureType,
-              v8->palette_id1,
-              (IDirectDrawSurface4 **)&pHardwareSurfaces[uNumLoadedFiles],
-              &pHardwareTextures[uNumLoadedFiles]);
+      v13 = pRenderer->LoadTexture((const char *)eTextureType, pOutTex->palette_id1,
+              (IDirectDrawSurface4 **)&pHardwareSurfaces[uNumLoadedFiles], &pHardwareTextures[uNumLoadedFiles]);
       free((void *)eTextureType);
     }
     return v13;
   }
-  v15 = v8->uTextureSize;
-  v16 = &v8->uDecompressedSize;
-  pOutTex = (Texture *)v8->uTextureSize;
+  //v15 = v8->uTextureSize;
+  //v16 = &v8->uDecompressedSize;
+  //pOutTex = (Texture *)v8->uTextureSize;
   if ( !v8->uDecompressedSize || dword_011BA4 )
   {
-    v32 = malloc(v15);
+    v32 = malloc(v8->uTextureSize);
     v8->pLevelOfDetail0_prolly_alpha_mask = (unsigned __int8 *)v32;
-    fread(v32, 1u, (size_t)pOutTex, pFile);
+    fread(v32, 1, (size_t)v8->uTextureSize, pFile);
   }
   else
   {
-    v17 = malloc(v8->uDecompressedSize);
-    v18 = v8->uTextureSize;
-    pContainer = (const char *)v17;
-    v19 = malloc(v18);
-    fread(v19, 1u, (size_t)pOutTex, pFile);
+    //v17 = malloc(v8->uDecompressedSize);
+    //v18 = v8->uTextureSize;
+    pContainer = (const char *)malloc(v8->uDecompressedSize);
+    v19 = malloc(v8->uTextureSize);
+    fread(v19, 1, (size_t)v8->uTextureSize, pFile);
     zlib::MemUnzip((void *)pContainer, &v8->uDecompressedSize, v19, v8->uTextureSize);
-    v8->uTextureSize = *v16;
+    v8->uTextureSize = v8->uDecompressedSize;
     free(v19);
-    if ( bUseLoResSprites && v8->pBits & 2 )
+    if ( /*bUseLoResSprites*/false && v8->pBits & 2 )
     {
       pOutTex = (Texture *)(((signed int)v8->uSizeOfMaxLevelOfDetail >> 2)
                           + ((signed int)v8->uSizeOfMaxLevelOfDetail >> 4)
@@ -2655,27 +2641,27 @@ int LODFile_IconsBitmaps::LoadTextureFromLOD(Texture *pOutTex, const char *pCont
       v23 = &pContainer[v8->uTextureWidth * v8->uTextureHeight];
       v8->pLevelOfDetail0_prolly_alpha_mask = (unsigned __int8 *)v21;
       memcpy(v21, v23, v22);
-      v8->uTextureWidth = (signed __int16)v8->uTextureWidth >> 1;
-      v24 = v8->uTextureWidth;
-      v8->uTextureHeight = (signed __int16)v8->uTextureHeight >> 1;
-      v25 = v8->uTextureHeight;
+      v8->uTextureWidth = (signed __int16)v8->uTextureWidth / 2;
+      //v24 = v8->uTextureWidth;
+      v8->uTextureHeight = (signed __int16)v8->uTextureHeight / 2;
+      //v25 = v8->uTextureHeight;
       --v8->uWidthLn2;
       --v8->uHeightLn2;
-      v8->uWidthMinus1 = v24 - 1;
-      v26 = v25 - 1;
-      v27 = (signed __int16)v24 * (signed __int16)v25;
-      v28 = pOutTex;
-      v8->uHeightMinus1 = v26;
-      v8->uSizeOfMaxLevelOfDetail = v27;
-      v8->uTextureSize = (unsigned int)v28;
+      v8->uWidthMinus1 = v8->uTextureWidth - 1;
+      //v26 = v25 - 1;
+      //v27 = (signed __int16)v8->uTextureWidth * (signed __int16)v25;
+      //v28 = pOutTex;
+      v8->uHeightMinus1 = v8->uTextureHeight - 1;
+      v8->uSizeOfMaxLevelOfDetail = (signed __int16)v8->uTextureWidth * (signed __int16)v8->uTextureHeight;
+      v8->uTextureSize = (unsigned int)pOutTex;
     }
     else
     {
-      v29 = *v16;
-      v30 = malloc(v29);
-      v31 = v8->uDecompressedSize;
+      //v29 = v8->uDecompressedSize;
+      v30 = malloc(v8->uDecompressedSize);
+      //v31 = v8->uDecompressedSize;
       v8->pLevelOfDetail0_prolly_alpha_mask = (unsigned __int8 *)v30;
-      memcpy(v30, pContainer, v31);
+      memcpy(v30, pContainer, v8->uDecompressedSize);
     }
     free((void *)pContainer);
   }
@@ -2685,7 +2671,7 @@ int LODFile_IconsBitmaps::LoadTextureFromLOD(Texture *pOutTex, const char *pCont
   {
     v33 = malloc(0x300);
     v8->pPalette24 = (unsigned __int8 *)v33;
-    fread(v33, 1u, 0x300u, pFile);
+    fread(v33, 1, 0x300u, pFile);
   }
   else
   {
@@ -2693,20 +2679,17 @@ int LODFile_IconsBitmaps::LoadTextureFromLOD(Texture *pOutTex, const char *pCont
     if ( eTextureType == TEXTURE_16BIT_PALETTE )
     {
       v8->pPalette16 = (unsigned __int16 *)malloc(0x200);
-      v38 = 0;
-      do
+      for ( v38 = 0; v38 < 256; ++v38 )
       {
-        fread((char *)&eTextureType + 3, 1u, 1u, pFile);
-        fread((char *)&pContainer + 3, 1u, 1u, pFile);
-        v39 = fread((char *)&pOutTex + 3, 1u, 1u, pFile);
+        fread((char *)&eTextureType + 3, 1, 1, pFile);
+        fread((char *)&pContainer + 3, 1, 1, pFile);
+        v39 = fread((char *)&pOutTex + 3, 1, 1, pFile);
         LOWORD(v39) = (unsigned __int8)(BYTE3(eTextureType) >> (8 - LOBYTE(uTextureRedBits)));
         v8->pPalette16[v38] = v39 << (LOBYTE(uTextureBlueBits) + LOBYTE(uTextureGreenBits));
         LOWORD(v40) = (unsigned __int8)(BYTE3(pContainer) >> (8 - LOBYTE(uTextureGreenBits)));
         v8->pPalette16[v38] += v40 << uTextureBlueBits;
         v8->pPalette16[v38] += (unsigned __int8)(BYTE3(pOutTex) >> (8 - LOBYTE(uTextureBlueBits)));
-        ++v38;
       }
-      while ( v38 < 256 );
       goto LABEL_36;
     }
   }
@@ -2728,24 +2711,17 @@ LABEL_36:
     v8->pLevelOfDetail1 = 0;
   }
   v8->pLevelOfDetail3 = v37;
-  v41 = 1;
-  while ( 1 << v41 != v8->uTextureWidth )
+  for ( v41 = 1; v41 < 15; ++v41 )
   {
-    ++v41;
-    if ( v41 >= 15 )
-      goto LABEL_48;
+    if ( 1 << v41 == v8->uTextureWidth )
+      v8->uWidthLn2 = v41;
   }
-  v8->uWidthLn2 = v41;
-LABEL_48:
-  v42 = 1;
-  while ( 1 << v42 != v8->uTextureHeight )
+  for ( v42 = 1; v42 < 15; ++v42 )
   {
-    ++v42;
-    if ( v42 >= 15 )
-      goto LABEL_53;
+    if ( 1 << v42 == v8->uTextureHeight )
+      v8->uHeightLn2 = v42;
   }
-  v8->uHeightLn2 = v42;
-LABEL_53:
+
   switch ( v8->uWidthLn2 )
   {
     case 2:
@@ -2841,16 +2817,16 @@ unsigned int LODFile_IconsBitmaps::LoadTexture(const char *pContainer, enum TEXT
   //LODFile_IconsBitmaps *v3; // esi@1
   //unsigned int v4; // edi@1
   //Texture *v5; // ebx@2
-  unsigned int v6; // ebx@8
-  const char *Sourcea; // [sp+14h] [bp+8h]@9
 
   //v3 = this;
   //v4 = 0;
   areWeLoadingTexture = 1;
 
   for (uint i = 0; i < uNumLoadedFiles; ++i)
+  {
     if (!_stricmp(pContainer, pTextures[i].pName))
       return i;
+  }
 
 //  if (!uNumLoadedFiles)
 //  {
@@ -2863,20 +2839,11 @@ unsigned int LODFile_IconsBitmaps::LoadTexture(const char *pContainer, enum TEXT
     }*/
     if (LoadTextureFromLOD(&pTextures[uNumLoadedFiles], pContainer, uTextureType) == -1)
     {
-      v6 = 0;
-      if (uNumLoadedFiles > 0)
+      for ( uint i = 0; i < uNumLoadedFiles; ++i )
       {
-        Sourcea = (const char *)pTextures;
-        while ( _stricmp(Sourcea, "pending") )
-        {
-          Sourcea += 72;
-          ++v6;
-          if (v6 >= uNumLoadedFiles)
-            goto LABEL_15;
-        }
-        return v6;
+        if (!_stricmp(pTextures[i].pName, "pending"))
+          return i;
       }
-LABEL_15:
       LoadTextureFromLOD(&pTextures[uNumLoadedFiles], "pending", uTextureType);
     }
     areWeLoadingTexture = 0;
@@ -2893,6 +2860,18 @@ LABEL_15:
 //  }
 //  return v4;
 }
+
+Texture * LODFile_IconsBitmaps::GetTexture( int idx )
+{
+  Assert(idx < MAX_LOD_TEXTURES, "Texture index out of bounds (%u)", idx);
+  if (idx == -1) 
+  {
+    //Log::Warning(L"Texture id = %d missing", idx);
+    return pTextures + LoadDummyTexture();
+  }
+  return pTextures + idx;
+}
+
 //----- (0046082C) --------------------------------------------------------
 bool Initialize_GamesLOD_NewLOD()
 {
@@ -2905,45 +2884,4 @@ bool Initialize_GamesLOD_NewLOD()
     return true;
   }
   return false;
-}
-//----- (00460706) --------------------------------------------------------
-void TryLoadLevelFromLOD()
-{
-  FILE *v0; // eax@1
-  FILE *v1; // esi@1
-  __int32 v2; // edi@2
-  char Ext[256]; // [sp+4h] [bp-40Ch]@1
-  char Dir[256]; // [sp+104h] [bp-30Ch]@1
-  char Filename[256]; // [sp+204h] [bp-20Ch]@1
-  char a1[260]; // [sp+304h] [bp-10Ch]@1
-  char Drive[4]; // [sp+408h] [bp-8h]@1
-  int DstBuf; // [sp+40Ch] [bp-4h]@2
-
-  strcpy(a1, pCurrentMapName);
-  _splitpath(a1, Drive, Dir, Filename, Ext);
-  sprintf(a1, "levels\\%s%s", Filename, ".lod");
-  v0 = fopen(a1, "rb");
-  v1 = v0;
-  if ( v0 )
-  {
-    fseek(v0, 0, 2);
-    v2 = ftell(v1);
-    rewind(v1);
-    ptr_6A0D08 = malloc(v2);
-    fread(ptr_6A0D08, v2, 1u, v1);
-    fseek(v1, v2 - 6, 0);
-    DstBuf = 0;
-    fread(&DstBuf, 4u, 1u, v1);
-    fread(&_6A0D10_txt_lod_loading__unused, 2u, 1u, v1);
-    _6A0D0C_txt_lod_loading = (int)((char *)ptr_6A0D08 + DstBuf);
-    fclose(v1);
-  }
-}
-
-//----- (0046080D) --------------------------------------------------------
-void  sub_46080D()
-{
-  free(ptr_6A0D08);
-  ptr_6A0D08 = 0;
-  _6A0D0C_txt_lod_loading = 0;
 }

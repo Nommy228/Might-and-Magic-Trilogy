@@ -1,3 +1,4 @@
+#define _CRT_NON_CONFORMING_SWPRINTFS
 #pragma once
 
 #define Error(format, ...)             Error_impl_(__FILE__, __FUNCTION__, __LINE__, format, __VA_ARGS__)
@@ -6,6 +7,7 @@
 
 
 #include <stdarg.h>
+#include <stdio.h>
 inline __declspec(noreturn) void Error_impl_(const char *filename, const char *functionname, int line,
                                              const char *format, ...)
 {
@@ -19,7 +21,7 @@ inline __declspec(noreturn) void Error_impl_(const char *filename, const char *f
     vsprintf(msg_body, format, va);
 
     wchar_t msg[sizeof(header) + sizeof(msg_body)];
-    swprintf(msg, L"%S %S", header, msg_body);
+    swprintf(msg, 8192, L"%S %S", header, msg_body);
 
     extern void MsgBox(const wchar_t *, const wchar_t *);
     MsgBox(msg, L"Error");
@@ -47,9 +49,9 @@ inline void Assert_impl_(const char *filename, const char *functionname, int lin
     
     wchar_t msg[sizeof(header) + sizeof(msg_body)];
     if (format)
-      swprintf(msg, L"%S %S", header, msg_body);
+      swprintf(msg, (sizeof(header) + sizeof(msg_body)), L"%S %S", header, msg_body);
     else
-      swprintf(msg, L"%S", header);
+      swprintf(msg, (sizeof(header) + sizeof(msg_body)), L"%S", header);
 
     extern void MsgBox(const wchar_t *, const wchar_t *);
     MsgBox(msg, L"Assertion");

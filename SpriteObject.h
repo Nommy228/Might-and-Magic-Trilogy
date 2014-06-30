@@ -22,6 +22,9 @@ struct SpriteObject
   static void UpdateObject_fn0_BLV(unsigned int uLayingItemID);
   static void UpdateObject_fn0_ODM(unsigned int uLayingItemID);
   static void OnInteraction(unsigned int uLayingItemID);
+  static bool sub_42F7EB_DropItemAt(unsigned int uSpriteID, int x, int y, int z, int a4, int count, int a7, unsigned __int16 attributes, ItemGen *a9);
+  static void sub_42F960_create_object(int x, int y, int z);
+  static void InitializeSpriteObjects();
 
 
   unsigned __int16 uType;
@@ -50,6 +53,7 @@ struct SpriteObject
 #pragma pack(pop)
 
 
+void CompactLayingItemsList();
 
 extern size_t uNumSpriteObjects;
 extern std::array<SpriteObject, MAX_SPRITE_OBJECTS> pSpriteObjects;

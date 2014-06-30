@@ -31,9 +31,9 @@ struct Bloodsplat
   float z;
   float radius;
   float dot_dist;
-  char r;
-  char g;
-  char b;
+  unsigned char r;
+  unsigned char g;
+  unsigned char b;
   char field_1B;
   int field_1C;
   unsigned long long field_20;
@@ -65,8 +65,8 @@ struct BloodsplatContainer
   }
 
 
-  bool AddBloodsplat(float x, float y, float z, float r, float g, float b, float radius, int a8, int a9);
-  bool AddBloodsplat(float x, float y, float z, float radius, char r, char g, char b);
+  void AddBloodsplat(float x, float y, float z, float r, float g, float b, float radius, int a8, int a9);
+  void AddBloodsplat(float x, float y, float z, float radius, unsigned char r, unsigned char g, unsigned char b);
 
 
   //void ( ***vdestructor_ptr)(BloodsplatContainer *, bool);
@@ -165,14 +165,13 @@ struct DecalBuilder
   {}
 
 
-  bool AddBloodsplat(float x, float y, float z, float r, float g, float b, float radius, int a8, int a9);
+  void AddBloodsplat(float x, float y, float z, float r, float g, float b, float radius, int a8, int a9);
   void Reset(unsigned int bPreserveBloodsplats);
   char ApplyDecals(int light_level, char a3, struct stru154 *a4, int a5, struct RenderVertexSoft *a6, struct IndoorCameraD3D_Vec4 *a7, char a8, unsigned int uSectorID);
-  char _49B790_build_decal_geometry(int a2, char a3, DecalBuilder_stru0 *a4, int a5, float a6, unsigned int uColorMultiplier, float a8, struct stru314 *a9, signed int a10, struct RenderVertexSoft *a11, char uClipFlags);
+  char _49B790_build_decal_geometry(int a2, char a3, Bloodsplat *a4, int a5, float a6, unsigned int uColorMultiplier, float a8, struct stru314 *a9, signed int a10, struct RenderVertexSoft *a11, char uClipFlags);
   bool ApplyBloodsplatDecals_IndoorFace(unsigned int uFaceID);
   char ApplyDecals_OutdoorFace(ODMFace *pFace);
   bool _49BE8A(struct Polygon *a2, Vec3_float_ *a3, float *a4, struct RenderVertexSoft *a5, unsigned int uStripType, char a7);
-  void DrawDecal(Decal *pDecal, float z_bias);
   void DrawDecals(float z_bias);
   void DrawBloodsplats();
   void DrawDecalDebugOutlines();

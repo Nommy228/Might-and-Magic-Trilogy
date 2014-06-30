@@ -26,7 +26,7 @@ enum Tileset: signed __int16
 {
   Tileset_Grass = 0,
   Tileset_Snow = 1,
-  Tileset_2 = 2,
+  Tilset_Desert = 2,
   Tileset_3 = 3,
   Tileset_Dirt = 4,
   Tileset_Water = 5,

@@ -1,3 +1,4 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include "Decoration.h"
 #include "../Party.h"
 #include "../ErrorHandling.h"
@@ -5,7 +6,7 @@
 //----- (004583B0) --------------------------------------------------------
 LevelDecoration::LevelDecoration()
 {
-  memset(this, 0, sizeof(this));
+  memset(this, 0, sizeof(*this));
 }
 
 //----- (00450929) --------------------------------------------------------

@@ -79,7 +79,8 @@ enum SoundID
   SOUND_8 = 0x8,
   SOUND_24 = 24,
   SOUND_error = 27,
-  SOUND_64 = 64,
+  SOUND_RunAlongWater = 63,
+  SOUND_RunAlong3DModel = 64,
   SOUND_Button = 66,
   SOUND_67 = 67,
   SOUND_71 = 71,
@@ -90,7 +91,8 @@ enum SoundID
   SOUND_83 = 83,
   SOUND_84 = 84,
   SOUND_85 = 85,
-  SOUND_103 = 103,
+  SOUND_WalkAlongWater = 102,
+  SOUND_WalkAlong3DModel = 103,
   SOUND_Arcomage_LoseResources = 0x78,
   SOUND_Arcomage_AddResources = 0x79,
   SOUND_Arcomage_TowerWallDamage = 0x7A,
@@ -119,6 +121,7 @@ enum SoundID
   SOUND_CloseBook = 231,
   SOUND_11090 = 11090,
   SOUND_12040 = 12040,
+  SOUND_Arena_Welcome = 14060,
   SOUND_20001 = 0x4E21,
 };
 
@@ -163,12 +166,12 @@ struct AudioPlayer
   void SetMusicVolume(int vol);
   void SetMasterVolume(float fVolume);
   void _4AA258(int a2);
-  void PlaySound(SoundID eSoundID, signed int a3, unsigned int uNumRepeats, signed int a5, signed int a6, int a7, unsigned int uVolume, int sPlaybackRate);
+  void PlaySound(SoundID eSoundID, signed int a3, unsigned int uNumRepeats, signed int a5, signed int a6, int a7, float uVolume, int sPlaybackRate);
   void UpdateSounds();
   void StopChannels(int uStartChannel, int uEndChannel);
   void LoadAudioSnd();
   void Initialize();
-  LSTATUS CheckA3DSupport(char a2);
+  void CheckA3DSupport(bool query);
   void Release();
   void FreeChannel(MixerChannel *pChannel);
   void _4ABF23(AudioPlayer_3DSample *a2);
@@ -279,7 +282,7 @@ struct SoundDesc: public SoundDesc_mm6
 struct SoundList
 {
   inline SoundList():
-    sNumSounds(0), pSounds(nullptr), uTotalLoadedSoundSize(0)
+    sNumSounds(0), pSL_Sounds(nullptr), uTotalLoadedSoundSize(0)
   {}
 
   void Initialize();
@@ -293,7 +296,7 @@ struct SoundList
   int FromFileTxt(const char *Args);
 
   signed int sNumSounds;
-  SoundDesc *pSounds;
+  SoundDesc *pSL_Sounds;
   unsigned int uTotalLoadedSoundSize;
 };
 #pragma pack(pop)
@@ -342,7 +345,7 @@ extern std::array<float, 10> pSoundVolumeLevels; // idb
 #pragma pack(push, 1)
 struct stru339_spell_sound
 {
-  int _494836(int uSoundID, int a6);
+  int AddPartySpellSound(int uSoundID, int a6);
 
   char pSounds[44744];
   int field_AEC8[45];
@@ -353,4 +356,10 @@ struct stru339_spell_sound
 };
 #pragma pack(pop)
 extern std::array<stru339_spell_sound, 4> stru_A750F8;
-extern std::array<stru339_spell_sound, 4> stru_AA1058;
+extern std::array<stru339_spell_sound, 4> AA1058_PartyQuickSpellSound;
+
+struct SoundHeader *FindSound_BinSearch(unsigned int uStart, unsigned int uEnd, const char *pName);
+struct SoundData *LoadSound(const char *pSoundName, struct SoundData *pOutBuff, unsigned int uID);
+int __fastcall sub_4AB66C(int, int); // weak
+int GetSoundStrengthByDistanceFromParty(int x, int y, int z);
+void PlayLevelMusic();

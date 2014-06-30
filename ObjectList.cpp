@@ -1,3 +1,4 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include "ObjectList.h"
 #include "mm7_data.h"
 #include "Sprites.h"
@@ -143,7 +144,7 @@ bool ObjectList::FromFileTxt(const char *Args)
   v2 = this;
   free(this->pObjects);
   v3 = 0;
-  v2->pObjects = 0;
+  v2->pObjects = nullptr;
   v2->uNumObjects = 0;
   v4 = fopen(Args, "r");
   File = v4;

@@ -1,3 +1,4 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include "FrameTableInc.h"
 #include <memory.h>
 //identical function to work in differnt threads

@@ -1,11 +1,9 @@
-#ifdef _MSC_VER
 #define _CRT_SECURE_NO_WARNINGS
-#endif
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "ErrorHandling.h"
 #include "TileFrameTable.h"
 #include "FrameTableInc.h"
 #include "PaletteManager.h"
@@ -17,11 +15,8 @@
 //----- (00487E1D) --------------------------------------------------------
 TileTable::~TileTable()
 {
-  if ( pTiles )
-  {
-    free(pTiles);
-    pTiles = nullptr;
-  }
+  free(pTiles);
+  pTiles = nullptr;
   sNumTiles = 0;
 }
 

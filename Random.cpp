@@ -1,7 +1,8 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include <math.h>
 
 #include "Random.h"
-#include "Math.h"
+#include "OurMath.h"
 
 
 
@@ -37,16 +38,16 @@ double Random::GetRandom()
      + v2 * 5115.0
      + this->field_0[4];
   v1->field_0[0] = v3 - floor(v3);
-  v1->field_0[4] = v3 * 2.328306436538696e-10;
-  return v3 - v3;
+  v1->field_0[4] = floor(v3) * 2.328306436538696e-10;
+  return v1->field_0[0];
 }
 
 //----- (004BE623) --------------------------------------------------------
 int Random::GetInRange()
 {
-  Random *v1; // esi@1
+//  Random *v1; // esi@1
   float v2; // ST10_4@1
-  double v3; // ST04_8@1
+//  double v3; // ST04_8@1
   int floored_random; // ecx@1
 
   v2 = GetRandom() * (double)this->range;

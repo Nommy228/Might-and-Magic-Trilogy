@@ -86,9 +86,11 @@ struct MapStats
 {
   void Initialize();
   MAP_TYPE GetMapInfo(const char *Str2);
-
+  int sub_410D99_get_map_index(int a1);
   MapInfo pInfos[77];
   unsigned int uNumMaps;
+
+
 };
 #pragma pack(pop)
 
@@ -102,4 +104,4 @@ extern MapStartPoint uLevel_StartingPointType; // weak
 
 
 void TeleportToStartingPoint(MapStartPoint point); // idb
-void sub_44987B(const char *pMapName, MapStartPoint point); // idb
+void Transition_StopSound_Autosave(const char *pMapName, MapStartPoint point); // sub_44987B idb

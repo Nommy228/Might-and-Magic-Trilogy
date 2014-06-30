@@ -106,7 +106,7 @@ enum PlayerSpeech
   SPEECH_63 = 63,
   SPEECH_64 = 64,
   SPEECH_Yell = 65,
-  SPEECH_66 = 66,
+  SPEECH_Falling_scream = 66,
   SPEECH_67 = 67,
   SPEECH_68 = 68,
   SPEECH_69 = 69,
@@ -552,7 +552,7 @@ struct Player
   void IncreaseAttribute(int eAttribute);
   void Player::Zero();
   unsigned int GetStatColor(int uStat);
-  bool DiscardConditionIfLastsLongerThan(unsigned int uCondition, unsigned __int64 uTime);
+  bool DiscardConditionIfLastsLongerThan(unsigned int uCondition, signed __int64 uTime);
   int SelectPhrasesTransaction(ItemGen *pItem, int building_type, int BuildID_2Events, int a5);
   int GetBodybuilding();
   int GetMeditation();
@@ -602,6 +602,8 @@ struct Player
   bool HasItem(unsigned int uItemID, bool checkHeldItem);
   void OnInventoryLeftClick();
 
+  bool PlayerHitOrMiss(Actor *pActor, int a3, int a4);
+
   unsigned int GetMultiplierForSkillLevel(unsigned int skillValue, int mult1, int mult2, int mult3, int mult4);
   int CalculateMeleeDmgToEnemyWithWeapon( ItemGen * weapon, unsigned int uTargetActorID , bool addOneDice);
   bool WearsItemAnyWhere(int item_id);
@@ -626,24 +628,24 @@ struct Player
   bool IsParalyzed();
   bool IsDrunk();
 
-  void SetCursed(bool state);
-  void SetWeak(bool state);
-  void SetAsleep(bool state);
-  void SetAfraid(bool state);
-  void SetDrunk(bool state);
-  void SetInsane(bool state);
-  void SetPoison1(bool state);
-  void SetDisease1(bool state);
-  void SetPoison2(bool state);
-  void SetDisease2(bool state);
-  void SetPoison3(bool state);
-  void SetDisease3(bool state);
-  void SetParalyzed(bool state);
-  void SetUnconcious(bool state);
-  void SetDead(bool state);
-  void SetPertified(bool state);
-  void SetEradicated(bool state);
-  void SetZombie(bool state);
+  void SetCursed(unsigned long long state);
+  void SetWeak(unsigned long long state);
+  void SetAsleep(unsigned long long state);
+  void SetAfraid(unsigned long long state);
+  void SetDrunk(unsigned long long state);
+  void SetInsane(unsigned long long state);
+  void SetPoisonWeak(unsigned long long state);
+  void SetDiseaseWeak(unsigned long long state);
+  void SetPoisonMedium(unsigned long long state);
+  void SetDiseaseMedium(unsigned long long state);
+  void SetPoisonSevere(unsigned long long state);
+  void SetDiseaseSevere(unsigned long long state);
+  void SetParalyzed(unsigned long long state);
+  void SetUnconcious(unsigned long long state);
+  void SetDead(unsigned long long state);
+  void SetPertified(unsigned long long state);
+  void SetEradicated(unsigned long long state);
+  void SetZombie(unsigned long long state);
 
   void SetCondWeakWithBlockCheck (int blockable);
   void SetCondInsaneWithBlockCheck (int blockable);
@@ -672,6 +674,9 @@ struct Player
   ItemGen* GetNthEquippedIndexItem(int index);
   ItemGen* GetItem(unsigned int PlayerEquipment::* itemPos);
   int GetPlayerIndex();
+
+  static void _42ECB5_PlayerAttacksActor();
+  static void _42FA66_do_explosive_impact(int a1, int a2, int a3, int a4, __int16 a5, signed int a6);
 
   std::array<__int64, 20> pConditions;
   unsigned __int64 uExperience;
@@ -840,3 +845,12 @@ struct Player
   char field_1B3B;
 };
 #pragma pack(pop)
+
+void __fastcall DamagePlayerFromMonster(unsigned int uObjID, int a2, struct Vec3_int_ *pPos, signed int a4);
+bool IsDwarfPresentInParty(bool b);
+bool  ShouldLoadTexturesForRaceAndGender(unsigned int _this);
+int PlayerCreation_GetUnspentAttributePointCount();
+int CycleCharacter(bool backwards);
+unsigned int SkillToMastery(unsigned int skill_value);
+
+extern NZIArray<struct Player *, 5> pPlayers;

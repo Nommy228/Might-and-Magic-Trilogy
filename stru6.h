@@ -112,8 +112,7 @@ struct stru6
   //----- (004A71DC) --------------------------------------------------------
   ~stru6()
   {
-    if (pStru1)
-      delete pStru1;
+    delete pStru1;
     pStru1 = nullptr;
   }
 
@@ -122,7 +121,7 @@ struct stru6
   void _4A73AA_hanging_trace_particles___like_fire_strike_ice_blast_etc(struct SpriteObject *a2, unsigned int uDiffuse, unsigned int uTextureID);
   void _4A75CC_single_spell_collision_particle(struct SpriteObject *a1, unsigned int uDiffuse, unsigned int uTextureID);
   void _4A7688_fireball_collision_particle(struct SpriteObject *a2);
-  void _4A77FD_implosion_particle(struct SpriteObject *a1);
+  void _4A77FD_implosion_particle_d3d(struct SpriteObject *a1);
   void _4A78AE_sparks_spell(struct SpriteObject *a1);
   void _4A7948_mind_blast_after_effect(struct SpriteObject *a1);
   bool AddMobileLight(struct SpriteObject *a1, unsigned int uDiffuse, int uRadius);
@@ -132,7 +131,7 @@ struct stru6
   void _4A7E89_sparkles_on_actor_after_it_casts_buff(struct Actor *pActor, unsigned int uDiffuse);
   void _4A7F74(int x, int y, int z);
   int _4A806F(struct Actor *pActor);
-  void _4A80DC_some_stuff_sw(struct SpriteObject *a2);
+  //void _4A80DC_implosion_particle_sw(struct SpriteObject *a2);
   bool _4A81CA(struct SpriteObject *a2);
   void SetPlayerBuffAnim(unsigned __int16 uSpellID, unsigned __int16 uPlayerID);
   void FadeScreen__like_Turn_Undead_and_mb_Armageddon(unsigned int uDiffuseColor, unsigned int uFadeTime);
@@ -156,7 +155,7 @@ struct stru6
   int field_5D0;
   int uAnimLength;
   int uFadeTime;
-  int uFadeTime2;
+  int uFadeLength;
   int uFadeColor;
   unsigned int uTextureID_effpar1;
   unsigned int uTextureID_effpar2;

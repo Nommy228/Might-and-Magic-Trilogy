@@ -1,31 +1,34 @@
 #pragma once
 #include "OSAPI.h"
 
-/*  293 */
-#pragma pack(push, 1)
-struct OSVersion
+class OSInfo
 {
-  //----- (004AD48F) --------------------------------------------------------
-  OSVersion()
-  {
-    bInitialized = false;
-    pVersionInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOA);
-    if (GetVersionExA(&pVersionInfo))
-      bInitialized = true;
-  }
+  public:
+    inline static bool CanUseDirectDraw4()
+    {
+      if (Ready())
+        return info.dwPlatformId != VER_PLATFORM_WIN32_NT || info.dwMajorVersion >= 4;
+      return false;
+    }
 
-  //----- (004AD4BA) --------------------------------------------------------
-  virtual ~OSVersion()
-  {
-    bInitialized = false;
-  }
+    inline static bool CanUseDirectDraw2()
+    {
+      return true;
+    }
 
 
-  //void ( ***vdestructor_ptr)(OSVersion *, bool);
-  OSVERSIONINFOA pVersionInfo;
-  int bInitialized;
+  private:
+    static bool           initialized;
+    static OSVERSIONINFOA info;
+
+    static bool Ready()
+    {
+      if (!initialized)
+      {
+        info.dwOSVersionInfoSize = sizeof(OSVERSIONINFOA);
+        if (GetVersionExA(&info))
+          initialized = true;
+      }
+      return initialized;
+    }
 };
-#pragma pack(pop)
-
-
-extern struct OSVersion *pVersion; // idb

@@ -14,8 +14,8 @@ struct stru298
   __int16 field_324[100];
   char field_3EC[100];
   char field_450[100];
-  Vec3_int_ vec_4B4;
+  Vec3_int_ vec_4B4[100];
 };
 #pragma pack(pop)
 
-extern stru298 stru_50FE08; // weak
+extern stru298 AttackerInfo; // weak

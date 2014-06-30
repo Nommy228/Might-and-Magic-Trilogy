@@ -1,3 +1,5 @@
+#define _CRT_SECURE_NO_WARNINGS
+#include "ErrorHandling.h"
 #include "IconFrameTable.h"
 #include "LOD.h"
 #include "mm7_data.h"
@@ -6,85 +8,44 @@
 //----- (00494F3A) --------------------------------------------------------
 unsigned int IconFrameTable::FindIcon(const char *pIconName)
 {
-  IconFrameTable *v2; // esi@1
-  int v3; // ebx@1
-  unsigned int uID; // edi@1
-  unsigned int result; // eax@4
-
-  v2 = this;
-  v3 = 0;
-  uID = 0;
-  if ( (signed int)this->uNumIcons <= 0 )
+  for ( uint i = 0; i < (signed int)this->uNumIcons; i++ )
   {
-LABEL_4:
-    result = 0;
+    if ( !_stricmp(pIconName, this->pIcons[i].pAnimationName) )
+      return i;
   }
-  else
-  {
-    while ( _stricmp(pIconName, v2->pIcons[v3].pAnimationName) )
-    {
-      ++uID;
-      ++v3;
-      if ( (signed int)uID >= (signed int)v2->uNumIcons )
-        goto LABEL_4;
-    }
-    result = uID;
-  }
-  return result;
+  return 0;
 }
 
 //----- (00494F70) --------------------------------------------------------
 IconFrame *IconFrameTable::GetFrame(unsigned int uIconID, unsigned int uFrameID)
 {
-  IconFrame *v3; // edi@1
-  IconFrame *v4; // ecx@1
-  __int16 v5; // dx@2
   int v6; // edx@3
-  unsigned int v7; // eax@3
-  char *i; // ecx@3
-  int v9; // esi@5
-  IconFrame *result; // eax@6
+  uint i;
 
-  v3 = this->pIcons;
-  v4 = &v3[uIconID];
-  if ( v4->uFlags & 1 && (v5 = v4->uAnimLength) != 0 )
+  if ( this->pIcons[uIconID].uFlags & 1 && this->pIcons[uIconID].uAnimLength != 0 )
   {
-    v6 = ((signed int)uFrameID >> 3) % (unsigned __int16)v5;
-    v7 = uIconID;
-    for ( i = (char *)&v4->uAnimTime; ; i += 32 )
-    {
-      v9 = *(short *)i;
-      if ( v6 <= v9 )
-        break;
-      v6 -= v9;
-      ++v7;
-    }
-    result = &v3[v7];
+    v6 = ((signed int)uFrameID >> 3) % (unsigned __int16)this->pIcons[uIconID].uAnimLength;
+    for ( i = uIconID; v6 > this->pIcons[i].uAnimTime; i++ )
+      v6 -= this->pIcons[i].uAnimTime;
+    return &this->pIcons[i];
   }
   else
-  {
-    result = &v3[uIconID];
-  }
-  return result;
+    return &this->pIcons[uIconID];
 }
 
 //----- (00494FBF) --------------------------------------------------------
 void IconFrameTable::InitializeAnimation(unsigned int uIconID)
 {
-  IconFrameTable *v2; // esi@1
   unsigned int v3; // edi@3
   const char *i; // eax@3
-  IconFrame *v5; // eax@5
 
-  v2 = this;
   if ( (signed int)uIconID <= (signed int)this->uNumIcons && (uIconID & 0x80000000u) == 0 )
   {
     v3 = uIconID;
-    for ( i = this->pIcons[uIconID].pTextureName; ; i = v5[v3].pTextureName )
+    for ( i = this->pIcons[uIconID].pTextureName; ; i = this->pIcons[v3].pTextureName )
     {
-      v2->pIcons[v3].uTextureID = pIcons_LOD->LoadTexture(i, TEXTURE_16BIT_PALETTE);
-      v5 = v2->pIcons;
-      if ( !(v5[v3].uFlags & 1) )
+      this->pIcons[v3].uTextureID = pIcons_LOD->LoadTexture(i, TEXTURE_16BIT_PALETTE);
+      if ( !(this->pIcons[v3].uFlags & 1) )
         break;
       ++v3;
     }
@@ -94,20 +55,20 @@ void IconFrameTable::InitializeAnimation(unsigned int uIconID)
 //----- (0049500A) --------------------------------------------------------
 void IconFrameTable::ToFile()
 {
-  IconFrameTable *v1; // esi@1
+  //IconFrameTable *v1; // esi@1
   FILE *v2; // eax@1
-  FILE *v3; // edi@1
+  //FILE *v3; // edi@1
 
-  IconFrameTable* Str = this;
+  //IconFrameTable* Str = this;
 
-  v1 = Str;
+  //v1 = Str;
   v2 = fopen("data\\dift.bin", "wb");
-  v3 = v2;
+  //v3 = v2;
   if ( !v2 )
     Error("Unable to save dift.bin!");
-  fwrite(v1, 4u, 1u, v2);
-  fwrite(v1->pIcons, 0x20u, v1->uNumIcons, v3);
-  fclose(v3);
+  fwrite(this, 4, 1, v2);
+  fwrite(this->pIcons, 0x20u, this->uNumIcons, v2);
+  fclose(v2);
 }
 
 //----- (00495056) --------------------------------------------------------
@@ -130,7 +91,7 @@ void IconFrameTable::FromFile(void *data_mm6, void *data_mm7, void *data_mm8)
 //----- (0049509D) --------------------------------------------------------
 int IconFrameTable::FromFileTxt(const char *Args)
 {
-  IconFrameTable *v2; // ebx@1
+  //IconFrameTable *v2; // ebx@1
   FILE *v3; // eax@1
   int v4; // esi@3
   void *v5; // eax@10
@@ -154,8 +115,9 @@ int IconFrameTable::FromFileTxt(const char *Args)
   FILE *File; // [sp+300h] [bp-4h]@1
   int Argsa; // [sp+30Ch] [bp+8h]@26
 
-  v2 = this;
+  //v2 = this;
   //TileTable::dtor((TileTable *)this);
+  __debugbreak();//Ritor1: this function not used
   v3 = fopen(Args, "r");
   File = v3;
   if ( !v3 )
@@ -180,13 +142,13 @@ int IconFrameTable::FromFileTxt(const char *Args)
     while ( fgets(&Buf, 490, File) );
     v4 = v21;
   }
-  v2->uNumIcons = v4;
+  this->uNumIcons = v4;
   v5 = malloc(32 * v4);//, "I Frames");
-  v2->pIcons = (IconFrame *)v5;
+  this->pIcons = (IconFrame *)v5;
   if ( v5 )
   {
     v6 = File;
-    v2->uNumIcons = 0;
+    this->uNumIcons = 0;
     fseek(v6, 0, 0);
     for ( i = fgets(&Buf, 490, File); i; i = fgets(&Buf, 490, File) )
     {
@@ -194,38 +156,38 @@ int IconFrameTable::FromFileTxt(const char *Args)
       memcpy(&v20, frame_table_txt_parser(&Buf, &v19), sizeof(v20));
       if ( v20.uPropCount && *v20.pProperties[0] != 47 )
       {
-        strcpy(v2->pIcons[v2->uNumIcons].pAnimationName, v20.pProperties[0]);
-        strcpy(v2->pIcons[v2->uNumIcons].pTextureName, v20.pProperties[1]);
+        strcpy(this->pIcons[this->uNumIcons].pAnimationName, v20.pProperties[0]);
+        strcpy(this->pIcons[this->uNumIcons].pTextureName, v20.pProperties[1]);
         v8 = v20.pProperties[2];
-        v2->pIcons[v2->uNumIcons].uFlags = 0;
+        this->pIcons[this->uNumIcons].uFlags = 0;
         if ( !_stricmp(v8, "new") )
         {
-          v9 = (int)&v2->pIcons[v2->uNumIcons].uFlags;
+          v9 = (int)&this->pIcons[this->uNumIcons].uFlags;
           *(char *)v9 |= 4u;
         }
-        v2->pIcons[v2->uNumIcons].uAnimTime = atoi(v20.pProperties[3]);
-        v2->pIcons[v2->uNumIcons].uAnimLength = 0;
-        v2->pIcons[v2->uNumIcons++].uTextureID = 0;
+        this->pIcons[this->uNumIcons].uAnimTime = atoi(v20.pProperties[3]);
+        this->pIcons[this->uNumIcons].uAnimLength = 0;
+        this->pIcons[this->uNumIcons++].uTextureID = 0;
       }
     }
     fclose(File);
     v10 = 0;
-    if ( (signed int)(v2->uNumIcons - 1) > 0 )
+    if ( (signed int)(this->uNumIcons - 1) > 0 )
     {
       v11 = 0;
       do
       {
-        v12 = (int)&v2->pIcons[v11];
+        v12 = (int)&this->pIcons[v11];
         if ( !(*(char *)(v12 + 60) & 4) )
           *(char *)(v12 + 28) |= 1u;
         ++v10;
         ++v11;
       }
-      while ( v10 < (signed int)(v2->uNumIcons - 1) );
+      while ( v10 < (signed int)(this->uNumIcons - 1) );
     }
-    for ( j = 0; j < (signed int)v2->uNumIcons; *(short *)(Argsa + 26) = v15 )
+    for ( j = 0; j < (signed int)this->uNumIcons; *(short *)(Argsa + 26) = v15 )
     {
-      v14 = v2->pIcons;
+      v14 = this->pIcons;
       Argsa = (int)&v14[j];
       v15 = *(short *)(Argsa + 24);
       if ( *(char *)(Argsa + 28) & 1 )

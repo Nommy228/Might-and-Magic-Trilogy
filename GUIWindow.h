@@ -205,6 +205,12 @@ enum UIMessageType: unsigned __int32
   UIMSG_ToggleColoredLights = 423,
   UIMSG_ToggleTint = 424,
   UIMSG_1A9 = 425,
+
+  UIMSG_MMT_MainMenu_MM6 = 426,
+  UIMSG_MMT_MainMenu_MM7 = 427,
+  UIMSG_MMT_MainMenu_MM8 = 428,
+  UIMSG_MMT_MainMenu_Continue = 429,
+
 };
 
 
@@ -223,6 +229,7 @@ enum MENU_STATE : __int32
   MENU_LoadingProcInMainMenu = 9,
   MENU_DebugBLVLevel = 10,
   MENU_CREDITSCLOSE = 11,
+  MENU_MMT_MAIN_MENU = 12,
 };
 
 
@@ -230,19 +237,25 @@ enum DIALOGUE_TYPE
 {
   DIALOGUE_USE_NPC_ABILITY = 9,
   DIALOGUE_13 = 0xD,
-  DIALOGUE_18 = 0x12,
-  DIALOGUE_19 = 19,
-  DIALOGUE_20 = 20,
-  DIALOGUE_21 = 21,
-  DIALOGUE_22 = 22,
-  DIALOGUE_23 = 23,
-  DIALOGUE_24 = 0x18,
+  DIALOGUE_18 = 18,
+  DIALOGUE_EVT_A = 19,
+  DIALOGUE_EVT_B = 20,
+  DIALOGUE_EVT_C = 21,
+  DIALOGUE_EVT_D = 22,
+  DIALOGUE_EVT_E = 23,
+  DIALOGUE_EVT_F = 0x18,
   DIALOGUE_76 = 76,
   DIALOGUE_PROFESSION_DETAILS = 77,
-  DIALOGUE_ARENA_WELCOME = 0x59,
-  DIALOGUE_ARENA_FIGHT_NOT_OVER_YET = 0x5A,
-  DIALOGUE_ARENA_REWARD = 0x5B,
-  DIALOGUE_ARENA_ALREADY_WON = 0x5C,
+  DIALOGUE_SKILL_TRAINER = 78,
+  DIALOGUE_84 = 84,
+  DIALOGUE_ARENA_SELECT_PAGE = 85,
+  DIALOGUE_ARENA_SELECT_SQUIRE = 86,
+  DIALOGUE_ARENA_SELECT_KNIGHT = 87,
+  DIALOGUE_ARENA_SELECT_CHAMPION = 88,
+  DIALOGUE_ARENA_WELCOME = 89,
+  DIALOGUE_ARENA_FIGHT_NOT_OVER_YET = 90,
+  DIALOGUE_ARENA_REWARD = 91,
+  DIALOGUE_ARENA_ALREADY_WON = 92,
 };
 
 
@@ -327,7 +340,7 @@ struct GUIWindow
 	                      UIMessageType msg, unsigned int msg_param, unsigned __int8 uHotkey, const char *pName, struct Texture *pTextures, ...);
   void DrawFlashingInputCursor(signed int uX, int uY, struct GUIFont *a2);
   int DrawTextInRect(GUIFont *pFont, unsigned int uX, unsigned int uY, unsigned int uColor, const char *text, int rect_width, int reverse_text);
-  void DrawText(GUIFont *a2, signed int uX, int uY, unsigned int uFontColor, const char *Str, int a7, int a8, unsigned int uFontShadowColor);
+  void DrawText(GUIFont *a2, signed int uX, int uY, unsigned int uFontColor, const char *Str, int a7, int a8, signed int uFontShadowColor);
   void DrawTitleText(GUIFont *a2, signed int uHorizontalMargin, unsigned int uVerticalMargin, unsigned __int16 uDefaultColor, const char *pInString, unsigned int uLineSpacing);
   void DrawShops_next_generation_time_string(__int64 next_generation_time);
   void HouseDialogManager();
@@ -457,6 +470,7 @@ void OnSelectNPCDialogueOption(DIALOGUE_TYPE newDialogueType);
 
 
 extern int pWindowList_at_506F50_minus1_indexing_buttons____and_an_int_[]; // idb
+extern struct GUIWindow *pWindow_MMT_MainMenu;
 extern struct GUIWindow *pWindow_MainMenu;
 extern std::array<struct GUIWindow, 20> pWindowList;
 
@@ -504,7 +518,7 @@ void GameUI_DrawCharacterSelectionFrame();
 void GameUI_CharacterQuickRecord_Draw(GUIWindow *window, Player *player);
 void GameUI_DrawNPCPopup(void *_this);
 
-void GameUI_InitializeDialogue(Actor *actor, int bPlayerSaysHello);
+void GameUI_InitializeDialogue(struct Actor *actor, int bPlayerSaysHello);
 void GameUI_DrawBranchlessDialogue();
 void GameUI_DrawDialogue();
 
@@ -575,17 +589,38 @@ void TravelUI_Draw();
 
 
 
+void UI_OnMouseRightClick(Vec2_int_ *_this);
 
 void __fastcall DrawPopupWindow(unsigned int uX, unsigned int uY, unsigned int uWidth, unsigned int uHeight); // idb
-void DrawCopyrightWindow();
-void LoadFonts_and_DrawCopyrightWindow();
+void DrawMM7CopyrightWindow();
+//void LoadFonts_and_DrawCopyrightWindow();
 void GUI_UpdateWindows();
 int GetConditionDrawColor(unsigned int uConditionIdx); // idb
 void FillAwardsData();
 void CreateAwardsScrollBar();
 void ReleaseAwardsScrollBar();
+void Inventory_ItemPopupAndAlchemy();
+void __fastcall LoadThumbnailLloydTexture(unsigned int uSlot, unsigned int uPlayer);
+unsigned int UI_GetHealthManaAndOtherQualitiesStringColor(signed int current_pos, signed int base_pos);
+unsigned int __fastcall GetSizeInInventorySlots(unsigned int uNumPixels);
+struct GUIButton *__fastcall GUI_HandleHotkey(unsigned __int8 uHotkey); // idb
+int __fastcall GUI_ReplaceHotkey(unsigned __int8 uOldHotkey, unsigned __int8 uNewHotkey, char bFirstCall);
+void DrawBuff_remaining_time_string(int uY, struct GUIWindow *window, __int64 remaining_time, struct GUIFont *Font);
+void GameUI_DrawItemInfo(struct ItemGen* inspect_item); // idb
+void MonsterPopup_Draw(unsigned int uActorID, struct GUIWindow *window);
+void SetUserInterface(enum PartyAlignment alignment, bool bReplace);
+void CreateMsgScrollWindow(signed int mscroll_id);
+void free_book_subwindow();
+void CreateScrollWindow();
+void OnPaperdollLeftClick();
+void DrawJoinGuildWindow(int pEventCode);
+void  DialogueEnding();
+char sub_4637E0_is_there_popup_onscreen();
 
 
+void __fastcall ZBuffer_Fill(int *pZBuffer, int uTextureId, int iZValue);
+void __fastcall ZBuffer_DoFill(int *pZBuffer, struct Texture *pTex, int uZValue);
+void __fastcall ZBuffer_DoFill2(int *pZBuffer, struct Texture *a2, int a3); // idb
 
 
 
@@ -682,6 +717,12 @@ extern struct GUIButton *pBtn_Maps;
 extern struct GUIButton *pBtn_Autonotes;
 extern struct GUIButton *pBtn_Quests;
 
+
+extern struct GUIButton *pMMT_MainMenu_BtnMM6;
+extern struct GUIButton *pMMT_MainMenu_BtnMM7;
+extern struct GUIButton *pMMT_MainMenu_BtnMM8;
+extern struct GUIButton *pMMT_MainMenu_BtnContinue;
+extern struct GUIButton *pMMT_MainMenu_BtnExit;
 
 extern struct GUIButton *pMainMenu_BtnExit;
 extern struct GUIButton *pMainMenu_BtnCredits;

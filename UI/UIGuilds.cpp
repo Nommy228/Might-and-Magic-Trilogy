@@ -1,3 +1,5 @@
+#define _CRT_SECURE_NO_WARNINGS
+#include "..\mm7_unsorted_subs.h"
 #include "..\Items.h"
 #include "..\GUIWindow.h"
 #include "..\mm7_data.h"
@@ -19,7 +21,7 @@ void GuildDialog()
   int v6; // esi@13
   signed int v7; // esi@17
   int v8; // esi@22
-  const char *statusbar_string; // ecx@26
+//  const char *statusbar_string; // ecx@26
   int v13; // ecx@30
   ItemGen *v15; // ST18_4@31
   int v17; // eax@31
@@ -52,7 +54,7 @@ void GuildDialog()
             guild_mambership_flags[(unsigned int)window_SpeakInHouse->ptr_1C - 139]) )
     { //you must me member
       pTextHeight = pFontArrus->CalcTextHeight(pNPCTopics[121].pText, &working_window, 0, 0);
-      working_window.DrawTitleText(pFontArrus, 0, (212 - pTextHeight) / 2 + 101, TargetColor(0xFFu, 0xFFu, 0x9Bu), pNPCTopics[121].pText, 3);
+      working_window.DrawTitleText(pFontArrus, 0, (212 - pTextHeight) / 2 + 101, Color16(0xFFu, 0xFFu, 0x9Bu), pNPCTopics[121].pText, 3);
       pDialogueWindow->pNumPresenceButton = 0;
       return;
     }
@@ -64,7 +66,7 @@ void GuildDialog()
       strcat(pTmpBuf.data(), "\n \n");
       strcat(pTmpBuf.data(), pGlobalTXT_LocalizationStrings[528]); //"I can offer you nothing further."
       pTextHeight = pFontArrus->CalcTextHeight(pTmpBuf.data(), &working_window, 0, 0);
-      working_window.DrawTitleText(pFontArrus, 0, (174 - pTextHeight) / 2 + 138, TargetColor(0xFFu, 0xFFu, 0x9Bu), pTmpBuf.data(), 3);
+      working_window.DrawTitleText(pFontArrus, 0, (174 - pTextHeight) / 2 + 138, Color16(0xFFu, 0xFFu, 0x9Bu), pTmpBuf.data(), 3);
       return;
     }
     v61 = 0;
@@ -95,7 +97,7 @@ void GuildDialog()
       strcat(pTmpBuf.data(), "\n \n");
       strcat(pTmpBuf.data(), pGlobalTXT_LocalizationStrings[528]); //"I can offer you nothing further."
       pTextHeight = pFontArrus->CalcTextHeight(pTmpBuf.data(), &working_window, 0, 0);
-      working_window.DrawTitleText(pFontArrus, 0, (174 - pTextHeight) / 2 + 138, TargetColor(0xFFu, 0xFFu, 0x9Bu), pTmpBuf.data(), 3);
+      working_window.DrawTitleText(pFontArrus, 0, (174 - pTextHeight) / 2 + 138, Color16(0xFFu, 0xFFu, 0x9Bu), pTmpBuf.data(), 3);
       return;
     }
     if ( pSkillFlag )
@@ -118,9 +120,9 @@ void GuildDialog()
         pButton->uHeight = pTextHeight;
         v26 = pButton->uY + pTextHeight - 1;
         pButton->uW = v26;
-        pTextColor = TargetColor(0xFFu, 0xFFu, 0x9Bu);
+        pTextColor = Color16(0xFFu, 0xFFu, 0x9Bu);
         if ( pDialogueWindow->pCurrentPosActiveItem != i )
-          pTextColor = TargetColor(0xFFu, 0xFFu, 0xFFu);
+          pTextColor = Color16(0xFFu, 0xFFu, 0xFFu);
         working_window.DrawTitleText(pFontArrus, 0, pButton->uY, pTextColor, pGlobalTXT_LocalizationStrings[400], 3);//"Buy Spells"
       }
       else
@@ -133,9 +135,9 @@ void GuildDialog()
           pButton->uHeight = pTextHeight;
           v26 = pButton->uY + pTextHeight - 1;
           pButton->uW = v26;
-          pTextColor = TargetColor(0xFFu, 0xFFu, 0x9Bu);
+          pTextColor = Color16(0xFFu, 0xFFu, 0x9Bu);
           if ( pDialogueWindow->pCurrentPosActiveItem != i )
-            pTextColor = TargetColor(0xFFu, 0xFFu, 0xFFu);
+            pTextColor = Color16(0xFFu, 0xFFu, 0xFFu);
           working_window.DrawTitleText(pFontArrus, 0, pButton->uY, pTextColor, pSkillNames[pButton->msg_param - 36], 3);
         }
         else
@@ -198,7 +200,7 @@ void GuildDialog()
         v17 = pPlayers[uActiveCharacter]->SelectPhrasesTransaction( (ItemGen *)&pParty->pPlayers[1].uExpressionTimeLength + v13 + 12 * (int)window_SpeakInHouse->ptr_1C, BuildingType_MagicShop, (int)window_SpeakInHouse->ptr_1C,  2);
         v18 = BuildDialogueString(pMerchantsBuyPhrases[v17], uActiveCharacter - 1, v15, (char *)window_SpeakInHouse->ptr_1C, 2, 0);
         pTextHeight = pFontArrus->CalcTextHeight(v18, &working_window, 0, 0);
-        working_window.DrawTitleText(pFontArrus, 0, (174 - pTextHeight) / 2 + 138,  TargetColor(0xFFu, 0xFFu, 0xFFu), v18, 3);
+        working_window.DrawTitleText(pFontArrus, 0, (174 - pTextHeight) / 2 + 138,  Color16(0xFFu, 0xFFu, 0xFFu), v18, 3);
         return;
       }
     }
