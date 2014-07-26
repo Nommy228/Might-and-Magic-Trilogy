@@ -1,3 +1,7 @@
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+
 #define _CRT_SECURE_NO_WARNINGS
 #include "ErrorHandling.h"
 #include "mm7_unsorted_subs.h"
@@ -271,7 +275,7 @@ int OutdoorLocation::GetHeightOnTerrain(int sX, int sZ)
 }
 
 //----- (00488F5C) --------------------------------------------------------
-bool OutdoorLocation::Initialize(const char *pFilename, int File, size_t uRespawnInterval, int thisa)
+bool OutdoorLocation::Initialize(const char *pFilename, int File, size_t uRespawnInterval, int *thisa)
 {
   OutdoorLocation *v5; // esi@1
   bool result; // eax@2
@@ -1070,7 +1074,7 @@ void OutdoorLocation::Release()
 }
 
 //----- (0047D0A6) --------------------------------------------------------
-bool OutdoorLocation::Load(const char *pFilename, ODMFace *File, size_t pNumItems, int thisa)//загрузка локации
+bool OutdoorLocation::Load(const char *pFilename, ODMFace *File, size_t pNumItems, int *thisa)//загрузка локации
 {
   //OutdoorLocation *pOutdoorLocation; // esi@1
   /*bool result; // eax@9
@@ -1945,7 +1949,7 @@ LABEL_112:
     if (Str2 == 0)
       ++ddm.uNumRespawns;
     v108 = 0;
-    *(int *)thisa = 1;
+    *thisa = 1;
     v39 = pGames_LOD->FindContainer(Str, 0);
     fread(&header, 0x10, 1u, v39);
     //pFilename = (char *)header.uCompressedSize;
@@ -1971,7 +1975,7 @@ LABEL_112:
     goto LABEL_120;
 
   }
-  *(int *)thisa = 0;
+  *thisa = 0;
 LABEL_120:
   //v108 = (int)".odm";
   //v83 = strlen(pContainer);
@@ -1984,7 +1988,7 @@ LABEL_120:
 
   pGameLoadingUI_ProgressBar->Progress();
 
-  if ( *(int *)thisa )
+  if ( *thisa )
   {
     memcpy(uFullyRevealedCellOnMap, Dst, 0x3C8u);
     memcpy(uPartiallyRevealedCellOnMap, Src, 0x3C8u);

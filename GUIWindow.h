@@ -438,7 +438,7 @@ struct GUIMessage
 
 
 
-#define AddMessage(msg, param, a4) AddMessageImpl((msg), (param), (a4), __FILE__, __LINE__)
+#define AddGUIMessage(msg, param, a4) AddMessageImpl((msg), (param), (a4), __FILE__, __LINE__)
 /*  250 */
 #pragma pack(push, 1)
 struct GUIMessageQueue

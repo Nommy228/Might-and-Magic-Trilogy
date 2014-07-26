@@ -1,3 +1,7 @@
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+
 #define _CRT_SECURE_NO_WARNINGS
 #include "ErrorHandling.h"
 #include "mm7_unsorted_subs.h"
@@ -7,7 +11,6 @@
 #include "LOD.h"
 #include "Keyboard.h"
 #include "OurMath.h"
-#include "VideoPlayer.h"
 #include "MapInfo.h"
 #include "Timer.h"
 #include "AudioPlayer.h"
@@ -108,18 +111,17 @@ void GUIMessageQueue::PopMessage(enum UIMessageType *pType, int *pParam, int *a4
 //----- (0041B4E1) --------------------------------------------------------
 int __fastcall GUI_ReplaceHotkey(unsigned __int8 uOldHotkey, unsigned __int8 uNewHotkey, char bFirstCall)
 {
-  unsigned __int8 v3; // bl@1
   int result; // eax@1
   int i; // edx@2
   GUIButton *j; // ecx@3
   int k; // edx@7
   GUIButton *l; // ecx@8
   unsigned __int8 v9; // [sp+4h] [bp-8h]@1
-  char v10; // [sp+8h] [bp-4h]@1
+  char old_hot_key; // [sp+8h] [bp-4h]@1
 
-  v3 = uNewHotkey;
-  v10 = toupper(uOldHotkey);
-  result = toupper(v3);
+  //v3 = uNewHotkey;
+  old_hot_key = toupper(uOldHotkey);
+  result = toupper(uNewHotkey);
   v9 = result;
   if ( bFirstCall )
   {
@@ -135,8 +137,8 @@ int __fastcall GUI_ReplaceHotkey(unsigned __int8 uOldHotkey, unsigned __int8 uNe
     result = 84 * pVisibleWindowsIdxs[k];
     for ( l = pWindowList[pVisibleWindowsIdxs[k] - 1].pControlsHead; l; l = l->pNext )
     {
-      LOBYTE(result) = v10;
-      if ( l->uHotkey == v10 )
+      LOBYTE(result) = old_hot_key;
+      if ( l->uHotkey == old_hot_key )
       {
         if ( !l->field_28 )
         {
@@ -153,28 +155,24 @@ int __fastcall GUI_ReplaceHotkey(unsigned __int8 uOldHotkey, unsigned __int8 uNe
 //----- (0041B438) --------------------------------------------------------
 GUIButton *__fastcall GUI_HandleHotkey(unsigned __int8 uHotkey)
 {
-  char v1; // al@1
-  int v2; // esi@1
-  char v3; // dl@1
-  GUIWindow *v4; // ecx@2
+  char Hot_key_num; // al@1
+  GUIWindow *current_window; // ecx@2
   GUIButton *result; // eax@2
-  //int v6; // edx@12
 
-  v1 = toupper(uHotkey);
-  v2 = uNumVisibleWindows;
-  v3 = v1;
-  for( v2 = uNumVisibleWindows; v2 >= 0 && pVisibleWindowsIdxs[v2] > 0; v2-- )
+  Hot_key_num = toupper(uHotkey);
+  for( int i = uNumVisibleWindows; i >= 0 && pVisibleWindowsIdxs[i] > 0; i-- )
   {
-	v4 = &pWindowList[pVisibleWindowsIdxs[v2] - 1];
-	for ( result = v4->pControlsHead; result; result = result->pNext )
+	current_window = &pWindowList[pVisibleWindowsIdxs[i] - 1];
+	for ( result = current_window->pControlsHead; result; result = result->pNext )
 	{
-	  if ( result->uHotkey == v3 )
+	  if ( result->uHotkey == Hot_key_num )
 	  {
-		pMessageQueue_50CBD0->AddMessage(result->msg, result->msg_param, 0);
+		pMessageQueue_50CBD0->AddGUIMessage(result->msg, result->msg_param, 0);
 		return result;
 	  }
 	}
-	if ( !v4->uFrameX && !v4->uFrameY && (v4->uFrameWidth == window->GetWidth() && v4->uFrameHeight == window->GetWidth()) )
+	if ( !current_window->uFrameX && !current_window->uFrameY
+		&& (current_window->uFrameWidth == window->GetWidth() && current_window->uFrameHeight == window->GetWidth()) )
 	  break;
   }
   return 0;
@@ -290,7 +288,7 @@ void GUIWindow::Release()
 		}
 	case WINDOW_Transition:
 		{
-		pVideoPlayer->Unload();
+		//pVideoPlayer->Unload();
 		pTexture_outside->Release();
 		pTexture_Dialogue_Background->Release();
 		pIcons_LOD->SyncLoadedFilesCount();
@@ -1837,7 +1835,7 @@ void GUI_UpdateWindows()
           continue;
         }
         pNumMessages = pMessageQueue_50CBD0->uNumMessages;
-        pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 0, 0);
+        pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Escape, 0, 0);
         continue;
       }
       case WINDOW_Transition:
@@ -1870,15 +1868,15 @@ void GUI_UpdateWindows()
         if ( ptr_507BD0->receives_keyboard_input_2 == WINDOW_INPUT_IN_PROGRESS)
         {
           ptr_507BD0->DrawMessageBox(0);
-          ptr_507BD0->DrawText(pFontCreate, 30, 40, v27, (const char *)pKeyActionMap->pPressedKeysBuffer, 0, 0, 0);
-          v31 = pFontCreate->GetLineWidth((const char *)pKeyActionMap->pPressedKeysBuffer);
+          ptr_507BD0->DrawText(pFontCreate, 30, 40, v27, pKeyActionMap->pPressedKeysBuffer, 0, 0, 0);
+          v31 = pFontCreate->GetLineWidth(pKeyActionMap->pPressedKeysBuffer);
           ptr_507BD0->DrawFlashingInputCursor(v31 + 30, 40, pFontCreate);
           continue;
         }
         if ( ptr_507BD0->receives_keyboard_input_2 == WINDOW_INPUT_CONFIRMED)
         {
           pWindow->receives_keyboard_input_2 = WINDOW_INPUT_NONE;
-          pMessageQueue_50CBD0->AddMessage((UIMessageType)(int)ptr_507BD0->ptr_1C, 0, 0);
+          pMessageQueue_50CBD0->AddGUIMessage((UIMessageType)(int)ptr_507BD0->ptr_1C, 0, 0);
           pEventTimer->Resume();
           ptr_507BD0->Release();
           pCurrentScreen = SCREEN_GAME;
@@ -1897,7 +1895,7 @@ void GUI_UpdateWindows()
       {
         pWindow->DrawMessageBox(0);
         pWindow->DrawText(pFontLucida, 10, 20, 0, "Making item number", 0, 0, 0);
-        pWindow->DrawText(pFontLucida, 10, 40, 0, (const char *)pKeyActionMap->pPressedKeysBuffer, 0, 0, 0);
+        pWindow->DrawText(pFontLucida, 10, 40, 0, pKeyActionMap->pPressedKeysBuffer, 0, 0, 0);
         if ( !pKeyActionMap->field_204 )
         {
           ItemGen2.Reset();
@@ -1905,7 +1903,7 @@ void GUI_UpdateWindows()
           pEventTimer->Resume();
           pCurrentScreen = 0;
           viewparams->bRedrawGameUI = true;
-          v26 = atoi((const char *)pKeyActionMap->pPressedKeysBuffer);
+          v26 = atoi(pKeyActionMap->pPressedKeysBuffer);
           if ( v26 > 0 )
           {
             if ( v26 < 800 )
@@ -2010,9 +2008,9 @@ void GUI_UpdateWindows()
           pButton->DrawLabel(pHint, pFontCreate, 0, 0);
         pWindow->Release();
         if (pCurrentScreen == SCREEN_SAVEGAME)
-          pMessageQueue_50CBD0->AddMessage(UIMSG_SaveGame, 0, 0);
+          pMessageQueue_50CBD0->AddGUIMessage(UIMSG_SaveGame, 0, 0);
         else
-          pMessageQueue_50CBD0->AddMessage(UIMSG_LoadGame, 0, 0);
+          pMessageQueue_50CBD0->AddGUIMessage(UIMSG_LoadGame, 0, 0);
         continue;
       }
       case WINDOW_LoadGame_CancelBtn:
@@ -2025,7 +2023,7 @@ void GUI_UpdateWindows()
         if ( pWindow->Hint && pWindow->Hint != (char *)1 )
           pButton->DrawLabel(pWindow->Hint, pFontCreate, 0, 0);
         pWindow->Release();
-        pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 0, 0);
+        pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Escape, 0, 0);
         continue;
       }
       case WINDOW_CloseRestWindowBtn:
@@ -2039,7 +2037,7 @@ void GUI_UpdateWindows()
         if ( pHint && pHint != (char *)1 )
           pGUIButton->DrawLabel(pHint, pFontCreate, 0, 0);
         pWindow->Release();
-        pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 0, 0);
+        pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Escape, 0, 0);
         continue;
       }
       case WINDOW_ExitCharacterWindow:
@@ -2054,7 +2052,7 @@ void GUI_UpdateWindows()
           pButton->DrawLabel(pHint, pFontCreate, 0, 0);
         pWindow->Release();
         pNumMessages = pMessageQueue_50CBD0->uNumMessages;
-        pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 0, 0);
+        pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Escape, 0, 0);
         continue;
       }
       case WINDOW_RestWindow:
@@ -2088,7 +2086,7 @@ void GUI_UpdateWindows()
       {
         pWindow->DrawMessageBox(0);
         pWindow->DrawText(pFontLucida, 10, 20, 0, "Making item number", 0, 0, 0);
-        pWindow->DrawText(pFontLucida, 10, 40, 0, (const char *)pKeyActionMap->pPressedKeysBuffer, 0, 0, 0);
+        pWindow->DrawText(pFontLucida, 10, 40, 0, pKeyActionMap->pPressedKeysBuffer, 0, 0, 0);
         if ( !pKeyActionMap->field_204 )
         {
           ItemGen2.Reset();
@@ -2096,7 +2094,7 @@ void GUI_UpdateWindows()
           pEventTimer->Resume();
           pCurrentScreen = SCREEN_GAME;
           viewparams->bRedrawGameUI = 1;
-          v39 = atoi((const char *)pKeyActionMap->pPressedKeysBuffer);
+          v39 = atoi(pKeyActionMap->pPressedKeysBuffer);
           if ( v39 > 0 )
           {
             if ( v39 < 800 )
@@ -2187,7 +2185,7 @@ void  ModalWindow_ShowHint()
 //----- (0041426F) --------------------------------------------------------
 void ModalWindow_Release()
 {
-  pMessageQueue_50CBD0->AddMessage((UIMessageType)pModalWindow->par1C, 0, 0);
+  pMessageQueue_50CBD0->AddGUIMessage((UIMessageType)pModalWindow->par1C, 0, 0);
 
   pModalWindow->Release();
   pModalWindow = nullptr;

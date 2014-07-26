@@ -20,5 +20,5 @@ struct MapsLongTimer
   __int16 field_1E;
 };
 #pragma pack(pop)
-extern MapsLongTimer MapsLongTimersList[100];
+extern MapsLongTimer MapsLongTimersList[100]; //array_5B5928
 

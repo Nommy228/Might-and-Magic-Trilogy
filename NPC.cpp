@@ -1,3 +1,7 @@
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+
 #define _CRT_SECURE_NO_WARNINGS
 #include "mm7_unsorted_subs.h"
 #include "texts.h"
@@ -9,7 +13,7 @@
 #include "Party.h"
 #include "NPC.h"
 #include "GUIWindow.h"
-#include "VideoPlayer.h"
+#include "MediaPlayer.h"
 #include "Events.h"
 #include "UI\UIHouses.h"
 #include "Indoor.h"
@@ -287,7 +291,6 @@ void NPCStats::InitializeNPCText()
 			test_string=tmp_pos+1;
 			} while ((decode_step<2)&&!break_loop);
 		}
-
 	free(pNPCTopicTXT_Raw);
 	pNPCTopicTXT_Raw = (char *)pEvents_LOD->LoadRaw("npctopic.txt", 0);
 	strtok(pNPCTopicTXT_Raw, "\r");
@@ -943,7 +946,7 @@ bool  CheckHiredNPCSpeciality(unsigned int uProfession)
     for (uint i=0; i<pNPCStats->uNumNewNPCs; ++i )
         {
         if ( pNPCStats->pNewNPCData[i].uProfession == uProfession && 
-            (pNPCStats->pNewNPCData[i].uFlags & 0x80) )
+            (pNPCStats->pNewNPCData[i].uFlags & 0x80) )//Uninitialized memory access
             return true;
         }
     if ( pParty->pHirelings[0].uProfession == uProfession ||
@@ -1442,7 +1445,7 @@ void __fastcall ClickNPCTopic(signed int uMessageParam)
             }
             pPlayers[uActiveCharacter]->PlaySound(SPEECH_85, 0);
           }
-          pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 1, 0);
+          pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Escape, 1, 0);
           /*if ( (signed int)pMessageQueue_50CBD0->uNumMessages < 40 )
           {
             pMessageQueue_50CBD0->pMessages[pMessageQueue_50CBD0->uNumMessages].eType = UIMSG_Escape;
@@ -1497,7 +1500,7 @@ void __fastcall ClickNPCTopic(signed int uMessageParam)
                 pCurrentNPCInfo->evt_F = 0;
               break;
           }
-          pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 1, 0);
+          pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Escape, 1, 0);
           /*if ( (signed int)pMessageQueue_50CBD0->uNumMessages < 40 )
           {
             pMessageQueue_50CBD0->pMessages[pMessageQueue_50CBD0->uNumMessages].eType = UIMSG_Escape;
@@ -1561,7 +1564,7 @@ void __fastcall ClickNPCTopic(signed int uMessageParam)
   PrepareHouse((HOUSE_ID)(int)window_SpeakInHouse->ptr_1C);
   dialog_menu_id = HOUSE_DIALOGUE_MAIN;
 
-  pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 1, 0);
+  pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Escape, 1, 0);
   /*if ( (signed int)pMessageQueue_50CBD0->uNumMessages < 40 )
   {
     pMessageQueue_50CBD0->pMessages[pMessageQueue_50CBD0->uNumMessages].eType = UIMSG_Escape;
@@ -1572,7 +1575,7 @@ void __fastcall ClickNPCTopic(signed int uMessageParam)
   if ( uActiveCharacter )
     pPlayers[uActiveCharacter]->PlaySound((PlayerSpeech)61, 0);
 _return:
-  pVideoPlayer->_4BF5B2();//HouseVideo
+  BackToHouseMenu();
 }
 //----- (004B29F2) --------------------------------------------------------
 const char * ContractSelectText( int pEventCode )
@@ -1987,7 +1990,7 @@ int UseNPCSkill(NPCProf profession)
 
     case GateMaster:
     {
-      pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 0, 0);
+      pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Escape, 0, 0);
       dword_50C9DC = 195;
       ptr_50C9E0 = GetNPCData(sDialogue_SpeakingActorNPC_ID);
     }

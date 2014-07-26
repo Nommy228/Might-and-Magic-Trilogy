@@ -1,3 +1,7 @@
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+
 #define _CRT_SECURE_NO_WARNINGS
 #include "..\Events.h"
 #include "..\mm7_unsorted_subs.h"
@@ -660,7 +664,7 @@ void GameUI_DrawBranchlessDialogue()
     if ( pGUIWindow2->receives_keyboard_input_2 == WINDOW_INPUT_CONFIRMED)
     {
       pGUIWindow2->receives_keyboard_input_2 = WINDOW_INPUT_NONE;
-      strcpy(GameUI_Footer_TimedString.data(), (const char *)pKeyActionMap->pPressedKeysBuffer);
+      strcpy(GameUI_Footer_TimedString.data(), pKeyActionMap->pPressedKeysBuffer);
       sub_4452BB();
       return;
     }
@@ -1147,67 +1151,60 @@ void GameUI_Footer()
 //----- (00420EFF) --------------------------------------------------------
 void GameUI_WritePointedObjectStatusString()
 {
-  int v1; // ebx@6
   GUIWindow *pWindow; // edi@7
   GUIButton *pButton; // ecx@11
-  int v7; // ecx@19
+  int requiredSkillpoints; // ecx@19
   enum UIMessageType pMessageType1; // esi@24
-//  int v14; // eax@41
+  int v14; // eax@41
   ItemGen *pItemGen; // ecx@44
   int v16; // ecx@46
-  signed int v18; // eax@55
+  signed int pickedObjectPID; // eax@55
   signed int v18b;
-  signed int v19; // ecx@63
+  signed int pickedObjectID; // ecx@63
+  BLVFace *pFace; // eax@69
   const char *pText; // ecx@79
-//  char *v28; // esi@82
-//  enum UIMessageType pMessageType2; // esi@110
-//  enum UIMessageType pMessageType3; // edx@117
+  enum UIMessageType pMessageType2; // esi@110
+  enum UIMessageType pMessageType3; // edx@117
   char Str1[200]; // [sp+Ch] [bp-D4h]@129
   unsigned int pX; // [sp+D4h] [bp-Ch]@1
   unsigned int pY; // [sp+D8h] [bp-8h]@1
-//  unsigned int v45; // [sp+DCh] [bp-4h]@21
 
   int interaction_distance_limit = 512;
-  int monster_info_distance_limit = 5120;
 
   pMouse->uPointingObjectID = 0;
   pMouse->GetClickPos(&pX, &pY);
-  if ( pX < 0 || pX > window->GetWidth() - 1 || pY < 0 || pY > window->GetHeight() - 1 )//границы окна игры
+  if ( pX < 0 || pX > window->GetWidth() - 1 || pY < 0 || pY > window->GetHeight() - 1 )
     return;
-  if ( pX <= 467 && pY <= 351 )//пределы основной области
+  if ( pCurrentScreen == SCREEN_GAME )
   {
-    //окно(область) игры----------------------------------
-    if ( pCurrentScreen == SCREEN_GAME )
+    if ( pX <= (window->GetWidth() - 1) * 0.73125 && pY <= (window->GetHeight() - 1) * 0.73125 ) 
     {
       //if ( pRenderer->pRenderD3D )  // inlined mm8::4C1E01
       {
-        v18 = pGame->pVisInstance->get_picked_object_zbuf_val();
+        pickedObjectPID = pGame->pVisInstance->get_picked_object_zbuf_val();
         if ( pX < (unsigned int)pViewport->uScreen_TL_X || pX > (unsigned int)pViewport->uScreen_BR_X
           || pY < (unsigned int)pViewport->uScreen_TL_Y || pY > (unsigned int)pViewport->uScreen_BR_Y )
-          v18 = -1;
-        if ( v18 == -1 )
+          pickedObjectPID = -1;
+        if ( pickedObjectPID == -1 )
         {
-          pMouse->uPointingObjectID = 0;
-          if ( pMouse->uPointingObjectID == 0 )
+          if ( uLastPointedObjectID != 0 )
           {
-            if ( uLastPointedObjectID != 0 )
-            {
-              pFooterString[0] = 0;
-              bForceDrawFooter = 1;
-            }
+            pFooterString[0] = 0;
+            bForceDrawFooter = 1;
           }
-          uLastPointedObjectID = pMouse->uPointingObjectID;
+          uLastPointedObjectID = 0;
           return;
         }
       }
       /*else
-        v18 = pRenderer->pActiveZBuffer[pX + pSRZBufferLineOffsets[pY]];*/
-      pMouse->uPointingObjectID = (unsigned __int16)v18;
-      v19 = (signed)PID_ID(v18);
-      //For Items------------------------------------
-      if (PID_TYPE(v18) == OBJECT_Item)
       {
-        if ( pObjectList->pObjects[pSpriteObjects[v19].uObjectDescID].uFlags & 0x10 )
+        v18 = pRenderer->pActiveZBuffer[pX + pSRZBufferLineOffsets[pY]];
+      }*/
+      pMouse->uPointingObjectID = (unsigned __int16)pickedObjectPID;
+      pickedObjectID = (signed)PID_ID(pickedObjectPID);
+      if ( PID_TYPE(pickedObjectPID) == OBJECT_Item )
+      {
+        if ( pObjectList->pObjects[pSpriteObjects[pickedObjectID].uObjectDescID].uFlags & 0x10 )
         {
           pMouse->uPointingObjectID = 0;
           pFooterString[0] = 0;
@@ -1215,105 +1212,71 @@ void GameUI_WritePointedObjectStatusString()
           uLastPointedObjectID = 0;
           return;
         }
-        if ( HIWORD(v18) < interaction_distance_limit && !pParty->pPickedItem.uItemID )
+        if ( pickedObjectPID >= 0x2000000u || pParty->pPickedItem.uItemID )
         {
-          sprintfex(pTmpBuf.data(), pGlobalTXT_LocalizationStrings[470], pSpriteObjects[v19].stru_24.GetDisplayName());// "Get %s"
+          GameUI_SetFooterString(pSpriteObjects[pickedObjectID].stru_24.GetDisplayName());
+        }
+        else
+        {
+          sprintfex(pTmpBuf.data(), pGlobalTXT_LocalizationStrings[470], pSpriteObjects[pickedObjectID].stru_24.GetDisplayName());// "Get %s"
           GameUI_SetFooterString(pTmpBuf.data());
-          return;
-        }
-        GameUI_SetFooterString(pSpriteObjects[v19].stru_24.GetDisplayName());
-        if ( pMouse->uPointingObjectID == 0 )
-        {
-          if ( uLastPointedObjectID != 0 )
-          {
-            pFooterString[0] = 0;
-            bForceDrawFooter = 1;
-          }
-        }
-        uLastPointedObjectID = pMouse->uPointingObjectID;
-        return;
+        } //intentional fallthrough
       }
-      //For Decorations----------------------------------
-      if (PID_TYPE(v18) == OBJECT_Decoration)
+      else if ( PID_TYPE(pickedObjectPID) == OBJECT_Decoration )
       {
-        if ( !pLevelDecorations[v19].uEventID )
+        if ( !pLevelDecorations[pickedObjectID].uEventID )
         {
-          if ( pLevelDecorations[v19].IsInteractive() )
-            pText = pNPCTopics[stru_5E4C90_MapPersistVars._decor_events[pLevelDecorations[v19]._idx_in_stru123 - 75] + 380].pTopic;//-379
+          if ( pLevelDecorations[pickedObjectID].IsInteractive() )
+            pText = pNPCTopics[stru_5E4C90_MapPersistVars._decor_events[pLevelDecorations[pickedObjectID]._idx_in_stru123 - 75] + 380].pTopic;//неверно для костра
           else
-            pText = pDecorationList->pDecorations[pLevelDecorations[v19].uDecorationDescID].field_20;
+            pText = pDecorationList->pDecorations[pLevelDecorations[pickedObjectID].uDecorationDescID].field_20;
           GameUI_SetFooterString(pText);
         }
         else
         {
-        if ( GetEventHintString(pLevelDecorations[v19].uEventID) )
-          GameUI_SetFooterString(GetEventHintString(pLevelDecorations[v19].uEventID));
-        }
-        if ( pMouse->uPointingObjectID == 0 )
-        {
-          if ( uLastPointedObjectID != 0 )
+          char* hintString = GetEventHintString(pLevelDecorations[pickedObjectID].uEventID);
+          if (  hintString != '\0' )
           {
-            pFooterString[0] = 0;
-            bForceDrawFooter = 1;
+            GameUI_SetFooterString(hintString);
           }
-        }
-        uLastPointedObjectID = pMouse->uPointingObjectID;
-        return;
+        } //intentional fallthrough
       }
-      //For 3D Model-------------------------------------
-      if (PID_TYPE(v18) == OBJECT_BModel)
+      else if ( PID_TYPE(pickedObjectPID) == OBJECT_BModel )
       {
-        if ( HIWORD(v18) < interaction_distance_limit )
+        if ( pickedObjectPID < 0x2000000u )
         {
-          if ( uCurrentlyLoadedLevelType == LEVEL_Outdoor)
+          char* newString = nullptr;
+          if ( uCurrentlyLoadedLevelType != LEVEL_Indoor )
           {
-            v18b = (signed int)(unsigned __int16)v18 >> 9;
-            if ( !pOutdoor->pBModels[v18b].pFaces[v19 & 0x3F].sCogTriggeredID
-              || !GetEventHintString(pOutdoor->pBModels[v18b].pFaces[v19 & 0x3F].sCogTriggeredID) )
+            v18b = (signed int)(unsigned __int16)pickedObjectPID >> 9;
+            short triggeredId = pOutdoor->pBModels[v18b].pFaces[pickedObjectID & 0x3F].sCogTriggeredID;
+            if (triggeredId != 0)
             {
-              pMouse->uPointingObjectID = 0;
+              newString = GetEventHintString(pOutdoor->pBModels[v18b].pFaces[pickedObjectID & 0x3F].sCogTriggeredID);
+            }
+          }
+          else
+          {
+            pFace = &pIndoor->pFaces[pickedObjectID];
+            if ( BYTE3(pFace->uAttributes) & 6 )
+            {
+              unsigned short eventId = pIndoor->pFaceExtras[pFace->uFaceExtraID].uEventID;
+              if (eventId != 0)
+              {
+                newString = GetEventHintString(pIndoor->pFaceExtras[pFace->uFaceExtraID].uEventID);
+              }
+            }
+          }
+          if (newString)
+          {
+            GameUI_SetFooterString(newString);
+            if ( pMouse->uPointingObjectID == 0 && uLastPointedObjectID != 0)
+            {
               pFooterString[0] = 0;
               bForceDrawFooter = 1;
-              uLastPointedObjectID = 0;
-              return;
-            }
-            GameUI_SetFooterString(GetEventHintString(pOutdoor->pBModels[v18b].pFaces[v19 & 0x3F].sCogTriggeredID));
-            if ( pMouse->uPointingObjectID == 0 )
-            {
-              if ( uLastPointedObjectID != 0 )
-              {
-                pFooterString[0] = 0;
-                bForceDrawFooter = 1;
-              }
             }
             uLastPointedObjectID = pMouse->uPointingObjectID;
             return;
-          }
-          if ( uCurrentlyLoadedLevelType == LEVEL_Indoor)
-          {
-            if ( pIndoor->pFaces[v19].uAttributes & FACE_INDICATE )
-            {
-              if ( !pIndoor->pFaceExtras[pIndoor->pFaces[v19].uFaceExtraID].uEventID
-               || !GetEventHintString(pIndoor->pFaceExtras[pIndoor->pFaces[v19].uFaceExtraID].uEventID) )
-              {
-                pMouse->uPointingObjectID = 0;
-                pFooterString[0] = 0;
-                bForceDrawFooter = 1;
-                uLastPointedObjectID = 0;
-                return;
-              }
-              GameUI_SetFooterString(GetEventHintString(pIndoor->pFaceExtras[pIndoor->pFaces[v19].uFaceExtraID].uEventID));
-              if ( pMouse->uPointingObjectID == 0 )
-              {
-                if ( uLastPointedObjectID != 0 )
-                {
-                  pFooterString[0] = 0;
-                  bForceDrawFooter = 1;
-                }
-              }
-              uLastPointedObjectID = pMouse->uPointingObjectID;
-              return;
-            }
           }
         }
         pMouse->uPointingObjectID = 0;
@@ -1322,311 +1285,227 @@ void GameUI_WritePointedObjectStatusString()
         uLastPointedObjectID = 0;
         return;
       }
-      if (PID_TYPE(v18) == OBJECT_Actor && HIWORD(v18) < monster_info_distance_limit )
-      {
-        if ( pActors[v19].dword_000334_unique_name )
-          pText = pMonsterStats->pPlaceStrings[pActors[v19].dword_000334_unique_name];
+      else if ( PID_TYPE(pickedObjectPID) == OBJECT_Actor )
+      {          
+        if ( pickedObjectPID >= 0x2000000u )
+        {
+          pMouse->uPointingObjectID = 0;
+          if ( uLastPointedObjectID != 0 )
+          {
+            pFooterString[0] = 0;
+            bForceDrawFooter = 1;
+          }
+          uLastPointedObjectID = 0;
+          return;
+        }
+        if ( pActors[pickedObjectID].dword_000334_unique_name )
+          pText = pMonsterStats->pPlaceStrings[pActors[pickedObjectID].dword_000334_unique_name];
         else
-          pText = pMonsterStats->pInfos[pActors[v19].pMonsterInfo.uID].pName;
-        strncpy(pTmpBuf.data(), pText, 2000);
-        GameUI_SetFooterString(pTmpBuf.data());
+          pText = pMonsterStats->pInfos[pActors[pickedObjectID].pMonsterInfo.uID].pName;
+        GameUI_SetFooterString(pText); //intentional fallthrough
       }
-      if ( pMouse->uPointingObjectID == 0 )
+      if ( pMouse->uPointingObjectID == 0 && uLastPointedObjectID != 0)
       {
-        if ( uLastPointedObjectID != 0 )
-        {
-          pFooterString[0] = 0;
-          bForceDrawFooter = 1;
-        }
+        pFooterString[0] = 0;
+        bForceDrawFooter = 1;
       }
       uLastPointedObjectID = pMouse->uPointingObjectID;
       return;
-    }
-    //окно(область) ящика-------------------------------------------
-    if ( pCurrentScreen == SCREEN_CHEST )
-    {
-      Chest::ChestUI_WritePointedObjectStatusString();
-      if ( pMouse->uPointingObjectID == 0 )
-      {
-        if ( uLastPointedObjectID != 0 )
-        {
-          pFooterString[0] = 0;
-          bForceDrawFooter = 1;
-        }
-      }
-      uLastPointedObjectID = pMouse->uPointingObjectID;
-      return;
-    }
-    //окно(область) магазина-----------------------------------------
-    if ( pCurrentScreen == SCREEN_HOUSE )
-    {
-      v16 = pRenderer->pActiveZBuffer[pX + pSRZBufferLineOffsets[pY]];
-      if ( v16 != 0 && v16 != -65536 )
-      {
-        if ( dialog_menu_id == HOUSE_DIALOGUE_SHOP_BUY_STANDARD )
-        {
-          pItemGen = &pParty->StandartItemsInShops[(unsigned int)window_SpeakInHouse->ptr_1C][v16-1];
-          GameUI_SetFooterString(pItemGen->GetDisplayName());
-          uLastPointedObjectID = 1;
-        }
-        if ( dialog_menu_id == HOUSE_DIALOGUE_SHOP_BUY_SPECIAL )
-        {
-          pItemGen = &pParty->SpecialItemsInShops[(unsigned int)window_SpeakInHouse->ptr_1C][v16-1];
-          GameUI_SetFooterString(pItemGen->GetDisplayName());
-          uLastPointedObjectID = 1;
-        }
-        if ( dialog_menu_id == HOUSE_DIALOGUE_SHOP_SELL )
-        {
-          pItemGen = &pPlayers[uActiveCharacter]->pInventoryItemList[v16-1];
-          GameUI_SetFooterString(pItemGen->GetDisplayName());
-          uLastPointedObjectID = 1;
-        }
-      }
-      if ( pMouse->uPointingObjectID == 0 )
-      {
-        if ( uLastPointedObjectID != 0 )
-        {
-          pFooterString[0] = 0;
-          bForceDrawFooter = 1;
-        }
-      }
-      uLastPointedObjectID = pMouse->uPointingObjectID;
-      return;
-    }
-    //-----------------------------------------
-    for ( v1 = uNumVisibleWindows; v1 >= 0; --v1 ) // some other fullscreen ui
-    {
-      pWindow = &pWindowList[pVisibleWindowsIdxs[v1] - 1];
-      if ( (signed int)pX >= (signed int)pWindow->uFrameX && (signed int)pX <= (signed int)pWindow->uFrameZ
-        && (signed int)pY >= (signed int)pWindow->uFrameY && (signed int)pY <= (signed int)pWindow->uFrameW )
-      {
-        for ( pButton = pWindow->pControlsHead; ; pButton = pButton->pNext )
-        {
-          if ( !pButton )
-            break;
-          switch ( pButton->uButtonType )
-          {
-            case 1://for dialogue window
-              if ( (signed int)pX >= (signed int)pButton->uX && (signed int)pX <= (signed int)pButton->uZ
-                && (signed int)pY >= (signed int)pButton->uY && (signed int)pY <= (signed int)pButton->uW )
-              {
-                pMessageType1 = (UIMessageType)pButton->field_1C;
-                if ( pMessageType1 )
-                  pMessageQueue_50CBD0->AddMessage(pMessageType1, pButton->msg_param, 0);
-                GameUI_SetFooterString(pButton->pButtonName);
-                uLastPointedObjectID = 1;
-                return;
-              }
-              break;
-            case 2:
-              if ( pX >= pButton->uX && pX <= pButton->uZ
-                && pY >= pButton->uY && pY <= pButton->uW )
-              {
-                pMessageType1 = (UIMessageType)pButton->field_1C;
-                if ( pMessageType1 )
-                  pMessageQueue_50CBD0->AddMessage(pMessageType1, pButton->msg_param, 0);
-                GameUI_SetFooterString(pButton->pButtonName);
-                uLastPointedObjectID = 1;
-                return;
-              }
-              break;
-            case 3:// click on skill
-              if ( pX >= pButton->uX && pX <= pButton->uZ
-                && pY >= pButton->uY && pY <= pButton->uW )
-              {
-                v7 = (LOBYTE(pPlayers[uActiveCharacter]->pActiveSkills[pButton->msg_param]) & 0x3F) + 1;
-                if ( pPlayers[uActiveCharacter]->uSkillPoints < v7 )
-                  sprintf(Str1, pGlobalTXT_LocalizationStrings[469], v7 - pPlayers[uActiveCharacter]->uSkillPoints);// "You need %d more Skill Points to advance here"
-                else
-                  sprintf(Str1, pGlobalTXT_LocalizationStrings[468], v7);// "Clicking here will spend %d Skill Points"
-                GameUI_SetFooterString(Str1);
-                uLastPointedObjectID = 1;
-                return;
-              }
-              break;
-          }
-        }
-      }
-    }
-  }//конец пределов основного экрана------------------------
-  if ( pX > 467 && pX <= window->GetWidth() - 1 && pY <= window->GetHeight() - 1 )//пределы правой области
-  {
-    if ( pCurrentScreen == SCREEN_GAME )
-    {
-      pWindow = &pWindowList[0];
-      if ( (signed int)pX >= (signed int)pWindow->uFrameX && (signed int)pX <= (signed int)pWindow->uFrameZ
-        && (signed int)pY >= (signed int)pWindow->uFrameY && (signed int)pY <= (signed int)pWindow->uFrameW )
-      {
-        for ( pButton = pWindow->pControlsHead; ; pButton = pButton->pNext )
-        {
-          if ( !pButton )
-            break;
-          switch ( pButton->uButtonType )
-          {
-            case 1://for dialogue window
-              if ( (signed int)pX >= (signed int)pButton->uX && (signed int)pX <= (signed int)pButton->uZ
-                && (signed int)pY >= (signed int)pButton->uY && (signed int)pY <= (signed int)pButton->uW )
-              {
-                pMessageType1 = (UIMessageType)pButton->field_1C;
-                if ( pMessageType1 )
-                  pMessageQueue_50CBD0->AddMessage(pMessageType1, pButton->msg_param, 0);
-                GameUI_SetFooterString(pButton->pButtonName);
-                uLastPointedObjectID = 1;
-                return;
-              }
-              break;
-            case 2:
-              if ( pX >= pButton->uX && pX <= pButton->uZ
-                && pY >= pButton->uY && pY <= pButton->uW )
-              {
-                pMessageType1 = (UIMessageType)pButton->field_1C;
-                if ( pMessageType1 )
-                  pMessageQueue_50CBD0->AddMessage(pMessageType1, pButton->msg_param, 0);
-                GameUI_SetFooterString(pButton->pButtonName);
-                uLastPointedObjectID = 1;
-                return;
-              }
-              break;
-            case 3:// click on skill
-              if ( pX >= pButton->uX && pX <= pButton->uZ
-                && pY >= pButton->uY && pY <= pButton->uW )
-              {
-                v7 = (LOBYTE(pPlayers[uActiveCharacter]->pActiveSkills[pButton->msg_param]) & 0x3F) + 1;
-                if ( pPlayers[uActiveCharacter]->uSkillPoints < v7 )
-                  sprintf(Str1, pGlobalTXT_LocalizationStrings[469], v7 - pPlayers[uActiveCharacter]->uSkillPoints);// "You need %d more Skill Points to advance here"
-                else
-                  sprintf(Str1, pGlobalTXT_LocalizationStrings[468], v7);// "Clicking here will spend %d Skill Points"
-                GameUI_SetFooterString(Str1);
-                uLastPointedObjectID = 1;
-                return;
-              }
-              break;
-          }
-        }
-      }
-    }
-    else
-    {
-      for ( v1 = uNumVisibleWindows; v1 > 0; --v1 )
-      {
-        pWindow = &pWindowList[pVisibleWindowsIdxs[v1] - 1];
-        if ( (signed int)pX >= (signed int)pWindow->uFrameX && (signed int)pX <= (signed int)pWindow->uFrameZ
-          && (signed int)pY >= (signed int)pWindow->uFrameY && (signed int)pY <= (signed int)pWindow->uFrameW )
-        {
-          for ( pButton = pWindow->pControlsHead; ; pButton = pButton->pNext )
-          {
-            if ( !pButton )
-              break;
-            switch ( pButton->uButtonType )
-            {
-              case 1://for dialogue window
-                if ( (signed int)pX >= (signed int)pButton->uX && (signed int)pX <= (signed int)pButton->uZ
-                  && (signed int)pY >= (signed int)pButton->uY && (signed int)pY <= (signed int)pButton->uW )
-                {
-                  pMessageType1 = (UIMessageType)pButton->field_1C;
-                  if ( pMessageType1 )
-                    pMessageQueue_50CBD0->AddMessage(pMessageType1, pButton->msg_param, 0);
-                  GameUI_SetFooterString(pButton->pButtonName);
-                  uLastPointedObjectID = 1;
-                  return;
-                }
-                break;
-              case 2:
-                if ( pX >= pButton->uX && pX <= pButton->uZ
-                  && pY >= pButton->uY && pY <= pButton->uW )
-                {
-                  pMessageType1 = (UIMessageType)pButton->field_1C;
-                  if ( pMessageType1 )
-                    pMessageQueue_50CBD0->AddMessage(pMessageType1, pButton->msg_param, 0);
-                  GameUI_SetFooterString(pButton->pButtonName);
-                  uLastPointedObjectID = 1;
-                  return;
-                }
-                break;
-              case 3:// click on skill
-                if ( pX >= pButton->uX && pX <= pButton->uZ
-                  && pY >= pButton->uY && pY <= pButton->uW )
-                {
-                  v7 = (LOBYTE(pPlayers[uActiveCharacter]->pActiveSkills[pButton->msg_param]) & 0x3F) + 1;
-                  if ( pPlayers[uActiveCharacter]->uSkillPoints < v7 )
-                    sprintf(Str1, pGlobalTXT_LocalizationStrings[469], v7 - pPlayers[uActiveCharacter]->uSkillPoints);// "You need %d more Skill Points to advance here"
-                  else
-                    sprintf(Str1, pGlobalTXT_LocalizationStrings[468], v7);// "Clicking here will spend %d Skill Points"
-                  GameUI_SetFooterString(Str1);
-                  uLastPointedObjectID = 1;
-                  return;
-                }
-                break;
-            }
-          }
-        }
-      }
     }
   }
-  if ( pX <= 467 && pY > 351 && pY <= 479 )//пределы нижней области
-  {
-    pWindow = &pWindowList[0];
-    if ( (signed int)pX >= (signed int)pWindow->uFrameX && (signed int)pX <= (signed int)pWindow->uFrameZ
-      && (signed int)pY >= (signed int)pWindow->uFrameY && (signed int)pY <= (signed int)pWindow->uFrameW )
+  else
+  {    
+    for (int i = uNumVisibleWindows; i > 0; --i)
     {
-      for ( pButton = pWindow->pControlsHead; ; pButton = pButton->pNext )
+      pWindow = &pWindowList[pVisibleWindowsIdxs[i] - 1];
+      if ( (signed int)pX >= (signed int)pWindow->uFrameX && (signed int)pX <= (signed int)pWindow->uFrameZ
+        && (signed int)pY >= (signed int)pWindow->uFrameY && (signed int)pY <= (signed int)pWindow->uFrameW )
       {
-        if ( !pButton )
-          break;
-        switch ( pButton->uButtonType )
+        for ( pButton = pWindow->pControlsHead; pButton != nullptr; pButton = pButton->pNext )
         {
+          switch ( pButton->uButtonType )
+          {
           case 1://for dialogue window
             if ( (signed int)pX >= (signed int)pButton->uX && (signed int)pX <= (signed int)pButton->uZ
               && (signed int)pY >= (signed int)pButton->uY && (signed int)pY <= (signed int)pButton->uW )
             {
               pMessageType1 = (UIMessageType)pButton->field_1C;
               if ( pMessageType1 )
-                pMessageQueue_50CBD0->AddMessage(pMessageType1, pButton->msg_param, 0);
+                pMessageQueue_50CBD0->AddGUIMessage(pMessageType1, pButton->msg_param, 0);
               GameUI_SetFooterString(pButton->pButtonName);
               uLastPointedObjectID = 1;
               return;
             }
             break;
-          case 2:
+          case 2://hovering over portraits
+            if (pButton->uWidth != 0 && pButton->uHeight != 0)
+            {
+              uint distW = pX - pButton->uX;
+              uint distY = pY - pButton->uY;
+
+              double ratioX = 1.0 * (distW*distW) / (pButton->uWidth*pButton->uWidth);
+              double ratioY = 1.0 * (distY*distY) / (pButton->uHeight*pButton->uHeight);
+
+              if (ratioX + ratioY < 1.0)
+              {
+                pMessageType2 = (UIMessageType)pButton->field_1C;
+                if ( pMessageType2 != 0 )
+                  pMessageQueue_50CBD0->AddGUIMessage(pMessageType2, pButton->msg_param, 0);
+                GameUI_SetFooterString(pButton->pButtonName); // for character name
+                uLastPointedObjectID = 1;
+                return;
+              }
+            }
+            break;
+          case 3:// click on skill
             if ( pX >= pButton->uX && pX <= pButton->uZ
               && pY >= pButton->uY && pY <= pButton->uW )
             {
-              pMessageType1 = (UIMessageType)pButton->field_1C;
-              if ( pMessageType1 )
-                pMessageQueue_50CBD0->AddMessage(pMessageType1, pButton->msg_param, 0);
-              GameUI_SetFooterString(pButton->pButtonName);
+              requiredSkillpoints = (LOBYTE(pPlayers[uActiveCharacter]->pActiveSkills[pButton->msg_param]) & 0x3F) + 1;
+              if ( pPlayers[uActiveCharacter]->uSkillPoints < requiredSkillpoints )
+                sprintf(Str1, pGlobalTXT_LocalizationStrings[469], requiredSkillpoints - pPlayers[uActiveCharacter]->uSkillPoints);// "You need %d more Skill Points to advance here"
+              else
+                sprintf(Str1, pGlobalTXT_LocalizationStrings[468], requiredSkillpoints);// "Clicking here will spend %d Skill Points"
+              GameUI_SetFooterString(Str1);
               uLastPointedObjectID = 1;
               return;
             }
             break;
-           case 3:// click on skill
-             if ( pX >= pButton->uX && pX <= pButton->uZ
-               && pY >= pButton->uY && pY <= pButton->uW )
-             {
-               v7 = (LOBYTE(pPlayers[uActiveCharacter]->pActiveSkills[pButton->msg_param]) & 0x3F) + 1;
-               if ( pPlayers[uActiveCharacter]->uSkillPoints < v7 )
-                 sprintf(Str1, pGlobalTXT_LocalizationStrings[469], v7 - pPlayers[uActiveCharacter]->uSkillPoints);// "You need %d more Skill Points to advance here"
-               else
-                 sprintf(Str1, pGlobalTXT_LocalizationStrings[468], v7);// "Clicking here will spend %d Skill Points"
-               GameUI_SetFooterString(Str1);
-               uLastPointedObjectID = 1;
-               return;
-             }
-             break;
+          }
         }
+      }
+      if ( pWindow->uFrameHeight == 480 )
+      {
+        //DebugBreak(); //Why is this condition here (in the original too)? Might check fullscreen windows. Let Silvo know if you find out
+        return;
+      }
+    }
+    //The game never gets to this point even in the original. It's also bugged(neither branch displays anything). 
+    //TODO fix these and move them up before the window check loop.
+    if ( pCurrentScreen == SCREEN_CHEST )
+    {
+      Chest::ChestUI_WritePointedObjectStatusString();
+      if ( uLastPointedObjectID != 0 )
+      {
+        pFooterString[0] = 0;
+        bForceDrawFooter = 1;
+      }
+      uLastPointedObjectID = 0;
+      return;
+    }
+    else if ( pCurrentScreen == SCREEN_HOUSE )
+    {
+      if ( dialog_menu_id != HOUSE_DIALOGUE_SHOP_BUY_STANDARD
+        || (v16 = pRenderer->pActiveZBuffer[pX + pSRZBufferLineOffsets[pY]], v16 == 0)
+        || v16 == -65536 )
+      {
+        if ( uLastPointedObjectID != 0 )
+        {
+          pFooterString[0] = 0;
+          bForceDrawFooter = 1;
+        }
+        uLastPointedObjectID = 0;
+        return;
+      }
+      pItemGen = (ItemGen *)((char *)&pParty->pPickedItem + 36 * (v16 + 12 * (unsigned int)window_SpeakInHouse->ptr_1C) + 4);
+      GameUI_SetFooterString(pItemGen->GetDisplayName());
+      pFooterString[0] = 0;
+      bForceDrawFooter = 1;
+      uLastPointedObjectID = 0;
+      return;
+    }
+    if ( pY < 350 )
+    {
+      v14 = pRenderer->pActiveZBuffer[pX + pSRZBufferLineOffsets[pY]];
+      if ( v14 == 0 || v14 == -65536 || v14 >= 5000 )
+      {
+        if ( pMouse->uPointingObjectID == 0 )
+        {
+          if ( uLastPointedObjectID != 0 )
+          {
+            pFooterString[0] = 0;
+            bForceDrawFooter = 1;
+          }
+        }
+        uLastPointedObjectID = pMouse->uPointingObjectID;
+        return;
+      }
+      pItemGen = (ItemGen *)&pPlayers[uActiveCharacter]->pInventoryItemList[v14-1];
+      GameUI_SetFooterString(pItemGen->GetDisplayName());
+      pFooterString[0] = 0;
+      bForceDrawFooter = 1;
+      uLastPointedObjectID = 0;
+      return;
+    }
+  }
+  if ( (signed int)pX >= (signed int)pWindowList[0].uFrameX && (signed int)pX <= (signed int)pWindowList[0].uFrameZ
+    && (signed int)pY >= (signed int)pWindowList[0].uFrameY && (signed int)pY <= (signed int)pWindowList[0].uFrameW )
+  {
+    for ( pButton = pWindowList[0].pControlsHead; pButton != nullptr; pButton = pButton->pNext )
+    {
+      switch (pButton->uButtonType)
+      {
+      case 1:
+        if ( (signed int)pX >= (signed int)pButton->uX && (signed int)pX <= (signed int)pButton->uZ
+          && (signed int)pY >= (signed int)pButton->uY && (signed int)pY <= (signed int)pButton->uW )
+        {
+          pMessageType3 = (UIMessageType)pButton->field_1C;
+          if ( pMessageType3 == 0 ) // For books
+          {
+            GameUI_SetFooterString(pButton->pButtonName);
+          }
+          else
+          {
+            pMessageQueue_50CBD0->AddGUIMessage(pMessageType3, pButton->msg_param, 0);
+          }
+          uLastPointedObjectID = 1;
+          return;
+        }
+        break;
+      case 2://hovering over portraits
+        if (pButton->uWidth != 0 && pButton->uHeight != 0)
+        {
+          uint distW = pX - pButton->uX;
+          uint distY = pY - pButton->uY;
+
+          double ratioX = 1.0 * (distW*distW) / (pButton->uWidth*pButton->uWidth);
+          double ratioY = 1.0 * (distY*distY) / (pButton->uHeight*pButton->uHeight);
+
+          if (ratioX + ratioY < 1.0)
+          {
+            pMessageType2 = (UIMessageType)pButton->field_1C;
+            if ( pMessageType2 != 0 )
+              pMessageQueue_50CBD0->AddGUIMessage(pMessageType2, pButton->msg_param, 0);
+            GameUI_SetFooterString(pButton->pButtonName); // for character name
+            uLastPointedObjectID = 1;
+            return;
+          }
+        }
+        break;
+      case 3:
+        if ( pX >= pButton->uX && pX <= pButton->uZ
+          && pY >= pButton->uY && pY <= pButton->uW )
+        {
+          requiredSkillpoints = (LOBYTE(pPlayers[uActiveCharacter]->pActiveSkills[pButton->msg_param]) & 0x3F) + 1;
+          if ( pPlayers[uActiveCharacter]->uSkillPoints < requiredSkillpoints )
+            sprintf(Str1, pGlobalTXT_LocalizationStrings[469], requiredSkillpoints - pPlayers[uActiveCharacter]->uSkillPoints);// "You need %d more Skill Points to advance here"
+          else
+            sprintf(Str1, pGlobalTXT_LocalizationStrings[468], requiredSkillpoints);// "Clicking here will spend %d Skill Points"
+          GameUI_SetFooterString(Str1);
+          uLastPointedObjectID = 1;
+          return;
+        }
+        break;
       }
     }
   }
   //pMouse->uPointingObjectID = sub_46A99B(); //for software
-  if ( pMouse->uPointingObjectID == 0 )
+  if ( uLastPointedObjectID != 0 )
   {
-    if ( uLastPointedObjectID != 0 )
-    {
-      pFooterString[0] = 0;
-      bForceDrawFooter = 1;
-    }
+    pFooterString[0] = 0;
+    bForceDrawFooter = 1;
   }
-  uLastPointedObjectID = pMouse->uPointingObjectID;
+  uLastPointedObjectID = 0;
   return;
 }
 

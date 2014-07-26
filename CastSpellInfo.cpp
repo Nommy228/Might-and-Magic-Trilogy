@@ -1,3 +1,7 @@
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+
 #define _CRT_SECURE_NO_WARNINGS
 #include "CastSpellInfo.h"
 #include "Actor.h"
@@ -1702,7 +1706,7 @@ void CastSpellInfoHelpers::_427E01_cast_spell()
           continue;
         }
         town_portal_caster_id = pCastSpell->uPlayerID;
-        pMessageQueue_50CBD0->AddMessage(UIMSG_OnCastTownPortal, 0, 0);
+        pMessageQueue_50CBD0->AddGUIMessage(UIMSG_OnCastTownPortal, 0, 0);
         spell_sound_flag = true;
         break;
       }
@@ -1718,7 +1722,7 @@ void CastSpellInfoHelpers::_427E01_cast_spell()
         if ( pPlayer->sMana >= (signed int)uRequiredMana )
         {
           pEventTimer->Pause();
-          pMessageQueue_50CBD0->AddMessage(UIMSG_OnCastLloydsBeacon, 0, 0);
+          pMessageQueue_50CBD0->AddGUIMessage(UIMSG_OnCastLloydsBeacon, 0, 0);
           lloyds_beacon_spell_level = (signed int)(604800 * spell_level);
           _506348_current_lloyd_playerid = pCastSpell->uPlayerID;
           ::uRequiredMana = uRequiredMana;

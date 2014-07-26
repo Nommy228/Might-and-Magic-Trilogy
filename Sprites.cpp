@@ -1,3 +1,7 @@
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+
 #define _CRT_SECURE_NO_WARNINGS
 #include <string.h>
 #include <algorithm>
@@ -402,17 +406,9 @@ void SpriteFrameTable::FromFile(void *data_mm6, void *data_mm7, void *data_mm8)
   memcpy(pSpriteSFrames + num_mm6_frames + num_mm7_frames, (char *)data_mm8 + 8, mm8_frames_size);
   memcpy(pSpriteEFrames + num_mm6_frames + num_mm7_frames, (char *)data_mm8 + 8 + mm8_frames_size, 2 * num_mm8_eframes);
 
-  for (uint i = 0; i < num_mm7_frames; ++i)
+  //the original was using num_mmx_frames, but never accessed any element beyond num_mmx_eframes, but boing beyong eframes caused invalid memory accesses
+  for (uint i = 0; i < num_mm6_eframes + num_mm7_eframes + num_mm8_eframes; ++i)
     pSpritePFrames[i] = &pSpriteSFrames[pSpriteEFrames[i]];
-  
-  for (uint i = num_mm7_frames; i < num_mm6_frames + num_mm7_frames; ++i)
-    pSpritePFrames[i] = &pSpriteSFrames[pSpriteEFrames[i] + num_mm7_frames];
-  
-  for (uint i = num_mm6_frames + num_mm7_frames; i < num_mm6_frames + num_mm7_frames + num_mm8_frames; ++i)
-    pSpritePFrames[i] = &pSpriteSFrames[pSpriteEFrames[i] + num_mm6_frames + num_mm7_frames];
-
-  //for (uint i = 0; i < uNumSpriteFrames; ++i)
-  //  pSpritePFrames[i] = &pSpriteSFrames[pSpriteEFrames[i]];
 }
 
 //----- (0044DA92) --------------------------------------------------------

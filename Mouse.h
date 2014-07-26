@@ -56,7 +56,10 @@ public:
     pCursorBitmap2_sysmem = nullptr;
     pCursorBitmap3_sysmembits_16bit = nullptr;
     ptr_90 = nullptr;
-    pWard = pWard;
+    pWard = nullptr;
+    *pCurrentCursorName = NULL;
+    uMouseClickX = 0;
+    uMouseClickY = 0;
   }
 
   void GetClickPos(unsigned int *pX, unsigned int *pY);

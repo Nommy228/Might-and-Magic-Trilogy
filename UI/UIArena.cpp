@@ -1,19 +1,23 @@
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+
 #define _CRT_SECURE_NO_WARNINGS
 
-#include "mm7_data.h"
-#include "Sprites.h"
+#include "../mm7_data.h"
+#include "../Sprites.h"
 
-#include "GUIWindow.h"
-#include "GUIFont.h"
-#include "Party.h"
-#include "AudioPlayer.h"
-#include "Outdoor.h"
-#include "LOD.h"
-#include "Actor.h"
-#include "Events.h"
-#include "Viewport.h"
-#include "texts.h"
-#include "MM7.h"
+#include "../GUIWindow.h"
+#include "../GUIFont.h"
+#include "../Party.h"
+#include "../AudioPlayer.h"
+#include "../Outdoor.h"
+#include "../LOD.h"
+#include "../Actor.h"
+#include "../Events.h"
+#include "../Viewport.h"
+#include "../texts.h"
+#include "../MM7.h"
 
 std::array<Vec2_int_, 20> pMonsterArenaPlacements = 
   {{
@@ -182,7 +186,7 @@ void ArenaFight()
     *(&pMessageQueue_50CBD0->uNumMessages + 3 * pMessageQueue_50CBD0->uNumMessages + 3) = 0;
     ++pMessageQueue_50CBD0->uNumMessages;
   }*/
-  pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 1, 0);
+  pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Escape, 1, 0);
   //v2 = pParty->pPlayers.data();
   for ( uint i = 0; i < 4; i++ )
   {

@@ -1,3 +1,7 @@
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+
 #define _CRT_SECURE_NO_WARNINGS
 #include "ErrorHandling.h"
 #include "LightmapBuilder.h"
@@ -114,7 +118,7 @@ void area_of_effect__damage_evaluate()
           v15 = pActors[target_id].vPosition.y - AttackerInfo.pYs[attacker_id];
           a1 = pActors[target_id].vPosition.x - AttackerInfo.pXs[attacker_id];
           v44 = pActors[target_id].vPosition.z;
-          v19 = AttackerInfo.pYs[attacker_id] + pActors[target_id].uActorRadius;
+          v19 = AttackerInfo.field_324[attacker_id] + pActors[target_id].uActorRadius;
           v48 = v15;
           if ( a1 * a1 + v15 * v15 + (pActors[target_id].vPosition.z + (pActors[target_id].uActorHeight >> 1) - AttackerInfo.pZs[attacker_id])
            * (pActors[target_id].vPosition.z + (pActors[target_id].uActorHeight >> 1) - AttackerInfo.pZs[attacker_id]) < (unsigned int)(v19 * v19) )
@@ -167,7 +171,7 @@ void area_of_effect__damage_evaluate()
             v48 = pActors[actorID].vPosition.y - AttackerInfo.pYs[attacker_id];
             v44 = pActors[actorID].vPosition.z;
             v32 = (pActors[actorID].uActorHeight / 2) - AttackerInfo.pZs[attacker_id];
-            v33 = pActors[actorID].uActorRadius + AttackerInfo.pYs[attacker_id];
+            v33 = pActors[actorID].uActorRadius + AttackerInfo.field_324[attacker_id];
             if ( a1 * a1 + v48 * v48 + (v31 + v32) * (v31 + v32) < (unsigned int)(v33 * v33) )
             {
               attacker_coord.x = AttackerInfo.pXs[attacker_id];

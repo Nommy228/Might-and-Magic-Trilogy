@@ -1,3 +1,7 @@
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+
 #define _CRT_SECURE_NO_WARNINGS
 #include "ErrorHandling.h"
 #include "mm7_unsorted_subs.h"
@@ -861,7 +865,7 @@ void  Party::Sleep6Hours()
     }
     if ( dword_506F14 == 2 )
     {
-      pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 0, 0);
+      pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Escape, 0, 0);
     }
   }
   else

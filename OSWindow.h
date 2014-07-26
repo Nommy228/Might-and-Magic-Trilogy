@@ -43,7 +43,7 @@ class OSWindow: public UIControl
     bool Initialize(const wchar_t *title, int window_width, int window_height);
     bool WinApiMessageProc(UINT msg, WPARAM wparam, LPARAM lparam, LRESULT *result);
 
-    HWND    api_handle;
+    HWND api_handle;
 
   private:
     static LPARAM __stdcall WinApiMsgRouter(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);

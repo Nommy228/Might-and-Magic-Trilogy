@@ -1,3 +1,7 @@
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+
 #define _CRT_SECURE_NO_WARNINGS
 #include <io.h>
 #include <direct.h>
@@ -14,7 +18,7 @@
 #include "ParticleEngine.h"
 #include "Mouse.h"
 #include "Keyboard.h"
-#include "CShow.h"
+#include "MediaPlayer.h"
 #include "GammaControl.h"
 #include "stru6.h"
 
@@ -63,8 +67,6 @@
 #include "LuaVM.h"
 #include "MMT.h"
 #include "Registry.h"
-
-//#include "lib/lua/lua.h"
 
 int __stdcall aWinProc(HWND hWnd, UINT Msg, WPARAM wParam, unsigned int lParam);
 int __stdcall InsertMM7CDDialogFunc(HWND hDlg, int a2, __int16 a3, int a4);
@@ -156,13 +158,13 @@ unsigned int GameOverMenu(void *ecx0)
 
   dword_6BE364_game_settings_1 &= ~GAME_SETTINGS_4000;
   bGameoverLoop = 1;
-  pVideoPlayer->bStopBeforeSchedule = 0;
+  pMediaPlayer->bStopBeforeSchedule = 0;
   pAudioPlayer->StopChannels(-1, -1);
   pRenderer->BeginScene();
   pRenderer->ClearBlack();
   pRenderer->EndScene();
   pRenderer->Present();
-  pVideoPlayer->pResetflag = 0;
+  //pMediaPlayer->pResetflag = 0;
   _449B57_test_bit(pParty->_quest_bits, 99);
   _this.Load("winbg.pcx", 2);
   pRenderer->BeginScene();
@@ -214,9 +216,9 @@ unsigned int GameOverMenu(void *ecx0)
   if ( v17 != 1 )
     v7 = pGlobalTXT_LocalizationStrings[57];
 
-  v8 = pGlobalTXT_LocalizationStrings[146];//Month, ћес€ц
+  v8 = pGlobalTXT_LocalizationStrings[146];//Month
   if ( v18 != 1 )
-    v8 = pGlobalTXT_LocalizationStrings[148];//Months,ћес€цев
+    v8 = pGlobalTXT_LocalizationStrings[148];//Months
 
   v9 = pGlobalTXT_LocalizationStrings[245];
   if ( v14 != 1 )
@@ -283,11 +285,11 @@ unsigned int GameOverMenu(void *ecx0)
     {
       pMessageQueue_50CBD0->pMessages[result].eType = UIMSG_Quit;
     }*/
-    pMessageQueue_50CBD0->AddMessage(UIMSG_Quit, 1, 0);
+    pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Quit, 1, 0);
   }
   else
   {
-    pMessageQueue_50CBD0->AddMessage(UIMSG_ShowFinalWindow, 1, 0);
+    pMessageQueue_50CBD0->AddGUIMessage(UIMSG_ShowFinalWindow, 1, 0);
     /*if ( (signed int)result < 40 )
     {
       pMessageQueue_50CBD0->pMessages[result].eType = UIMSG_C5;
@@ -416,7 +418,7 @@ int stru350::sub_451007_scale_image_bicubic(unsigned short *pSrc, int srcWidth, 
       if ( v22 != 255 )
         v22 &= 0x7FFFFFFFu;
       v23 = _450F55(v251 | ((v252 | ((a6b | (v22 << 8)) << 8)) << 8));
-      *(_DWORD *)v193 = v23;
+      *(_DWORD *)v193 = v23; //Invalid memory access
       v193 = (unsigned __int16 *)((char *)v193 + field_20_bits);
     }
     v193 = (unsigned __int16 *)((char *)v193 + field_20_bits * (dstPitch - dstWidth));
@@ -909,18 +911,15 @@ void MainMenu_Loop()
 {
   GUIButton *pButton; // eax@27
   unsigned int pControlParam; // ecx@35
-//  int v10; // ecx@36
-//  int v11; // ecx@37
   unsigned int pY; // [sp-18h] [bp-54h]@39
   Texture *pTexture; // [sp-14h] [bp-50h]@39
-//  GUIButton *pButton2; // [sp+0h] [bp-3Ch]@27
   GUIWindow *pWindow; // [sp+4h] [bp-38h]@11
   
   pCurrentScreen = SCREEN_GAME;
 
   pGUIWindow2 = 0;
-  pAudioPlayer->StopChannels(-1, -1);//остановить/подготовить канал
-  pMouse->RemoveHoldingItem();//избавить курсор от вещи
+  pAudioPlayer->StopChannels(-1, -1);
+  pMouse->RemoveHoldingItem();
 
   pIcons_LOD->_inlined_sub2();
 
@@ -1001,7 +1000,7 @@ void MainMenu_Loop()
                 && pWindow == pWindow_MainMenu )
            {
             pControlParam = pButton->msg_param;
-            switch (pControlParam) // подсветка кнопок
+            switch (pControlParam) // backlight for buttons
             {
               case 0:
               pTexture = pNew;
@@ -1020,7 +1019,7 @@ void MainMenu_Loop()
               pY = 337;
               break;
             }
-            pRenderer->DrawTextureIndexed(495, pY, pTexture); //подсветка кнопок
+            pRenderer->DrawTextureIndexed(495, pY, pTexture);
            }
           }
         }
@@ -1143,12 +1142,8 @@ void InitializeTurnBasedAnimations(void *_this)
 //----- (00464866) --------------------------------------------------------
 void DoPrepareWorld(unsigned int bLoading, int _1_fullscreen_loading_2_box)
 {
-  //int v2; // esi@1
   char *v3; // eax@1
-  //char *v4; // eax@1
   unsigned int v5; // eax@3
-  //size_t v6; // ecx@10
-  //char *v7; // eax@11
   char Str1[20]; // [sp+Ch] [bp-18h]@1
   unsigned int v9; // [sp+20h] [bp-4h]@1
 
@@ -1205,14 +1200,12 @@ void DoPrepareWorld(unsigned int bLoading, int _1_fullscreen_loading_2_box)
   _flushall();
 }
 
-
 //----- (00464E17) --------------------------------------------------------
 bool __fastcall CheckMM7CD(char c)
 {
-  char DstBuf[256]; // [sp+Ch] [bp-218h]@1
-  char strCommand[256]; // [sp+10Ch] [bp-118h]@1
-  char Filename[20]; // [sp+20Ch] [bp-18h]@1
-
+  char DstBuf[256] = {0};
+  char strCommand[256] = {0}; // [sp+10Ch] [bp-118h]@1
+  char Filename[20] = {0}; // [sp+20Ch] [bp-18h]@1
 
   wchar_t pMagicPath[1024];
   swprintf(pMagicPath, wcslen(L"%C:\\anims\\magic7.vid"), L"%C:\\anims\\magic7.vid", c);
@@ -1220,12 +1213,13 @@ bool __fastcall CheckMM7CD(char c)
     return false;
 
   wsprintfA(strCommand, "open %c: type cdaudio alias CD", c);
-  if (!mciSendStringA(strCommand, DstBuf, 0xFFu, 0))
+  if (!mciSendStringA(strCommand, DstBuf, 255, 0))//Uninitialized memory access
+
   {
     wsprintfA(strCommand, "info CD UPC wait");
-    mciSendStringA(strCommand, DstBuf, 0xFFu, 0);
+    mciSendStringA(strCommand, DstBuf, 255, 0);
     wsprintfA(strCommand, "close CD");
-    mciSendStringA(strCommand, DstBuf, 0xFFu, 0);
+    mciSendStringA(strCommand, DstBuf, 255, 0);
   }
 
   memcpy(Filename, "X:\\anims\\magic7.vid", sizeof(Filename));
@@ -1238,7 +1232,7 @@ bool __fastcall CheckMM7CD(char c)
   if (!fseek(f, 0, SEEK_END))
   {
     if (!fseek(f, -100, SEEK_CUR))
-      fread(DstBuf, 1u, 0x64u, f);
+      fread(DstBuf, 1, 0x64u, f);
 
     fclose(f);
     return true;
@@ -1420,6 +1414,8 @@ bool MM7_Initialize(int game_width, int game_height)
 
   srand(GetTickCount());
 
+  pEventTimer = Timer::Create();
+  pEventTimer->Initialize();
   window = OSWindow::Create(L"Might and MagicЃ Trilogy", game_width, game_height);
 
   pRenderer = Render::Create();
@@ -1456,9 +1452,6 @@ bool MM7_Initialize(int game_width, int game_height)
   MM6_Initialize(pMM6IniFile);
 
   pKeyActionMap = new KeyboardActionMapping;
-
-  pEventTimer = Timer::Create();
-  pEventTimer->Initialize();
 
   OnTimer(1);
   GameUI_StatusBar_UpdateTimedString(1);
@@ -1717,13 +1710,13 @@ bool MM7_Initialize(int game_width, int game_height)
   else
     pGame->uFlags2 &= ~GAME_FLAGS_2_DRAW_BLOODSPLATS;
 
-  uTurnSpeed = ReadWindowsRegistryInt("TurnDelta", 0);
+  uTurnSpeed = ReadWindowsRegistryInt("TurnDelta", 3);
 
   if (!bNoSound)
     pAudioPlayer->Initialize();
 
-  pVideoPlayer = new VideoPlayer();
-  pVideoPlayer->Initialize(window);
+  pMediaPlayer = new Media::MPlayer();
+  pMediaPlayer->Initialize(window);
 
   dword_6BE364_game_settings_1 |= GAME_SETTINGS_4000;
 
@@ -1755,13 +1748,6 @@ bool MM7_Initialize(int game_width, int game_height)
 //----- (00465D0B) --------------------------------------------------------
 void SecondaryInitialization()
 {
-  //__int16 v4; // ax@4
-  //signed int v5; // esi@5
-  //int v6; // ecx@6
-  //int v7; // edx@7
-  //ObjectDesc *v8; // eax@7
-  //char pContainer[32]; // [sp+10h] [bp-Ch]@9
-
   pMouse->Initialize(window);
 
   pItemsTable = new ItemsTable;
@@ -1780,6 +1766,7 @@ void SecondaryInitialization()
   //pSprites_LOD->can_load_hardware_sprites = 1;
   pObjectList->InitializeSprites();
   pOverlayList->InitializeSprites();
+
   if (!bNoSound)
     pSoundList->Initialize();
 
@@ -1981,8 +1968,8 @@ void IntegrityTest()
   static_assert(sizeof(LODSprite) == 0x28, "Wrong type size");
 }
 
-bool new_sky = false;            //новое небо(требуютс€ текстурки)
-int max_flight_height = 4000;    //максимальна€ высота полЄта
+bool new_sky = false;            //new sky(need texture)
+int max_flight_height = 4000;    //maximum altitude
 
 
 
@@ -2037,7 +2024,9 @@ bool MM_Main(const wchar_t *pCmdLine)
   uCPUSpeed = Rect.bottom;*/
   uCPUSpeed = 2048; // about 2GHz
 
-  if (!MM7_Initialize(640, 480))//задаЄтс€ размер окна
+  //_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF | _CRTDBG_CHECK_ALWAYS_DF );//Ritor1: for memory test
+
+  if (!MM7_Initialize(640, 480))
   {
     Log::Warning(L"MM init: failed");
     pGame->Deinitialize();
@@ -2057,7 +2046,7 @@ bool MM_Main(const wchar_t *pCmdLine)
   FinalInitialization();
 
   //Ritor1: include
-  //MMT_MainMenu_Loop();
+  MMT_MainMenu_Loop();
 
   Log::Warning(L"MM: entering main loop");
   while ( 1 )
@@ -2090,8 +2079,7 @@ bool MM_Main(const wchar_t *pCmdLine)
         }
         DeleteCCharFont();
         bFlashQuestBook = true;
-        PlayFullscreenMovie(MOVIE_Emerald);
-        //pGame->pCShow->PlayMovie(MOVIE_Emerald, 0);
+        pMediaPlayer->PlayFullscreenMovie(MOVIE_Emerald, true);
         SaveNewGame();
         if (bNoMargareth)
           _449B7E_toggle_bit(pParty->_quest_bits, PARTY_QUEST_EMERALD_MARGARETH_OFF, 1);
@@ -2179,15 +2167,10 @@ bool MM_Main(const wchar_t *pCmdLine)
 //----- (00466082) --------------------------------------------------------
 void MM6_Initialize(const wchar_t *pIniFilename)
 {
-  //int v0; // eax@1
-  //UINT v1; // eax@18
   size_t v2; // eax@31
   size_t v3; // ebx@32
   size_t v4; // edi@36
-  //char v5[120]; // [sp+Ch] [bp-17Ch]@1
-  //char String[120]; // [sp+84h] [bp-104h]@32
   char pDefaultGroundTexture[16]; // [sp+FCh] [bp-8Ch]@32
-  //char pIniFilename[120]; // [sp+10Ch] [bp-7Ch]@1
   unsigned int v9; // [sp+184h] [bp-4h]@28
 
   //_getcwd(v5, 120);
@@ -2248,11 +2231,7 @@ void MM6_Initialize(const wchar_t *pIniFilename)
   pODMRenderParams->shading_dist_shade     = GetPrivateProfileIntW(L"shading", L"dist_shade", 2048, pIniFilename);
   pODMRenderParams->shading_dist_shademist = GetPrivateProfileIntW(L"shading", L"dist_shademist", 4096, pIniFilename);
 
-  //int dist = 0x2000;
-
-  //if ( new_draw_object_dist )
-      //dist = 0x6000;
-  pODMRenderParams->shading_dist_mist = GetPrivateProfileIntW(L"shading", L"dist_mist", 0x2000, pIniFilename);//дальность отрисовки 0x2000
+  pODMRenderParams->shading_dist_mist = GetPrivateProfileIntW(L"shading", L"dist_mist", 0x2000, pIniFilename);//drawing dist 0x2000
 
   wchar_t pDefaultSkyTextureW[1024];
   GetPrivateProfileStringW(L"textures", L"sky", L"plansky1", pDefaultSkyTextureW, 0x10u, pIniFilename);
@@ -2361,7 +2340,7 @@ void SetCurrentMenuID(MENU_STATE uMenu)
 {
   sCurrentMenuID = uMenu;
 
-  Log::Warning(L"CurrentMenu = %s", MENU_STATE_to_string(uMenu));
+  Log::Warning(L"CurrentMenu = %s \n", MENU_STATE_to_string(uMenu));
 }
 
 //----- (00466CA0) --------------------------------------------------------
@@ -2407,103 +2386,55 @@ bool __fastcall _46BFFA_check_object_intercept(unsigned int uLayingItemID, signe
   char *v11; // edx@20
   unsigned __int16 v12; // ax@23
   int v13; // eax@27
-//  unsigned int v14; // ebx@33
   int v16; // eax@36
-//  unsigned int v17; // eax@37
   __int16 v18; // di@37
   signed int v19; // edx@37
-//  unsigned __int8 v20; // sf@37
-//  char *v21; // ecx@38
   unsigned __int16 v22; // ax@41
-//  unsigned int v23; // eax@46
   signed int v24; // ebx@46
   char *v25; // edx@47
-  int v26; // edx@54
-  int v27; // edx@55
-  int v28; // edx@56
-  int v29; // edx@57
-//  unsigned __int16 v30; // ax@60
-//  unsigned int v31; // ecx@60
-//  int v32; // edi@60
-//  unsigned int v33; // eax@65
   signed int v34; // edx@65
-//  char *v35; // ecx@66
   unsigned __int16 v36; // ax@69
   int v37; // ST14_4@72
   int v38; // eax@72
   int v39; // ST10_4@72
   int v40; // ST0C_4@72
-  int v41; // edx@76
-  int v42; // edx@77
-  int v43; // edx@78
   unsigned __int8 v44; // zf@79
-  int v45; // edx@79
-  unsigned __int16 v46; // ax@80
   int v47; // eax@81
-  int v48; // edx@87
-  int v49; // edx@88
-  int v50; // edx@89
   signed int v52; // ebx@93
-//  char *v53; // edx@94
-//  unsigned __int16 v54; // ax@98
-//  unsigned int v55; // ecx@98
   signed int v56; // ebx@98
-//  char *v57; // edx@99
   unsigned __int16 v58; // ax@102
   unsigned __int16 v59; // ax@107
-//  unsigned int v60; // ecx@107
   signed int v61; // ebx@107
-//  char *v62; // edx@108
   unsigned __int16 v63; // ax@111
   int v64; // ebx@114
   signed int v65; // eax@114
-//  unsigned int v66; // edi@123
-//  unsigned __int16 v67; // ax@124
-//  unsigned int v68; // ecx@124
   signed int v69; // ebx@124
-//  char *v70; // edx@125
   unsigned __int16 v71; // ax@128
   unsigned int v72; // ebx@131
   int v78; // eax@133
-  char v79; // zf@139
-//  unsigned int v80; // eax@140
   signed int v81; // edx@140
-//  char *v82; // ecx@141
   unsigned __int16 v83; // ax@144
-//  unsigned __int16 v84; // ax@151
-//  unsigned int v85; // ecx@151
   signed int v86; // ebx@151
-//  char *v87; // edx@152
   unsigned __int16 v88; // ax@155
   unsigned int v89; // eax@158
   int v90; // ST34_4@159
   int v91; // eax@159
   unsigned int v92; // eax@163
-//  unsigned int v93; // eax@177
-//  char *v94; // ecx@178
   unsigned __int16 v95; // ax@181
   unsigned __int16 v96; // ax@184
   int v97; // eax@185
-//  unsigned __int16 v98; // ax@191
   char v100; // ST18_1@198
   int v102; // eax@198
   signed int v106; // eax@208
   unsigned int v107; // edx@220
   signed int v108; // ebx@225
-//  unsigned int v109; // eax@234
   signed int v110; // ebx@234
-//  char *v111; // ecx@235
   unsigned __int16 v112; // ax@238
   unsigned __int16 v113; // si@241
   int v114; // eax@242
   int v115; // eax@245
-//  unsigned __int16 v117; // ax@251
-//  unsigned int v118; // ecx@251
   signed int v119; // ebx@251
-//  char *v120; // edx@252
   unsigned __int16 v121; // ax@255
-//  unsigned int v122; // eax@260
-//  char *v123; // edx@261
   int v124; // eax@267
   int v125; // [sp-20h] [bp-4Ch]@28
   char v132; // [sp-8h] [bp-34h]@131
@@ -2513,18 +2444,15 @@ bool __fastcall _46BFFA_check_object_intercept(unsigned int uLayingItemID, signe
   int v137; // [sp+10h] [bp-1Ch]@208
   signed int v138; // [sp+14h] [bp-18h]@207
   signed int v139; // [sp+18h] [bp-14h]@208
-//  char *v140; // [sp+1Ch] [bp-10h]@61
   signed int v141; // [sp+1Ch] [bp-10h]@117
   unsigned int v142; // [sp+1Ch] [bp-10h]@158
   signed int v143; // [sp+1Ch] [bp-10h]@172
-//  char *v144; // [sp+1Ch] [bp-10h]@192
   signed int v146; // [sp+20h] [bp-Ch]@60
   int v147; // [sp+20h] [bp-Ch]@72
   signed int v148; // [sp+20h] [bp-Ch]@158
   unsigned __int16 v150; // [sp+20h] [bp-Ch]@208
   signed int v152; // [sp+24h] [bp-8h]@208
 
-  //применение: фаерболт в храме луны
   object = &pObjectList->pObjects[pSpriteObjects[uLayingItemID].uObjectDescID];
   //v151 = PID_TYPE(a2);
   if ( PID_TYPE(a2) == OBJECT_Actor)
@@ -2554,959 +2482,753 @@ bool __fastcall _46BFFA_check_object_intercept(unsigned int uLayingItemID, signe
 
   //v6 = v2->uType;
   //v7 = v2->uType;
-  if ( pSpriteObjects[uLayingItemID].uType > 3060 )
+
+  switch (pSpriteObjects[uLayingItemID].uType)
   {
-    if ( pSpriteObjects[uLayingItemID].uType > 6090 )
-    {
-      if ( pSpriteObjects[uLayingItemID].uType > 8090 )
-      {
-        if ( pSpriteObjects[uLayingItemID].uType == 9010 )
-          goto LABEL_247;
-        if ( pSpriteObjects[uLayingItemID].uType != 9030 )
-        {
-          if ( pSpriteObjects[uLayingItemID].uType != 9040 )
-          {
-            if ( pSpriteObjects[uLayingItemID].uType != 9080 )
-              return 0;
-            v95 = 0;
-            pSpriteObjects[uLayingItemID].uType = pSpriteObjects[uLayingItemID].uType + 1;
-            for ( v146 = 0; v146 < (signed int)pObjectList->uNumObjects; ++v146 )
-            {
-              if ( pSpriteObjects[uLayingItemID].uType == pObjectList->pObjects[v146].uObjectID )
-                v95 = v146;
-            }
-            pSpriteObjects[uLayingItemID].uObjectDescID = v95;
-            if ( !v95 )
-              SpriteObject::OnInteraction(uLayingItemID);
-            v100 = pSpriteObjects[uLayingItemID].field_61;
-            pSpriteObjects[uLayingItemID].uSpriteFrameID = 0;
-            v102 = 8 * uLayingItemID;
-            LOBYTE(v102) = PID(OBJECT_Item, uLayingItemID);
-            pSpriteObjects[uLayingItemID].vVelocity.x = 0;
-            pSpriteObjects[uLayingItemID].vVelocity.y = 0;
-            pSpriteObjects[uLayingItemID].vVelocity.z = 0;
-            AttackerInfo.Add(v102, 512, pSpriteObjects[uLayingItemID].vPosition.x, pSpriteObjects[uLayingItemID].vPosition.y, pSpriteObjects[uLayingItemID].vPosition.z, v100, 0);
-            if (object->uFlags & OBJECT_DESC_TRIAL_PARTICLE)
-              trail_particle_generator.GenerateTrailParticles(pSpriteObjects[uLayingItemID].vPosition.x, pSpriteObjects[uLayingItemID].vPosition.y, pSpriteObjects[uLayingItemID].vPosition.z, object->uParticleTrailColor);
-            if ( !pSpriteObjects[uLayingItemID].uSoundID )
-              v47 = 0;
-            else
-              v47 = (signed __int16)pSpriteObjects[uLayingItemID].uSoundID + 4;
-            v125 = word_4EE088_sound_ids[pSpriteObjects[uLayingItemID].spell_id - 1] + 1;
-            pAudioPlayer->PlaySound((SoundID)v125, v102, 0, -1, 0, v47, 0, 0);
-            return 0;
-          }
-          sub_43A97E(uLayingItemID, a2);
-          ++pSpriteObjects[uLayingItemID].uType;
-          v95 = 0;
-          for ( v52 = 0; v52 < (signed int)pObjectList->uNumObjects; ++v52 )
-          {
-            if ( pSpriteObjects[uLayingItemID].uType == pObjectList->pObjects[v52].uObjectID )
-              v95 = v52;
-          }
-          pSpriteObjects[uLayingItemID].uObjectDescID = v95;
-          if ( !v95 )
-            SpriteObject::OnInteraction(uLayingItemID);
-          v96 = pSpriteObjects[uLayingItemID].uSoundID;
-          pSpriteObjects[uLayingItemID].vVelocity.z = 0;
-          pSpriteObjects[uLayingItemID].vVelocity.y = 0;
-          pSpriteObjects[uLayingItemID].vVelocity.x = 0;
-          pSpriteObjects[uLayingItemID].uSpriteFrameID = 0;
-          if ( !v96 )
-            v97 = 0;
-          else
-            v97 = (signed __int16)v96 + 4;
-          v124 = 8 * uLayingItemID;
-          LOBYTE(v124) = v124 | 2;
-          v125 = word_4EE088_sound_ids[pSpriteObjects[uLayingItemID].spell_id - 1] + 1;
-          pAudioPlayer->PlaySound((SoundID)v125, v124, 0, -1, 0, v97, 0, 0);
-          return 0;
-        }
-LABEL_172:
-        v143 = 17030;
-        switch ( pSpriteObjects[uLayingItemID].uType )
-        {
-          case 0x1798u:
-            v143 = 15040;
-            break;
-          case 0xFAAu:
-            v143 = 13010;
-            break;
-          case 0x2346u:
-            v143 = 18030;
-            break;
-        }
-        v138 = 1;
-        if ( PID_TYPE(a2) != OBJECT_Actor)
-        {
-          if ( pSpriteObjects[uLayingItemID].uType != 9030 || pSpriteObjects[uLayingItemID].spell_skill != 4 )
-          {
-            SpriteObject::OnInteraction(uLayingItemID);
-            return 0;
-          }
-          pSpriteObjects[uLayingItemID]._46BEF1_apply_spells_aoe();
-LABEL_233:
-          if ( !v138 )
-          {
-            ++pSpriteObjects[uLayingItemID].uType;
-            v112 = 0;
-            for ( v110 = 0; v110 < (signed int)pObjectList->uNumObjects; ++v110 )
-            {
-              if ( pSpriteObjects[uLayingItemID].uType == pObjectList->pObjects[v110].uObjectID )
-                v112 = v110;
-            }
-            pSpriteObjects[uLayingItemID].uObjectDescID = v112;
-            if ( !v112 )
-              SpriteObject::OnInteraction(uLayingItemID);
-            pSpriteObjects[uLayingItemID].vVelocity.z = 0;
-            pSpriteObjects[uLayingItemID].vVelocity.y = 0;
-            pSpriteObjects[uLayingItemID].vVelocity.x = 0;
-            pSpriteObjects[uLayingItemID].uSpriteFrameID = 0;
-            v113 = pSpriteObjects[uLayingItemID].uSoundID;
-            if ( v113 )
-              v114 = (signed __int16)v113 + 4;
-            else
-              v114 = 0;
-            v115 = 8 * uLayingItemID;
-            LOBYTE(v115) = PID(OBJECT_Item, uLayingItemID);
-            v125 = v143 + 1;
-            pAudioPlayer->PlaySound((SoundID)v125, v115, 0, -1, 0, v114, 0, 0);
-            return 0;
-          }
-          SpriteObject::OnInteraction(uLayingItemID);
-          return 0;
-        }
-        v106 = a2;
-        v150 = 0;
-        v139 = PID_ID(v106);
-        v137 = pSpriteObjects[uLayingItemID].spell_level;
-        v152 = pSpriteObjects[uLayingItemID].spell_skill;
-        v136 = pSpriteObjects[uLayingItemID].spell_id;
-        if ( pSpriteObjects[uLayingItemID].uType == 9030 )
-        {
-          v150 = 2;
-          if ( v152 == 2 )
-          {
-            v150 = 3;
-          }
-          else
-          {
-            if ( v152 >= 3 )
-              v150 = 4;
-          }
-          pActors[v139].uAttributes |= 0x80000;
-        }
-        if ( pSpriteObjects[uLayingItemID].uType == 6040 )
-        {
-          v135 = 7;
-        }
-        else
-        {
-          if ( pSpriteObjects[uLayingItemID].uType == 8030 )
-          {
-            v135 = 9;
-          }
-          else
-          {
-            if ( pSpriteObjects[uLayingItemID].uType != 9030 )
-            {
-              v107 = v136;
-LABEL_222:
-              if ( pSpriteObjects[uLayingItemID].uType != 9030 || v152 != 4 )
-              {
-                v108 = v139;
-                if ( pActors[v139].DoesDmgTypeDoDamage((DAMAGE_TYPE)v107) )
-                {
-                  v138 = 0;
-                  if ( pSpriteObjects[uLayingItemID].uType == 8030 )
-                  {
-                    pActors[v108].uAIState = Standing;
-                    pActors[v108].UpdateAnimation();
-                  }
-                  pActors[v108].pActorBuffs[v136].Apply(pParty->uTimePlayed + (signed int)(signed __int64)((double)(v137 << 7) * 0.033333335),
-                    v152, v150, 0, 0);
-                }
-              }
-              else
-              {
-                pSpriteObjects[uLayingItemID]._46BEF1_apply_spells_aoe();
-              }
-              pSpriteObjects[uLayingItemID].spell_level = 0;
-              pSpriteObjects[uLayingItemID].spell_skill = 0;
-              pSpriteObjects[uLayingItemID].spell_id = 0;
-              goto LABEL_233;
-            }
-            v135 = 10;
-          }
-        }
-        v107 = v135;
-        goto LABEL_222;
-      }
-      if ( pSpriteObjects[uLayingItemID].uType == 8090
-        || pSpriteObjects[uLayingItemID].uType == 7030
-        || pSpriteObjects[uLayingItemID].uType == 7090 || pSpriteObjects[uLayingItemID].uType == 8000 )
-      {
-        sub_43A97E(uLayingItemID, a2);
-        ++pSpriteObjects[uLayingItemID].uType;
-        v95 = 0;
-        for ( v52 = 0; v52 < (signed int)pObjectList->uNumObjects; ++v52 )
-        {
-          if ( pSpriteObjects[uLayingItemID].uType == pObjectList->pObjects[v52].uObjectID )
-            v95 = v52;
-        }
-        pSpriteObjects[uLayingItemID].uObjectDescID = v95;
-        if ( !v95 )
-          SpriteObject::OnInteraction(uLayingItemID);
-        v96 = pSpriteObjects[uLayingItemID].uSoundID;
-        pSpriteObjects[uLayingItemID].vVelocity.z = 0;
-        pSpriteObjects[uLayingItemID].vVelocity.y = 0;
-        pSpriteObjects[uLayingItemID].vVelocity.x = 0;
-        pSpriteObjects[uLayingItemID].uSpriteFrameID = 0;
-        if ( !v96 )
-          v97 = 0;
-        else
-          v97 = (signed __int16)v96 + 4;
-        v124 = 8 * uLayingItemID;
-        LOBYTE(v124) = v124 | 2;
-        v125 = word_4EE088_sound_ids[pSpriteObjects[uLayingItemID].spell_id - 1] + 1;
-        pAudioPlayer->PlaySound((SoundID)v125, v124, 0, -1, 0, v97, 0, 0);
-        return 0;
-      }
-      if ( pSpriteObjects[uLayingItemID].uType == 8010 )
-      {
-        if ( PID_TYPE(a2) == 3
-          && MonsterStats::BelongsToSupertype(pActors[PID_ID(a2)].pMonsterInfo.uID, MONSTER_SUPERTYPE_UNDEAD) )
-          sub_43A97E(uLayingItemID, a2);
-        ++pSpriteObjects[uLayingItemID].uType;
-        //v9 = 0;
-        v95 = 0;
-        for ( v52 = 0; v52 < (signed int)pObjectList->uNumObjects; ++v52 )
-        {
-          if ( pSpriteObjects[uLayingItemID].uType == pObjectList->pObjects[v52].uObjectID )
-            v95 = v52;
-        }
-        pSpriteObjects[uLayingItemID].uObjectDescID = v95;
-        if ( !v95 )
-          SpriteObject::OnInteraction(uLayingItemID);
-        v96 = pSpriteObjects[uLayingItemID].uSoundID;
-         pSpriteObjects[uLayingItemID].vVelocity.z = 0;
-        pSpriteObjects[uLayingItemID].vVelocity.y = 0;
-        pSpriteObjects[uLayingItemID].vVelocity.x = 0;
-        pSpriteObjects[uLayingItemID].uSpriteFrameID = 0;
-        if ( !v96 )
-          v97 = 0;
-        else
-          v97 = (signed __int16)v96 + 4;
-        v92 = uLayingItemID;
-        v124 = 8 * v92;
-        LOBYTE(v124) = v124 | 2;
-        v125 = word_4EE088_sound_ids[pSpriteObjects[uLayingItemID].spell_id - 1] + 1;
-        pAudioPlayer->PlaySound((SoundID)v125, v124, 0, -1, 0, v97, 0, 0);
-        return 0;
-      }
-      v79 = pSpriteObjects[uLayingItemID].uType == 8030;
-    }
-    else
-    {
-      if ( pSpriteObjects[uLayingItemID].uType == 6090 )
-      {
-        sub_43A97E(uLayingItemID, a2);
-        ++pSpriteObjects[uLayingItemID].uType;
-        v95 = 0;
-        for ( v52 = 0; v52 < (signed int)pObjectList->uNumObjects; ++v52 )
-        {
-          if ( pSpriteObjects[uLayingItemID].uType == pObjectList->pObjects[v52].uObjectID )
-            v95 = v52;
-        }
-        pSpriteObjects[uLayingItemID].uObjectDescID = v95;
-        if ( !v95 )
-          SpriteObject::OnInteraction(uLayingItemID);
-        v96 = pSpriteObjects[uLayingItemID].uSoundID;
-        pSpriteObjects[uLayingItemID].vVelocity.z = 0;
-        pSpriteObjects[uLayingItemID].vVelocity.y = 0;
-        pSpriteObjects[uLayingItemID].vVelocity.x = 0;
-        pSpriteObjects[uLayingItemID].uSpriteFrameID = 0;
-        if ( !v96 )
-          v97 = 0;
-        else
-          v97 = (signed __int16)v96 + 4;
-        v124 = 8 * uLayingItemID;
-        LOBYTE(v124) = v124 | 2;
-        v125 = word_4EE088_sound_ids[pSpriteObjects[uLayingItemID].spell_id - 1] + 1;
-        pAudioPlayer->PlaySound((SoundID)v125, v124, 0, -1, 0, v97, 0, 0);
-        return 0;
-      }
-      if ( pSpriteObjects[uLayingItemID].uType <= 4070 )
-      {
-        if ( pSpriteObjects[uLayingItemID].uType != 4070 )
-        {
-          v48 = pSpriteObjects[uLayingItemID].uType - 3090;
-          if ( v48 )
-          {
-            v49 = v48 - 2;
-            if ( v49 )
-            {
-              v50 = v49 - 908;
-              if ( v49 == 908 )
-              {
-                sub_43A97E(uLayingItemID, a2);
-                ++pSpriteObjects[uLayingItemID].uType;
-                v95 = 0;
-                for ( v52 = 0; v52 < (signed int)pObjectList->uNumObjects; ++v52 )
-                {
-                  if ( pSpriteObjects[uLayingItemID].uType == pObjectList->pObjects[v52].uObjectID )
-                    v95 = v52;
-                }
-                pSpriteObjects[uLayingItemID].uObjectDescID = v95;
-                if ( !v95 )
-                  SpriteObject::OnInteraction(uLayingItemID);
-                v96 = pSpriteObjects[uLayingItemID].uSoundID;
-                pSpriteObjects[uLayingItemID].vVelocity.z = 0;
-                pSpriteObjects[uLayingItemID].vVelocity.y = 0;
-                pSpriteObjects[uLayingItemID].vVelocity.x = 0;
-                pSpriteObjects[uLayingItemID].uSpriteFrameID = 0;
-                if ( !v96 )
-                  v97 = 0;
-                else
-                  v97 = (signed __int16)v96 + 4;
-                v124 = 8 * uLayingItemID;
-                LOBYTE(v124) = v124 | 2;
-                v125 = word_4EE088_sound_ids[pSpriteObjects[uLayingItemID].spell_id - 1] + 1;
-                pAudioPlayer->PlaySound((SoundID)v125, v124, 0, -1, 0, v97, 0, 0);
-                return 0;
-              }
-              v45 = v50 - 30;
-              v44 = v45 == 0;
-              goto LABEL_91;
-            }
-            //v9 = 0;
-            pSpriteObjects[uLayingItemID].uType = pSpriteObjects[uLayingItemID].uType - 1;
-            v58 = 0;
-            for ( v56 = 0; v56 < (signed int)pObjectList->uNumObjects; ++v56 )
-            {
-              if ( pSpriteObjects[uLayingItemID].uType == pObjectList->pObjects[v56].uObjectID )
-                v58 = v56;
-            }
-            pSpriteObjects[uLayingItemID].uObjectDescID = v58;
-            if ( !v58 )
-              SpriteObject::OnInteraction(uLayingItemID);
-            pSpriteObjects[uLayingItemID].vVelocity.z = 0;
-            pSpriteObjects[uLayingItemID].vVelocity.y = 0;
-            pSpriteObjects[uLayingItemID].vVelocity.x = 0;
-            pSpriteObjects[uLayingItemID].uSpriteFrameID = 0;
-            sub_43A97E(uLayingItemID, a2);
-            if ( !pSpriteObjects[uLayingItemID].uSoundID )
-              v16 = 0;
-            else
-              v16 = (signed __int16)pSpriteObjects[uLayingItemID].uSoundID + 4;
-            v124 = 8 * uLayingItemID;
-            LOBYTE(v124) = v124 | 2;
-            v125 = word_4EE088_sound_ids[pSpriteObjects[uLayingItemID].spell_id - 1] + 1;
-            pAudioPlayer->PlaySound((SoundID)v125, v124, 0, -1, 0, v16, 0, 0);
-            return 0;
-          }
-          //v9 = 0;
-          pSpriteObjects[uLayingItemID].uType = pSpriteObjects[uLayingItemID].uType + 2;
-          v63 = 0;
-          for ( v61 = 0; v61 < (signed int)pObjectList->uNumObjects; ++v61 )
-          {
-            if ( v59 == pObjectList->pObjects[v61].uObjectID )
-              v63 = v61;
-          }
-          pSpriteObjects[uLayingItemID].uObjectDescID = v63;
-          if ( !v63 )
-            SpriteObject::OnInteraction(uLayingItemID);
-          v64 = pSpriteObjects[uLayingItemID].uFacing - stru_5C6E00->uIntegerDoublePi;
-          v44 = pSpriteObjects[uLayingItemID].spell_skill == 4;
-          pSpriteObjects[uLayingItemID].vVelocity.z = 0;
-          pSpriteObjects[uLayingItemID].vVelocity.y = 0;
-          pSpriteObjects[uLayingItemID].vVelocity.x = 0;
-          v65 = 7;
-          if ( v44 )
-            v65 = 9;
-          if ( v65 > 0 )
-          {
-            v141 = v65;
-            do
-            {
-              v64 += (signed int)stru_5C6E00->uIntegerHalfPi / 2;
-              pSpriteObjects[uLayingItemID].Create(v64, 0, 1000, 0);
-              --v141;
-            }
-            while ( v141 );
-          }
-          SpriteObject::OnInteraction(uLayingItemID);
-          if ( !pSpriteObjects[uLayingItemID].uSoundID )
-            v16 = 0;
-          else
-            v16 = (signed __int16)pSpriteObjects[uLayingItemID].uSoundID + 4;
-          v124 = 8 * uLayingItemID;
-          LOBYTE(v124) = v124 | 2;
-          v125 = word_4EE088_sound_ids[pSpriteObjects[uLayingItemID].spell_id - 1] + 1;
-          pAudioPlayer->PlaySound((SoundID)v125, v124, 0, -1, 0, v16, 0, 0);
-          return 0;
-        }
-        //v66 = 0;
-        if ( PID_TYPE(a2) == 6 || PID_TYPE(a2) == 5 ||  !PID_TYPE(a2) )
-          return 1;
-        pSpriteObjects[uLayingItemID].uType = pSpriteObjects[uLayingItemID].uType + 1;
-        v71 = 0;
-        for ( v69 = 0; v69 < (signed int)pObjectList->uNumObjects; ++v69 )
-        {
-          if ( pSpriteObjects[uLayingItemID].uType == pObjectList->pObjects[v69].uObjectID )
-            v71 = v69;
-        }
-        pSpriteObjects[uLayingItemID].uObjectDescID = v71;
-        if ( !v71 )
-          SpriteObject::OnInteraction(uLayingItemID);
-        v134 = 0;
-        v72 = uLayingItemID;
-        v132 = 0;
-        pSpriteObjects[uLayingItemID].vVelocity.z = 0;
-        pSpriteObjects[uLayingItemID].vVelocity.y = 0;
-        pSpriteObjects[uLayingItemID].vVelocity.x = 0;
-        pSpriteObjects[uLayingItemID].uSpriteFrameID = 0;
-        AttackerInfo.Add(PID(OBJECT_Item,v72), 512, pSpriteObjects[uLayingItemID].vPosition.x, pSpriteObjects[uLayingItemID].vPosition.y, pSpriteObjects[uLayingItemID].vPosition.z, v132, v134);
-        if ( !pSpriteObjects[uLayingItemID].uSoundID )
-          v78 = 0;
-        else
-          v78 = (signed __int16)pSpriteObjects[uLayingItemID].uSoundID + 4;
-        v125 = word_4EE088_sound_ids[pSpriteObjects[uLayingItemID].spell_id - 1] + 1;
-        pAudioPlayer->PlaySound((SoundID)v125, pSpriteObjects[uLayingItemID].vPosition.x, 0, -1, 0, v78, 0, 0);
-        return 0;
-      }
-      if ( pSpriteObjects[uLayingItemID].uType == 4090 )
-      {
-        //v9 = 0;
-        pSpriteObjects[uLayingItemID].uType = pSpriteObjects[uLayingItemID].uType + 2;
-        v88 = 0;
-        for ( v86 = 0; v86 < (signed int)pObjectList->uNumObjects; ++v86 )
-        {
-          if ( pSpriteObjects[uLayingItemID].uType == pObjectList->pObjects[v86].uObjectID )
-            v88 = v86;
-        }
-        pSpriteObjects[uLayingItemID].uObjectDescID = v88;
-        if ( !v88 )
-          SpriteObject::OnInteraction(uLayingItemID);
-        v89 = pSpriteObjects[uLayingItemID].uFacing - stru_5C6E00->uIntegerDoublePi;
-        pSpriteObjects[uLayingItemID].vVelocity.z = 0;
-        pSpriteObjects[uLayingItemID].vVelocity.y = 0;
-        pSpriteObjects[uLayingItemID].vVelocity.x = 0;
-        v142 = v89;
-        v148 = 7;
-        do
-        {
-          pRnd->SetRange(-128, 128);
-          v90 = pRnd->GetInRange();
-          pRnd->SetRange(5, 500);
-          v91 = pRnd->GetInRange();
-          v142 += (signed int)stru_5C6E00->uIntegerHalfPi >> 1;
-          pSpriteObjects[uLayingItemID].Create(v90 + v142, 0, v91, 0);
-          --v148;
-        }
-        while ( v148 );
-        SpriteObject::OnInteraction(uLayingItemID);
-        if ( !pSpriteObjects[uLayingItemID].uSoundID )
-          v16 = 0;
-        else
-          v16 = (signed __int16)pSpriteObjects[uLayingItemID].uSoundID + 4;
-        v124 = 8 * uLayingItemID;
-        LOBYTE(v124) = v124 | 2;
-        v125 = word_4EE088_sound_ids[pSpriteObjects[uLayingItemID].spell_id-1] + 1;
-        pAudioPlayer->PlaySound((SoundID)v125, v124, 0, -1, 0, v16, 0, 0);
-        return 0;
-      }
-      if ( pSpriteObjects[uLayingItemID].uType == 4092 )
-      {
-        //v66 = 0;
-        pSpriteObjects[uLayingItemID].uType = 4091;
-        v83 = 0;
-        for ( v81 = 0; v81 < (signed int)pObjectList->uNumObjects; ++v81 )
-        {
-          if ( pSpriteObjects[uLayingItemID].uType == pObjectList->pObjects[v81].uObjectID )
-            v83 = v81;
-        }
-        pSpriteObjects[uLayingItemID].uObjectDescID = v83;
-        if ( !v83 )
-          SpriteObject::OnInteraction(uLayingItemID);
-        v134 = 0;
-        //v72 = uLayingItemID;
-        v132 = pSpriteObjects[uLayingItemID].field_61;
-        pSpriteObjects[uLayingItemID].vVelocity.z = 0;
-        pSpriteObjects[uLayingItemID].vVelocity.y = 0;
-        pSpriteObjects[uLayingItemID].vVelocity.x = 0;
-        pSpriteObjects[uLayingItemID].uSpriteFrameID = 0;
-        AttackerInfo.Add(PID(OBJECT_Item, uLayingItemID), 512, pSpriteObjects[uLayingItemID].vPosition.x, pSpriteObjects[uLayingItemID].vPosition.y, pSpriteObjects[uLayingItemID].vPosition.z, v132, v134);
-        if ( !pSpriteObjects[uLayingItemID].uSoundID )
-          v78 = 0;
-        else
-          v78 = (signed __int16)pSpriteObjects[uLayingItemID].uSoundID + 4;
-        v125 = word_4EE088_sound_ids[pSpriteObjects[uLayingItemID].spell_id - 1] + 1;
-        pAudioPlayer->PlaySound((SoundID)v125, pSpriteObjects[uLayingItemID].vPosition.x, 0, -1, 0, v78, 0, 0);
-        return 0;
-      }
-      if ( pSpriteObjects[uLayingItemID].uType == 4100 || pSpriteObjects[uLayingItemID].uType == 6010 )
-      {
-        sub_43A97E(uLayingItemID, a2);
-        ++pSpriteObjects[uLayingItemID].uType;
-        v95 = 0;
-        for ( v52 = 0; v52 < (signed int)pObjectList->uNumObjects; ++v52 )
-        {
-          if ( pSpriteObjects[uLayingItemID].uType == pObjectList->pObjects[v52].uObjectID )
-            v95 = v52;
-        }
-        pSpriteObjects[uLayingItemID].uObjectDescID = v95;
-        if ( !v95 )
-          SpriteObject::OnInteraction(uLayingItemID);
-        v96 = pSpriteObjects[uLayingItemID].uSoundID;
-        pSpriteObjects[uLayingItemID].vVelocity.z = 0;
-        pSpriteObjects[uLayingItemID].vVelocity.y = 0;
-        pSpriteObjects[uLayingItemID].vVelocity.x = 0;
-        pSpriteObjects[uLayingItemID].uSpriteFrameID = 0;
-        if ( !v96 )
-          v97 = 0;
-        else
-          v97 = (signed __int16)v96 + 4;
-        v124 = 8 * uLayingItemID;
-        LOBYTE(v124) = v124 | 2;
-        v125 = word_4EE088_sound_ids[pSpriteObjects[uLayingItemID].spell_id - 1] + 1;
-        pAudioPlayer->PlaySound((SoundID)v125, v124, 0, -1, 0, v97, 0, 0);
-        return 0;
-      }
-      v79 = pSpriteObjects[uLayingItemID].uType == 6040;
-    }
-    if ( !v79 )
-      return 0;
-    goto LABEL_172;
+
+  case 1060:
+  case 2030:
+  case 9010:
+	{
+	  //v9 = 0;
+	  if (PID_TYPE(a2) == 6 || PID_TYPE(a2) == 5 || !PID_TYPE(a2))
+		  return 1;
+	  if (PID_TYPE(a2) != 2)
+	  {
+		  sub_43A97E(uLayingItemID, a2);
+		  ++pSpriteObjects[uLayingItemID].uType;
+		  v95 = 0;
+		  for (v52 = 0; v52 < (signed int)pObjectList->uNumObjects; ++v52)
+		  {
+			  if (pSpriteObjects[uLayingItemID].uType == pObjectList->pObjects[v52].uObjectID)
+				  v95 = v52;
+		  }
+		  pSpriteObjects[uLayingItemID].uObjectDescID = v95;
+		  if (!v95)
+			  SpriteObject::OnInteraction(uLayingItemID);
+		  pSpriteObjects[uLayingItemID].vVelocity.z = 0;
+		  pSpriteObjects[uLayingItemID].vVelocity.y = 0;
+		  pSpriteObjects[uLayingItemID].vVelocity.x = 0;
+		  pSpriteObjects[uLayingItemID].uSpriteFrameID = 0;
+		  if (!pSpriteObjects[uLayingItemID].uSoundID)
+			  v97 = 0;
+		  else
+			  v97 = (signed __int16)pSpriteObjects[uLayingItemID].uSoundID + 4;
+		  v124 = 8 * uLayingItemID;
+		  LOBYTE(v124) = v124 | 2;
+		  v125 = word_4EE088_sound_ids[pSpriteObjects[uLayingItemID].spell_id - 1] + 1;
+		  pAudioPlayer->PlaySound((SoundID)v125, v124, 0, -1, 0, v97, 0, 0);
+		  return 0;
+	  }
+	  pSpriteObjects[uLayingItemID].uType = pSpriteObjects[uLayingItemID].uType + 1;
+	  v121 = 0;
+	  for (v119 = 0; v119 < (signed int)pObjectList->uNumObjects; ++v119)
+	  {
+		  if (pSpriteObjects[uLayingItemID].uType == pObjectList->pObjects[v119].uObjectID)
+			  v121 = v119;
+	  }
+	  pSpriteObjects[uLayingItemID].uObjectDescID = v121;
+	  if (!v121)
+		  SpriteObject::OnInteraction(uLayingItemID);
+	  pSpriteObjects[uLayingItemID].vVelocity.z = 0;
+	  pSpriteObjects[uLayingItemID].vVelocity.y = 0;
+	  pSpriteObjects[uLayingItemID].vVelocity.x = 0;
+	  pSpriteObjects[uLayingItemID].uSpriteFrameID = 0;
+	  v13 = 8 * uLayingItemID;
+	  LOBYTE(v13) = PID(OBJECT_Item, uLayingItemID);
+	  pAudioPlayer->PlaySound(SOUND_8, v13, 0, -1, 0, 0, 0, 0);
+	  return 0;
   }
-  if ( pSpriteObjects[uLayingItemID].uType == 3060 )
+
+  
+  case 500:
+  case 505:
+  case 510:
+  case 515:
+  case 520:
+  case 525:
+  case 530:
+  case 535:
+  case 540:
   {
-    sub_43A97E(uLayingItemID, a2);
-    ++pSpriteObjects[uLayingItemID].uType;
-    v95 = 0;
-    for ( v52 = 0; v52 < (signed int)pObjectList->uNumObjects; ++v52 )
-    {
-      if ( pSpriteObjects[uLayingItemID].uType == pObjectList->pObjects[v52].uObjectID )
-        v95 = v52;
-    }
-    pSpriteObjects[uLayingItemID].uObjectDescID = v95;
-    if ( !v95 )
-      SpriteObject::OnInteraction(uLayingItemID);
-    v96 = pSpriteObjects[uLayingItemID].uSoundID;
-    pSpriteObjects[uLayingItemID].vVelocity.z = 0;
-    pSpriteObjects[uLayingItemID].vVelocity.y = 0;
-    pSpriteObjects[uLayingItemID].vVelocity.x = 0;
-    pSpriteObjects[uLayingItemID].uSpriteFrameID = 0;
-    if ( !v96 )
-      v97 = 0;
-    else
-      v97 = (signed __int16)v96 + 4;
-    v124 = 8 * uLayingItemID;
-    LOBYTE(v124) = v124 | 2;
-    v125 = word_4EE088_sound_ids[pSpriteObjects[uLayingItemID].spell_id - 1] + 1;
-    pAudioPlayer->PlaySound((SoundID)v125, v124, 0, -1, 0, v97, 0, 0);
-    return 0;
+	  sub_43A97E(uLayingItemID, a2);
+	  ++pSpriteObjects[uLayingItemID].uType;
+	  v12 = 0;
+	  for (v10 = 0; v10 < (signed int)pObjectList->uNumObjects; ++v10)
+	  {
+		  if (pSpriteObjects[uLayingItemID].uType == pObjectList->pObjects[v10].uObjectID)
+			  v12 = v10;
+	  }
+	  pSpriteObjects[uLayingItemID].uObjectDescID = v12;
+	  if (!v12)
+		  SpriteObject::OnInteraction(uLayingItemID);
+	  pSpriteObjects[uLayingItemID].vVelocity.z = 0;
+	  pSpriteObjects[uLayingItemID].vVelocity.y = 0;
+	  pSpriteObjects[uLayingItemID].vVelocity.x = 0;
+	  pSpriteObjects[uLayingItemID].uSpriteFrameID = 0;
+	  if (pSpriteObjects[uLayingItemID].uType == 555)
+	  {
+		  v13 = 8 * uLayingItemID;
+		  LOBYTE(v13) = PID(OBJECT_Item, uLayingItemID);
+		  pAudioPlayer->PlaySound(SOUND_8, v13, 0, -1, 0, 0, 0, 0);
+	  }
+	  return 0;
   }
-  if ( pSpriteObjects[uLayingItemID].uType <= 555 )
+  
+  case 545:
+  case 550:
   {
-    if ( pSpriteObjects[uLayingItemID].uType == 555 )
-    {
-      sub_43A97E(uLayingItemID, a2);
-      ++pSpriteObjects[uLayingItemID].uType;
-      v18 = 0;
-      v22 = 0;
-      v25 = (char *)&pObjectList->pObjects->uObjectID;
-      for ( v24 = 0; v24 < (signed int)pObjectList->uNumObjects; ++v24 )
-      {
-        if ( pSpriteObjects[uLayingItemID].uType == pObjectList->pObjects[v24].uObjectID )
-          v22 = v24;
-      }
-      pSpriteObjects[uLayingItemID].uObjectDescID = v22;
-      if ( v22 == v18 )
-        SpriteObject::OnInteraction(uLayingItemID);
-      pSpriteObjects[uLayingItemID].vVelocity.z = v18;
-      pSpriteObjects[uLayingItemID].vVelocity.y = v18;
-      pSpriteObjects[uLayingItemID].vVelocity.x = v18;
-      pSpriteObjects[uLayingItemID].uSpriteFrameID = v18;
-    }
-    else
-    {
-      switch ( pSpriteObjects[uLayingItemID].uType )
-      {
-        case 500:
-        case 505:
-        case 510:
-        case 515:
-        case 520:
-        case 525:
-        case 530:
-        case 535:
-        case 540:
-          sub_43A97E(uLayingItemID, a2);
-          ++pSpriteObjects[uLayingItemID].uType;
-          v12 = 0;
-          for ( v10 = 0; v10 < (signed int)pObjectList->uNumObjects; ++v10 )
-          {
-            if ( pSpriteObjects[uLayingItemID].uType == pObjectList->pObjects[v10].uObjectID )
-              v12 = v10;
-          }
-          pSpriteObjects[uLayingItemID].uObjectDescID = v12;
-          if ( !v12 )
-            SpriteObject::OnInteraction(uLayingItemID);
-          v44 = pSpriteObjects[uLayingItemID].uType == 555;
-          pSpriteObjects[uLayingItemID].vVelocity.z = 0;
-          pSpriteObjects[uLayingItemID].vVelocity.y = 0;
-          pSpriteObjects[uLayingItemID].vVelocity.x = 0;
-          pSpriteObjects[uLayingItemID].uSpriteFrameID = 0;
-          if ( !v44 )
-          {
-            v13 = 8 * uLayingItemID;
-            LOBYTE(v13) = PID(OBJECT_Item, uLayingItemID);
-            pAudioPlayer->PlaySound(SOUND_8, v13, 0, -1, 0, 0, 0, 0);
-          }
-          return 0;
-        case 545:
-        case 550:
-          if ( pSpriteObjects[uLayingItemID].stru_24.uItemID != 405 && pSpriteObjects[uLayingItemID].stru_24.uSpecEnchantmentType != 3 )
-          {
-            pSpriteObjects[uLayingItemID].vVelocity.z = 0;
-            pSpriteObjects[uLayingItemID].vVelocity.y = 0;
-            pSpriteObjects[uLayingItemID].vVelocity.x = 0;
-            pSpriteObjects[uLayingItemID].uSpriteFrameID = 0;
-            sub_43A97E(uLayingItemID, a2);
-            SpriteObject::OnInteraction(uLayingItemID);
-            if ( pSpriteObjects[uLayingItemID].uSoundID == 0 )
-              v16 = 0;
-            else
-              v16 = (signed __int16)pSpriteObjects[uLayingItemID].uSoundID + 4;
-            v124 = 8 * uLayingItemID;
-            LOBYTE(v124) = v124 | 2;
-            v125 = word_4EE088_sound_ids[pSpriteObjects[uLayingItemID].spell_id] + 1;
-            pAudioPlayer->PlaySound((SoundID)v125, v124, 0, -1, 0, v16, 0, 0);
-            return 0;
-          }
-          v18 = 0;
-          pSpriteObjects[uLayingItemID].uType = 600;
-          v22 = 0;
-          for ( v19 = 0; v19 < (signed int)pObjectList->uNumObjects; ++v19 )
-          {
-            if ( pSpriteObjects[uLayingItemID].uType == pObjectList->pObjects[v19].uObjectID )
-              v22 = v19;
-          }
-          pSpriteObjects[uLayingItemID].uObjectDescID = v22;
-          if ( !v22 )
-            SpriteObject::OnInteraction(uLayingItemID);
-          pSpriteObjects[uLayingItemID].vVelocity.z = v18;
-          pSpriteObjects[uLayingItemID].vVelocity.y = v18;
-          pSpriteObjects[uLayingItemID].vVelocity.x = v18;
-          pSpriteObjects[uLayingItemID].uSpriteFrameID = v18;
-        default:
-          return 0;
-      }
-      v12 = 0;
-      for ( v10; v10 < (signed int)v8; ++v10 )
-      {
-        v11 += 56;
-        if ( pSpriteObjects[uLayingItemID].uType != *(short *)v11 )
-          v12 = v10;
-      }
-      pSpriteObjects[uLayingItemID].uObjectDescID = v12;
-      if ( !v12 )
-        SpriteObject::OnInteraction(uLayingItemID);
-      v44 = pSpriteObjects[uLayingItemID].uType == 555;
-      pSpriteObjects[uLayingItemID].vVelocity.z = 0;
-      pSpriteObjects[uLayingItemID].vVelocity.y = 0;
-      pSpriteObjects[uLayingItemID].vVelocity.x = 0;
-      pSpriteObjects[uLayingItemID].uSpriteFrameID = 0;
-      if ( !v44 )
-      {
-        v13 = 8 * uLayingItemID;
-        LOBYTE(v13) = PID(OBJECT_Item, uLayingItemID);
-        pAudioPlayer->PlaySound(SOUND_8, v13, 0, -1, 0, 0, 0, 0);
-        return 0;
-      }
-    }
-    return 0;
+	  if (pSpriteObjects[uLayingItemID].stru_24.uItemID != 405 && pSpriteObjects[uLayingItemID].stru_24.uSpecEnchantmentType != 3)
+	  {
+		  pSpriteObjects[uLayingItemID].vVelocity.z = 0;
+		  pSpriteObjects[uLayingItemID].vVelocity.y = 0;
+		  pSpriteObjects[uLayingItemID].vVelocity.x = 0;
+		  pSpriteObjects[uLayingItemID].uSpriteFrameID = 0;
+		  sub_43A97E(uLayingItemID, a2);
+		  SpriteObject::OnInteraction(uLayingItemID);
+		  if (pSpriteObjects[uLayingItemID].uSoundID == 0)
+			  v16 = 0;
+		  else
+			  v16 = (signed __int16)pSpriteObjects[uLayingItemID].uSoundID + 4;
+		  v124 = 8 * uLayingItemID;
+		  LOBYTE(v124) = v124 | 2;
+		  v125 = word_4EE088_sound_ids[pSpriteObjects[uLayingItemID].spell_id] + 1;
+		  pAudioPlayer->PlaySound((SoundID)v125, v124, 0, -1, 0, v16, 0, 0);
+		  return 0;
+	  }
+	  v18 = 0;
+	  pSpriteObjects[uLayingItemID].uType = 600;
+	  v22 = 0;
+	  for (v19 = 0; v19 < (signed int)pObjectList->uNumObjects; ++v19)
+	  {
+		  if (pSpriteObjects[uLayingItemID].uType == pObjectList->pObjects[v19].uObjectID)
+			  v22 = v19;
+	  }
+	  pSpriteObjects[uLayingItemID].uObjectDescID = v22;
+	  if (!v22)
+		  SpriteObject::OnInteraction(uLayingItemID);
+	  pSpriteObjects[uLayingItemID].vVelocity.z = v18;
+	  pSpriteObjects[uLayingItemID].vVelocity.y = v18;
+	  pSpriteObjects[uLayingItemID].vVelocity.x = v18;
+	  pSpriteObjects[uLayingItemID].uSpriteFrameID = v18;
+	  v12 = 0;
+	  for (v10; v10 < (signed int)v8; ++v10)
+	  {
+		  v11 += 56;
+		  if (pSpriteObjects[uLayingItemID].uType != *(short *)v11)
+			  v12 = v10;
+	  }
+	  pSpriteObjects[uLayingItemID].uObjectDescID = v12;
+	  if (!v12)
+		  SpriteObject::OnInteraction(uLayingItemID);
+	  v44 = pSpriteObjects[uLayingItemID].uType == 555;
+	  pSpriteObjects[uLayingItemID].vVelocity.z = 0;
+	  pSpriteObjects[uLayingItemID].vVelocity.y = 0;
+	  pSpriteObjects[uLayingItemID].vVelocity.x = 0;
+	  pSpriteObjects[uLayingItemID].uSpriteFrameID = 0;
+	  if (!v44)
+	  {
+		  v13 = 8 * uLayingItemID;
+		  LOBYTE(v13) = PID(OBJECT_Item, uLayingItemID);
+		  pAudioPlayer->PlaySound(SOUND_8, v13, 0, -1, 0, 0, 0, 0);
+		  return 0;
+	  }
+	  return 0;
   }
-  if ( pSpriteObjects[uLayingItemID].uType > 1100 )
+  
+  case 600:
   {
-    v41 = pSpriteObjects[uLayingItemID].uType - 2030;
-    if ( !v41 )
-      goto LABEL_247;
-    v42 = v41 - 30;
-    if ( v42 )
-    {
-      v43 = v42 - 40;
-      if ( v42 == 40 )
-      {
-        if ( PID_TYPE(a2) != 3 )
-        {
-          //v32 = 0;
-          pSpriteObjects[uLayingItemID].uType = pSpriteObjects[uLayingItemID].uType + 1;
-          v46 = 0;
-          for ( v146 = 0; v146 < (signed int)pObjectList->uNumObjects; ++v146 )
-          {
-            if ( pSpriteObjects[uLayingItemID].uType == pObjectList->pObjects[v146].uObjectID )
-              v46 = v146;
-          }
-          pSpriteObjects[uLayingItemID].uObjectDescID = v46;
-          if ( !v46 )
-            SpriteObject::OnInteraction(uLayingItemID);
-          v100 = pSpriteObjects[uLayingItemID].field_61;
-          pSpriteObjects[uLayingItemID].uSpriteFrameID = 0;
-          v102 = 8 * uLayingItemID;
-          LOBYTE(v102) = PID(OBJECT_Item, uLayingItemID);
-          pSpriteObjects[uLayingItemID].vVelocity.x = 0;
-          pSpriteObjects[uLayingItemID].vVelocity.y = 0;
-          pSpriteObjects[uLayingItemID].vVelocity.z = 0;
-          AttackerInfo.Add(v102, 512, pSpriteObjects[uLayingItemID].vPosition.x, pSpriteObjects[uLayingItemID].vPosition.y, pSpriteObjects[uLayingItemID].vPosition.z, v100, 0);
-          if (object->uFlags & OBJECT_DESC_TRIAL_PARTICLE)
-            trail_particle_generator.GenerateTrailParticles(pSpriteObjects[uLayingItemID].vPosition.x, pSpriteObjects[uLayingItemID].vPosition.y, pSpriteObjects[uLayingItemID].vPosition.z, object->uParticleTrailColor);
-          if ( !pSpriteObjects[uLayingItemID].uSoundID )
-            v47 = 0;
-          else
-            v47 = (signed __int16)pSpriteObjects[uLayingItemID].uSoundID + 4;
-          v125 = word_4EE088_sound_ids[pSpriteObjects[uLayingItemID].spell_id - 1] + 1;
-          pAudioPlayer->PlaySound((SoundID)v125, v102, 0, -1, 0, v47, 0, 0);
-          return 0;
-        }
-        return 1;
-      }
-      v45 = v43 - 910;
-      v44 = v45 == 0;
-LABEL_91:
-      if ( !v44 && v45 != 20 )
-        return 0;
-    }
-    sub_43A97E(uLayingItemID, a2);
-    ++pSpriteObjects[uLayingItemID].uType;
-    v95 = 0;
-    for ( v52 = 0; v52 < (signed int)pObjectList->uNumObjects; ++v52 )
-    {
-      if ( pSpriteObjects[uLayingItemID].uType == pObjectList->pObjects[v52].uObjectID )
-        v95 = v52;
-    }
-    pSpriteObjects[uLayingItemID].uObjectDescID = v95;
-    if ( !v95 )
-      SpriteObject::OnInteraction(uLayingItemID);
-    v96 = pSpriteObjects[uLayingItemID].uSoundID;
-    pSpriteObjects[uLayingItemID].vVelocity.z = 0;
-    pSpriteObjects[uLayingItemID].vVelocity.y = 0;
-    pSpriteObjects[uLayingItemID].vVelocity.x = 0;
-    pSpriteObjects[uLayingItemID].uSpriteFrameID = 0;
-    if ( !v96 )
-      v97 = 0;
-    else
-      v97 = (signed __int16)v96 + 4;
-    v124 = 8 * uLayingItemID;
-    LOBYTE(v124) = v124 | 2;
-    v125 = word_4EE088_sound_ids[pSpriteObjects[uLayingItemID].spell_id - 1] + 1;
-    pAudioPlayer->PlaySound((SoundID)v125, v124, 0, -1, 0, v97, 0, 0);
-    return 0;
+			  pSpriteObjects[uLayingItemID].uType = 601;
+			  v36 = 0;
+			  for (v34 = 0; v34 < (signed int)pObjectList->uNumObjects; ++v34)
+			  {
+				  if (pSpriteObjects[uLayingItemID].uType == pObjectList->pObjects[v34].uObjectID)
+					  v36 = v34;
+			  }
+			  pSpriteObjects[uLayingItemID].uObjectDescID = v36;
+			  if (!v36)
+				  SpriteObject::OnInteraction(uLayingItemID);
+			  v37 = pSpriteObjects[uLayingItemID].vPosition.z;
+			  pSpriteObjects[uLayingItemID].vVelocity.z = 0;
+			  v38 = 8 * uLayingItemID;
+			  v39 = pSpriteObjects[uLayingItemID].vPosition.y;
+			  LOBYTE(v38) = PID(OBJECT_Item, uLayingItemID);
+			  pSpriteObjects[uLayingItemID].vVelocity.y = 0;
+			  pSpriteObjects[uLayingItemID].vVelocity.x = 0;
+			  v40 = pSpriteObjects[uLayingItemID].vPosition.x;
+			  pSpriteObjects[uLayingItemID].uSpriteFrameID = 0;
+			  v147 = v38;
+			  AttackerInfo.Add(v38, 512, v40, v39, v37, 0, 0);
+			  if (object->uFlags & OBJECT_DESC_TRIAL_PARTICLE)
+				  trail_particle_generator.GenerateTrailParticles(pSpriteObjects[uLayingItemID].vPosition.x, pSpriteObjects[uLayingItemID].vPosition.y, pSpriteObjects[uLayingItemID].vPosition.z, object->uParticleTrailColor);
+			  pAudioPlayer->PlaySound(SOUND_8, v147, 0, -1, 0, 0, 0, 0);
+			  return 0;
   }
-  if ( pSpriteObjects[uLayingItemID].uType == 1100 )
+  
+  case 1010:
+  case 1100:
+  case 2060:
+  case 3010:
+  case 3030:
+  case 3060:
+  case 4000:
+  case 4030:
+  case 4050:
+  case 4100:
+  case 6010:
+  case 6090:
   {
-    sub_43A97E(uLayingItemID, a2);
-    ++pSpriteObjects[uLayingItemID].uType;
-    v95 = 0;
-    for ( v52 = 0; v52 < (signed int)pObjectList->uNumObjects; ++v52 )
-    {
-      if ( pSpriteObjects[uLayingItemID].uType == pObjectList->pObjects[v52].uObjectID )
-        v95 = v52;
-    }
-    pSpriteObjects[uLayingItemID].uObjectDescID = v95;
-    if ( !v95 )
-      SpriteObject::OnInteraction(uLayingItemID);
-    v96 = pSpriteObjects[uLayingItemID].uSoundID;
-    pSpriteObjects[uLayingItemID].vVelocity.z = 0;
-    pSpriteObjects[uLayingItemID].vVelocity.y = 0;
-    pSpriteObjects[uLayingItemID].vVelocity.x = 0;
-    pSpriteObjects[uLayingItemID].uSpriteFrameID = 0;
-    if ( !v96 )
-      v97 = 0;
-    else
-      v97 = (signed __int16)v96 + 4;
-    v92 = uLayingItemID;
-    v124 = 8 * v92;
-    LOBYTE(v124) = v124 | 2;
-    v125 = word_4EE088_sound_ids[pSpriteObjects[uLayingItemID].spell_id - 1] + 1;
-    pAudioPlayer->PlaySound((SoundID)v125, v124, 0, -1, 0, v97, 0, 0);
-    return 0;
+	sub_43A97E(uLayingItemID, a2);
+	++pSpriteObjects[uLayingItemID].uType;
+	v95 = 0;
+	for (v52 = 0; v52 < (signed int)pObjectList->uNumObjects; ++v52)
+	{
+		if (pSpriteObjects[uLayingItemID].uType == pObjectList->pObjects[v52].uObjectID)
+			v95 = v52;
+	}
+	pSpriteObjects[uLayingItemID].uObjectDescID = v95;
+	if (!v95)
+		SpriteObject::OnInteraction(uLayingItemID);
+	v96 = pSpriteObjects[uLayingItemID].uSoundID;
+	pSpriteObjects[uLayingItemID].vVelocity.z = 0;
+	pSpriteObjects[uLayingItemID].vVelocity.y = 0;
+	pSpriteObjects[uLayingItemID].vVelocity.x = 0;
+	pSpriteObjects[uLayingItemID].uSpriteFrameID = 0;
+	if (!v96)
+		v97 = 0;
+	else
+		v97 = (signed __int16)v96 + 4;
+	v124 = 8 * uLayingItemID;
+	LOBYTE(v124) = v124 | 2;
+	v125 = word_4EE088_sound_ids[pSpriteObjects[uLayingItemID].spell_id - 1] + 1;
+	pAudioPlayer->PlaySound((SoundID)v125, v124, 0, -1, 0, v97, 0, 0);
+	return 0;
   }
-  v26 = pSpriteObjects[uLayingItemID].uType - 600;
-  if ( pSpriteObjects[uLayingItemID].uType == 600 )
+
+  
+	  case 555:
   {
-    pSpriteObjects[uLayingItemID].uType = 601;
-    v36 = 0;
-    for ( v34 = 0; v34 < (signed int)pObjectList->uNumObjects; ++v34 )
-    {
-      if ( pSpriteObjects[uLayingItemID].uType == pObjectList->pObjects[v34].uObjectID )
-        v36 = v34;
-    }
-    pSpriteObjects[uLayingItemID].uObjectDescID = v36;
-    if ( !v36 )
-      SpriteObject::OnInteraction(uLayingItemID);
-    v37 = pSpriteObjects[uLayingItemID].vPosition.z;
-    pSpriteObjects[uLayingItemID].vVelocity.z = 0;
-    v38 = 8 * uLayingItemID;
-    v39 = pSpriteObjects[uLayingItemID].vPosition.y;
-    LOBYTE(v38) = PID(OBJECT_Item, uLayingItemID);
-    pSpriteObjects[uLayingItemID].vVelocity.y = 0;
-    pSpriteObjects[uLayingItemID].vVelocity.x = 0;
-    v40 = pSpriteObjects[uLayingItemID].vPosition.x;
-    pSpriteObjects[uLayingItemID].uSpriteFrameID = 0;
-    v147 = v38;
-    AttackerInfo.Add(v38, 512, v40, v39, v37, 0, 0);
-    if (object->uFlags & OBJECT_DESC_TRIAL_PARTICLE)
-      trail_particle_generator.GenerateTrailParticles(pSpriteObjects[uLayingItemID].vPosition.x, pSpriteObjects[uLayingItemID].vPosition.y, pSpriteObjects[uLayingItemID].vPosition.z, object->uParticleTrailColor);
-    pAudioPlayer->PlaySound(SOUND_8, v147, 0, -1, 0, 0, 0, 0);
-    return 0;
+			  sub_43A97E(uLayingItemID, a2);
+			  ++pSpriteObjects[uLayingItemID].uType;
+			  v18 = 0;
+			  v22 = 0;
+			  v25 = (char *)&pObjectList->pObjects->uObjectID;
+			  for (v24 = 0; v24 < (signed int)pObjectList->uNumObjects; ++v24)
+			  {
+				  if (pSpriteObjects[uLayingItemID].uType == pObjectList->pObjects[v24].uObjectID)
+					  v22 = v24;
+			  }
+			  pSpriteObjects[uLayingItemID].uObjectDescID = v22;
+			  if (v22 == v18)
+				  SpriteObject::OnInteraction(uLayingItemID);
+			  pSpriteObjects[uLayingItemID].vVelocity.z = v18;
+			  pSpriteObjects[uLayingItemID].vVelocity.y = v18;
+			  pSpriteObjects[uLayingItemID].vVelocity.x = v18;
+			  pSpriteObjects[uLayingItemID].uSpriteFrameID = v18;
+			  return 0;
   }
-  v27 = v26 - 410;
-  if ( v26 == 410 )
+  
+	  case 3090:
   {
-    sub_43A97E(uLayingItemID, a2);
-    ++pSpriteObjects[uLayingItemID].uType;
-    v95 = 0;
-    for ( v52 = 0; v52 < (signed int)pObjectList->uNumObjects; ++v52 )
-    {
-      if ( pSpriteObjects[uLayingItemID].uType == pObjectList->pObjects[v52].uObjectID )
-        v95 = v52;
-    }
-    pSpriteObjects[uLayingItemID].uObjectDescID = v95;
-    if ( !v95 )
-    SpriteObject::OnInteraction(uLayingItemID);
-    v96 = pSpriteObjects[uLayingItemID].uSoundID;
-    pSpriteObjects[uLayingItemID].vVelocity.z = 0;
-    pSpriteObjects[uLayingItemID].vVelocity.y = 0;
-    pSpriteObjects[uLayingItemID].vVelocity.x = 0;
-    pSpriteObjects[uLayingItemID].uSpriteFrameID = 0;
-    if ( !v96 )
-      v97 = 0;
-    else
-      v97 = (signed __int16)v96 + 4;
-    v124 = 8 * uLayingItemID;
-    LOBYTE(v124) = v124 | 2;
-    v125 = word_4EE088_sound_ids[pSpriteObjects[uLayingItemID].spell_id - 1] + 1;
-    pAudioPlayer->PlaySound((SoundID)v125, v124, 0, -1, 0, v97, 0, 0);
-    return 0;
+			   //v9 = 0;
+			   pSpriteObjects[uLayingItemID].uType = pSpriteObjects[uLayingItemID].uType + 2;
+			   v63 = 0;
+			   for (v61 = 0; v61 < (signed int)pObjectList->uNumObjects; ++v61)
+			   {
+				   if (v59 == pObjectList->pObjects[v61].uObjectID)
+					   v63 = v61;
+			   }
+			   pSpriteObjects[uLayingItemID].uObjectDescID = v63;
+			   if (!v63)
+				   SpriteObject::OnInteraction(uLayingItemID);
+			   v64 = pSpriteObjects[uLayingItemID].uFacing - stru_5C6E00->uIntegerDoublePi;
+			   v44 = pSpriteObjects[uLayingItemID].spell_skill == 4;
+			   pSpriteObjects[uLayingItemID].vVelocity.z = 0;
+			   pSpriteObjects[uLayingItemID].vVelocity.y = 0;
+			   pSpriteObjects[uLayingItemID].vVelocity.x = 0;
+			   v65 = 7;
+			   if (v44)
+				   v65 = 9;
+			   if (v65 > 0)
+			   {
+				   v141 = v65;
+				   do
+				   {
+					   v64 += (signed int)stru_5C6E00->uIntegerHalfPi / 2;
+					   pSpriteObjects[uLayingItemID].Create(v64, 0, 1000, 0);
+					   --v141;
+				   } while (v141);
+			   }
+			   SpriteObject::OnInteraction(uLayingItemID);
+			   if (!pSpriteObjects[uLayingItemID].uSoundID)
+				   v16 = 0;
+			   else
+				   v16 = (signed __int16)pSpriteObjects[uLayingItemID].uSoundID + 4;
+			   v124 = 8 * uLayingItemID;
+			   LOBYTE(v124) = v124 | 2;
+			   v125 = word_4EE088_sound_ids[pSpriteObjects[uLayingItemID].spell_id - 1] + 1;
+			   pAudioPlayer->PlaySound((SoundID)v125, v124, 0, -1, 0, v16, 0, 0);
+			   return 0;
   }
-  v28 = v27 - 40;
-  if ( !v28 )
+  
+	  case 3092:
   {
-    v95 = 0;
-    pSpriteObjects[uLayingItemID].uType = pSpriteObjects[uLayingItemID].uType + 1;
-    for ( v146 = 0; v146 < (signed int)pObjectList->uNumObjects; ++v146 )
-    {
-      if ( pSpriteObjects[uLayingItemID].uType == pObjectList->pObjects[v146].uObjectID )
-        v95 = v146;
-    }
-    pSpriteObjects[uLayingItemID].uObjectDescID = v95;
-    if ( !v95 )
-      SpriteObject::OnInteraction(uLayingItemID);
-    v100 = pSpriteObjects[uLayingItemID].field_61;
-    pSpriteObjects[uLayingItemID].uSpriteFrameID = 0;
-    v102 = 8 * uLayingItemID;
-    LOBYTE(v102) = PID(OBJECT_Item, uLayingItemID);
-    pSpriteObjects[uLayingItemID].vVelocity.x = 0;
-    pSpriteObjects[uLayingItemID].vVelocity.y = 0;
-    pSpriteObjects[uLayingItemID].vVelocity.z = 0;
-    AttackerInfo.Add(v102, 512, pSpriteObjects[uLayingItemID].vPosition.x, pSpriteObjects[uLayingItemID].vPosition.y, pSpriteObjects[uLayingItemID].vPosition.z, v100, 0);
-    if (object->uFlags & OBJECT_DESC_TRIAL_PARTICLE)
-      trail_particle_generator.GenerateTrailParticles(pSpriteObjects[uLayingItemID].vPosition.x, pSpriteObjects[uLayingItemID].vPosition.y, pSpriteObjects[uLayingItemID].vPosition.z, object->uParticleTrailColor);
-    if ( !pSpriteObjects[uLayingItemID].uSoundID )
-      v47 = 0;
-    else
-      v47 = (signed __int16)pSpriteObjects[uLayingItemID].uSoundID + 4;
-    v125 = word_4EE088_sound_ids[pSpriteObjects[uLayingItemID].spell_id - 1] + 1;
-    pAudioPlayer->PlaySound((SoundID)v125, v102, 0, -1, 0, v47, 0, 0);
-    return 0;
+			   pSpriteObjects[uLayingItemID].uType = pSpriteObjects[uLayingItemID].uType - 1;
+			   v58 = 0;
+			   for (v56 = 0; v56 < (signed int)pObjectList->uNumObjects; ++v56)
+			   {
+				   if (pSpriteObjects[uLayingItemID].uType == pObjectList->pObjects[v56].uObjectID)
+					   v58 = v56;
+			   }
+			   pSpriteObjects[uLayingItemID].uObjectDescID = v58;
+			   if (!v58)
+				   SpriteObject::OnInteraction(uLayingItemID);
+			   pSpriteObjects[uLayingItemID].vVelocity.z = 0;
+			   pSpriteObjects[uLayingItemID].vVelocity.y = 0;
+			   pSpriteObjects[uLayingItemID].vVelocity.x = 0;
+			   pSpriteObjects[uLayingItemID].uSpriteFrameID = 0;
+			   sub_43A97E(uLayingItemID, a2);
+			   if (!pSpriteObjects[uLayingItemID].uSoundID)
+				   v16 = 0;
+			   else
+				   v16 = (signed __int16)pSpriteObjects[uLayingItemID].uSoundID + 4;
+			   v124 = 8 * uLayingItemID;
+			   LOBYTE(v124) = v124 | 2;
+			   v125 = word_4EE088_sound_ids[pSpriteObjects[uLayingItemID].spell_id - 1] + 1;
+			   pAudioPlayer->PlaySound((SoundID)v125, v124, 0, -1, 0, v16, 0, 0);
+			   return 0;
   }
-  v29 = v28 - 10;
-  if ( v29 )
+  
+	  case 4070:
   {
-    if ( v29 != 20 )
-      return 0;
-    if ( PID_TYPE(a2) != 3 )
-    {
-      //v32 = 0;
-      pSpriteObjects[uLayingItemID].uType = pSpriteObjects[uLayingItemID].uType + 1;
-      v46 = 0;
-      for ( v146 = 0; v146 < (signed int)pObjectList->uNumObjects; ++v146 )
-      {
-        if ( pSpriteObjects[uLayingItemID].uType == pObjectList->pObjects[v146].uObjectID )
-          v46 = v146;
-      }
-      pSpriteObjects[uLayingItemID].uObjectDescID = v46;
-      if ( !v46 )
-        SpriteObject::OnInteraction(uLayingItemID);
-      v100 = pSpriteObjects[uLayingItemID].field_61;
-      pSpriteObjects[uLayingItemID].uSpriteFrameID = 0;
-      v102 = 8 * uLayingItemID;
-      LOBYTE(v102) = PID(OBJECT_Item, uLayingItemID);
-      pSpriteObjects[uLayingItemID].vVelocity.x = 0;
-      pSpriteObjects[uLayingItemID].vVelocity.y = 0;
-      pSpriteObjects[uLayingItemID].vVelocity.z = 0;
-      AttackerInfo.Add(v102, 512, pSpriteObjects[uLayingItemID].vPosition.x, pSpriteObjects[uLayingItemID].vPosition.y, pSpriteObjects[uLayingItemID].vPosition.z, v100, 0);
-      if (object->uFlags & OBJECT_DESC_TRIAL_PARTICLE)
-        trail_particle_generator.GenerateTrailParticles(pSpriteObjects[uLayingItemID].vPosition.x, pSpriteObjects[uLayingItemID].vPosition.y, pSpriteObjects[uLayingItemID].vPosition.z, object->uParticleTrailColor);
-      if ( !pSpriteObjects[uLayingItemID].uSoundID )
-        v47 = 0;
-      else
-        v47 = (signed __int16)pSpriteObjects[uLayingItemID].uSoundID + 4;
-      v125 = word_4EE088_sound_ids[pSpriteObjects[uLayingItemID].spell_id - 1] + 1;
-      pAudioPlayer->PlaySound((SoundID)v125, v102, 0, -1, 0, v47, 0, 0);
-      return 0;
-    }
-    return 1;
+			   if (PID_TYPE(a2) == 6 || PID_TYPE(a2) == 5 || !PID_TYPE(a2))
+				   return 1;
+			   pSpriteObjects[uLayingItemID].uType = pSpriteObjects[uLayingItemID].uType + 1;
+			   v71 = 0;
+			   for (v69 = 0; v69 < (signed int)pObjectList->uNumObjects; ++v69)
+			   {
+				   if (pSpriteObjects[uLayingItemID].uType == pObjectList->pObjects[v69].uObjectID)
+					   v71 = v69;
+			   }
+			   pSpriteObjects[uLayingItemID].uObjectDescID = v71;
+			   if (!v71)
+				   SpriteObject::OnInteraction(uLayingItemID);
+			   v134 = 0;
+			   v72 = uLayingItemID;
+			   v132 = 0;
+			   pSpriteObjects[uLayingItemID].vVelocity.z = 0;
+			   pSpriteObjects[uLayingItemID].vVelocity.y = 0;
+			   pSpriteObjects[uLayingItemID].vVelocity.x = 0;
+			   pSpriteObjects[uLayingItemID].uSpriteFrameID = 0;
+			   AttackerInfo.Add(PID(OBJECT_Item, v72), 512, pSpriteObjects[uLayingItemID].vPosition.x, pSpriteObjects[uLayingItemID].vPosition.y, pSpriteObjects[uLayingItemID].vPosition.z, v132, v134);
+			   if (!pSpriteObjects[uLayingItemID].uSoundID)
+				   v78 = 0;
+			   else
+				   v78 = (signed __int16)pSpriteObjects[uLayingItemID].uSoundID + 4;
+			   v125 = word_4EE088_sound_ids[pSpriteObjects[uLayingItemID].spell_id - 1] + 1;
+			   pAudioPlayer->PlaySound((SoundID)v125, pSpriteObjects[uLayingItemID].vPosition.x, 0, -1, 0, v78, 0, 0);
+			   return 0;
   }
-LABEL_247:
-  //v9 = 0;
-  if ( PID_TYPE(a2) == 6 || PID_TYPE(a2) == 5 || !PID_TYPE(a2) )
-    return 1;
-  if ( PID_TYPE(a2) != 2 )
+  
+	  case 4090:
   {
-    sub_43A97E(uLayingItemID, a2);
-    ++pSpriteObjects[uLayingItemID].uType;
-    v95 = 0;
-    for ( v52 = 0; v52 < (signed int)pObjectList->uNumObjects; ++v52 )
-    {
-      if ( pSpriteObjects[uLayingItemID].uType == pObjectList->pObjects[v52].uObjectID )
-        v95 = v52;
-    }
-    pSpriteObjects[uLayingItemID].uObjectDescID = v95;
-    if ( !v95 )
-      SpriteObject::OnInteraction(uLayingItemID);
-    pSpriteObjects[uLayingItemID].vVelocity.z = 0;
-    pSpriteObjects[uLayingItemID].vVelocity.y = 0;
-    pSpriteObjects[uLayingItemID].vVelocity.x = 0;
-    pSpriteObjects[uLayingItemID].uSpriteFrameID = 0;
-    if ( !pSpriteObjects[uLayingItemID].uSoundID )
-      v97 = 0;
-    else
-      v97 = (signed __int16)pSpriteObjects[uLayingItemID].uSoundID + 4;
-    v124 = 8 * uLayingItemID;
-    LOBYTE(v124) = v124 | 2;
-    v125 = word_4EE088_sound_ids[pSpriteObjects[uLayingItemID].spell_id - 1] + 1;
-    pAudioPlayer->PlaySound((SoundID)v125, v124, 0, -1, 0, v97, 0, 0);
-    return 0;
+			   //v9 = 0;
+			   pSpriteObjects[uLayingItemID].uType = pSpriteObjects[uLayingItemID].uType + 2;
+			   v88 = 0;
+			   for (v86 = 0; v86 < (signed int)pObjectList->uNumObjects; ++v86)
+			   {
+				   if (pSpriteObjects[uLayingItemID].uType == pObjectList->pObjects[v86].uObjectID)
+					   v88 = v86;
+			   }
+			   pSpriteObjects[uLayingItemID].uObjectDescID = v88;
+			   if (!v88)
+				   SpriteObject::OnInteraction(uLayingItemID);
+			   v89 = pSpriteObjects[uLayingItemID].uFacing - stru_5C6E00->uIntegerDoublePi;
+			   pSpriteObjects[uLayingItemID].vVelocity.z = 0;
+			   pSpriteObjects[uLayingItemID].vVelocity.y = 0;
+			   pSpriteObjects[uLayingItemID].vVelocity.x = 0;
+			   v142 = v89;
+			   v148 = 7;
+			   do
+			   {
+				   pRnd->SetRange(-128, 128);
+				   v90 = pRnd->GetInRange();
+				   pRnd->SetRange(5, 500);
+				   v91 = pRnd->GetInRange();
+				   v142 += (signed int)stru_5C6E00->uIntegerHalfPi >> 1;
+				   pSpriteObjects[uLayingItemID].Create(v90 + v142, 0, v91, 0);
+				   --v148;
+			   } while (v148);
+			   SpriteObject::OnInteraction(uLayingItemID);
+			   if (!pSpriteObjects[uLayingItemID].uSoundID)
+				   v16 = 0;
+			   else
+				   v16 = (signed __int16)pSpriteObjects[uLayingItemID].uSoundID + 4;
+			   v124 = 8 * uLayingItemID;
+			   LOBYTE(v124) = v124 | 2;
+			   v125 = word_4EE088_sound_ids[pSpriteObjects[uLayingItemID].spell_id - 1] + 1;
+			   pAudioPlayer->PlaySound((SoundID)v125, v124, 0, -1, 0, v16, 0, 0);
+			   return 0;
   }
-  pSpriteObjects[uLayingItemID].uType = pSpriteObjects[uLayingItemID].uType + 1;
-  v121 = 0;
-  for ( v119 = 0; v119 < (signed int)pObjectList->uNumObjects; ++v119 )
+  
+	  case 4092:
   {
-    if ( pSpriteObjects[uLayingItemID].uType == pObjectList->pObjects[v119].uObjectID )
-      v121 = v119;
+			   pSpriteObjects[uLayingItemID].uType = 4091;
+			   v83 = 0;
+			   for (v81 = 0; v81 < (signed int)pObjectList->uNumObjects; ++v81)
+			   {
+				   if (pSpriteObjects[uLayingItemID].uType == pObjectList->pObjects[v81].uObjectID)
+					   v83 = v81;
+			   }
+			   pSpriteObjects[uLayingItemID].uObjectDescID = v83;
+			   if (!v83)
+				   SpriteObject::OnInteraction(uLayingItemID);
+			   v134 = 0;
+			   //v72 = uLayingItemID;
+			   v132 = pSpriteObjects[uLayingItemID].field_61;
+			   pSpriteObjects[uLayingItemID].vVelocity.z = 0;
+			   pSpriteObjects[uLayingItemID].vVelocity.y = 0;
+			   pSpriteObjects[uLayingItemID].vVelocity.x = 0;
+			   pSpriteObjects[uLayingItemID].uSpriteFrameID = 0;
+			   AttackerInfo.Add(PID(OBJECT_Item, uLayingItemID), 512, pSpriteObjects[uLayingItemID].vPosition.x, pSpriteObjects[uLayingItemID].vPosition.y, pSpriteObjects[uLayingItemID].vPosition.z, v132, v134);
+			   if (!pSpriteObjects[uLayingItemID].uSoundID)
+				   v78 = 0;
+			   else
+				   v78 = (signed __int16)pSpriteObjects[uLayingItemID].uSoundID + 4;
+			   v125 = word_4EE088_sound_ids[pSpriteObjects[uLayingItemID].spell_id - 1] + 1;
+			   pAudioPlayer->PlaySound((SoundID)v125, pSpriteObjects[uLayingItemID].vPosition.x, 0, -1, 0, v78, 0, 0);
+			   return 0;
   }
-  pSpriteObjects[uLayingItemID].uObjectDescID = v121;
-  if ( !v121 )
-    SpriteObject::OnInteraction(uLayingItemID);
-  pSpriteObjects[uLayingItemID].vVelocity.z = 0;
-  pSpriteObjects[uLayingItemID].vVelocity.y = 0;
-  pSpriteObjects[uLayingItemID].vVelocity.x = 0;
-  pSpriteObjects[uLayingItemID].uSpriteFrameID = 0;
-  v13 = 8 * uLayingItemID;
-  LOBYTE(v13) = PID(OBJECT_Item,uLayingItemID);
-  pAudioPlayer->PlaySound(SOUND_8, v13, 0, -1, 0, 0, 0, 0);
-  return 0;
+    
+	  case 8010:
+	  {
+		if (PID_TYPE(a2) == 3
+			&& MonsterStats::BelongsToSupertype(pActors[PID_ID(a2)].pMonsterInfo.uID, MONSTER_SUPERTYPE_UNDEAD))
+			sub_43A97E(uLayingItemID, a2);
+		++pSpriteObjects[uLayingItemID].uType;
+		//v9 = 0;
+		v95 = 0;
+		for (v52 = 0; v52 < (signed int)pObjectList->uNumObjects; ++v52)
+		{
+			if (pSpriteObjects[uLayingItemID].uType == pObjectList->pObjects[v52].uObjectID)
+				v95 = v52;
+		}
+		pSpriteObjects[uLayingItemID].uObjectDescID = v95;
+		if (!v95)
+			SpriteObject::OnInteraction(uLayingItemID);
+		v96 = pSpriteObjects[uLayingItemID].uSoundID;
+		pSpriteObjects[uLayingItemID].vVelocity.z = 0;
+		pSpriteObjects[uLayingItemID].vVelocity.y = 0;
+		pSpriteObjects[uLayingItemID].vVelocity.x = 0;
+		pSpriteObjects[uLayingItemID].uSpriteFrameID = 0;
+		if (!v96)
+			v97 = 0;
+		else
+			v97 = (signed __int16)v96 + 4;
+		v92 = uLayingItemID;
+		v124 = 8 * v92;
+		LOBYTE(v124) = v124 | 2;
+		v125 = word_4EE088_sound_ids[pSpriteObjects[uLayingItemID].spell_id - 1] + 1;
+		pAudioPlayer->PlaySound((SoundID)v125, v124, 0, -1, 0, v97, 0, 0);
+		return 0;
+	  }
+	  
+	  case 7030:
+	  case 7090:
+	  case 8000:
+	  case 8090:
+	  {
+		sub_43A97E(uLayingItemID, a2);
+		++pSpriteObjects[uLayingItemID].uType;
+		v95 = 0;
+		for (v52 = 0; v52 < (signed int)pObjectList->uNumObjects; ++v52)
+		{
+			if (pSpriteObjects[uLayingItemID].uType == pObjectList->pObjects[v52].uObjectID)
+				v95 = v52;
+		}
+		pSpriteObjects[uLayingItemID].uObjectDescID = v95;
+		if (!v95)
+			SpriteObject::OnInteraction(uLayingItemID);
+		v96 = pSpriteObjects[uLayingItemID].uSoundID;
+		pSpriteObjects[uLayingItemID].vVelocity.z = 0;
+		pSpriteObjects[uLayingItemID].vVelocity.y = 0;
+		pSpriteObjects[uLayingItemID].vVelocity.x = 0;
+		pSpriteObjects[uLayingItemID].uSpriteFrameID = 0;
+		if (!v96)
+			v97 = 0;
+		else
+			v97 = (signed __int16)v96 + 4;
+		v124 = 8 * uLayingItemID;
+		LOBYTE(v124) = v124 | 2;
+		v125 = word_4EE088_sound_ids[pSpriteObjects[uLayingItemID].spell_id - 1] + 1;
+		pAudioPlayer->PlaySound((SoundID)v125, v124, 0, -1, 0, v97, 0, 0);
+		return 0;
+	  }
+	  
+	  case 6040:
+	  case 8030:
+	  case 9030:
+	  {
+		v143 = 17030;
+		switch (pSpriteObjects[uLayingItemID].uType)
+		{
+		case 0x1798u:
+			v143 = 15040;
+			break;
+		case 0xFAAu:
+			v143 = 13010;
+			break;
+		case 0x2346u:
+			v143 = 18030;
+			break;
+		}
+		v138 = 1;
+		if (PID_TYPE(a2) != OBJECT_Actor)
+		{
+			if (pSpriteObjects[uLayingItemID].uType != 9030 || pSpriteObjects[uLayingItemID].spell_skill != 4)
+			{
+				SpriteObject::OnInteraction(uLayingItemID);
+				return 0;
+			}
+			pSpriteObjects[uLayingItemID]._46BEF1_apply_spells_aoe();
+			if (!v138)
+			{
+				++pSpriteObjects[uLayingItemID].uType;
+				v112 = 0;
+				for (v110 = 0; v110 < (signed int)pObjectList->uNumObjects; ++v110)
+				{
+					if (pSpriteObjects[uLayingItemID].uType == pObjectList->pObjects[v110].uObjectID)
+						v112 = v110;
+				}
+				pSpriteObjects[uLayingItemID].uObjectDescID = v112;
+				if (!v112)
+					SpriteObject::OnInteraction(uLayingItemID);
+				pSpriteObjects[uLayingItemID].vVelocity.z = 0;
+				pSpriteObjects[uLayingItemID].vVelocity.y = 0;
+				pSpriteObjects[uLayingItemID].vVelocity.x = 0;
+				pSpriteObjects[uLayingItemID].uSpriteFrameID = 0;
+				v113 = pSpriteObjects[uLayingItemID].uSoundID;
+				if (v113)
+					v114 = (signed __int16)v113 + 4;
+				else
+					v114 = 0;
+				v115 = 8 * uLayingItemID;
+				LOBYTE(v115) = PID(OBJECT_Item, uLayingItemID);
+				v125 = v143 + 1;
+				pAudioPlayer->PlaySound((SoundID)v125, v115, 0, -1, 0, v114, 0, 0);
+			}
+			else
+				SpriteObject::OnInteraction(uLayingItemID);
+			return 0;
+		}
+		v106 = a2;
+		v150 = 0;
+		v139 = PID_ID(v106);
+		v137 = pSpriteObjects[uLayingItemID].spell_level;
+		v152 = pSpriteObjects[uLayingItemID].spell_skill;
+		v136 = pSpriteObjects[uLayingItemID].spell_id;
+		if (pSpriteObjects[uLayingItemID].uType == 9030)
+		{
+			v150 = 2;
+			if (v152 == 2)
+			{
+				v150 = 3;
+			}
+			else
+			{
+				if (v152 >= 3)
+					v150 = 4;
+			}
+			pActors[v139].uAttributes |= 0x80000;
+			v107 = v135;
+		}
+		if (pSpriteObjects[uLayingItemID].uType == 6040)
+		{
+			v135 = 7;
+			v107 = v135;
+		}
+		else
+		{
+			if (pSpriteObjects[uLayingItemID].uType == 8030)
+			{
+				v135 = 9;
+				v107 = v135;
+			}
+			else
+			{
+				if (pSpriteObjects[uLayingItemID].uType != 9030)
+				{
+					v107 = v136;
+				}
+				if (pSpriteObjects[uLayingItemID].uType == 9030)
+				{
+					v135 = 10;
+					v107 = v135;
+				}
+			}
+		}
+		if (pSpriteObjects[uLayingItemID].uType != 9030 || v152 != 4)
+		{
+			v108 = v139;
+			if (pActors[v139].DoesDmgTypeDoDamage((DAMAGE_TYPE)v107))
+			{
+				v138 = 0;
+				if (pSpriteObjects[uLayingItemID].uType == 8030)
+				{
+					pActors[v108].uAIState = Standing;
+					pActors[v108].UpdateAnimation();
+				}
+				pActors[v108].pActorBuffs[v136].Apply(pParty->uTimePlayed + (signed int)(signed __int64)((double)(v137 << 7) * 0.033333335),
+					v152, v150, 0, 0);
+			}
+		}
+		else
+		{
+			pSpriteObjects[uLayingItemID]._46BEF1_apply_spells_aoe();
+		}
+		pSpriteObjects[uLayingItemID].spell_level = 0;
+		pSpriteObjects[uLayingItemID].spell_skill = 0;
+		pSpriteObjects[uLayingItemID].spell_id = 0;
+		if (!v138)
+		{
+			++pSpriteObjects[uLayingItemID].uType;
+			v112 = 0;
+			for (v110 = 0; v110 < (signed int)pObjectList->uNumObjects; ++v110)
+			{
+				if (pSpriteObjects[uLayingItemID].uType == pObjectList->pObjects[v110].uObjectID)
+					v112 = v110;
+			}
+			pSpriteObjects[uLayingItemID].uObjectDescID = v112;
+			if (!v112)
+				SpriteObject::OnInteraction(uLayingItemID);
+			pSpriteObjects[uLayingItemID].vVelocity.z = 0;
+			pSpriteObjects[uLayingItemID].vVelocity.y = 0;
+			pSpriteObjects[uLayingItemID].vVelocity.x = 0;
+			pSpriteObjects[uLayingItemID].uSpriteFrameID = 0;
+			v113 = pSpriteObjects[uLayingItemID].uSoundID;
+			if (v113)
+				v114 = (signed __int16)v113 + 4;
+			else
+				v114 = 0;
+			v115 = 8 * uLayingItemID;
+			LOBYTE(v115) = PID(OBJECT_Item, uLayingItemID);
+			v125 = v143 + 1;
+			pAudioPlayer->PlaySound((SoundID)v125, v115, 0, -1, 0, v114, 0, 0);
+		}
+		else
+			SpriteObject::OnInteraction(uLayingItemID);
+		return 0;
+	  }
+	  
+	  case 9040:
+	  {
+			sub_43A97E(uLayingItemID, a2);
+			++pSpriteObjects[uLayingItemID].uType;
+			v95 = 0;
+			for (v52 = 0; v52 < (signed int)pObjectList->uNumObjects; ++v52)
+			{
+				if (pSpriteObjects[uLayingItemID].uType == pObjectList->pObjects[v52].uObjectID)
+					v95 = v52;
+			}
+			pSpriteObjects[uLayingItemID].uObjectDescID = v95;
+			if (!v95)
+				SpriteObject::OnInteraction(uLayingItemID);
+			v96 = pSpriteObjects[uLayingItemID].uSoundID;
+			pSpriteObjects[uLayingItemID].vVelocity.z = 0;
+			pSpriteObjects[uLayingItemID].vVelocity.y = 0;
+			pSpriteObjects[uLayingItemID].vVelocity.x = 0;
+			pSpriteObjects[uLayingItemID].uSpriteFrameID = 0;
+			if (!v96)
+				v97 = 0;
+			else
+				v97 = (signed __int16)v96 + 4;
+			v124 = 8 * uLayingItemID;
+			LOBYTE(v124) = v124 | 2;
+			v125 = word_4EE088_sound_ids[pSpriteObjects[uLayingItemID].spell_id - 1] + 1;
+			pAudioPlayer->PlaySound((SoundID)v125, v124, 0, -1, 0, v97, 0, 0);
+			return 0;
+	  }
+
+/*
+	  case 1080:
+	  case 2100:
+	  {
+				   if (PID_TYPE(a2) != 3)
+				   {
+					   //v32 = 0;
+					   pSpriteObjects[uLayingItemID].uType = pSpriteObjects[uLayingItemID].uType + 1;
+					   v46 = 0;
+					   for (v146 = 0; v146 < (signed int)pObjectList->uNumObjects; ++v146)
+					   {
+						   if (pSpriteObjects[uLayingItemID].uType == pObjectList->pObjects[v146].uObjectID)
+							   v46 = v146;
+					   }
+					   pSpriteObjects[uLayingItemID].uObjectDescID = v46;
+					   if (!v46)
+						   SpriteObject::OnInteraction(uLayingItemID);
+					   v100 = pSpriteObjects[uLayingItemID].field_61;
+					   pSpriteObjects[uLayingItemID].uSpriteFrameID = 0;
+					   v102 = 8 * uLayingItemID;
+					   LOBYTE(v102) = PID(OBJECT_Item, uLayingItemID);
+					   pSpriteObjects[uLayingItemID].vVelocity.x = 0;
+					   pSpriteObjects[uLayingItemID].vVelocity.y = 0;
+					   pSpriteObjects[uLayingItemID].vVelocity.z = 0;
+					   AttackerInfo.Add(v102, 512, pSpriteObjects[uLayingItemID].vPosition.x, pSpriteObjects[uLayingItemID].vPosition.y, pSpriteObjects[uLayingItemID].vPosition.z, v100, 0);
+					   if (object->uFlags & OBJECT_DESC_TRIAL_PARTICLE)
+						   trail_particle_generator.GenerateTrailParticles(pSpriteObjects[uLayingItemID].vPosition.x, pSpriteObjects[uLayingItemID].vPosition.y, pSpriteObjects[uLayingItemID].vPosition.z, object->uParticleTrailColor);
+					   if (!pSpriteObjects[uLayingItemID].uSoundID)
+						   v47 = 0;
+					   else
+						   v47 = (signed __int16)pSpriteObjects[uLayingItemID].uSoundID + 4;
+					   v125 = word_4EE088_sound_ids[pSpriteObjects[uLayingItemID].spell_id - 1] + 1;
+					   pAudioPlayer->PlaySound((SoundID)v125, v102, 0, -1, 0, v47, 0, 0);
+					   return 0;
+				   }
+				   return 1;
+	  }*/
+
+	  case 1080:
+	  case 2100:
+	  {
+				   if (PID_TYPE(a2) == 3)
+					   return 1;
+					//else go to next case
+	  }
+
+	  case 1050:
+	  case 9080:
+	  {
+		v95 = 0;
+		pSpriteObjects[uLayingItemID].uType = pSpriteObjects[uLayingItemID].uType + 1;
+		for (v146 = 0; v146 < (signed int)pObjectList->uNumObjects; ++v146)
+		{
+			if (pSpriteObjects[uLayingItemID].uType == pObjectList->pObjects[v146].uObjectID)
+				v95 = v146;
+		}
+		pSpriteObjects[uLayingItemID].uObjectDescID = v95;
+		if (!v95)
+			SpriteObject::OnInteraction(uLayingItemID);
+		v100 = pSpriteObjects[uLayingItemID].field_61;
+		pSpriteObjects[uLayingItemID].uSpriteFrameID = 0;
+		v102 = 8 * uLayingItemID;
+		LOBYTE(v102) = PID(OBJECT_Item, uLayingItemID);
+		pSpriteObjects[uLayingItemID].vVelocity.x = 0;
+		pSpriteObjects[uLayingItemID].vVelocity.y = 0;
+		pSpriteObjects[uLayingItemID].vVelocity.z = 0;
+		AttackerInfo.Add(v102, 512, pSpriteObjects[uLayingItemID].vPosition.x, pSpriteObjects[uLayingItemID].vPosition.y, pSpriteObjects[uLayingItemID].vPosition.z, v100, 0);
+		if (object->uFlags & OBJECT_DESC_TRIAL_PARTICLE)
+			trail_particle_generator.GenerateTrailParticles(pSpriteObjects[uLayingItemID].vPosition.x, pSpriteObjects[uLayingItemID].vPosition.y, pSpriteObjects[uLayingItemID].vPosition.z, object->uParticleTrailColor);
+		if (!pSpriteObjects[uLayingItemID].uSoundID)
+			v47 = 0;
+		else
+			v47 = (signed __int16)pSpriteObjects[uLayingItemID].uSoundID + 4;
+		v125 = word_4EE088_sound_ids[pSpriteObjects[uLayingItemID].spell_id - 1] + 1;
+		pAudioPlayer->PlaySound((SoundID)v125, v102, 0, -1, 0, v47, 0, 0);
+		return 0;
+	  }
+
+	  default:
+		  return 0;
+  }
+
 }

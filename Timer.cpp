@@ -1,3 +1,7 @@
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+
 #define _CRT_SECURE_NO_WARNINGS
 
 #include "Timer.h"
@@ -39,13 +43,13 @@ void Timer::Pause()
   }
 }
 
-
 //----- (00426363) --------------------------------------------------------
 void Timer::Resume()
 {
   if (bPaused)
   {
-    pKeyActionMap->ResetKeys();
+    pKeyActionMap->ResetKeys();//Unhandled application exception
+
     bPaused = 0;
     uStartTime = Time();
   }

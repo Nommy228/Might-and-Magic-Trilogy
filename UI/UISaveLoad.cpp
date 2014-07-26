@@ -1,3 +1,7 @@
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+
 #define _CRT_SECURE_NO_WARNINGS
 #include <io.h>
 
@@ -95,8 +99,8 @@ static void UI_DrawSaveLoad(bool save)
   if ( pGUIWindow_CurrentMenu->receives_keyboard_input_2 == WINDOW_INPUT_CONFIRMED)
   {
     pGUIWindow_CurrentMenu->receives_keyboard_input_2 = WINDOW_INPUT_NONE;
-    strcpy((char *)&pSavegameHeader + 100 * uLoadGameUI_SelectedSlot, (const char *)pKeyActionMap->pPressedKeysBuffer);
-    pMessageQueue_50CBD0->AddMessage(UIMSG_SaveGame, 0, 0);
+    strcpy((char *)&pSavegameHeader + 100 * uLoadGameUI_SelectedSlot, pKeyActionMap->pPressedKeysBuffer);
+    pMessageQueue_50CBD0->AddGUIMessage(UIMSG_SaveGame, 0, 0);
   }
   else
   {
@@ -108,7 +112,7 @@ static void UI_DrawSaveLoad(bool save)
     pGUIWindow_CurrentMenu->DrawText(pFontSmallnum, pFontSmallnum->AlignText_Center(186, pGlobalTXT_LocalizationStrings[135]) + 25,
         220, 0, pGlobalTXT_LocalizationStrings[135], 0, 0, 0);//Загрузка
     pGUIWindow_CurrentMenu->DrawTextInRect(pFontSmallnum, pFontSmallnum->AlignText_Center(186,
-        (const char *)pSavegameHeader.data() + 100 * uLoadGameUI_SelectedSlot) + 25, 0x106, 0, pSavegameHeader[uLoadGameUI_SelectedSlot].pName, 185, 0);
+		pSavegameHeader[uLoadGameUI_SelectedSlot].pName) + 25, 0x106, 0, pSavegameHeader[uLoadGameUI_SelectedSlot].pName, 185, 0);
     pGUIWindow_CurrentMenu->DrawText(pFontSmallnum, pFontSmallnum->AlignText_Center(186, pGlobalTXT_LocalizationStrings[165]) + 25,
         304, 0, pGlobalTXT_LocalizationStrings[165], 0, 0, 0);//"Пожалуйста, пожождите"
   }

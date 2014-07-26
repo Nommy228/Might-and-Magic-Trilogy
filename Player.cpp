@@ -1,3 +1,7 @@
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+
 #define _CRT_SECURE_NO_WARNINGS
 #include "VectorTypes.h"
 #include "stru6.h"
@@ -4316,7 +4320,7 @@ void Player::UseItem_DrinkPotion_etc(signed int player_num, int a3)
 
     if ( pGUIWindow_CurrentMenu && pGUIWindow_CurrentMenu->eWindowType != WINDOW_null)
     {
-      pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 0, 0);
+      pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Escape, 0, 0);
     }
     if ( v73 )
     {
@@ -4612,7 +4616,7 @@ void Player::UseItem_DrinkPotion_etc(signed int player_num, int a3)
 //           pMouse->RemoveHoldingItem();
 //           return;
 //         }
-        pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 0, 0);
+        pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Escape, 0, 0);
       }
       if ( v73 )
       {
@@ -4665,11 +4669,11 @@ void Player::UseItem_DrinkPotion_etc(signed int player_num, int a3)
     else
     {
       pMouse->RemoveHoldingItem();
-      pMessageQueue_50C9E8->AddMessage(UIMSG_SpellScrollUse, scroll_id, player_num - 1);
+      pMessageQueue_50C9E8->AddGUIMessage(UIMSG_SpellScrollUse, scroll_id, player_num - 1);
       if ( pCurrentScreen && pGUIWindow_CurrentMenu
         && (pGUIWindow_CurrentMenu->eWindowType != WINDOW_null))
       {
-        pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 0, 0);
+        pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Escape, 0, 0);
       }
     }
     return;
@@ -4728,7 +4732,7 @@ void Player::UseItem_DrinkPotion_etc(signed int player_num, int a3)
           pMouse->RemoveHoldingItem();
           return;
         }
-        pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 0, 0);
+        pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Escape, 0, 0);
       }
 //       if ( v73 )                                                v73 is always 0 at this point
 //       {

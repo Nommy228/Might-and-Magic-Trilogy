@@ -1,3 +1,7 @@
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+
 #define _CRT_SECURE_NO_WARNINGS
 #include "Arcomage.h"
 #include "mm7_unsorted_subs.h"
@@ -8,11 +12,12 @@
 #include "ParticleEngine.h"
 #include "Mouse.h"
 #include "Keyboard.h"
-#include "CShow.h"
 #include "GammaControl.h"
 #include "stru6.h"
 #include "stru9.h"
 #include "stru10.h"
+#include "ErrorHandling.h"
+#include "MediaPlayer.h"
 
 #include "Game.h"
 #include "Party.h"
@@ -25,7 +30,6 @@
 #include "LOD.h"
 #include "GUIWindow.h"
 #include "TurnEngine.h"
-#include "VideoPlayer.h"
 #include "Bink_Smacker.h"
 #include "Events.h"
 #include "Arcomage.h"
@@ -96,7 +100,7 @@ void Game::Draw()
   pIndoorCameraD3D->CreateWorldMatrixAndSomeStuff();
   pIndoorCameraD3D->_4374E8_ProllyBuildFrustrum();
 
-  if ( pMovie )
+  if ( pMovie_Track )
   {
     /*if ( !pRenderer->pRenderD3D )
     {
@@ -136,7 +140,8 @@ void Game::Draw()
         pIndoor->Draw();
       else if (uCurrentlyLoadedLevelType == LEVEL_Outdoor)
         pOutdoor->Draw();
-      else Error("Invalid level type: %u", uCurrentlyLoadedLevelType);
+      else 
+        Error("Invalid level type: %u", uCurrentlyLoadedLevelType);
 
       //if (pRenderer->pRenderD3D)
       {
@@ -166,7 +171,7 @@ void Game::Draw()
     GameUI_Footer_2();
     viewparams->bRedrawGameUI = false;
   }
-  if (!pMovie)//!pVideoPlayer->pSmackerMovie)
+  if (!pMovie_Track)//!pVideoPlayer->pSmackerMovie)
   {
     GameUI_DrawMinimap(488, 16, 625, 133, viewparams->uMinimapZoom, true);//redraw = pParty->uFlags & 2);
     if (v4)
@@ -190,7 +195,7 @@ void Game::Draw()
   GameUI_DrawCharacterSelectionFrame();
   if ( _44100D_should_alter_right_panel() )
     GameUI_DrawRightPanel();
-  if ( !pMovie )
+  if ( !pMovie_Track )
   {
     pStru6Instance->DrawPlayerBuffAnims();
     pOtherOverlayList->DrawTurnBasedIcon(v4);
@@ -349,8 +354,8 @@ void Game::Loop()
         continue;
       }
 
-      pVideoPlayer->_inlined_in_463149();
-      
+      pMediaPlayer->HouseMovieLoop();
+   
       pEventTimer->Update();
       pMiscTimer->Update();
 
@@ -424,9 +429,10 @@ void Game::Loop()
           if ( pNPCStats->pNewNPCData[i].field_24 )
             pNPCStats->pNewNPCData[i].uFlags &= 0xFFFFFF7Fu;
         }
-        pVideoPlayer->PlayDeathMovie();
-        if ( pMovie )
-          pVideoPlayer->Unload();
+        pMediaPlayer->bStopBeforeSchedule = 0;
+        pMediaPlayer->PlayFullscreenMovie(MOVIE_Death, true);
+        if ( pMovie_Track )
+          pMediaPlayer->Unload();
         SaveGame(0, 0);
         ++pParty->uNumDeaths;
         for ( uint i = 0; i < 4; ++i )
@@ -705,6 +711,7 @@ void Game::Deinitialize()
   pGames_LOD->FreeSubIndexAndIO();
   ClipCursor(0);
   Game::Destroy();
+  delete pEventTimer;
 }
 
 //----- (0044EE7C) --------------------------------------------------------
@@ -1070,7 +1077,8 @@ void Game::OutlineSelection()
           else
             face->uAttributes |= FACE_OUTLINED;
         }
-        else Error("Invalid level type", uCurrentlyLoadedLevelType);
+        else 
+          Error("Invalid level type", uCurrentlyLoadedLevelType);
       }
       break;
 
@@ -1084,50 +1092,24 @@ void Game::OutlineSelection()
 //----- (004304E7) --------------------------------------------------------
 void  GameUI_MsgProc()
 {
-  //signed int v0; // edi@6
-  //char *v1; // esi@6
   unsigned int v2; // edx@7
   Actor *pActor; // ecx@13
   int v4; // ecx@18
-  //NPCData *pNPCData0; // eax@18
-  //int v6; // edx@20
-  //int v7; // ecx@29
-  //unsigned int v8; // edx@59
-  //unsigned int v9; // ecx@60
   unsigned int v10; // ecx@73
-  //unsigned int v11; // eax@75
-  unsigned __int8 v12; // sf@75
-  unsigned __int8 v13; // of@75
   int v14; // eax@98
-  unsigned int v15; // eax@102
-  unsigned __int8 v16; // al@104
-  unsigned __int8 v17; // al@105
   int v18; // eax@106
   float v19; // ST64_4@121
-//  unsigned int v20; // ecx@121
   float v21; // ST64_4@126
   float v22; // ST64_4@127
-//  unsigned int v23; // ecx@135
   unsigned int v24; // ecx@149
-//  unsigned int v25; // ecx@165
-//  GUIWindow *pWindow; // eax@204
-//  unsigned int v27; // edx@204
-//  unsigned int v28; // ecx@204
   GUIWindow *pWindow2; // ecx@248
-  //int v30; // edx@258
-  //const char *v31; // ecx@262
-  signed int v32; // eax@269
+  bool pKeyBindingFlag; // eax@269
   unsigned int v33; // eax@277
-  unsigned __int8 v34; // al@279
-  unsigned __int8 v35; // al@280
-  //GUIWindow *pWindow3; // ecx@332
   int v37; // eax@341
   int v38; // eax@358
   SHORT v39; // ax@365
-  //signed int v40; // eax@365
   char *v41; // eax@380
   int v42; // eax@396
-//  POINT *pPoint; // eax@397
   signed int v44; // eax@398
   int v45; // edx@398
   signed int v46; // ecx@398
@@ -1136,7 +1118,6 @@ void  GameUI_MsgProc()
   BLVFace *pBLVFace; // ecx@410
   ODMFace *pODMFace; // ecx@412
   CastSpellInfo *pSpellInfo; // ecx@415
-//  void *v52; // eax@424
   __int16 v53; // ax@431
   int v54; // eax@432
   int v55; // ecx@432
@@ -1145,8 +1126,6 @@ void  GameUI_MsgProc()
   Player *pPlayer; // edx@442
   unsigned int pMapNum; // eax@445
   signed int v60; // ST64_4@459
-  //NPCData *pNPCData2; // eax@467
-  //unsigned __int64 v62; // kr00_8@467
   __int16 v63; // dx@479
   unsigned int v64; // eax@486
   int v65; // ecx@486
@@ -1163,30 +1142,21 @@ void  GameUI_MsgProc()
   int v76; // esi@535
   int v77; // eax@537
   Player *pPlayer2; // ecx@549
-  //int v79; // ecx@550
-  //unsigned int v80; // edx@550
   signed int v81; // eax@552
-//  POINT *pPoint2; // eax@553
   signed int v83; // ecx@554
   signed int v84; // ecx@554
   GUIButton *pButton; // eax@578
   unsigned int v86; // eax@583
   const char *v87; // ecx@595
   const char *v88; // ecx@596
-  //unsigned int v89; // eax@598
   unsigned int v90; // eax@602
   int v91; // edx@605
   int v92; // eax@605
   int v93; // edx@605
   int pPlayerNum; // edx@611
   int v95; // eax@611
-  //const char *v96; // ecx@621
   unsigned int v97; // eax@624
   int v98; // eax@636
-//  unsigned __int8 v99; // al@643
-//  Player *pPlayer3; // eax@648
-//  int v101; // ecx@648
-//  int v102; // edx@652
   int v103; // eax@671
   Player *pPlayer4; // ecx@718
   int v105; // eax@718
@@ -1195,71 +1165,20 @@ void  GameUI_MsgProc()
   unsigned int v108; // eax@758
   unsigned int v115; // eax@764
   int v116; // eax@776
-//  POINT *pPoint3; // eax@777
   unsigned int v118; // eax@785
   unsigned int v119; // ecx@786
-//  unsigned int v120; // [sp-28h] [bp-624h]@86
   unsigned int v121; // [sp-28h] [bp-624h]@711
-//  unsigned int v122; // [sp-24h] [bp-620h]@86
   unsigned int v123; // [sp-24h] [bp-620h]@711
-//  unsigned int v124; // [sp-20h] [bp-61Ch]@86
   unsigned int v125; // [sp-20h] [bp-61Ch]@711
-//  unsigned int v126; // [sp-1Ch] [bp-618h]@86
   int v127; // [sp-1Ch] [bp-618h]@107
   unsigned int v128; // [sp-1Ch] [bp-618h]@711
-//  int v129; // [sp-18h] [bp-614h]@86
-  //signed int v130; // [sp-18h] [bp-614h]@107
-//  int v131; // [sp-14h] [bp-610h]@86
-  //unsigned int v132; // [sp-14h] [bp-610h]@107
-  //unsigned int v133; // [sp-10h] [bp-60Ch]@60
-//  unsigned int v134; // [sp-10h] [bp-60Ch]@86
-  //signed int v135; // [sp-10h] [bp-60Ch]@107
-//  unsigned int v136; // [sp-10h] [bp-60Ch]@121
-  //unsigned int v137; // [sp-Ch] [bp-608h]@60
-//  unsigned int v138; // [sp-Ch] [bp-608h]@86
-  //signed int v139; // [sp-Ch] [bp-608h]@107
-//  unsigned int v140; // [sp-Ch] [bp-608h]@121
-//  enum WindowType pWindowType; // [sp-8h] [bp-604h]@56
-  //enum WindowType pWindowType1; // [sp-8h] [bp-604h]@60
-//  unsigned __int8 v143; // [sp-8h] [bp-604h]@86
-  //int v144; // [sp-8h] [bp-604h]@107
-//  enum WindowType pWindowType2; // [sp-8h] [bp-604h]@121
-  //const char *v146; // [sp-8h] [bp-604h]@449
-  //unsigned int v147; // [sp-8h] [bp-604h]@550
-  //int v148; // [sp-4h] [bp-600h]@56
   GUIButton *pButton2; // [sp-4h] [bp-600h]@59
-//  const char *v150; // [sp-4h] [bp-600h]@86
-  //unsigned int v151; // [sp-4h] [bp-600h]@107
-//  int v152; // [sp-4h] [bp-600h]@121
-//  int v153; // [sp-4h] [bp-600h]@135
-  //int v154; // [sp-4h] [bp-600h]@149
-//  int v155; // [sp-4h] [bp-600h]@165
-//  int v156; // [sp-4h] [bp-600h]@204
-  //const char *v157; // [sp-4h] [bp-600h]@444
-  //unsigned int v158; // [sp-4h] [bp-600h]@449
-  //__int16 v159; // [sp-4h] [bp-600h]@550
-//  int v160; // [sp-4h] [bp-600h]@599
   const char *v161; // [sp-4h] [bp-600h]@637
-  //int v162; // [sp+0h] [bp-5FCh]@56
-  //int v163; // [sp+0h] [bp-5FCh]@59
-//  Texture *pTexture; // [sp+0h] [bp-5FCh]@86
-  //int v165; // [sp+0h] [bp-5FCh]@107
-//  int v166; // [sp+0h] [bp-5FCh]@121
-//  int v167; // [sp+0h] [bp-5FCh]@135
-  //int v168; // [sp+0h] [bp-5FCh]@149
-//  int v169; // [sp+0h] [bp-5FCh]@165
-//  int v170; // [sp+0h] [bp-5FCh]@204
-  //signed int v171; // [sp+0h] [bp-5FCh]@259
   KeyToggleType pKeyToggleType; // [sp+0h] [bp-5FCh]@287
   char *v173; // [sp+0h] [bp-5FCh]@444
   char *v174; // [sp+0h] [bp-5FCh]@449
-  //int v175; // [sp+0h] [bp-5FCh]@550
-//  int v176; // [sp+0h] [bp-5FCh]@599
   const char *v177; // [sp+0h] [bp-5FCh]@629
   char *v178; // [sp+0h] [bp-5FCh]@637
-//  int v179; // [sp+4h] [bp-5F8h]@0
-  //signed int _this; // [sp+14h] [bp-5E8h]@22
-//  signed int thisa; // [sp+14h] [bp-5E8h]@251
   signed int thisb; // [sp+14h] [bp-5E8h]@272
   Player *pPlayer7; // [sp+14h] [bp-5E8h]@373
   Player *pPlayer8; // [sp+14h] [bp-5E8h]@377
@@ -1270,7 +1189,6 @@ void  GameUI_MsgProc()
   signed int thisi; // [sp+14h] [bp-5E8h]@535
   MapInfo *pMapInfo; // [sp+14h] [bp-5E8h]@604
   Player *pPlayer10; // [sp+14h] [bp-5E8h]@641
-//  int thisl; // [sp+14h] [bp-5E8h]@648
   int uMessageParam; // [sp+18h] [bp-5E4h]@7
   int uAction; // [sp+1Ch] [bp-5E0h]@18
   NPCData *pNPCData4; // [sp+20h] [bp-5DCh]@23
@@ -1279,18 +1197,11 @@ void  GameUI_MsgProc()
   enum UIMessageType uMessage; // [sp+2Ch] [bp-5D0h]@7
   unsigned int v199; // [sp+30h] [bp-5CCh]@7
   char *v200; // [sp+34h] [bp-5C8h]@518
-//  POINT v201; // [sp+38h] [bp-5C4h]@553
   POINT v202; // [sp+40h] [bp-5BCh]@141
   POINT a2; // [sp+48h] [bp-5B4h]@127
-//  POINT v204; // [sp+50h] [bp-5ACh]@777
   POINT v205; // [sp+58h] [bp-5A4h]@171
-//  POINT v206; // [sp+60h] [bp-59Ch]@553
   POINT v207; // [sp+68h] [bp-594h]@155
-//  POINT v208; // [sp+70h] [bp-58Ch]@397
-//  POINT v209; // [sp+78h] [bp-584h]@777
-//  POINT v210; // [sp+80h] [bp-57Ch]@397
   POINT v211; // [sp+88h] [bp-574h]@704
-  //__int64 v212; // [sp+90h] [bp-56Ch]@467
   int v213; // [sp+98h] [bp-564h]@385
   char pLevelName[32]; // [sp+9Ch] [bp-560h]@380
   char pOut[32]; // [sp+BCh] [bp-540h]@370
@@ -1300,7 +1211,6 @@ void  GameUI_MsgProc()
   char a1[64]; // [sp+1F8h] [bp-404h]@467
   char Str2[128]; // [sp+238h] [bp-3C4h]@527
   Actor actor; // [sp+2B8h] [bp-344h]@4
-  //unsigned short* screenshot;
   int currHour;
 
   dword_50CDC8 = 0;
@@ -1333,7 +1243,7 @@ void  GameUI_MsgProc()
           uGameState = GAME_FINISHED;
           continue;
         case UIMSG_PlayArcomage:
-          pVideoPlayer->_4BF5B2();
+          BackToHouseMenu();
           pArcomageGame->bGameInProgress = 1;
           ArcomageGame::PrepareArcomage();
           continue;
@@ -1433,7 +1343,7 @@ void  GameUI_MsgProc()
           }
           else
           {
-            ShowStatusBarString(pGlobalTXT_LocalizationStrings[201], 2u);// "Are you sure?  Click again to start a New Game"
+            ShowStatusBarString(pGlobalTXT_LocalizationStrings[201], 2);// "Are you sure?  Click again to start a New Game"
             pAudioPlayer->PlaySound(SOUND_20001, 0, 0, -1, 0, 0, 0, 0);
             dword_6BE138 = 124;
           }
@@ -1504,8 +1414,8 @@ void  GameUI_MsgProc()
             v10 = pSaveListPosition + uMessageParam;
             if ( dword_6BE138 == pSaveListPosition + uMessageParam )
             {
-              pMessageQueue_50CBD0->AddMessage(UIMSG_SaveLoadBtn, 0, 0);
-              pMessageQueue_50CBD0->AddMessage(UIMSG_LoadGame, 0, 0);
+              pMessageQueue_50CBD0->AddGUIMessage(UIMSG_SaveLoadBtn, 0, 0);
+              pMessageQueue_50CBD0->AddGUIMessage(UIMSG_LoadGame, 0, 0);
             }
             uLoadGameUI_SelectedSlot = v10;
             dword_6BE138 = v10;
@@ -1513,9 +1423,9 @@ void  GameUI_MsgProc()
           else
           {
             pKeyActionMap->EnterText(0, 19, pGUIWindow_CurrentMenu);
-            if ( strcmp((const char *)&pSavegameHeader[uLoadGameUI_SelectedSlot], pGlobalTXT_LocalizationStrings[72]) )// "Empty"
-              strcpy((char *)pKeyActionMap->pPressedKeysBuffer, (const char *)&pSavegameHeader[uLoadGameUI_SelectedSlot]);
-            pKeyActionMap->uNumKeysPressed = strlen((const char *)pKeyActionMap->pPressedKeysBuffer);
+            if ( strcmp(pSavegameHeader[uLoadGameUI_SelectedSlot].pName, pGlobalTXT_LocalizationStrings[72]) )// "Empty"
+              strcpy(pKeyActionMap->pPressedKeysBuffer, pSavegameHeader[uLoadGameUI_SelectedSlot].pName);
+            pKeyActionMap->uNumKeysPressed = strlen(pKeyActionMap->pPressedKeysBuffer);
           }
           continue;
         case UIMSG_LoadGame:
@@ -1530,7 +1440,7 @@ void  GameUI_MsgProc()
           if ( pGUIWindow_CurrentMenu->receives_keyboard_input_2 == WINDOW_INPUT_IN_PROGRESS)
           {
             pKeyActionMap->SetWindowInputStatus(WINDOW_INPUT_NONE);
-            strcpy((char *)&pSavegameHeader[uLoadGameUI_SelectedSlot], (const char *)pKeyActionMap->pPressedKeysBuffer);
+            strcpy((char *)&pSavegameHeader[uLoadGameUI_SelectedSlot], pKeyActionMap->pPressedKeysBuffer);
           }
           DoSavegame(uLoadGameUI_SelectedSlot);
           stru_506E40.Release();
@@ -1628,32 +1538,34 @@ void  GameUI_MsgProc()
           uTextureID_Optkb[3] = pIcons_LOD->LoadTexture("optkb_1", TEXTURE_16BIT_PALETTE);
           uTextureID_Optkb[4] = pIcons_LOD->LoadTexture("optkb_2", TEXTURE_16BIT_PALETTE);
           pGUIWindow_CurrentMenu = GUIWindow::Create(0, 0, window->GetWidth(), window->GetHeight(), WINDOW_KeyMappingOptions, 0, 0);
-          pGUIWindow_CurrentMenu->CreateButton(0xF1u, 0x12Eu, 0xD6u, 0x28u, 1, 0, UIMSG_Escape, 0, 0, "", 0);
-          pGUIWindow_CurrentMenu->CreateButton(19u, 0x12Eu, 0x6Cu, 0x14u, 1, 0, UIMSG_SelectKeyPage1, 0, 0, "", 0);
-          pGUIWindow_CurrentMenu->CreateButton(127u, 0x12Eu, 0x6Cu, 0x14u, 1, 0, UIMSG_SelectKeyPage2, 0, 0, "", 0);
-          pGUIWindow_CurrentMenu->CreateButton(127u, 0x144u, 0x6Cu, 0x14u, 1, 0, UIMSG_ResetKeyMapping, 0, 0, "", 0);
-          pGUIWindow_CurrentMenu->CreateButton(19u, 0x144u, 0x6Cu, 0x14u, 1, 0, UIMSG_Game_OpenOptionsDialog, 0, 0, "", 0);
-          pGUIWindow_CurrentMenu->CreateButton(129u, 0x94u, 0x46u, 0x13u, 1, 0, UIMSG_ChangeKeyButton, 0, 0, "", 0);
-          pGUIWindow_CurrentMenu->CreateButton(129u, 0xA7u, 0x46u, 0x13u, 1, 0, UIMSG_ChangeKeyButton, 1u, 0, "", 0);
-          pGUIWindow_CurrentMenu->CreateButton(129u, 0xBAu, 0x46u, 0x13u, 1, 0, UIMSG_ChangeKeyButton, 2u, 0, "", 0);
-          pGUIWindow_CurrentMenu->CreateButton(129u, 0xCDu, 0x46u, 0x13u, 1, 0, UIMSG_ChangeKeyButton, 3u, 0, "", 0);
-          pGUIWindow_CurrentMenu->CreateButton(129u, 224u, 70u, 19u, 1, 0, UIMSG_ChangeKeyButton, 4u, 0, "", 0);
-          pGUIWindow_CurrentMenu->CreateButton(129u, 243u, 70u, 0x13u, 1, 0, UIMSG_ChangeKeyButton, 5u, 0, "", 0);
-          pGUIWindow_CurrentMenu->CreateButton(129u, 262u, 70u, 0x13u, 1, 0, UIMSG_ChangeKeyButton, 6u, 0, "", 0);
-          pGUIWindow_CurrentMenu->CreateButton(350u, 148u, 70u, 0x13u, 1, 0, UIMSG_ChangeKeyButton, 7u, 0, "", 0);
-          pGUIWindow_CurrentMenu->CreateButton(350u, 167u, 70u, 0x13u, 1, 0, UIMSG_ChangeKeyButton, 8u, 0, "", 0);
-          pGUIWindow_CurrentMenu->CreateButton(350u, 186u, 70u, 0x13u, 1, 0, UIMSG_ChangeKeyButton, 9u, 0, "", 0);
-          pGUIWindow_CurrentMenu->CreateButton(350u, 205u, 70u, 0x13u, 1, 0, UIMSG_ChangeKeyButton, 0xAu, 0, "", 0);
-          pGUIWindow_CurrentMenu->CreateButton(350u, 224u, 70u, 0x13u, 1, 0, UIMSG_ChangeKeyButton, 0xBu, 0, "", 0);
-          pGUIWindow_CurrentMenu->CreateButton(350u, 243u, 70u, 0x13u, 1, 0, UIMSG_ChangeKeyButton, 0xCu, 0, "", 0);
-          pGUIWindow_CurrentMenu->CreateButton(350u, 262u, 70u, 0x13u, 1, 0, UIMSG_ChangeKeyButton, 0xDu, 0, "", 0);
+
+          pGUIWindow_CurrentMenu->CreateButton(241, 302, 214, 40, 1, 0, UIMSG_Escape, 0, 0, "", 0);
+
+          pGUIWindow_CurrentMenu->CreateButton(19, 302, 108, 20, 1, 0, UIMSG_SelectKeyPage1, 0, 0, "", 0);
+          pGUIWindow_CurrentMenu->CreateButton(127, 302, 108, 20, 1, 0, UIMSG_SelectKeyPage2, 0, 0, "", 0);
+          pGUIWindow_CurrentMenu->CreateButton(127, 324, 108, 20, 1, 0, UIMSG_ResetKeyMapping, 0, 0, "", 0);
+          pGUIWindow_CurrentMenu->CreateButton(19, 324, 108, 20, 1, 0, UIMSG_Game_OpenOptionsDialog, 0, 0, "", 0);
+
+          pGUIWindow_CurrentMenu->CreateButton(129, 148, 70, 19, 1, 0, UIMSG_ChangeKeyButton, 0, 0, "", 0);
+          pGUIWindow_CurrentMenu->CreateButton(129, 167, 70, 19, 1, 0, UIMSG_ChangeKeyButton, 1, 0, "", 0);
+          pGUIWindow_CurrentMenu->CreateButton(129, 186, 70, 19, 1, 0, UIMSG_ChangeKeyButton, 2, 0, "", 0);
+          pGUIWindow_CurrentMenu->CreateButton(129, 205, 70, 19, 1, 0, UIMSG_ChangeKeyButton, 3, 0, "", 0);
+          pGUIWindow_CurrentMenu->CreateButton(129, 224, 70, 19, 1, 0, UIMSG_ChangeKeyButton, 4, 0, "", 0);
+          pGUIWindow_CurrentMenu->CreateButton(129, 243, 70, 19, 1, 0, UIMSG_ChangeKeyButton, 5, 0, "", 0);
+          pGUIWindow_CurrentMenu->CreateButton(129, 262, 70, 19, 1, 0, UIMSG_ChangeKeyButton, 6, 0, "", 0);
+          pGUIWindow_CurrentMenu->CreateButton(350, 148, 70, 19, 1, 0, UIMSG_ChangeKeyButton, 7, 0, "", 0);
+          pGUIWindow_CurrentMenu->CreateButton(350, 167, 70, 19, 1, 0, UIMSG_ChangeKeyButton, 8, 0, "", 0);
+          pGUIWindow_CurrentMenu->CreateButton(350, 186, 70, 19, 1, 0, UIMSG_ChangeKeyButton, 9, 0, "", 0);
+          pGUIWindow_CurrentMenu->CreateButton(350, 205, 70, 19, 1, 0, UIMSG_ChangeKeyButton, 10, 0, "", 0);
+          pGUIWindow_CurrentMenu->CreateButton(350, 224, 70, 19, 1, 0, UIMSG_ChangeKeyButton, 11, 0, "", 0);
+          pGUIWindow_CurrentMenu->CreateButton(350, 243, 70, 19, 1, 0, UIMSG_ChangeKeyButton, 12, 0, "", 0);
+          pGUIWindow_CurrentMenu->CreateButton(350, 262, 70, 19, 1, 0, UIMSG_ChangeKeyButton, 13, 0, "", 0);
+
           uGameMenuUI_CurentlySelectedKeyIdx = -1;
           KeyboardPageNum = 1;
           memset(GameMenuUI_InvaligKeyBindingsFlags.data(), 0, sizeof(GameMenuUI_InvaligKeyBindingsFlags));
           //*(_WORD *)KeyButtonArray[28] = 0;
           memcpy(pPrevVirtualCidesMapping.data(), pKeyActionMap->pVirtualKeyCodesMapping, 0x78u);
-          //v1 = "";
-          //v0 = 1;
           continue;
         case UIMSG_ChangeKeyButton:
           if ( uGameMenuUI_CurentlySelectedKeyIdx != -1 )
@@ -1670,31 +1582,21 @@ void  GameUI_MsgProc()
         case UIMSG_ResetKeyMapping:
           v197 = 1;
           pKeyActionMap->SetDefaultMapping();
-          uAction = 0;
-          do
+          for ( uint i = 0; i < 28; i++ )
           {
-            v15 = pKeyActionMap->GetActionVKey((enum InputAction)uAction);
-            if ( v15 != pPrevVirtualCidesMapping[uAction] )
+            if ( pKeyActionMap->GetActionVKey((enum InputAction)i) != pPrevVirtualCidesMapping[i] )
             {
               if ( v197 )
               {
-                v16 = pKeyActionMap->GetActionVKey((enum InputAction)uAction);
-                GUI_ReplaceHotkey(LOBYTE(pPrevVirtualCidesMapping[uAction]), v16, 1);
+                GUI_ReplaceHotkey(LOBYTE(pPrevVirtualCidesMapping[i]), pKeyActionMap->GetActionVKey((enum InputAction)i), 1);
                 v197 = 0;
               }
               else
-              {
-                v17 = pKeyActionMap->GetActionVKey((enum InputAction)uAction);
-                GUI_ReplaceHotkey(LOBYTE(pPrevVirtualCidesMapping[uAction]), v17, 0);
-              }
+                GUI_ReplaceHotkey(LOBYTE(pPrevVirtualCidesMapping[i]), pKeyActionMap->GetActionVKey((enum InputAction)i), 0);
             }
-            pPrevVirtualCidesMapping[uAction] = pKeyActionMap->GetActionVKey((enum InputAction)uAction);
-            v18 = uAction++;
-            v13 = uAction > 28;
-            v12 = uAction - 28 < 0;
-            GameMenuUI_InvaligKeyBindingsFlags[v18] = 0;
+            pPrevVirtualCidesMapping[i] = pKeyActionMap->GetActionVKey((enum InputAction)i);
+            GameMenuUI_InvaligKeyBindingsFlags[i] = false;
           }
-          while ( v12 ^ v13 );
           pAudioPlayer->PlaySound((SoundID)219, 0, 0, -1, 0, 0, 0, 0);
           continue;
         case UIMSG_SelectKeyPage1:
@@ -1794,8 +1696,8 @@ void  GameUI_MsgProc()
         case UIMSG_ToggleTint:
           pRenderer->ToggleTint();
           continue;
-        case UIMSG_ChangeMusicVolume:  //громкость музыки
-          if ( uMessageParam == 4 )//кнопка понижения
+        case UIMSG_ChangeMusicVolume:
+          if ( uMessageParam == 4 )//-
           {
             --uMusicVolimeMultiplier;
             if ( (char)uMusicVolimeMultiplier < 1 )
@@ -1806,7 +1708,7 @@ void  GameUI_MsgProc()
             pAudioPlayer->SetMusicVolume(pSoundVolumeLevels[uMusicVolimeMultiplier] * 64.0f);
             continue;
           }
-          if ( uMessageParam == 5 )//кнопка повышения
+          if ( uMessageParam == 5 )//+
           {
             ++uMusicVolimeMultiplier;
             if ( (char)uMusicVolimeMultiplier > 9 )
@@ -1817,7 +1719,7 @@ void  GameUI_MsgProc()
             pAudioPlayer->SetMusicVolume(pSoundVolumeLevels[uMusicVolimeMultiplier] * 64.0f);
             continue;
           }
-          uMusicVolimeMultiplier = (pMouse->GetCursorPos(&v202)->x - 263) / 17;//для задания громкости мышкой
+          uMusicVolimeMultiplier = (pMouse->GetCursorPos(&v202)->x - 263) / 17;//for mouse
           if ( (char)uMusicVolimeMultiplier > 9 )
             uMusicVolimeMultiplier = 9;
           if ( uMusicVolimeMultiplier )
@@ -2216,52 +2118,44 @@ void  GameUI_MsgProc()
 
                     case SCREEN_KEYBOARD_OPTIONS://Return to game
                       v197 = 1;
-                      v32 = 0;
-                      while ( !GameMenuUI_InvaligKeyBindingsFlags[v32])
+					  pKeyBindingFlag = false;
+                      for ( uint i = 0; i < 28; ++i )
                       {
-                        ++v32;
-                        if ( v32 >= 28 )
-                        {
-                          thisb = (signed int)&uTextureID_Optkb;
-                          assert(false && "Invalid condition values");
-                          do
-                          {
-                            if ( *(int *)thisb )
-                              pIcons_LOD->pTextures[*(int *)thisb].Release();
-                            thisb += 4;
-                          }
-                          while ( thisb < (signed int)0x00507C08 );
-
-                          memset(&uTextureID_Optkb, 0, 0x14u);
-                          pIcons_LOD->SyncLoadedFilesCount();
-                          for ( uAction = 0; uAction < 28; ++uAction )
-                          {
-                            v33 = pKeyActionMap->GetActionVKey((enum InputAction)uAction);
-                            if ( v33 != pPrevVirtualCidesMapping[uAction] )
-                            {
-                              if ( v197 )
-                              {
-                                v34 = pKeyActionMap->GetActionVKey((enum InputAction)uAction);
-                                GUI_ReplaceHotkey(v34, LOBYTE(pPrevVirtualCidesMapping[uAction]), 1);
-                                v197 = 0;
-                              }
-                              else
-                              {
-                                v35 = pKeyActionMap->GetActionVKey((enum InputAction)uAction);
-                                GUI_ReplaceHotkey(v35, LOBYTE(pPrevVirtualCidesMapping[uAction]), 0);
-                              }
-                            }
-                            if ( uAction && uAction != 2 && uAction != 3 && uAction != 1 && uAction != 25 && uAction != 26 )
-                              pKeyToggleType = TOGGLE_OneTimePress;
-                            else
-                              pKeyToggleType = TOGGLE_Continuously;
-                            pKeyActionMap->SetKeyMapping(uAction, pPrevVirtualCidesMapping[uAction], pKeyToggleType);
-                          }
-                          pKeyActionMap->StoreMappings();
-                          stru_506E40.Release();
-                          break;
-                        }
+                        if ( GameMenuUI_InvaligKeyBindingsFlags[i] )
+                          pKeyBindingFlag = true;
                       }
+                      if ( !pKeyBindingFlag )
+                      {
+                        for ( uint i = 0; i < 5; i++ )
+                        {
+                          if ( uTextureID_Optkb[i] )
+                            pIcons_LOD->pTextures[uTextureID_Optkb[i]].Release();
+                        }
+                        memset(&uTextureID_Optkb, 0, 20);
+                        pIcons_LOD->SyncLoadedFilesCount();
+                        for ( uint i = 0; i < 28; ++i )
+                        {
+                          if ( pKeyActionMap->GetActionVKey((enum InputAction)i) != pPrevVirtualCidesMapping[i] )
+                          {
+                            if ( v197 )
+                            {
+                              GUI_ReplaceHotkey(pKeyActionMap->GetActionVKey((enum InputAction)i), LOBYTE(pPrevVirtualCidesMapping[i]), 1);
+                              v197 = 0;
+                            }
+                            else
+                              GUI_ReplaceHotkey(pKeyActionMap->GetActionVKey((enum InputAction)i), LOBYTE(pPrevVirtualCidesMapping[i]), 0);
+                          }
+                          if ( i > 3 && i != 25 && i != 26 )
+                            pKeyToggleType = TOGGLE_OneTimePress;
+                          else
+                            pKeyToggleType = TOGGLE_Continuously;
+                          pKeyActionMap->SetKeyMapping(i, pPrevVirtualCidesMapping[i], pKeyToggleType);
+                        }
+                        pKeyActionMap->StoreMappings();
+                        stru_506E40.Release();
+                        break;
+                      }
+                      pAudioPlayer->PlaySound((SoundID)27, 0, 0, -1, 0, 0, 0, 0);
                       break;
                     case SCREEN_REST://close rest screen
                       if ( dword_506F14 )
@@ -2331,7 +2225,7 @@ void  GameUI_MsgProc()
                       }
                       GetHouseGoodbyeSpeech();
                       pAudioPlayer->PlaySound(SOUND_7, 814, 0, -1, 0, 0, 0, 0);
-                      pVideoPlayer->Unload();
+                      pMediaPlayer->Unload();
                       pGUIWindow_CurrentMenu = window_SpeakInHouse;
                       if ( pGUIWindow_Settings )
                       {
@@ -2361,7 +2255,7 @@ void  GameUI_MsgProc()
                     case SCREEN_INPUT_BLV://click escape
                       if ( uCurrentHouse_Animation == 153 )
                         PlayHouseSound(0x99u, HouseSound_Greeting_2);
-                      pVideoPlayer->Unload();
+                      pMediaPlayer->Unload();
                       if ( npcIdToDismissAfterDialogue )
                       {
                         pParty->hirelingScrollPosition = 0;
@@ -2409,7 +2303,7 @@ void  GameUI_MsgProc()
                       viewparams->bRedrawGameUI = true;
                       continue;
                     case SCREEN_VIDEO:
-                      pVideoPlayer->Unload();
+                      pMediaPlayer->Unload();
                       continue;
                     case SCREEN_CHARACTERS:
                       CharacterUI_ReleaseButtons();
@@ -2610,7 +2504,9 @@ void  GameUI_MsgProc()
           dword_50CDC8 = 1;
           sub_42FBDD();
           PlayHouseSound(uCurrentHouse_Animation, HouseSound_NotEnoughMoney_TrainingSuccessful);
-          pVideoPlayer->Unload();
+
+          if (pMovie_Track)
+            pMediaPlayer->Unload();
           DialogueEnding();
           viewparams->bRedrawGameUI = true;
           if ( dword_59117C_teleportx | dword_591178_teleporty | dword_591174_teleportz | dword_591170_teleport_directiony | dword_59116C_teleport_directionx | dword_591168_teleport_speedz )
@@ -2661,7 +2557,7 @@ void  GameUI_MsgProc()
           continue;
         case UIMSG_TransitionWindowCloseBtn:
           CloseWindowBackground();
-          pVideoPlayer->Unload();
+          pMediaPlayer->Unload();
           DialogueEnding();
           viewparams->bRedrawGameUI = true;
           continue;
@@ -2948,7 +2844,7 @@ void  GameUI_MsgProc()
             *(&pMessageQueue_50CBD0->uNumMessages + 3 * pMessageQueue_50CBD0->uNumMessages + 3) = 0;
             ++pMessageQueue_50CBD0->uNumMessages;
           }*/
-          pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 1, 0);
+          pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Escape, 1, 0);
           continue;
 
         case UIMSG_OnCastTownPortal:
@@ -2996,7 +2892,7 @@ void  GameUI_MsgProc()
           continue;
         case UIMSG_CloseAfterInstallBeacon:
           dword_50CDC8 = 1;
-          pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 0, 0);
+          pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Escape, 0, 0);
           /*if ( (signed int)pMessageQueue_50CBD0->uNumMessages >= 40 )
             continue;
           pMessageQueue_50CBD0->pMessages[pMessageQueue_50CBD0->uNumMessages].eType = UIMSG_Escape;
@@ -3047,7 +2943,7 @@ void  GameUI_MsgProc()
               pParty->sRotationY = pPlayer9->pInstalledBeacons[uMessageParam].PartyRot_X;
               pParty->sRotationX = pPlayer9->pInstalledBeacons[uMessageParam].PartyRot_Y;
             }
-            pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 1, 0);
+            pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Escape, 1, 0);
             pBooksWindow->Release();
             pGUIWindow_CurrentMenu->Release();
             pBooksWindow = 0;
@@ -3068,7 +2964,7 @@ void  GameUI_MsgProc()
               continue;
             for ( thisg = 0; thisg < (signed int)pGames_LOD->uNumSubDirs / 2; ++thisg )
             {
-              if ( !_stricmp((const char *)pGames_LOD->pSubIndices[thisg].pFilename, pCurrentMapName) )
+              if ( !_stricmp(pGames_LOD->pSubIndices[thisg].pFilename, pCurrentMapName) )
                 pPlayer9->pInstalledBeacons[uMessageParam].SaveFileID = thisg;
             }
           }
@@ -3134,7 +3030,7 @@ LABEL_486:
                     *(&pMessageQueue_50CBD0->uNumMessages + 3 * pMessageQueue_50CBD0->uNumMessages + 3) = 0;
                     ++pMessageQueue_50CBD0->uNumMessages;
                   }*/
-                  pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 1, 0);
+                  pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Escape, 1, 0);
                   continue;
                 }
                 v63 = 210;
@@ -3269,7 +3165,7 @@ LABEL_486:
         case UIMSG_DD:
 			__debugbreak();
           sprintf(pTmpBuf.data(), "%s", pKeyActionMap->pPressedKeysBuffer);
-          memcpy(&v216, txt_file_frametable_parser((const char *)pKeyActionMap->pPressedKeysBuffer, &v218), sizeof(v216));
+          memcpy(&v216, txt_file_frametable_parser(pKeyActionMap->pPressedKeysBuffer, &v218), sizeof(v216));
           if ( v216.uPropCount == 1 )
           {
             pNPCData4 = (NPCData *)((signed int)pGames_LOD->uNumSubDirs / 2);
@@ -3284,7 +3180,7 @@ LABEL_486:
               thish = 0;
               do
               {
-                if ( !_stricmp((const char *)&pGames_LOD->pSubIndices[thish], Str2) )
+                if ( !_stricmp(pGames_LOD->pSubIndices[thish].pFilename, Str2) )
                   break;
                 ++thish;
                 pNPCData3 = (NPCData *)((char *)pNPCData3 + 1);
@@ -3292,7 +3188,7 @@ LABEL_486:
               while ( (signed int)pNPCData3 < (signed int)pNPCData4 );
               if ( (signed int)pNPCData3 < (signed int)pNPCData4 )
               {
-                strcpy(pCurrentMapName, (const char *)&pGames_LOD->pSubIndices[(int)pNPCData3]);
+                strcpy(pCurrentMapName, pGames_LOD->pSubIndices[(int)pNPCData3].pFilename);
                 dword_6BE364_game_settings_1 |= GAME_SETTINGS_0001;
                 uGameState = GAME_STATE_CHANGE_LOCATION;
                 OnMapLeave();
@@ -3576,7 +3472,7 @@ LABEL_486:
                   *(&pMessageQueue_50CBD0->uNumMessages + 3 * pMessageQueue_50CBD0->uNumMessages + 3) = 0;
                   ++pMessageQueue_50CBD0->uNumMessages;
                 }*/
-                pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 0, 0);
+                pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Escape, 0, 0);
                 ShowStatusBarString(pGlobalTXT_LocalizationStrings[481], 2);// "Encounter!"
                 pAudioPlayer->PlaySound((SoundID)227, 0, 0, -1, 0, 0, 0, 0);
                 continue;
@@ -3733,8 +3629,8 @@ LABEL_486:
                     dword_50C9EC[3 * dword_50C9E8 + 2] = uActiveCharacter - 1;
                     ++dword_50C9E8;
                   }*/
-                  pMessageQueue_50C9E8->AddMessage(UIMSG_CastSpellFromBook, v103, uActiveCharacter - 1);
-                //  pMessageQueue_50CBD0->AddMessage(UIMSG_CastSpellFromBook, v103, uActiveCharacter - 1);
+                  pMessageQueue_50C9E8->AddGUIMessage(UIMSG_CastSpellFromBook, v103, uActiveCharacter - 1);
+                //  pMessageQueue_50CBD0->AddGUIMessage(UIMSG_CastSpellFromBook, v103, uActiveCharacter - 1);
                 }
                 else
                 {
@@ -3835,7 +3731,7 @@ LABEL_486:
           pMessageQueue_50CBD0->pMessages[pMessageQueue_50CBD0->uNumMessages].param = 0;
           *(&pMessageQueue_50CBD0->uNumMessages + 3 * pMessageQueue_50CBD0->uNumMessages + 3) = 0;
           ++pMessageQueue_50CBD0->uNumMessages;*/
-          pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 0, 0);
+          pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Escape, 0, 0);
           continue;
         case UIMSG_ClickAwardScrollBar:
           books_page_number = 1;
@@ -4060,7 +3956,7 @@ LABEL_486:
           v115 = pMessageQueue_50CBD0->uNumMessages;
           if ( !pMessageQueue_50CBD0->uNumMessages )
           {
-            pMessageQueue_50CBD0->AddMessage(UIMSG_MouseLeftClickInScreen, 0, 0);
+            pMessageQueue_50CBD0->AddGUIMessage(UIMSG_MouseLeftClickInScreen, 0, 0);
             /*if ( (signed int)v115 < 40 )
             //goto LABEL_769;
             {
@@ -4075,7 +3971,7 @@ LABEL_486:
           if ( pMessageQueue_50CBD0->pMessages[0].field_8 )
           {
             pMessageQueue_50CBD0->uNumMessages = 1;
-            pMessageQueue_50CBD0->AddMessage(UIMSG_MouseLeftClickInScreen, 0, 0);
+            pMessageQueue_50CBD0->AddGUIMessage(UIMSG_MouseLeftClickInScreen, 0, 0);
             /*v115 = v0;
             pMessageQueue_50CBD0->uNumMessages = v0;
             pMessageQueue_50CBD0->pMessages[v115].eType = UIMSG_MouseLeftClickInScreen;
@@ -4087,7 +3983,7 @@ LABEL_486:
           }
           v115 = 0;
           pMessageQueue_50CBD0->uNumMessages = 0;
-          pMessageQueue_50CBD0->AddMessage(UIMSG_MouseLeftClickInScreen, 0, 0);
+          pMessageQueue_50CBD0->AddGUIMessage(UIMSG_MouseLeftClickInScreen, 0, 0);
           /*if ( (signed int)v115 < 40 )
             //goto LABEL_769;
           {
@@ -4208,7 +4104,7 @@ LABEL_486:
       *(&pMessageQueue_50CBD0->uNumMessages + 3 * pMessageQueue_50CBD0->uNumMessages + 3) = 0;
       ++pMessageQueue_50CBD0->uNumMessages;
     }*/
-    pMessageQueue_50CBD0->AddMessage((UIMessageType)dword_50C9DC, (int)ptr_50C9E0, 0);
+    pMessageQueue_50CBD0->AddGUIMessage((UIMessageType)dword_50C9DC, (int)ptr_50C9E0, 0);
     dword_50C9DC = 0;
   }
   else
@@ -4225,7 +4121,7 @@ LABEL_486:
           *(&pMessageQueue_50CBD0->uNumMessages + 3 * pMessageQueue_50CBD0->uNumMessages + 3) = 0;
           ++pMessageQueue_50CBD0->uNumMessages;
         }*/
-        pMessageQueue_50CBD0->AddMessage((UIMessageType)_50C9D0_AfterEnchClickEventId, _50C9D4_AfterEnchClickEventSecondParam, 0);
+        pMessageQueue_50CBD0->AddGUIMessage((UIMessageType)_50C9D0_AfterEnchClickEventId, _50C9D4_AfterEnchClickEventSecondParam, 0);
         _50C9D0_AfterEnchClickEventId = 0;
         _50C9D4_AfterEnchClickEventSecondParam = 0;
         _50C9D8_AfterEnchClickEventTimeout = 0;
@@ -4421,8 +4317,8 @@ void  GUI_MainMenuMessageProc()
               v26 = pParam + pSaveListPosition;
               if ( dword_6BE138 == pParam + pSaveListPosition )
               {
-                pMessageQueue_50CBD0->AddMessage(UIMSG_SaveLoadBtn, 0, 0);
-                pMessageQueue_50CBD0->AddMessage(UIMSG_LoadGame, 0, 0);
+                pMessageQueue_50CBD0->AddGUIMessage(UIMSG_SaveLoadBtn, 0, 0);
+                pMessageQueue_50CBD0->AddGUIMessage(UIMSG_LoadGame, 0, 0);
               }
               uLoadGameUI_SelectedSlot = v26;
               dword_6BE138 = v26;
@@ -4431,8 +4327,8 @@ void  GUI_MainMenuMessageProc()
           {
             //typing in the line
               pKeyActionMap->EnterText(0, 19, pGUIWindow_CurrentMenu);
-              strcpy((char *)pKeyActionMap->pPressedKeysBuffer, pSavegameHeader[uLoadGameUI_SelectedSlot].pName);
-              pKeyActionMap->uNumKeysPressed = strlen((const char *)pKeyActionMap->pPressedKeysBuffer);
+              strcpy(pKeyActionMap->pPressedKeysBuffer, pSavegameHeader[uLoadGameUI_SelectedSlot].pName);
+              pKeyActionMap->uNumKeysPressed = strlen(pKeyActionMap->pPressedKeysBuffer);
           }
           break;
         case UIMSG_SaveLoadBtn:
@@ -4474,7 +4370,7 @@ void  GUI_MainMenuMessageProc()
           if ( !(dword_6BE364_game_settings_1 & GAME_SETTINGS_4000))
             break;
           v15 = 1;
-          pVideoPlayer->bStopBeforeSchedule = 1;
+          pMediaPlayer->bStopBeforeSchedule = 1;
           viewparams->bRedrawGameUI = 1;
           viewparams->field_48 = 1;
           if ( GetCurrentMenuID() == MENU_MAIN || GetCurrentMenuID() == MENU_MMT_MAIN_MENU
@@ -4492,7 +4388,7 @@ void  GUI_MainMenuMessageProc()
               SetCurrentMenuID(MENU_CREDITSCLOSE);//в закрытие Создатели
               break;
             }
-            pMessageQueue_50CBD0->AddMessage(UIMSG_ChangeGameState, 0, 0);
+            pMessageQueue_50CBD0->AddGUIMessage(UIMSG_ChangeGameState, 0, 0);
             break;
           }
           if ( GetCurrentMenuID() == MENU_CREDITSPROC && !pCurrentScreen )
@@ -4509,7 +4405,7 @@ void  GUI_MainMenuMessageProc()
               SetCurrentMenuID(MENU_CREDITSCLOSE);
               break;
             }
-            pMessageQueue_50CBD0->AddMessage(UIMSG_ChangeGameState, 0, 0);
+            pMessageQueue_50CBD0->AddGUIMessage(UIMSG_ChangeGameState, 0, 0);
             break;
           }
           if ( pCurrentScreen == SCREEN_LOADGAME )
@@ -4530,7 +4426,7 @@ void  GUI_MainMenuMessageProc()
           }
           if ( pCurrentScreen == SCREEN_VIDEO )
           {
-            pVideoPlayer->Unload();
+            //pVideoPlayer->Unload();
           }
           else
           {

@@ -27,11 +27,19 @@ class OpenALSoundProvider
       this->context = nullptr;
     }
 
+    inline ~OpenALSoundProvider()
+    {
+      Release();
+    }
+
     inline bool Initialize()
     {
+
       auto device_names = alcGetString(nullptr, ALC_ALL_DEVICES_SPECIFIER);
       if (!device_names)
+      {
         device_names = alcGetString(nullptr, ALC_DEVICE_SPECIFIER);
+      }
       if (device_names)
       {
         for (auto device_name = device_names; device_name[0]; device_name += strlen(device_name))
@@ -68,15 +76,47 @@ class OpenALSoundProvider
       if (context)
       {
         alcDestroyContext(context);
-        context = nullptr;
       }
       if (device)
       {
         alcCloseDevice(device);
-        device = nullptr;
       }
     }
 
+    void DeleteStreamingTrack(StreamingTrackBuffer **buffer)
+    {
+      if (!buffer && !*buffer)
+        return;
+      auto track = *buffer;
+
+      int status;
+      alGetSourcei(track->source_id, AL_SOURCE_STATE, &status);
+      if (status == AL_PLAYING)
+      {
+        alSourceStop(track->source_id);
+        if (CheckError()) __debugbreak();
+      }
+
+      int num_processed_buffers = 0;
+      int num_queued_buffers = 0;
+      alGetSourcei(track->source_id, AL_BUFFERS_PROCESSED, &num_processed_buffers);
+      alGetSourcei(track->source_id, AL_BUFFERS_QUEUED, &num_queued_buffers);
+      int num_track_buffers = num_queued_buffers + num_processed_buffers;
+      for (int i = 0; i < num_processed_buffers; ++i)
+      {
+        unsigned int buffer_id;
+        alSourceUnqueueBuffers(track->source_id, 1, &buffer_id);
+        if (!CheckError())
+          alDeleteBuffers(1, &buffer_id);
+        else __debugbreak();
+      }
+
+      alDeleteSources(1, &track->source_id);
+      CheckError();
+
+      delete *buffer;
+      *buffer = nullptr;
+    }
 
     void DeleteBuffer16(TrackBuffer **buffer)
     {
@@ -125,6 +165,7 @@ class OpenALSoundProvider
       }
 
       unsigned int al_source = -1;
+      alGetError();
       alGenSources(1, &al_source);
       if (CheckError())
         return nullptr;

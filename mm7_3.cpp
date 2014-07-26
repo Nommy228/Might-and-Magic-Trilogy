@@ -1,3 +1,7 @@
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+
 #define _CRT_SECURE_NO_WARNINGS
 #include "ErrorHandling.h"
 #include "Weather.h"
@@ -2650,13 +2654,14 @@ void ODM_LoadAndInitialize(const char *pLevelFilename, ODMRenderParams *thisa)
   const char *pFilename; // [sp+84h] [bp-Ch]@1
   //unsigned int v12; // [sp+88h] [bp-8h]@12
   //int v13; // [sp+8Ch] [bp-4h]@11
+  int v;
 
   pFilename = pLevelFilename;
   //thisa->AllocSoftwareDrawBuffers();
   pODMRenderParams->Initialize();
   pWeather->bRenderSnow = false;
   pRenderer->ClearZBuffer(0, 479);
-  thisa = (ODMRenderParams *)1;
+  //thisa = (ODMRenderParams *)1;
   GetAlertStatus();
   if ( _A750D8_player_speech_timer )
     _A750D8_player_speech_timer = 0;
@@ -2668,14 +2673,14 @@ void ODM_LoadAndInitialize(const char *pLevelFilename, ODMRenderParams *thisa)
     v3 = v4->uRespawnIntervalDays;
   }
   else
-    v4 = (MapInfo *)thisa;
+    v4 = (MapInfo *)1;
   day_attrib &= ~DAY_ATTRIB_FOG;
   dword_6BE13C_uCurrentlyLoadedLocationID = v2;
   pOutdoor->Initialize(
     pFilename,
     (unsigned int)(signed __int64)((double)(signed __int64)pParty->uTimePlayed * 0.234375) / 0x3C / 0x3C / 0x18 + 1,
     v3,
-    (int)&thisa);
+    &v);
   if ( !(dword_6BE364_game_settings_1 & GAME_SETTINGS_2000) )
   {
     Actor::InitializeActors();
@@ -2684,8 +2689,8 @@ void ODM_LoadAndInitialize(const char *pLevelFilename, ODMRenderParams *thisa)
   dword_6BE364_game_settings_1 &= ~GAME_SETTINGS_2000;
   //v5 = 0;
   if ( !v2 )
-    thisa = 0;
-  if ( thisa == (ODMRenderParams *)1 )
+    v = 0;
+  if ( v == 1 )
   {
     //v13 = 0;
     for (uint i = 0; i < pOutdoor->uNumSpawnPoints; ++i)

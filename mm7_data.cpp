@@ -1,3 +1,7 @@
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+
 #define _CRT_SECURE_NO_WARNINGS
 #include "mm7_data.h"
 
@@ -304,8 +308,8 @@ std::array<stat_coord, 26> stat_string_coord = //4E2940
 // Data declarations
 
 int game_starting_year = 0;
-int game_viewport_width;
-int game_viewport_height;
+unsigned int game_viewport_width;
+unsigned int game_viewport_height;
 int game_viewport_x;
 int game_viewport_y;
 int game_viewport_z;

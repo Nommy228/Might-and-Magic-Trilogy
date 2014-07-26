@@ -1,3 +1,7 @@
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+
 #define _CRT_SECURE_NO_WARNINGS
 #include "LightmapBuilder.h"
 #include "Game.h"
@@ -35,18 +39,10 @@ Lightmap::Lightmap()
   field_C18 = 0;
 }
 
-
-
-
-
 //----- (0045BB06) --------------------------------------------------------
 LightmapBuilder::LightmapBuilder()
 {
 }
-
-
-
-
 
 //----- (0045BC07) --------------------------------------------------------
 bool LightmapBuilder::ApplyLights(stru320 *a2, stru154 *a3, unsigned int uNumVertices, RenderVertexSoft *a5, IndoorCameraD3D_Vec4 *a6, char uClipFlag)
@@ -114,18 +110,10 @@ bool LightmapBuilder::_45BE86_build_light_polygon(Vec3_int_ *pos, float radius, 
   Lightmap *v11; // edi@3
   double v17; // st7@5
   double v24; // st7@6
-//  int v31; // eax@8
-//  int v32; // ebx@8
-//  unsigned int v33; // ecx@8
-//  int v34; // edx@9
-//  int v35; // edx@11
-//  unsigned int v36; // edx@13
-//  int v37; // ecx@14
   double v38; // st7@14
   double v39; // st7@16
   double v40; // st7@16
   int v45; // eax@24
-//  int v53; // [sp-8h] [bp-54h]@34
 
   if (fabsf(radius) < 1e-6f)
     return true;

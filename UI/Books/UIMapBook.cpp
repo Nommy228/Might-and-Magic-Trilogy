@@ -182,7 +182,7 @@ unsigned int  DrawLloydBeaconsScreen()
     }
   }
   if ( byte_506360 )
-    pMessageQueue_50CBD0->AddMessage(UIMSG_CloseAfterInstallBeacon, 0, 0);
+    pMessageQueue_50CBD0->AddGUIMessage(UIMSG_CloseAfterInstallBeacon, 0, 0);
   return BeaconID;
 }
 

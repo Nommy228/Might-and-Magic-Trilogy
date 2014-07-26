@@ -1,9 +1,12 @@
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+
 #define _CRT_SECURE_NO_WARNINGS
 #include "..\MM7.h"
 
 #include "..\Keyboard.h"
 #include "..\IndoorCameraD3D.h"
-#include "..\CShow.h"
 #include "..\GammaControl.h"
 #include "..\Render.h"
 

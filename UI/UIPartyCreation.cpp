@@ -1,3 +1,7 @@
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+
 #define _CRT_SECURE_NO_WARNINGS
 #include "UIPartyCreation.h"
 #include "..\mm7_unsorted_subs.h"
@@ -154,19 +158,19 @@ void PlayerCreationUI_Draw()
       switch ( pGUIWindow_CurrentMenu->receives_keyboard_input_2 )
       {
         case WINDOW_INPUT_IN_PROGRESS://press name panel
-          v17 = pGUIWindow_CurrentMenu->DrawTextInRect(pFontCreate, 159 * (int)pGUIWindow_CurrentMenu->ptr_1C + 18, 124, 0, (const char *)pKeyActionMap->pPressedKeysBuffer, 120, 1);
+          v17 = pGUIWindow_CurrentMenu->DrawTextInRect(pFontCreate, 159 * (int)pGUIWindow_CurrentMenu->ptr_1C + 18, 124, 0, pKeyActionMap->pPressedKeysBuffer, 120, 1);
           pGUIWindow_CurrentMenu->DrawFlashingInputCursor(159 * (unsigned int)pGUIWindow_CurrentMenu->ptr_1C + v17 + 20, 124, pFontCreate);
           break;
         case WINDOW_INPUT_CONFIRMED: // press enter
           pGUIWindow_CurrentMenu->receives_keyboard_input_2 = WINDOW_INPUT_NONE;
           v126 = 0;
-          for ( int i = 0; i < strlen((const char *)pKeyActionMap->pPressedKeysBuffer); ++i )//edit name
+          for ( int i = 0; i < strlen(pKeyActionMap->pPressedKeysBuffer); ++i )//edit name
           {
             if ( pKeyActionMap->pPressedKeysBuffer[i] == ' ' )
               ++v126;
           }
-          if ( strlen((const char *)pKeyActionMap->pPressedKeysBuffer) && v126 != strlen((const char *)pKeyActionMap->pPressedKeysBuffer) )
-            strcpy(pParty->pPlayers[i].pName, (const char *)pKeyActionMap->pPressedKeysBuffer);
+          if ( strlen(pKeyActionMap->pPressedKeysBuffer) && v126 != strlen(pKeyActionMap->pPressedKeysBuffer) )
+            strcpy(pParty->pPlayers[i].pName, pKeyActionMap->pPressedKeysBuffer);
           pGUIWindow_CurrentMenu->DrawTextInRect(pFontCreate, pIntervalX, 124, 0, pParty->pPlayers[i].pName, 130, 0);
           pParty->pPlayers[i].field_1988[27] = 1;
           break;
@@ -568,7 +572,7 @@ bool PlayerCreationUI_Loop()
             && uMouseY >= (signed int)pControlsHead->uY && uMouseY <= (signed int)pControlsHead->uW )//mouse movement
         {
           pControlParam = pControlsHead->uControlParam;
-          pMessageQueue_50CBD0->AddMessage((UIMessageType)pControlsHead->field_1C, pControlParam, 0);
+          pMessageQueue_50CBD0->AddGUIMessage((UIMessageType)pControlsHead->field_1C, pControlParam, 0);
           v1 = 0;
         }
         pControlsHead = pControlsHead->pNext;

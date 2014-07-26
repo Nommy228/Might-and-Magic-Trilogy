@@ -1,10 +1,14 @@
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+
 #define _CRT_SECURE_NO_WARNINGS
 #include <io.h>
 
 #include "..\ErrorHandling.h"
 #include "..\mm7_unsorted_subs.h"
 #include "..\mm7_data.h"
-#include "..\VideoPlayer.h"
+#include "..\MediaPlayer.h"
 #include "..\MapInfo.h"
 #include "..\GUIWindow.h"
 #include "..\GUIFont.h"
@@ -52,7 +56,7 @@ void TransitionUI_Load(uint anim_id, uint exit_pic_id, int x, int y, int z, int 
   if (anim_id)
   {
     if ( !IndoorLocation::GetLocationIndex(pLocationName) )
-      pVideoPlayer->OpenHouseMovie(pAnimatedRooms[p2DEvents[anim_id - 1].uAnimationID].video_name, 1);
+      pMediaPlayer->OpenHouseMovie(pAnimatedRooms[p2DEvents[anim_id - 1].uAnimationID].video_name, 1);
   }
   else if ( !IndoorLocation::GetLocationIndex(pLocationName) )
   {
@@ -178,7 +182,7 @@ void TransitionUI_Draw()
   pRenderer->DrawTextureIndexed(556, 451, pIcons_LOD->GetTexture(uTextureID_x_x_u));
   pRenderer->DrawTextureIndexed(476, 451, pIcons_LOD->GetTexture(uTextureID_x_ok_u));
   map_id = pMapStats->GetMapInfo(pCurrentMapName);
-  if ( (pMovie || v9) && *dword_591164_teleport_map_name != ' ' )
+  if ( (pMovie_Track || v9) && *dword_591164_teleport_map_name != ' ' )
     map_id = pMapStats->GetMapInfo(dword_591164_teleport_map_name);
   transition_window.uFrameX = 493;
   transition_window.uFrameWidth = 126;

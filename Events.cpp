@@ -1,3 +1,7 @@
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+
 #define _CRT_SECURE_NO_WARNINGS
 #include <stdlib.h>
 #include "mm7_unsorted_subs.h"
@@ -6,7 +10,7 @@
 #include "Weather.h"
 #include "Texture.h"
 #include "mm7_data.h"
-#include "VideoPlayer.h"
+#include "MediaPlayer.h"
 #include "Mouse.h"
 
 #include "MapInfo.h"
@@ -283,7 +287,6 @@ Emerald Isle #201 // margareth armoury tip
 //----- (0044684A) --------------------------------------------------------
 void EventProcessor(int uEventID, int targetObj, int canShowMessages, int entry_line)
 {
-//  unsigned int v3; // eax@5
   signed int v4; // esi@7
   int v11; // eax@14
   char *v12; // eax@15
@@ -298,60 +301,22 @@ void EventProcessor(int uEventID, int targetObj, int canShowMessages, int entry_
   unsigned __int16 v24; // ax@45
   LevelDecoration *v26; // eax@55
   int v27; // eax@57
-//  int v28; // ecx@57
   int pEventID; // eax@58
   int pNPC_ID; // ecx@58
   int pIndex; // esi@58
   NPCData *pNPC; // ecx@58
-//  int v34; // esi@59
-//  int v35; // esi@60
-//  int v36; // esi@61
-//  int v37; // esi@62
   int v38; // eax@78
   int v39; // ecx@78
   int v42; // eax@84
   int v43; // ecx@84
-//  void *v46; // eax@91
-//  GUIWindow *v47; // eax@93
   GUIButton *v48; // ecx@93
   GUIButton *v49; // esi@94
-//  char v50; // al@100
-//  Player *v51; // esi@103
-//  Player *v52; // ecx@106
-//  int v53; // ecx@107
-//  char v54; // al@111
-//  Player *v55; // esi@114
-//  Player *v56; // ecx@117
-//  int v57; // ecx@118
   signed int pValue; // ebp@124
   Player *pPlayer; // esi@125
-//  int v60; // eax@126
-//  int v61; // edx@133
-//  int v62; // eax@139
-//  int v63; // ebp@145
-//  signed int v64; // edi@146
-//  unsigned int v65; // edx@148
-//  Player *v66; // ecx@148
-//  int v67; // esi@148
-//  signed int v68; // eax@151
-//  int v69; // esi@151
-//  Player *v70; // ecx@158
-//  unsigned int v71; // eax@159
-//  int v72; // esi@159
-//  signed int v73; // eax@162
-//  int v74; // esi@162
-//  int v75; // edx@172
-//  Player *v76; // esi@173
-//  signed int v77; // ebp@186
-//  int v78; // edx@186
-//  Player *v79; // esi@187
-//  Player *v82; // esi@201
   int v83; // eax@212
   int v84; // ebp@220
   int v90; // eax@243
   const char *v91; // ecx@247
-//  int v92; // eax@251
-//  char *v93; // eax@252
   int v94; // ecx@262
   int v95; // ebp@262
   int v96; // edx@262
@@ -360,17 +325,10 @@ void EventProcessor(int uEventID, int targetObj, int canShowMessages, int entry_
   const char *v99; // esi@267
   int v100; // edx@267
   unsigned int v102; // esi@281
-//  int v103; // edi@284
   int v104; // eax@288
-//  int v105; // edx@294
   int v106; // [sp-20h] [bp-4C8h]@278
   signed int v109; // [sp-14h] [bp-4BCh]@278
   signed int v110; // [sp-10h] [bp-4B8h]@278
-//  int v113; // [sp-8h] [bp-4B0h]@106
-//  int v114; // [sp-8h] [bp-4B0h]@117
-//  int v117; // [sp-4h] [bp-4ACh]@106
-//  int v118; // [sp-4h] [bp-4ACh]@117
-//  int v121; // [sp-4h] [bp-4ACh]@294
   int curr_seq_num; // [sp+10h] [bp-498h]@4
   int v126; // [sp+1Ch] [bp-48Ch]@262
   int player_choose; // [sp+20h] [bp-488h]@4
@@ -393,7 +351,7 @@ void EventProcessor(int uEventID, int targetObj, int canShowMessages, int entry_
   v133 = 0;
   EvtTargetObj = targetObj;
   dword_5B65C4_cancelEventProcessing = 0;
-  /*if ( uEventID == 114 )//чтобы проверить скрипт
+  /*if ( uEventID == 114 )//for test script
   {
     if (!lua->DoFile("out01.lua"))
       Log::Warning(L"Error opening out01.lua\n");
@@ -453,18 +411,18 @@ void EventProcessor(int uEventID, int targetObj, int canShowMessages, int entry_
         v12 = (char *)&item.uExpireTime + strlen(Source) + 7;
         if ( *v12 == 32 )
           *v12 = 0;
-        if (pVideoPlayer->bBufferLoaded)
-          pVideoPlayer->Unload();
-        pVideoPlayer->bStopBeforeSchedule = 0;
-        pVideoPlayer->pResetflag = 0;
+        if (pMediaPlayer->bPlaying_Movie)
+          pMediaPlayer->Unload();
+        pMediaPlayer->bStopBeforeSchedule = 0;
+//        pMediaPlayer->pResetflag = 0;
 
         v128 = pCurrentScreen;
         strcpy(Str, Source);
         v16 = RemoveQuotes(Str);
-		pVideoPlayer->MovieLoop(v16, 0, _evt->v5, 1);
+		pMediaPlayer->FullscreenMovieLoop(v16, 0/*, _evt->v5*/);
         if ( !_stricmp(v16, "arbiter good") )
-                {
-                  pParty->alignment = PartyAlignment_Good;
+        {
+          pParty->alignment = PartyAlignment_Good;
           v18 = 0;
           LOBYTE(v17) = 1;
           SetUserInterface(PartyAlignment_Good, v17);
@@ -474,7 +432,7 @@ void EventProcessor(int uEventID, int targetObj, int canShowMessages, int entry_
             if ( v128 == 3 )
               pGameLoadingUI_ProgressBar->uType = GUIProgressBar::TYPE_Fullscreen;
             if ( v128 == 13 )
-              pVideoPlayer->OpenHouseMovie(pAnimatedRooms[uCurrentHouse_Animation].video_name, 1u);
+              pMediaPlayer->OpenHouseMovie(pAnimatedRooms[uCurrentHouse_Animation].video_name, 1u);
           }
           ++curr_seq_num;
           break;
@@ -491,7 +449,7 @@ void EventProcessor(int uEventID, int targetObj, int canShowMessages, int entry_
             if ( v128 == 3 )
               pGameLoadingUI_ProgressBar->uType = GUIProgressBar::TYPE_Fullscreen;
             if ( v128 == 13 )
-              pVideoPlayer->OpenHouseMovie(pAnimatedRooms[uCurrentHouse_Animation].video_name, 1u);
+              pMediaPlayer->OpenHouseMovie(pAnimatedRooms[uCurrentHouse_Animation].video_name, 1);
           }
           ++curr_seq_num;
           break;
@@ -508,7 +466,7 @@ void EventProcessor(int uEventID, int targetObj, int canShowMessages, int entry_
           if ( v128 == 3 )
             pGameLoadingUI_ProgressBar->uType = GUIProgressBar::TYPE_Fullscreen;
           if ( v128 == 13 )
-            pVideoPlayer->OpenHouseMovie(pAnimatedRooms[uCurrentHouse_Animation].video_name, 1);
+            pMediaPlayer->OpenHouseMovie(pAnimatedRooms[uCurrentHouse_Animation].video_name, 1);
         }
         ++curr_seq_num;
         }
@@ -690,7 +648,7 @@ LABEL_47:
           if ( window_SpeakInHouse->par1C == 165 )
             {
             HouseDialogPressCloseBtn();
-            pVideoPlayer->Unload();
+            pMediaPlayer->Unload();
             window_SpeakInHouse->Release();
             pParty->uFlags &= ~2;
             activeLevelDecoration = (LevelDecoration*)1;
@@ -717,7 +675,7 @@ LABEL_47:
           else
             {
             if ( window_SpeakInHouse->par1C == 553 )
-              pVideoPlayer->bLoopPlaying = 0;
+              pMediaPlayer->bLoopPlaying = 0;
             }
           }
 
@@ -1180,7 +1138,7 @@ LABEL_47:
               dialog_menu_id = HOUSE_DIALOGUE_NULL;
               while ( HouseDialogPressCloseBtn() )
                 ;
-              pVideoPlayer->Unload();
+              pMediaPlayer->Unload();
               window_SpeakInHouse->Release();
               window_SpeakInHouse = 0;
               if ( pMessageQueue_50CBD0->uNumMessages )

@@ -1,3 +1,7 @@
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+
 #define _CRT_SECURE_NO_WARNINGS
 #include "Keyboard.h"
 #include "GUIWindow.h"
@@ -26,7 +30,8 @@
 struct KeyboardActionMapping *pKeyActionMap;
 
 
-class CKeyListElement{
+class CKeyListElement
+{
 public:
   std::string m_keyName;
   unsigned char m_keyDefaultCode;
@@ -130,6 +135,8 @@ KeyboardActionMapping::KeyboardActionMapping()
 
   ResetKeys();
 
+  uNumKeysPressed = 0;
+
   uGameMenuUI_CurentlySelectedKeyIdx = -1;
 }
 // 506E68: using guessed type int uGameMenuUI_CurentlySelectedKeyIdx;
@@ -147,23 +154,20 @@ void KeyboardActionMapping::SetDefaultMapping()
 void KeyboardActionMapping::ResetKeys()
 {
   for (uint i = 0; i < 30; ++i)
-    GetAsyncKeyState(pVirtualKeyCodesMapping[i]);
+    pToggleTypes[i] = (KeyToggleType)GetAsyncKeyState(pVirtualKeyCodesMapping[i]);
 }
 
 //----- (00459E5A) --------------------------------------------------------
 void KeyboardActionMapping::EnterText(int a2, int max_string_len, GUIWindow *pWindow)
 {
-  KeyboardActionMapping *v4; // esi@1
-
-  v4 = this;
   memset(this->pPressedKeysBuffer, 0, 0x101u);
-  v4->uNumKeysPressed = 0;
+  this->uNumKeysPressed = 0;
   if ( a2 )
-    v4->field_204 = 2;
+    this->field_204 = 2;
   else
-    v4->field_204 = 1;
-  v4->max_input_string_len = max_string_len;
-  v4->pWindow = pWindow;
+    this->field_204 = 1;
+  this->max_input_string_len = max_string_len;
+  this->pWindow = pWindow;
   pWindow->receives_keyboard_input_2 = WINDOW_INPUT_IN_PROGRESS;
 }
 
@@ -192,13 +196,9 @@ bool KeyboardActionMapping::ProcessTextInput(unsigned int a2)
       }
     }
     else if ( a2 == VK_RETURN )
-    {
       pKeyActionMap->SetWindowInputStatus(WINDOW_INPUT_CONFIRMED);
-    }
     else if ( a2 == VK_ESCAPE )
-    {
       pKeyActionMap->SetWindowInputStatus(WINDOW_INPUT_CANCELLED);
-    }
     else if (this->uNumKeysPressed < this->max_input_string_len)
     {
       if ( pKeyActionMap->field_204 == 1 )
@@ -231,8 +231,6 @@ bool KeyboardActionMapping::ProcessTextInput(unsigned int a2)
 }
 // 506E68: using guessed type int uGameMenuUI_CurentlySelectedKeyIdx;
 
-
-
 //----- (00459FFC) --------------------------------------------------------
 void KeyboardActionMapping::ReadMappings()
 {
@@ -247,13 +245,9 @@ void KeyboardActionMapping::ReadMappings()
 
     ReadWindowsRegistryString(keyName, str, 32, "DEFAULT");
     if ( strcmp(str, "DEFAULT") && ( TranslateKeyNameToKeyCode(str) != -1) )
-    {
       pVirtualKeyCodesMapping[commandId] = TranslateKeyNameToKeyCode(str);
-    }
     else
-    {
       pVirtualKeyCodesMapping[commandId] = commandDefaultKeyCode;
-    }
     pToggleTypes[commandId] = toggType;
   }
 
@@ -345,28 +339,6 @@ bool Keyboard::WasKeyPressed(int vKey)
 //----- (0046A14B) --------------------------------------------------------
 void OnPressSpace()
 {
-  //SHORT v0; // ax@2
-  /*int *v1; // eax@2
-  char *v2; // ebx@5
-  unsigned int v3; // esi@5
-  signed int v4; // edi@7
-  unsigned int v5; // edx@7
-  int v6; // ecx@8
-  int v7; // eax@8
-  int v8; // ecx@17
-  int *v9; // esi@22
-  signed int v10; // ebx@22
-  int i; // edi@23
-  int v12; // edx@24
-  int v13; // ecx@24
-  int j; // esi@28
-  int v16; // [sp+4h] [bp-1Ch]@0
-  char *v17; // [sp+8h] [bp-18h]@5
-  unsigned int v18; // [sp+Ch] [bp-14h]@5
-  int v19; // [sp+10h] [bp-10h]@8
-  int *v20; // [sp+14h] [bp-Ch]@5
-  int *v21; // [sp+18h] [bp-8h]@7
-  int v22; // [sp+1Ch] [bp-4h]@4*/
 
   //if ( pRenderer->pRenderD3D )
   {
@@ -489,14 +461,10 @@ void OnPressSpace()
 void Keyboard::ProcessInputActions()
 {
   char v4; // al@9
-  //char v8; // bl@100
   unsigned __int16 v9; // ax@102
   int spell_price; // eax@103
-//  char v14; // al@159
-//  unsigned int v15; // eax@168
   PartyAction partyAction; // [sp-14h] [bp-1Ch]@20
   InputAction inputAction; // [sp+0h] [bp-8h]@7
-  //int v24; // [sp+4h] [bp-4h]@87
 
   pGame->pKeyboardInstance->EnterCriticalSection();
   Keyboard* pKeyboard = pGame->pKeyboardInstance;
@@ -529,7 +497,7 @@ void Keyboard::ProcessInputActions()
     {
       if (pCurrentScreen == SCREEN_GAME)
       {
-        pMessageQueue_50CBD0->AddMessage(UIMSG_Game_Action, 0, 0);
+        pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Game_Action, 0, 0);
         continue;
       }
       if ( pCurrentScreen == SCREEN_NPC_DIALOGUE || pCurrentScreen == SCREEN_BRANCHLESS_NPC_DIALOG )
@@ -550,7 +518,7 @@ void Keyboard::ProcessInputActions()
           }
           pMessageQueue_50CBD0->uNumMessages = 0;
         }
-        //pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 0, 0);
+        //pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Escape, 0, 0);
       }
     }
   }*/
@@ -761,11 +729,11 @@ void Keyboard::ProcessInputActions()
                  spell_price > pPlayers[uActiveCharacter]->sMana) )
             {
               pPartyActionQueue = pPartyActionQueue;
-              pMessageQueue_50CBD0->AddMessage(UIMSG_Attack, 0, 0);
+              pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Attack, 0, 0);
               break;
             }
             else
-              pMessageQueue_50C9E8->AddMessage(UIMSG_CastQuickSpell, 0, 0);
+              pMessageQueue_50C9E8->AddGUIMessage(UIMSG_CastQuickSpell, 0, 0);
             break;
           case INPUT_Attack:
             if (pCurrentScreen != SCREEN_GAME)
@@ -775,12 +743,12 @@ void Keyboard::ProcessInputActions()
               pTurnEngine->field_18 |= TE_FLAG_8;
               break;
             }
-            pMessageQueue_50CBD0->AddMessage(UIMSG_Attack, 0, 0);
+            pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Attack, 0, 0);
             break;
           case INPUT_EventTrigger:
             if (pCurrentScreen == SCREEN_GAME)
             {
-              pMessageQueue_50CBD0->AddMessage(UIMSG_Game_Action, 0, 0);
+              pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Game_Action, 0, 0);
               break;
             }
             if ( pCurrentScreen == SCREEN_NPC_DIALOGUE )
@@ -799,14 +767,14 @@ void Keyboard::ProcessInputActions()
                 }
                 break;
               }
-              pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 0, 0);
+              pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Escape, 0, 0);
             }
             break;
           case INPUT_CharCycle:
             if ( pCurrentScreen == SCREEN_SPELL_BOOK  )
               break;
 
-            pMessageQueue_50C9E8->AddMessage(UIMSG_CycleCharacters, 0, 0);
+            pMessageQueue_50C9E8->AddGUIMessage(UIMSG_CycleCharacters, 0, 0);
             break;
           case INPUT_LookUp:
             if ( pEventTimer->bPaused )
@@ -839,18 +807,17 @@ void Keyboard::ProcessInputActions()
             pPartyActionQueue->Add(partyAction);
             break;
           case INPUT_FlyDown:
-            if ( !pCurrentScreen
-              && !pEventTimer->bPaused )
+            if ( !pCurrentScreen && !pEventTimer->bPaused )
             {
               partyAction = (PartyAction)14;
               pPartyActionQueue->Add(partyAction);
             }
             break;
           case INPUT_ZoomIn:
-              pMessageQueue_50C9E8->AddMessage(UIMSG_ClickZoomOutBtn, 0, 0);
+              pMessageQueue_50C9E8->AddGUIMessage(UIMSG_ClickZoomOutBtn, 0, 0);
             break;
           case INPUT_ZoomOut:
-              pMessageQueue_50C9E8->AddMessage(UIMSG_ClickZoomInBtn, 0, 0);
+              pMessageQueue_50C9E8->AddGUIMessage(UIMSG_ClickZoomInBtn, 0, 0);
             break;
           case INPUT_AlwaysRun:
             bAlwaysRun = bAlwaysRun == 0;

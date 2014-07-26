@@ -1,3 +1,7 @@
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+
 #define _CRT_SECURE_NO_WARNINGS
 #include "ErrorHandling.h"
 #include "LOD.h"
@@ -156,67 +160,39 @@ void LODFile_IconsBitmaps::RemoveTexturesPackFromTextureList()
 //----- (004AC67E) --------------------------------------------------------
 int LODFile_Sprites::LoadSpriteFromFile(LODSprite *pSpriteHeader, const char *pContainer)
 {
-  FILE *v3; // eax@1
-  FILE *v4; // ebx@1
-  int result; // eax@2
-  LODSprite *v6; // esi@3
-  LODSprite_stru0 *v7; // eax@3
-  size_t v8; // ST10_4@3
-  int *v9; // ebx@3
-  int v10; // eax@3
-  void *v11; // eax@5
-  LODSprite_stru0 *v12; // eax@6
-  void *v13; // ecx@6
-  LODSprite_stru0 *i; // edx@6
   FILE *File; // [sp+4h] [bp-4h]@1
   void *DstBufa; // [sp+10h] [bp+8h]@4
   int Sizea; // [sp+14h] [bp+Ch]@3
 
-  v3 = FindContainer(pContainer, 0);
-  v4 = v3;
-  File = v3;
-  if ( v3 )
+  File = FindContainer(pContainer, 0);
+  if ( File )
   {
-    v6 = pSpriteHeader;
-    fread(pSpriteHeader, 1u, 0x20u, v3);
+    fread(pSpriteHeader, 1, 0x20u, File);
     strcpy(pSpriteHeader->pName, pContainer);
     Sizea = pSpriteHeader->uSpriteSize;
-    v7 = (LODSprite_stru0 *)malloc(8 * v6->uHeight);
-    v8 = 8 * pSpriteHeader->uHeight;
-    pSpriteHeader->pSpriteLines = v7;
-    fread(v7, 1u, v8, v4);
+    pSpriteHeader->pSpriteLines = (LODSprite_stru0 *)malloc(8 * pSpriteHeader->uHeight);
+    fread(pSpriteHeader->pSpriteLines, 1, 8 * pSpriteHeader->uHeight, File);
 
-    v9 = &pSpriteHeader->uDecompressedSize;
-    v10 = pSpriteHeader->uDecompressedSize;
-    if ( v10 )
+    if ( pSpriteHeader->uDecompressedSize )
     {
-      pSpriteHeader->pDecompressedBytes = malloc(v10);
+      pSpriteHeader->pDecompressedBytes = malloc(pSpriteHeader->uDecompressedSize);
       DstBufa = malloc(Sizea);
-      fread(DstBufa, 1u, Sizea, File);
-      zlib::MemUnzip(v6->pDecompressedBytes, (unsigned int *)&v6->uDecompressedSize, DstBufa, v6->uSpriteSize);
-      v6->uSpriteSize = *v9;
+      fread(DstBufa, 1, Sizea, File);
+      zlib::MemUnzip(pSpriteHeader->pDecompressedBytes, (unsigned int *)&pSpriteHeader->uDecompressedSize, DstBufa, pSpriteHeader->uSpriteSize);
+      pSpriteHeader->uSpriteSize = pSpriteHeader->uDecompressedSize;
       free(DstBufa);
     }
     else
     {
-      v11 = malloc(Sizea);
-      pSpriteHeader->pDecompressedBytes = v11;
-      fread(v11, 1u, Sizea, File);
+      pSpriteHeader->pDecompressedBytes = malloc(Sizea);
+      fread(pSpriteHeader->pDecompressedBytes, 1, Sizea, File);
     }
-    v12 = v6->pSpriteLines;
-    v13 = v6->pDecompressedBytes;
-    for ( i = &v12[v6->uHeight]; v12 < i; i = &v6->pSpriteLines[v6->uHeight] )
-    {
-      v12->pos = (char *)v12->pos + (unsigned int)v13;
-      ++v12;
-    }
-    result = 1;
+	for ( uint i = 0; i < pSpriteHeader->uHeight; i++ )
+      pSpriteHeader->pSpriteLines[i].pos += (unsigned int)pSpriteHeader->pDecompressedBytes;
+    return 1;
   }
   else
-  {
-    result = -1;
-  }
-  return result;
+    return -1;
 }
 
 //----- (004AC795) --------------------------------------------------------
@@ -328,14 +304,12 @@ int LODFile_Sprites::LoadSprite(const char *pContainerName, unsigned int uPalett
 //----- (004ACADA) --------------------------------------------------------
 void LODFile_Sprites::ReleaseLostHardwareSprites()
 {
-  LODFile_Sprites *v1; // esi@1
   signed int v2; // ebx@2
   int v3; // edi@3
   IDirectDrawSurface *v4; // eax@4
   IDirect3DTexture2 *v5; // eax@6
   IDirectDrawSurface *v6; // ST00_4@8
 
-  v1 = this;
   if ( this->pHardwareSprites )
   {
     v2 = 0;
@@ -344,24 +318,24 @@ void LODFile_Sprites::ReleaseLostHardwareSprites()
       v3 = 0;
       do
       {
-        v4 = (IDirectDrawSurface *)v1->pHardwareSprites[v3].pTextureSurface;
+        v4 = (IDirectDrawSurface *)this->pHardwareSprites[v3].pTextureSurface;
         if ( v4 && v4->IsLost() == DDERR_SURFACELOST )
         {
-          v5 = v1->pHardwareSprites[v3].pTexture;
+          v5 = this->pHardwareSprites[v3].pTexture;
           if ( v5 )
           {
             v5->Release();
-            v1->pHardwareSprites[v3].pTexture = nullptr;
+            this->pHardwareSprites[v3].pTexture = nullptr;
           }
-          v6 = (IDirectDrawSurface *)v1->pHardwareSprites[v3].pTextureSurface;
+          v6 = (IDirectDrawSurface *)this->pHardwareSprites[v3].pTextureSurface;
           v6->Release();
-          v1->pHardwareSprites[v3].pTextureSurface = nullptr;
-          pRenderer->MoveSpriteToDevice(&v1->pHardwareSprites[v3]);
+          this->pHardwareSprites[v3].pTextureSurface = nullptr;
+          pRenderer->MoveSpriteToDevice(&this->pHardwareSprites[v3]);
         }
         ++v2;
         ++v3;
       }
-      while ( v2 < (signed int)v1->uNumLoadedSprites );
+      while ( v2 < (signed int)this->uNumLoadedSprites );
     }
   }
 }
@@ -369,47 +343,26 @@ void LODFile_Sprites::ReleaseLostHardwareSprites()
 //----- (004ACB70) --------------------------------------------------------
 void LODFile_Sprites::ReleaseAll()
 {
-  LODFile_Sprites *v1; // esi@1
-  signed int v2; // ebx@2
-  int v3; // edi@3
-  Sprite *v4; // eax@4
-  IDirect3DTexture2 *v5; // eax@5
-  Sprite *v6; // eax@7
-  IDirectDrawSurface *v7; // eax@8
-
-  v1 = this;
   if ( this->pHardwareSprites )
   {
-    v2 = 0;
-    if ( (signed int)this->uNumLoadedSprites > 0 )
+    for ( int i = 0; i < this->uNumLoadedSprites; ++i )
     {
-      v3 = 0;
-      do
+      if ( this->pHardwareSprites )
       {
-        v4 = v1->pHardwareSprites;
-        if ( v4 )
+        if ( this->pHardwareSprites[i].pTexture )
         {
-          v5 = v4[v3].pTexture;
-          if ( v5 )
+          this->pHardwareSprites[i].pTexture->Release();
+          this->pHardwareSprites[i].pTexture = nullptr;
+        }
+        if ( this->pHardwareSprites )
+        {
+          if ( this->pHardwareSprites[i].pTextureSurface )
           {
-            v5->Release();
-            v1->pHardwareSprites[v3].pTexture = nullptr;
-          }
-          v6 = v1->pHardwareSprites;
-          if ( v6 )
-          {
-            v7 = (IDirectDrawSurface *)v6[v3].pTextureSurface;
-            if ( v7 )
-            {
-              v7->Release();
-              v1->pHardwareSprites[v3].pTextureSurface = nullptr;
-            }
+            this->pHardwareSprites[i].pTextureSurface->Release();
+            this->pHardwareSprites[i].pTextureSurface = nullptr;
           }
         }
-        ++v2;
-        ++v3;
       }
-      while ( v2 < (signed int)v1->uNumLoadedSprites );
     }
   }
 }
@@ -417,25 +370,10 @@ void LODFile_Sprites::ReleaseAll()
 //----- (004ACBE0) --------------------------------------------------------
 void LODFile_Sprites::MoveSpritesToVideoMemory()
 {
-  LODFile_Sprites *v1; // esi@1
-  int v2; // ebx@1
-  signed int v3; // edi@2
-
-  v1 = this;
-  v2 = 0;
   if ( this->pHardwareSprites )
   {
-    v3 = 0;
-    if ( (signed int)this->uNumLoadedSprites > 0 )
-    {
-      do
-      {
-        pRenderer->MoveSpriteToDevice(&v1->pHardwareSprites[v2]);
-        ++v3;
-        ++v2;
-      }
-      while ( v3 < (signed int)v1->uNumLoadedSprites );
-    }
+    for ( int i = 0; i < this->uNumLoadedSprites; ++i )
+      pRenderer->MoveSpriteToDevice(&this->pHardwareSprites[i]);
   }
 }
 
@@ -446,7 +384,7 @@ int LODSprite::DrawSprite_sw(RenderBillboardTransform_local0 *a2, char a3)
   int result; // eax@1
   int v5; // esi@2
   int v6; // ST18_4@2
-  signed int v7; // eax@2
+  //signed int v7; // eax@2
   signed int v8; // ebx@2
   int v9; // ebx@2
   int *v10; // ecx@2
@@ -541,11 +479,11 @@ int LODSprite::DrawSprite_sw(RenderBillboardTransform_local0 *a2, char a3)
   v87 = (signed __int64)0x100000000ui64 / result;
   v48 = (signed __int64)0x100000000ui64 / result;
   v62 = (signed __int64)0x100000000ui64 / v5;
-  v7 = this->uHeight;
+  //v7 = this->uHeight;
   v8 = (signed int)((signed __int64)0x100000000ui64 / v5) >> 1;
   v53 = v8;
   v70 = (this->uHeight << 16) - v8;
-  v49 = v7;
+  v49 = this->uHeight;
   v69 = v3->uTargetPitch;
 
   __debugbreak(); // target surface  will most likely be 32bit, but this sub awaits 16bits
@@ -554,7 +492,7 @@ int LODSprite::DrawSprite_sw(RenderBillboardTransform_local0 *a2, char a3)
   v61 = v3->pPalette;
   v9 = (v6 * this->uWidth + 0x8000) >> 16;
   v72 = v3->uScreenSpaceY;
-  result = (v5 * v7 + 0x8000) >> 16;
+  result = (v5 * this->uHeight + 0x8000) >> 16;
   v10 = (int *)(v72 - result + 1);
   v11 = v3->uScreenSpaceX - (v9 >> 1) + 1;
   v65 = v72 - result + 1;
@@ -832,13 +770,12 @@ int LODSprite::_4AD2D1(struct RenderBillboardTransform_local0 *a2, int a3)
   void *v11; // edx@3
   unsigned __int16 *v12; // ecx@3
   int v13; // ebx@4
-  LODSprite *v14; // [sp+8h] [bp-10h]@1
+  //LODSprite *v14; // [sp+8h] [bp-10h]@1
   unsigned __int16 *v15; // [sp+10h] [bp-8h]@1
   unsigned __int16 *v16; // [sp+14h] [bp-4h]@1
   int i; // [sp+20h] [bp+8h]@1
 
   result = (int)a2;
-  v14 = this;
   v4 = a2->uTargetPitch;
 
   __debugbreak(); // sub expects 16bit target surface, we may have 32bit
@@ -848,8 +785,8 @@ int LODSprite::_4AD2D1(struct RenderBillboardTransform_local0 *a2, int a3)
   for ( i = v4 * a2->uScreenSpaceY - (this->uWidth >> 1) + a2->uScreenSpaceX + 1; v5 >= 0; --v5 )
   {
     v6 = &this->pSpriteLines[v5];
-    v7 = v6->a1;
-    if ( v6->a1 != -1 )
+    v7 = this->pSpriteLines[v5].a1;
+    if ( this->pSpriteLines[v5].a1 != -1 )
     {
       v8 = v7;
       v9 = &v16[v7 + i];
@@ -875,52 +812,29 @@ int LODSprite::_4AD2D1(struct RenderBillboardTransform_local0 *a2, int a3)
 //----- (0046454B) --------------------------------------------------------
 void LODFile_IconsBitmaps::ReleaseAll2()
 {
-  LODFile_IconsBitmaps *v1; // esi@1
-  int v2; // edi@1
-  Texture *v3; // ebx@2
-  struct IDirect3DTexture2 **v4; // eax@3
-  struct IDirect3DTexture2 *v5; // eax@4
-  struct IDirectDrawSurface **v6; // eax@6
-  struct IDirectDrawSurface *v7; // eax@7
-  int v8; // eax@10
-
-  v1 = this;
-  v2 = this->uNumLoadedFiles - 1;
-  if ( v2 >= this->dword_11B84 )
+  for ( uint i = (uint)this->dword_11B84; i < this->uNumLoadedFiles; i++ )
   {
-    v3 = &this->pTextures[v2];
-    do
+    this->pTextures[i].Release();
+    if ( this->pHardwareTextures )
     {
-      v3->Release();
-      v4 = v1->pHardwareTextures;
-      if ( v4 )
+      if ( this->pHardwareTextures[i] )
       {
-        v5 = v4[v2];
-        if ( v5 )
-        {
-          v5->Release();
-          v1->pHardwareTextures[v2] = 0;
-        }
+        this->pHardwareTextures[i]->Release();
+        this->pHardwareTextures[i] = 0;
       }
-      v6 = v1->pHardwareSurfaces;
-      if ( v6 )
-      {
-        v7 = v6[v2];
-        if ( v7 )
-        {
-          v7->Release();
-          v1->pHardwareSurfaces[v2] = 0;
-        }
-      }
-      --v2;
-      --v3;
     }
-    while ( v2 >= v1->dword_11B84 );
+    if ( this->pHardwareSurfaces )
+    {
+      if ( this->pHardwareSurfaces[i] )
+      {
+        this->pHardwareSurfaces[i]->Release();
+        this->pHardwareSurfaces[i] = 0;
+      }
+    }
   }
-  v8 = v1->dword_11B84;
-  v1->uTexturePacksCount = 0;
-  v1->uNumPrevLoadedFiles = 0;
-  v1->uNumLoadedFiles = v8;
+  this->uTexturePacksCount = 0;
+  this->uNumPrevLoadedFiles = 0;
+  this->uNumLoadedFiles = this->dword_11B84;
 }
 
 //----- (004645DC) --------------------------------------------------------
@@ -934,7 +848,6 @@ void LODFile_Sprites::DeleteSomeOtherSprites()
   DeleteSpritesRange(field_ECA0, uNumLoadedSprites);
   *v1 = *v2;
 }
-
 
 //----- (00461431) --------------------------------------------------------
 void LOD::File::Close()
@@ -952,8 +865,6 @@ void LOD::File::Close()
     _6A0CA8_lod_unused = 0;
   }
 }
-
-
 
 //----- (00461492) --------------------------------------------------------
 int LODWriteableFile::CreateNewLod(LOD::FileHeader *pHeader, LOD::Directory *pDir, const char *lod_name)
@@ -1010,45 +921,23 @@ void LODFile_Sprites::DeleteSomeSprites()
 //----- (00450CA9) --------------------------------------------------------
 void LODFile_Sprites::DeleteSpritesRange(int uStartIndex, int uStopIndex)
 {
-  LODFile_Sprites *v3; // edi@1
-  int v4; // esi@3
-  LODSprite *v5; // ebx@3
-  LODSprite *v6; // esi@7
-  int v7; // edi@7
-  int a2a; // [sp+10h] [bp+8h]@3
-
-  v3 = this;
   if ( this->pHardwareSprites )
   {
     if ( uStartIndex < uStopIndex )
     {
-      v4 = uStartIndex;
-      v5 = &this->pSpriteHeaders[uStartIndex];
-      a2a = uStopIndex - uStartIndex;
-      do
+      for ( int i = uStartIndex; i < uStopIndex; i++ )
       {
-        v5->Release();
-        pHardwareSprites[v4].Release();
-        ++v4;
-        ++v5;
-        --a2a;
+        this->pSpriteHeaders[i].Release();
+        pHardwareSprites[i].Release();
       }
-      while ( a2a );
     }
   }
   else
   {
     if ( uStartIndex < uStopIndex )
     {
-      v6 = &this->pSpriteHeaders[uStartIndex];
-      v7 = uStopIndex - uStartIndex;
-      do
-      {
-        v6->Release();
-        ++v6;
-        --v7;
-      }
-      while ( v7 );
+      for ( int i = uStartIndex; i < uStopIndex; i++ )
+        this->pSpriteHeaders[i].Release();
     }
   }
 }
@@ -1056,24 +945,21 @@ void LODFile_Sprites::DeleteSpritesRange(int uStartIndex, int uStopIndex)
 //----- (00450D1D) --------------------------------------------------------
 void LODSprite::Release()
 {
-  LODSprite *v1; // esi@1
-
-  v1 = this;
   if ( !(HIBYTE(this->word_1A) & 4) )
   {
     free(this->pDecompressedBytes);
-    free(v1->pSpriteLines);
+    free(this->pSpriteLines);
   }
-  v1->word_1A = 0;
-  v1->pDecompressedBytes = nullptr;
-  v1->pSpriteLines = nullptr;
-  v1->pName[0] = 0;
-  v1->word_16 = 0;
-  v1->uPaletteId = 0;
-  v1->uTexturePitch = 0;
-  v1->uHeight = 0;
-  v1->uWidth = 0;
-  v1->uSpriteSize = 0;
+  this->word_1A = 0;
+  this->pDecompressedBytes = nullptr;
+  this->pSpriteLines = nullptr;
+  this->pName[0] = 0;
+  this->word_16 = 0;
+  this->uPaletteId = 0;
+  this->uTexturePitch = 0;
+  this->uHeight = 0;
+  this->uWidth = 0;
+  this->uSpriteSize = 0;
 }
 
 //----- (00450D68) --------------------------------------------------------
@@ -1091,9 +977,6 @@ void Sprite::Release()
   pTexture = nullptr;
 }
 
-
-
-
 //----- (0040FAEE) --------------------------------------------------------
 //----- (0040FA2E) --------------------------------------------------------
 bool LODFile_IconsBitmaps::Load(const char *pLODFilename, const char *pFolderName)
@@ -1106,86 +989,45 @@ bool LODFile_IconsBitmaps::Load(const char *pLODFilename, const char *pFolderNam
   return LoadSubIndices(pFolderName) == 0;
 }
 
-
 //----- (0040FA60) --------------------------------------------------------
 void LODFile_IconsBitmaps::ReleaseAll()
 {
-  LODFile_IconsBitmaps *v1; // esi@1
-  unsigned int v2; // edi@1
-  Texture *v3; // ebp@2
-  struct IDirect3DTexture2 **v4; // eax@3
-  struct IDirect3DTexture2 *v5; // eax@4
-  struct IDirectDrawSurface **v6; // eax@6
-  struct IDirectDrawSurface *v7; // eax@7
-
-  v1 = this;
-  v2 = this->uNumLoadedFiles - 1;
-  if ( (v2 & 0x80000000u) == 0 )
+  for( uint i = 0; i < this->uNumLoadedFiles; i++ )
   {
-    v3 = &this->pTextures[v2];
-    do
+    this->pTextures[i].Release();
+    if ( this->pHardwareTextures )
     {
-      v3->Release();
-      v4 = v1->pHardwareTextures;
-      if ( v4 )
+      if ( this->pHardwareTextures[i] )
       {
-        v5 = v4[v2];
-        if ( v5 )
-        {
-          v5->Release();
-          v1->pHardwareTextures[v2] = 0;
-        }
+        this->pHardwareTextures[i]->Release();
+        this->pHardwareTextures[i] = 0;
       }
-      v6 = v1->pHardwareSurfaces;
-      if ( v6 )
-      {
-        v7 = v6[v2];
-        if ( v7 )
-        {
-          v7->Release();
-          v1->pHardwareSurfaces[v2] = 0;
-        }
-      }
-      --v2;
-      --v3;
     }
-    while ( (v2 & 0x80000000u) == 0 );
+    if ( this->pHardwareSurfaces )
+    {
+      if ( this->pHardwareSurfaces[i] )
+      {
+        this->pHardwareSurfaces[i]->Release();
+        this->pHardwareSurfaces[i] = 0;
+      }
+    }
   }
-  v1->uTexturePacksCount = 0;
-  v1->uNumPrevLoadedFiles = 0;
-  v1->dword_11B84 = 0;
-  v1->dword_11B80 = 0;
-  v1->uNumLoadedFiles = 0;
+  this->uTexturePacksCount = 0;
+  this->uNumPrevLoadedFiles = 0;
+  this->dword_11B84 = 0;
+  this->dword_11B80 = 0;
+  this->uNumLoadedFiles = 0;
 }
 
 //----- (0040F9F0) --------------------------------------------------------
 unsigned int LODFile_IconsBitmaps::FindTextureByName(const char *pName)
 {
-  LODFile_IconsBitmaps *v2; // esi@1
-  unsigned int v3; // edi@1
-  Texture *v4; // ebx@2
-  unsigned int result; // eax@5
-
-  v2 = this;
-  v3 = 0;
-  if ( (signed int)this->uNumLoadedFiles <= 0 )
+  for ( uint i = 0; i < this->uNumLoadedFiles; i++ )
   {
-LABEL_5:
-    result = -1;
+    if ( !_stricmp(this->pTextures[i].pName, pName) )
+      return i;
   }
-  else
-  {
-    v4 = this->pTextures;
-    while ( _stricmp(v4->pName, pName) )
-    {
-      ++v3;
-      ++v4;
-      if ( (signed int)v3 >= (signed int)v2->uNumLoadedFiles )
-        goto LABEL_5;
-    }
-    result = v3;
-  }
-  return result;
+  return -1;
 }
 
 //----- (0040F9C5) --------------------------------------------------------
@@ -1205,64 +1047,30 @@ void LODFile_IconsBitmaps::SyncLoadedFilesCount()
  
 }
 
-
-
 //----- (0046249B) --------------------------------------------------------
 LODFile_Sprites::~LODFile_Sprites()
 {
-  LODFile_Sprites *v1; // esi@1
-  signed int v2; // ebx@1
-  LODSprite *v3; // edi@3
-  char *v4; // edi@6
-  int thisa; // [sp+4h] [bp-10h]@3
-  LODSprite *thisb; // [sp+4h] [bp-10h]@7
-
-  v1 = this;
-  v2 = 0;
   if ( this->pHardwareSprites )
   {
-    if ( (signed int)this->uNumLoadedSprites > 0 )
+    for ( int i = 0; i < this->uNumLoadedSprites; ++i )
     {
-      thisa = 0;
-      v3 = this->pSpriteHeaders;
-      do
-      {
-        v3->Release();
-        v1->pHardwareSprites[thisa].Release();
-        ++thisa;
-        ++v2;
-        ++v3;
-      }
-      while ( v2 < (signed int)v1->uNumLoadedSprites );
+      this->pSpriteHeaders[i].Release();
+      this->pHardwareSprites[i].Release();
     }
   }
   else
   {
-    v4 = (char *)&this->uNumLoadedSprites;
-    if ( (signed int)this->uNumLoadedSprites > 0 )
-    {
-      thisb = this->pSpriteHeaders;
-      do
-      {
-        thisb->Release();
-        ++thisb;
-        ++v2;
-      }
-      while ( v2 < *(int *)v4 );
-    }
+    for ( int i = 0; i < this->uNumLoadedSprites; ++i )
+      this->pSpriteHeaders[i].Release();
   }
   //_eh_vector_destructor_iterator_(v1->pSpriteHeaders, 40, 1500, LODSprite::dtor);
   //LOD::File::vdtor((LOD::File *)v1);
 }
 // 4CC2B4: using guessed type int __stdcall _eh vector destructor iterator_(int, int, int, int);
 
-
 //----- (00462463) --------------------------------------------------------
 LODSprite::~LODSprite()
 {
-  LODSprite *v1; // esi@1
-
-  v1 = this;
   if ( !(HIBYTE(this->word_1A) & 4) )
   {
     free(pDecompressedBytes);
@@ -1293,50 +1101,30 @@ LODFile_Sprites::LODFile_Sprites():
 //----- (00462303) --------------------------------------------------------
 LODFile_IconsBitmaps::~LODFile_IconsBitmaps()
 {
-  LODFile_IconsBitmaps *v1; // esi@1
-  unsigned int v2; // edi@1
-  struct IDirect3DTexture2 **v3; // eax@3
-  struct IDirect3DTexture2 *v4; // eax@4
-  struct IDirectDrawSurface **v5; // eax@6
-  struct IDirectDrawSurface *v6; // eax@7
-  Texture *thisa; // [sp+4h] [bp-10h]@2
 
-  v1 = this;
-  v2 = this->uNumLoadedFiles - 1;
-  if ( (v2 & 0x80000000u) == 0 )
+  for ( uint i = 0; i < this->uNumLoadedFiles; i++ )
   {
-    thisa = &this->pTextures[v2];
-    do
+    this->pTextures[i].Release();
+    if ( this->pHardwareTextures )
     {
-      thisa->Release();
-      v3 = v1->pHardwareTextures;
-      if ( v3 )
+      if ( this->pHardwareTextures[i] )
       {
-        v4 = v3[v2];
-        if ( v4 )
-        {
-          v4->Release();
-          v1->pHardwareTextures[v2] = 0;
-        }
+        this->pHardwareTextures[i]->Release();
+        this->pHardwareTextures[i] = 0;
       }
-      v5 = v1->pHardwareSurfaces;
-      if ( v5 )
-      {
-        v6 = v5[v2];
-        if ( v6 )
-        {
-          v6->Release();
-          v1->pHardwareSurfaces[v2] = 0;
-        }
-      }
-      --thisa;
-      --v2;
     }
-    while ( (v2 & 0x80000000u) == 0 );
+    if ( this->pHardwareSurfaces )
+    {
+      if ( this->pHardwareSurfaces[i] )
+      {
+        this->pHardwareSurfaces[i]->Release();
+        this->pHardwareSurfaces[i] = 0;
+      }
+    }
   }
-  free(v1->pHardwareSurfaces);
-  free(v1->pHardwareTextures);
-  free(v1->ptr_011BB4);
+  free(this->pHardwareSurfaces);
+  free(this->pHardwareTextures);
+  free(this->ptr_011BB4);
   //LOD::File::vdtor((LOD::File *)v1);
 }
 
@@ -1344,11 +1132,6 @@ LODFile_IconsBitmaps::~LODFile_IconsBitmaps()
 LODFile_IconsBitmaps::LODFile_IconsBitmaps():
   LOD::File()
 {
-  LODFile_IconsBitmaps *v1; // esi@1
-//  Texture *v2; // ebx@1
-//  signed int v3; // [sp+4h] [bp-10h]@1
-
-  v1 = this;
   /*v2 = v1->pTextures;
   v3 = 1000;
   do
@@ -1358,18 +1141,20 @@ LODFile_IconsBitmaps::LODFile_IconsBitmaps():
     --v3;
   }
   while ( v3 );*/
-  v1->uTexturePacksCount = 0;
-  v1->uNumPrevLoadedFiles = 0;
-  v1->dword_11B84 = 0;
-  v1->dword_11B80 = 0;
-  v1->uNumLoadedFiles = 0;
-  v1->dword_011BA4 = 0;
-  //v1->can_load_hardware_sprites = 0;
-  v1->pHardwareSurfaces = 0;
-  v1->pHardwareTextures = 0;
-  v1->ptr_011BB4 = 0;
+  this->uTexturePacksCount = 0;
+  this->uNumPrevLoadedFiles = 0;
+  this->dword_11B84 = 0;
+  this->dword_11B80 = 0;
+  this->uNumLoadedFiles = 0;
+  this->dword_011BA4 = 0;
+  //this->can_load_hardware_sprites = 0;
+  this->pHardwareSurfaces = 0;
+  this->pHardwareTextures = 0;
+  this->ptr_011BB4 = 0;
+  this->uTextureRedBits = 0;
+  this->uTextureGreenBits = 0;
+  this->uTextureBlueBits = 0;
 }
-
 
 //----- (004621A7) --------------------------------------------------------
 bool LODWriteableFile::_4621A7()//закрыть и загрузить записываемый ф-л(при сохранении)
@@ -1582,7 +1367,7 @@ unsigned int LODWriteableFile::Write(const LOD::Directory *pDir, const void *pDi
   if ( !bRewrite_data && (insert_index < uNumSubDirs) )//перезаписывание файлов для освобождения места для нового ф-ла
   {
     for( int i = uNumSubDirs; i > insert_index; --i )
-      memcpy(&pSubIndices[i], &pSubIndices[i - 1], sizeof(LOD::Directory));
+      memcpy(&pSubIndices[i], &pSubIndices[i - 1], sizeof(LOD::Directory));	//Uninitialized memory access
   }
   //insert
   memcpy(&pSubIndices[insert_index], pDir, sizeof(LOD::Directory));//записать текущий файл
@@ -1620,7 +1405,7 @@ unsigned int LODWriteableFile::Write(const LOD::Directory *pDir, const void *pDi
     to_copy_size -= read_size;
   }
   // add container data
-  fwrite(pDirData, 1, pDir->uDataSize, tmp_file);
+  fwrite(pDirData, 1, pDir->uDataSize, tmp_file);// Uninitialized memory access(tmp_file)
   if ( bRewrite_data )
     fseek(pFile,size_correction , SEEK_CUR);
 
@@ -1685,7 +1470,6 @@ bool LODWriteableFile::LoadFile(const char *pFilename, bool bWriting)
   return true;
 }
 
-
 //----- (00461A11) --------------------------------------------------------
 void LOD::File::FreeSubIndexAndIO()
 {
@@ -1694,7 +1478,6 @@ void LOD::File::FreeSubIndexAndIO()
   pIOBuffer = nullptr;
   pSubIndices = nullptr;
 }
-
 
 //----- (00461954) --------------------------------------------------------
 void LOD::File::AllocSubIndicesAndIO(unsigned int uNumSubIndices, unsigned int uBufferSize)
@@ -1720,12 +1503,9 @@ void LOD::File::AllocSubIndicesAndIO(unsigned int uNumSubIndices, unsigned int u
   }
 }
 
-
-
 //----- (0046188A) --------------------------------------------------------
 int LOD::File::LoadSubIndices(const char *pContainer)
 {
-
   unsigned int uDir; // edi@1
   LOD::Directory *curr_index; // eax@7
 
@@ -1733,23 +1513,23 @@ int LOD::File::LoadSubIndices(const char *pContainer)
   uDir = 0;
 
   for (uDir=0; uDir <header.uNumIndices;++uDir)
-      {
-       if (!_stricmp(pContainer, pRoot[uDir].pFilename))
-       {
-       strcpy( pContainerName, pContainer);
-	  uCurrentIndexDir = uDir;
-	  curr_index=(LOD::Directory *)&pRoot[uDir];
-	  uOffsetToSubIndex =curr_index->uOfsetFromSubindicesStart ;
-	  uNumSubDirs =curr_index->uNumSubIndices;// *(_WORD *)(v8 + 28);
-	  fseek( pFile, uOffsetToSubIndex, SEEK_SET);
-	  pSubIndices = (LOD::Directory *)malloc(sizeof(LOD::Directory)*(uNumSubDirs + 5));
+  {
+    if (!_stricmp(pContainer, pRoot[uDir].pFilename))
+    {
+      strcpy(pContainerName, pContainer);
+      uCurrentIndexDir = uDir;
+      curr_index = (LOD::Directory *)&pRoot[uDir];
+      uOffsetToSubIndex = curr_index->uOfsetFromSubindicesStart ;
+      uNumSubDirs = curr_index->uNumSubIndices;// *(_WORD *)(v8 + 28);
+      fseek( pFile, uOffsetToSubIndex, SEEK_SET);
+      pSubIndices = (LOD::Directory *)malloc(sizeof(LOD::Directory)*(uNumSubDirs + 5));
 
-	  if ( pSubIndices)
-		  fread( pSubIndices, sizeof(LOD::Directory),  uNumSubDirs,  pFile);
-	  return 0;
-       }
-      }
- return 3;
+      if ( pSubIndices)
+        fread( pSubIndices, sizeof(LOD::Directory),  uNumSubDirs,  pFile);
+      return 0;
+    }
+  }
+  return 3;
 }
 
 //----- (004617D5) --------------------------------------------------------
@@ -1786,20 +1566,15 @@ bool LOD::File::LoadHeader(const char *pFilename, bool bWriting)
   return true;
 }
 
-
 //----- (00461790) --------------------------------------------------------
 LOD::File::~File()
 {
-  LOD::File *v1; // esi@1
-
-  v1 = this;
   if ( this->isFileOpened )
   {
     fclose(this->pFile);
-    free(v1->pSubIndices);
+    free(this->pSubIndices);
   }
 }
-
 
 //----- (0046175B) --------------------------------------------------------
 LOD::File::File():
@@ -1816,7 +1591,6 @@ LOD::File::File():
   Close();
 }
 
-
 //----- (0046172B) --------------------------------------------------------
 LOD::Directory::Directory()
 {
@@ -1832,144 +1606,99 @@ LOD::Directory::Directory()
 //----- (0046165E) --------------------------------------------------------
 int LOD::File::CalcIndexFast(int startIndex, int maxIndex, const char *pContainerName)
 {
-  int v4; // esi@1
+  int pCurrent_position; // esi@1
   int v5; // ebx@2
   int result; // eax@2
-  int v7; // edi@10
-  int v8; // esi@11
-  int v9; // esi@17
-  LOD::File *v10; // [sp+Ch] [bp-4h]@1
 
-  v4 = startIndex;
-  v10 = this;
+  pCurrent_position = startIndex;
   while ( 1 )                                   // binary search in LOD indices
   {
+
     while ( 1 )
     {
-      v5 = maxIndex - v4;
-      result = _stricmp((const char *)pContainerName, (const char *)(&v10->pSubIndices[(maxIndex - v4) / 2] + v4));
-      if ( !result )
-        _6A0CA4_lod_binary_search = (maxIndex - v4) / 2 + v4;
-      if ( v4 == maxIndex )
-        goto LABEL_14;
-      if ( result < 0 )
-        break;
-      if ( v5 <= 4 )
+      v5 = maxIndex - pCurrent_position;
+      result = _stricmp(pContainerName, (const char *)(&this->pSubIndices[(maxIndex - pCurrent_position) / 2] + pCurrent_position));
+      if ( !_stricmp(pContainerName, (const char *)(&this->pSubIndices[(maxIndex - pCurrent_position) / 2] + pCurrent_position)) )
+        _6A0CA4_lod_binary_search = (maxIndex - pCurrent_position) / 2 + pCurrent_position;
+      if ( pCurrent_position == maxIndex )
       {
-        v7 = v4;
-        if ( v4 < maxIndex )
-        {
-          v9 = v4;
-          do
-          {
-            result = _stricmp((const char *)pContainerName, (const char *)&v10->pSubIndices[v9]);
-            if ( !result )
-              goto LABEL_21;
-            ++v7;
-            ++v9;
-          }
-          while ( v7 < maxIndex );
-        }
-LABEL_14:
         _6A0CA4_lod_binary_search = -1;
         return result;
       }
-      v4 += (maxIndex - v4) / 2;
+      if ( result < 0 )//первая строка меньше второй
+        break;
+      if ( v5 <= 4 )
+      {
+        for ( int i = pCurrent_position; i < maxIndex; ++i )
+        {
+          result = _stricmp(pContainerName, this->pSubIndices[i].pFilename);
+          if ( !_stricmp(pContainerName, this->pSubIndices[i].pFilename) )
+          {
+            _6A0CA4_lod_binary_search = i;
+            return 0;//строки ровны
+          }
+        }
+        _6A0CA4_lod_binary_search = -1;
+        return result;
+      }
+      pCurrent_position += (maxIndex - pCurrent_position) / 2;
     }
+
     if ( v5 <= 4 )
       break;
-    maxIndex = (maxIndex - v4) / 2 + v4;
+    maxIndex = (maxIndex - pCurrent_position) / 2 + pCurrent_position;
   }
-  v7 = v4;
-  if ( v4 >= maxIndex )
-    goto LABEL_14;
-  v8 = v4;
-  while ( 1 )
+
+  for (int i = pCurrent_position; i < maxIndex; ++i)
   {
-    result = _stricmp((const char *)pContainerName, (const char *)&v10->pSubIndices[v8]);
-    if ( !result )
-      break;
-    ++v7;
-    ++v8;
-    if ( v7 >= maxIndex )
-      goto LABEL_14;
+    result = _stricmp(pContainerName, this->pSubIndices[i].pFilename);
+    if ( !_stricmp(pContainerName, this->pSubIndices[i].pFilename) )
+    {
+      _6A0CA4_lod_binary_search = i;
+      return 0;
+    }
   }
-LABEL_21:
-  _6A0CA4_lod_binary_search = v7;
+  _6A0CA4_lod_binary_search = -1;
   return result;
 }
 // 6A0CA4: using guessed type int _6A0CA4_lod_binary_search;
 
-
 //----- (0046161C) --------------------------------------------------------
 bool LOD::File::DoesContainerExist(const char *pContainer)
 {
-  LOD::File *this_dup; // esi@1
-  int i; // ebx@1
-  signed int i_dup; // edi@1
-  bool result; // eax@4
-
-  this_dup = this;
-  i = 0;
-  i_dup = 0;
-  if ( (signed int)this->uNumSubDirs <= 0 )
+  for ( int i = 0; i < (signed int)this->uNumSubDirs; ++i )
   {
-LABEL_4:
-    result = 0;
+    if ( !_stricmp(pContainer, this->pSubIndices[i].pFilename) )
+      return 1;
   }
-  else
-  {
-    while ( _stricmp((const char *)pContainer, (const char *)&this_dup->pSubIndices[i]) )
-    {
-      ++i_dup;
-      ++i;
-      if ( i_dup >= (signed int)this_dup->uNumSubDirs )
-        goto LABEL_4;
-    }
-    result = 1;
-  }
-  return result;
+  return 0;
 }
-
 
 //----- (00461397) --------------------------------------------------------
 int LODFile_Sprites::_461397()
 {
-  int result; // eax@1
-  //int *pfield_ECA0; // edi@1
-  int v3; // esi@1
-  int v4; // ecx@3
-
-  result = this->uNumLoadedSprites;
-  //pfield_ECA0 = &this->field_ECA0;
-  v3 = this->field_ECA0;
-  this->field_ECA8 = result;
-  if ( result < v3 )
-    this->field_ECA8 = v3;
-  v4 = this->field_ECA4;
-  if ( v3 < v4 )
-    field_ECA0 = v4;
-  return result;
+  this->field_ECA8 = this->uNumLoadedSprites;
+  if ( this->uNumLoadedSprites < this->field_ECA0 )
+    this->field_ECA8 = this->field_ECA0;
+  if ( this->field_ECA0 < this->field_ECA4 )
+    field_ECA0 = this->field_ECA4;
+  return this->uNumLoadedSprites;
 }
 
 //----- (00461580) --------------------------------------------------------
 FILE *LOD::File::FindContainer(const char *pContainer_Name, bool bLinearSearch)
 {
-  unsigned int v4; // eax@4
   if (!isFileOpened)
     return 0;
-
 
   if (bLinearSearch)
   {
     for (uint i = 0; i < uNumSubDirs; ++i)
       if (!_stricmp(pContainer_Name, pSubIndices[i].pFilename))
       {
-        v4 = pSubIndices[i].uOfsetFromSubindicesStart;
-        fseek(pFile, uOffsetToSubIndex + v4, SEEK_SET);
+        fseek(pFile, uOffsetToSubIndex + pSubIndices[i].uOfsetFromSubindicesStart, SEEK_SET);
         return pFile;
       }
-
     return nullptr;
   }
   else
@@ -1977,8 +1706,7 @@ FILE *LOD::File::FindContainer(const char *pContainer_Name, bool bLinearSearch)
     CalcIndexFast(0, uNumSubDirs, pContainer_Name);
     if ( _6A0CA4_lod_binary_search < 0 )
       return 0;
-    v4 = pSubIndices[_6A0CA4_lod_binary_search].uOfsetFromSubindicesStart;
-    fseek(pFile, uOffsetToSubIndex + v4, SEEK_SET);
+    fseek(pFile, uOffsetToSubIndex + pSubIndices[_6A0CA4_lod_binary_search].uOfsetFromSubindicesStart, SEEK_SET);
     return pFile;
   }
 }
@@ -1986,108 +1714,65 @@ FILE *LOD::File::FindContainer(const char *pContainer_Name, bool bLinearSearch)
 //----- (0041097D) --------------------------------------------------------
 void LODFile_IconsBitmaps::SetupPalettes(unsigned int uTargetRBits, unsigned int uTargetGBits, unsigned int uTargetBBits)
 {
-  int v4; // edx@1
-  LODFile_IconsBitmaps *v5; // esi@1
-  int v6; // ecx@1
-  unsigned __int8 v7; // zf@4
-  unsigned __int8 v8; // sf@4
-  unsigned __int16 **v9; // edi@5
-  FILE *v10; // eax@7
-  FILE *v11; // ebx@7
-  signed int v12; // ebx@8
-  int v13; // eax@9
-  int v14; // edx@9
-  int v16; // [sp+4Ch] [bp-8h]@4
   FILE *File; // [sp+50h] [bp-4h]@7
 
-  v4 = uTargetGBits;
-  v5 = this;
-  v6 = uTargetBBits;
-  if ( v5->uTextureRedBits != uTargetRBits
-    || v5->uTextureGreenBits != uTargetGBits
-    || v5->uTextureBlueBits != uTargetBBits )
+  if ( this->uTextureRedBits != uTargetRBits
+    || this->uTextureGreenBits != uTargetGBits
+    || this->uTextureBlueBits != uTargetBBits )	 //Uninitialized memory access
   {
-    v16 = 0;
-    v7 = v5->uNumLoadedFiles == 0;
-    v8 = (v5->uNumLoadedFiles & 0x80000000u) != 0;
-    v5->uTextureRedBits = uTargetRBits;
-    v5->uTextureGreenBits = v4;
-    v5->uTextureBlueBits = v6;
-    if ( !(v8 | v7) )
+    this->uTextureRedBits = uTargetRBits;
+    this->uTextureGreenBits = uTargetGBits;
+    this->uTextureBlueBits = uTargetBBits;
+    for ( uint i = 0; i < this->uNumLoadedFiles; ++i )
     {
-      v9 = &v5->pTextures[0].pPalette16;
-      do
-      {
-        Texture DstBuf; // [sp+4h] [bp-50h]@6
-        //Texture::Texture(&DstBuf);
+      Texture DstBuf; // [sp+4h] [bp-50h]@6
+      //Texture::Texture(&DstBuf);
 
-        if ( *v9 )
+      if ( this->pTextures[i].pPalette16 )
+      {
+        File = FindContainer((const char *)this->pTextures[i].pName, 0);
+        if ( File )
         {
-          v10 = FindContainer((const char *)v9 - 64, 0);
-          v11 = v10;
-          File = v10;
-          if ( v10 )
+          fread(&DstBuf, 1, 0x30u, File);
+          fseek(File, DstBuf.uTextureSize, 1);
+          for ( uint j = 0; j < 256; ++j )
           {
-            fread(&DstBuf, 1u, 0x30u, v10);
-            fseek(v11, DstBuf.uTextureSize, 1);
-            v12 = 0;
-            do
-            {
-              fread((char *)&uTargetRBits + 3, 1u, 1u, File);
-              fread((char *)&uTargetBBits + 3, 1u, 1u, File);
-              v13 = fread((char *)&uTargetGBits + 3, 1u, 1u, File);
-              LOWORD(v13) = (unsigned __int8)(BYTE3(uTargetRBits) >> (8 - LOBYTE(v5->uTextureRedBits)));
-              (*v9)[v12] = v13 << (LOBYTE(v5->uTextureGreenBits) + LOBYTE(v5->uTextureBlueBits));
-              LOWORD(v14) = (unsigned __int8)(BYTE3(uTargetBBits) >> (8 - LOBYTE(v5->uTextureGreenBits)));
-              (*v9)[v12] |= v14 << v5->uTextureBlueBits;
-              (*v9)[v12] |= BYTE3(uTargetGBits) >> (8 - LOBYTE(v5->uTextureBlueBits));
-              ++v12;
-            }
-            while ( v12 < 256 );
+            fread((char *)&uTargetRBits + 3, 1, 1, File);
+            fread((char *)&uTargetGBits + 3, 1, 1, File);
+            fread((char *)&uTargetBBits + 3, 1, 1, File);
+            this->pTextures[i].pPalette16[j] = (BYTE3(uTargetRBits) >> (8 - LOBYTE(this->uTextureRedBits)))
+                                      << (LOBYTE(this->uTextureGreenBits) + LOBYTE(this->uTextureBlueBits));
+            this->pTextures[i].pPalette16[j] |= (BYTE3(uTargetGBits) >> (8 - LOBYTE(this->uTextureGreenBits)))
+                                      << this->uTextureBlueBits;
+            this->pTextures[i].pPalette16[j] |= BYTE3(uTargetBBits) >> (8 - LOBYTE(this->uTextureBlueBits));
           }
         }
-        ++v16;
-        v9 += 18;
       }
-      while ( v16 < (signed int)v5->uNumLoadedFiles );
     }
   }
 }
 
-
-
 //----- (0041088B) --------------------------------------------------------
 void *LOD::File::LoadRaw(const char *pContainer, int a3)
 {
-  LOD::File *v3; // esi@1
-  FILE *v4; // eax@1
-  FILE *v5; // esi@1
-  void *v6; // eax@5
+  FILE *File; // eax@1
   void *v7; // ebx@7
   void *v8; // edi@7
-  void *v9; // eax@9
   Texture DstBuf; // [sp+Ch] [bp-4Ch]@1
-  FILE *File; // [sp+54h] [bp-4h]@1
-  unsigned int Argsa; // [sp+60h] [bp+8h]@3
 
-  v3 = this;
-  v4 = FindContainer(pContainer, 0);
-  v5 = v4;
-  File = v4;
-  if ( !v4 )
+  File = FindContainer(pContainer, 0);
+  if ( !File )
     Error("Unable to load %s", pContainer);
 
-  fread(&DstBuf, 1u, 0x30u, v4);
-  Argsa = DstBuf.uTextureSize;
+  fread(&DstBuf, 1, 0x30u, File);
   if ( DstBuf.uDecompressedSize )
   {
     if ( a3 )
-      v6 = malloc(DstBuf.uDecompressedSize+1);
+      v7 = malloc(DstBuf.uDecompressedSize+1);
     else
-      v6 = malloc(DstBuf.uDecompressedSize+1);
-    v7 = v6;
+      v7 = malloc(DstBuf.uDecompressedSize+1);
     v8 = malloc(DstBuf.uTextureSize+1);
-    fread(v8, 1u, Argsa, File);
+    fread(v8, 1, DstBuf.uTextureSize, File);
     zlib::MemUnzip(v7, &DstBuf.uDecompressedSize, v8, DstBuf.uTextureSize);
     DstBuf.uTextureSize = DstBuf.uDecompressedSize;
     free(v8);
@@ -2095,212 +1780,181 @@ void *LOD::File::LoadRaw(const char *pContainer, int a3)
   else
   {
     if ( a3 )
-      v9 = malloc(DstBuf.uTextureSize+1);
+      v7 = malloc(DstBuf.uTextureSize+1);
     else
-      v9 = malloc(DstBuf.uTextureSize+1);
-    v7 = v9;
-    fread(v9, 1u, Argsa, v5);
+      v7 = malloc(DstBuf.uTextureSize+1);
+    fread(v7, 1, DstBuf.uTextureSize, File);
   }
   return v7;
 }
 
-
-
 //----- (00410522) --------------------------------------------------------
 int LODFile_IconsBitmaps::_410522(Texture *pDst, const char *pContainer, unsigned int uTextureType)
 {
-  LODFile_IconsBitmaps *v4; // edi@1
-  Texture *v5; // esi@5
-  unsigned int v6; // eax@5
-  void *v7; // eax@6
-  unsigned int v8; // ST28_4@6
   void *v9; // ST2C_4@6
-  unsigned __int8 *v10; // eax@7
-  FILE *v11; // ST28_4@7
-  void *v12; // eax@9
-  FILE *v13; // ST28_4@9
-  signed int v14; // eax@12
   int v15; // ecx@12
   int v16; // ecx@12
   int v17; // eax@12
-  signed int v18; // ebx@14
-  int v19; // eax@15
-  int v20; // edx@15
   signed int v21; // ecx@18
   signed int v22; // ecx@23
-  //char Args[100]; // [sp+4h] [bp-68h]@3
   FILE *File; // [sp+68h] [bp-4h]@1
+  unsigned int uTargetRBits;
+  unsigned int uTargetGBits;
+  unsigned int uTargetBBits;
 
-  v4 = this;
   File = FindContainer(pContainer, 0);
   if ( !File )
   {
     File = FindContainer("pending", 0);
     if ( !File )
       Error("Can't find %s!", pContainer);
-
   }
-  v5 = pDst;
-  fread(pDst, 1u, 0x30u, File);
-  strcpy(v5->pName, pContainer);
-  pDst = (Texture *)v5->uTextureSize;
-  v6 = v5->uDecompressedSize;
-  v5->pLevelOfDetail0_prolly_alpha_mask = 0;
-  if ( v6 )
+
+  fread(pDst, 1, 0x30u, File);
+  strcpy(pDst->pName, pContainer);
+  pDst->pLevelOfDetail0_prolly_alpha_mask = 0;
+  if ( pDst->uDecompressedSize )
   {
-    v7 = malloc(v6);
-    v8 = v5->uTextureSize;
-    v5->pLevelOfDetail0_prolly_alpha_mask = (unsigned __int8 *)v7;
-    pContainer = (const char *)malloc(v8);
-    fread((void *)pContainer, 1u, (size_t)pDst, File);
-    zlib::MemUnzip(v5->pLevelOfDetail0_prolly_alpha_mask, &v5->uDecompressedSize, pContainer, v5->uTextureSize);
-    v9 = (void *)pContainer;
-    v5->uTextureSize = v5->uDecompressedSize;
+    pDst->pLevelOfDetail0_prolly_alpha_mask = (unsigned __int8 *)malloc(pDst->uDecompressedSize);
+    v9 = malloc(pDst->uTextureSize);
+    fread((void *)v9, 1, (size_t)pDst->uTextureSize, File);
+    zlib::MemUnzip(pDst->pLevelOfDetail0_prolly_alpha_mask, &pDst->uDecompressedSize, v9, pDst->uTextureSize);
+    pDst->uTextureSize = pDst->uDecompressedSize;
     free(v9);
   }
   else
   {
-    v10 = (unsigned __int8 *)malloc(0);
-    v11 = File;
-    v5->pLevelOfDetail0_prolly_alpha_mask = v10;
-    fread(v10, 1u, (size_t)pDst, v11);
+    pDst->pLevelOfDetail0_prolly_alpha_mask = (unsigned __int8 *)malloc(0);
+    fread(pDst->pLevelOfDetail0_prolly_alpha_mask, 1, (size_t)pDst->uTextureSize, File);
   }
-  v5->pPalette24 = 0;
+  pDst->pPalette16 = 0;
+  pDst->pPalette24 = 0;
   if ( uTextureType == 1 )
   {
-    v12 = malloc(0x300u);
-    v13 = File;
-    v5->pPalette24 = (unsigned __int8 *)v12;
-    fread(v12, 1u, 0x300u, v13);
-LABEL_10:
-    v5->pPalette16 = 0;
-    goto LABEL_11;
+    pDst->pPalette24 = (unsigned __int8 *)malloc(0x300u);
+    fread(pDst->pPalette24, 1, 0x300u, File);
   }
-  if ( uTextureType != 2 )
-    goto LABEL_10;
-  v18 = 0;
-  v5->pPalette16 = 0;
-  v5->pPalette16 = (unsigned __int16 *)malloc(0x400u);
-  do
+  else if ( uTextureType == 2 )
   {
-    fread((char *)&pContainer + 3, 1u, 1u, File);
-    fread((char *)&uTextureType + 3, 1u, 1u, File);
-    v19 = fread((char *)&pDst + 3, 1u, 1u, File);
-    LOWORD(v19) = (unsigned __int8)(BYTE3(pContainer) >> (8 - LOBYTE(v4->uTextureRedBits)));
-    v5->pPalette16[v18] = v19 << (LOBYTE(v4->uTextureBlueBits) + LOBYTE(v4->uTextureGreenBits));
-    LOWORD(v20) = (unsigned __int8)(BYTE3(uTextureType) >> (8 - LOBYTE(v4->uTextureGreenBits)));
-    v5->pPalette16[v18] += v20 << v4->uTextureBlueBits;
-    v5->pPalette16[v18] += (unsigned __int8)(BYTE3(pDst) >> (8 - LOBYTE(v4->uTextureBlueBits)));
-    ++v18;
+    pDst->pPalette16 = (unsigned __int16 *)malloc(0x400u);
+    for ( uint i = 0; i < 256; ++i )
+    {
+      fread((char *)&uTargetRBits + 3, 1, 1, File);
+      fread((char *)&uTargetGBits + 3, 1, 1, File);
+      fread((char *)&uTargetBBits + 3, 1, 1, File);
+      pDst->pPalette16[i] = (unsigned __int8)(BYTE3(uTargetRBits) >> (8 - LOBYTE(this->uTextureRedBits)))
+                          << (LOBYTE(this->uTextureBlueBits) + LOBYTE(this->uTextureGreenBits));
+      pDst->pPalette16[i] += (unsigned __int8)(BYTE3(uTargetGBits) >> (8 - LOBYTE(this->uTextureGreenBits)))
+                          << this->uTextureBlueBits;
+      pDst->pPalette16[i] += (unsigned __int8)(BYTE3(uTargetBBits) >> (8 - LOBYTE(this->uTextureBlueBits)));
+    }
   }
-  while ( v18 < 256 );
-LABEL_11:
-  if ( v5->pBits & 2 )
+
+  if ( pDst->pBits & 2 )
   {
-    v14 = v5->uSizeOfMaxLevelOfDetail;
-    v15 = (int)&v5->pLevelOfDetail0_prolly_alpha_mask[v14];
-    v5->pLevelOfDetail1 = (unsigned __int8 *)v15;
-    v16 = (v14 >> 2) + v15;
-    v5->pLevelOfDetail2 = (unsigned __int8 *)v16;
-    v17 = v16 + (v14 >> 4);
+    v15 = (int)&pDst->pLevelOfDetail0_prolly_alpha_mask[pDst->uSizeOfMaxLevelOfDetail];
+    pDst->pLevelOfDetail1 = (unsigned __int8 *)v15;
+    v16 = (pDst->uSizeOfMaxLevelOfDetail >> 2) + v15;
+    pDst->pLevelOfDetail2 = (unsigned __int8 *)v16;
+    v17 = v16 + (pDst->uSizeOfMaxLevelOfDetail >> 4);
   }
   else
   {
     v17 = 0;
-    v5->pLevelOfDetail2 = 0;
-    v5->pLevelOfDetail1 = 0;
+    pDst->pLevelOfDetail2 = 0;
+    pDst->pLevelOfDetail1 = 0;
   }
-  v5->pLevelOfDetail3 = (unsigned __int8 *)v17;
+  pDst->pLevelOfDetail3 = (unsigned __int8 *)v17;
   v21 = 1;
-  while ( 1 << v21 != v5->uTextureWidth )
+  while ( 1 << v21 != pDst->uTextureWidth )
   {
     ++v21;
     if ( v21 >= 15 )
       goto LABEL_23;
   }
-  v5->uWidthLn2 = v21;
+  pDst->uWidthLn2 = v21;
 LABEL_23:
   v22 = 1;
-  while ( 1 << v22 != v5->uTextureHeight )
+  while ( 1 << v22 != pDst->uTextureHeight )
   {
     ++v22;
     if ( v22 >= 15 )
       goto LABEL_28;
   }
-  v5->uHeightLn2 = v22;
+  pDst->uHeightLn2 = v22;
 LABEL_28:
-  switch ( v5->uWidthLn2 )
+  switch ( pDst->uWidthLn2 )
   {
     case 2:
-      v5->uWidthMinus1 = 3;
+      pDst->uWidthMinus1 = 3;
       break;
     case 3:
-      v5->uWidthMinus1 = 7;
+      pDst->uWidthMinus1 = 7;
       break;
     case 4:
-      v5->uWidthMinus1 = 15;
+      pDst->uWidthMinus1 = 15;
       break;
     case 5:
-      v5->uWidthMinus1 = 31;
+      pDst->uWidthMinus1 = 31;
       break;
     case 6:
-      v5->uWidthMinus1 = 63;
+      pDst->uWidthMinus1 = 63;
       break;
     case 7:
-      v5->uWidthMinus1 = 127;
+      pDst->uWidthMinus1 = 127;
       break;
     case 8:
-      v5->uWidthMinus1 = 255;
+      pDst->uWidthMinus1 = 255;
       break;
     case 9:
-      v5->uWidthMinus1 = 511;
+      pDst->uWidthMinus1 = 511;
       break;
     case 10:
-      v5->uWidthMinus1 = 1023;
+      pDst->uWidthMinus1 = 1023;
       break;
     case 11:
-      v5->uWidthMinus1 = 2047;
+      pDst->uWidthMinus1 = 2047;
       break;
     case 12:
-      v5->uWidthMinus1 = 4095;
+      pDst->uWidthMinus1 = 4095;
       break;
     default:
       break;
   }
-  switch ( v5->uHeightLn2 )
+  switch ( pDst->uHeightLn2 )
   {
     case 2:
-      v5->uHeightMinus1 = 3;
+      pDst->uHeightMinus1 = 3;
       break;
     case 3:
-      v5->uHeightMinus1 = 7;
+      pDst->uHeightMinus1 = 7;
       break;
     case 4:
-      v5->uHeightMinus1 = 15;
+      pDst->uHeightMinus1 = 15;
       break;
     case 5:
-      v5->uHeightMinus1 = 31;
+      pDst->uHeightMinus1 = 31;
       break;
     case 6:
-      v5->uHeightMinus1 = 63;
+      pDst->uHeightMinus1 = 63;
       break;
     case 7:
-      v5->uHeightMinus1 = 127;
+      pDst->uHeightMinus1 = 127;
       break;
     case 8:
-      v5->uHeightMinus1 = 255;
+      pDst->uHeightMinus1 = 255;
       break;
     case 9:
-      v5->uHeightMinus1 = 511;
+      pDst->uHeightMinus1 = 511;
       break;
     case 10:
-      v5->uHeightMinus1 = 1023;
+      pDst->uHeightMinus1 = 1023;
       break;
     case 11:
-      v5->uHeightMinus1 = 2047;
+      pDst->uHeightMinus1 = 2047;
       break;
     case 12:
-      v5->uHeightMinus1 = 4095;
+      pDst->uHeightMinus1 = 4095;
       break;
     default:
       return 1;
@@ -2308,11 +1962,10 @@ LABEL_28:
   return 1;
 }
 
-
 //----- (00410423) --------------------------------------------------------
 void LODFile_IconsBitmaps::_410423_move_textures_to_device()
 {
-  LODFile_IconsBitmaps *v1; // esi@1
+  //LODFile_IconsBitmaps *v1; // esi@1
   unsigned int v2; // edi@1
   char *v3; // ebx@2
   size_t v4; // eax@9
@@ -2320,22 +1973,19 @@ void LODFile_IconsBitmaps::_410423_move_textures_to_device()
   void *v6; // eax@12
   signed int v7; // esi@13
 
-  v1 = this;
+  __debugbreak();//Ritor1
   v2 = this->uNumLoadedFiles - 1;
   if ( (v2 & 0x80000000u) == 0 )
   {
     v3 = &this->pTextures[v2].pName[2];
     do
     {
-      if ( v1->ptr_011BB4[v2] )
+      if ( this->ptr_011BB4[v2] )
       {
         if ( *(v3 - 2) != 'w' || *(v3 - 1) != 't' || *v3 != 'r' || v3[1] != 'd' || v3[2] != 'r' )
         {
-          pRenderer->LoadTexture(
-            v3 - 2,
-            *((short *)v3 + 17),
-            (IDirectDrawSurface4 **)&v1->pHardwareSurfaces[v2],
-            &v1->pHardwareTextures[v2]);
+          pRenderer->LoadTexture(v3 - 2, *((short *)v3 + 17), (IDirectDrawSurface4 **)&this->pHardwareSurfaces[v2],
+            &this->pHardwareTextures[v2]);
         }
         else
         {
@@ -2343,11 +1993,8 @@ void LODFile_IconsBitmaps::_410423_move_textures_to_device()
           v5 = (char *)malloc(v4 + 2);
           *v5 = 'h';
           strcpy(v5 + 1, v3 - 2);
-          pRenderer->LoadTexture(
-            v5,
-            *((short *)v3 + 17),
-            (IDirectDrawSurface4 **)&v1->pHardwareSurfaces[v2],
-            &v1->pHardwareTextures[v2]);
+          pRenderer->LoadTexture(v5, *((short *)v3 + 17), (IDirectDrawSurface4 **)&this->pHardwareSurfaces[v2],
+            &this->pHardwareTextures[v2]);
           free(v5);
         }
       }
@@ -2356,38 +2003,22 @@ void LODFile_IconsBitmaps::_410423_move_textures_to_device()
     }
     while ( (v2 & 0x80000000u) == 0 );
   }
-  v6 = v1->ptr_011BB4;
+  v6 = this->ptr_011BB4;
   if ( v6 )
   {
-    v7 = v1->uNumLoadedFiles;
+    v7 = this->uNumLoadedFiles;
     if ( v7 > 1 )
       memset(v6, 0, v7 - 1);
   }
 }
 
-
 //----- (004103BB) --------------------------------------------------------
 void LODFile_IconsBitmaps::ReleaseHardwareTextures()
 {
-  //LODFile_IconsBitmaps *v1; // esi@1
-//  unsigned int v2; // edi@1
-  //struct IDirect3DTexture2 **v3; // eax@2
-  //struct IDirect3DTexture2 *v4; // eax@3
-  //struct IDirectDrawSurface **v5; // eax@5
-  //struct IDirectDrawSurface *v6; // eax@6
-
-  //v1 = this;
-  
-  //while ( 1 )
   for ( uint i = 0; i < this->uNumLoadedFiles; i++ )
   {
-    
-    //if ( (v2 & 0x80000000u) != 0 )
-      //break;
-    //v3 = this->pHardwareTextures;
     if ( this->pHardwareTextures )
     {
-      //v4 = this->pHardwareTextures[v2];
       if ( this->pHardwareTextures[i] )
       {
         this->pHardwareTextures[i]->Release();
@@ -2395,10 +2026,8 @@ void LODFile_IconsBitmaps::ReleaseHardwareTextures()
         this->ptr_011BB4[i] = 1;
       }
     }
-    //v5 = this->pHardwareSurfaces;
     if ( this->pHardwareSurfaces )
     {
-      //v6 = this->pHardwareSurfaces[v2];
       if ( this->pHardwareSurfaces[i] )
       {
         this->pHardwareSurfaces[i]->Release();
@@ -2409,43 +2038,28 @@ void LODFile_IconsBitmaps::ReleaseHardwareTextures()
   }
 }
 
-
 //----- (0041033D) --------------------------------------------------------
 void LODFile_IconsBitmaps::ReleaseLostHardwareTextures()
 {
-  LODFile_IconsBitmaps *v1; // edi@1
-  unsigned int i; // ebx@1
-  struct IDirectDrawSurface **pHardwareSurfaces; // eax@2
-  int v4; // esi@3
-  struct IDirectDrawSurface *pSurface; // eax@3
-  struct IDirect3DTexture2 **v6; // eax@5
-  struct IDirect3DTexture2 *v7; // eax@6
-
-  v1 = this;
-  for ( i = this->uNumLoadedFiles - 1; (i & 0x80000000u) == 0; --i )
+  for ( uint i = 0; i < this->uNumLoadedFiles; ++i )
   {
-    pHardwareSurfaces = v1->pHardwareSurfaces;
-    if ( pHardwareSurfaces )
+    if ( this->pHardwareSurfaces )
     {
-      v4 = i;
-      pSurface = pHardwareSurfaces[i];
-      if ( pSurface )
+      if ( this->pHardwareSurfaces[i] )
       {
-        if ( pSurface->IsLost() == DDERR_SURFACELOST )
+        if ( this->pHardwareSurfaces[i]->IsLost() == DDERR_SURFACELOST )
         {
-          v6 = v1->pHardwareTextures;
-          if ( v6 )
+          if ( this->pHardwareTextures )
           {
-            v7 = v6[v4];
-            if ( v7 )
+            if ( this->pHardwareTextures[i] )
             {
-              v7->Release();
-              v1->pHardwareTextures[v4] = 0;
+              this->pHardwareTextures[i]->Release();
+              this->pHardwareTextures[i] = 0;
             }
           }
-          v1->pHardwareSurfaces[v4]->Release();
-          v1->pHardwareSurfaces[v4] = 0;
-          v1->ptr_011BB4[i] = 1;
+          this->pHardwareSurfaces[i]->Release();
+          this->pHardwareSurfaces[i] = 0;
+          this->ptr_011BB4[i] = 1;
         }
       }
     }
@@ -2455,120 +2069,82 @@ void LODFile_IconsBitmaps::ReleaseLostHardwareTextures()
 //----- (004101B1) --------------------------------------------------------
 int LODFile_IconsBitmaps::ReloadTexture(Texture *pDst, const char *pContainer, int mode)
 {
-  LODFile_IconsBitmaps *v4; // edi@1
-  FILE *v5; // eax@1
+  ///////////////////////////////////////////////
+  //Вызывается когда нажимаем кнопку НОВАЯ ИГРА//
+  ///////////////////////////////////////////////
   Texture *v6; // esi@2
   unsigned int v7; // ebx@6
   unsigned int v8; // ecx@6
   signed int result; // eax@7
-  size_t *v10; // ebx@8
-  signed int v11; // ebx@12
-  int v12; // eax@13
-  int v13; // edx@13
   FILE *File; // [sp+Ch] [bp-8h]@1
   unsigned __int8 v15; // [sp+11h] [bp-3h]@13
   unsigned __int8 v16; // [sp+12h] [bp-2h]@13
   unsigned __int8 DstBuf; // [sp+13h] [bp-1h]@13
   void *DstBufa; // [sp+1Ch] [bp+8h]@10
   void *Sourcea; // [sp+20h] [bp+Ch]@10
-  unsigned int Counta; // [sp+24h] [bp+10h]@6
 
-  v4 = this;
-  v5 = FindContainer(pContainer, 0);
-  File = v5;
-  if ( v5
-    && (v6 = pDst, pDst->pLevelOfDetail0_prolly_alpha_mask)
+  File = FindContainer(pContainer, 0);
+  v6 = pDst;
+  if ( File && pDst->pLevelOfDetail0_prolly_alpha_mask
     && mode == 2
-    && pDst->pPalette16
-    && !pDst->pPalette24
+    && pDst->pPalette16 && !pDst->pPalette24
     && (v7 = pDst->uTextureSize,
-        fread(pDst, 1u, 0x30u, v5),
+        fread(pDst, 1, 0x30u, File),
         strcpy(pDst->pName, pContainer),
         v8 = pDst->uTextureSize,
-        Counta = pDst->uTextureSize,
         (signed int)v8 <= (signed int)v7) )
   {
-    v10 = &pDst->uDecompressedSize;
-    if ( !pDst->uDecompressedSize || v4->dword_011BA4 )
+    if ( !pDst->uDecompressedSize || this->dword_011BA4 )
     {
-      fread(pDst->pLevelOfDetail0_prolly_alpha_mask, 1u, v8, File);
+      fread(pDst->pLevelOfDetail0_prolly_alpha_mask, 1, pDst->uTextureSize, File);
     }
     else
     {
       Sourcea = malloc(pDst->uDecompressedSize);
       DstBufa = malloc(pDst->uTextureSize);
-      fread(DstBufa, 1u, Counta, File);
+      fread(DstBufa, 1, pDst->uTextureSize, File);
       zlib::MemUnzip(Sourcea, &v6->uDecompressedSize, DstBufa, v6->uTextureSize);
-      v6->uTextureSize = *v10;
+      v6->uTextureSize = pDst->uDecompressedSize;
       free(DstBufa);
-      memcpy(v6->pLevelOfDetail0_prolly_alpha_mask, Sourcea, *v10);
+      memcpy(v6->pLevelOfDetail0_prolly_alpha_mask, Sourcea, pDst->uDecompressedSize);
       free(Sourcea);
     }
-    v11 = 0;
-    do
+    for( uint i = 0; i < 256; ++i )
     {
-      fread(&DstBuf, 1u, 1u, File);
-      fread(&v16, 1u, 1u, File);
-      v12 = fread(&v15, 1u, 1u, File);
-      LOWORD(v12) = (unsigned __int8)(DstBuf >> (8 - LOBYTE(v4->uTextureRedBits)));
-      v6->pPalette16[v11] = v12 << (LOBYTE(v4->uTextureBlueBits) + LOBYTE(v4->uTextureGreenBits));
-      LOWORD(v13) = (unsigned __int8)(v16 >> (8 - LOBYTE(v4->uTextureGreenBits)));
-      v6->pPalette16[v11] += v13 << v4->uTextureBlueBits;
-      v6->pPalette16[v11] += (unsigned __int8)(v15 >> (8 - LOBYTE(v4->uTextureBlueBits)));
-      ++v11;
+      fread(&DstBuf, 1, 1, File);
+      fread(&v16, 1, 1, File);
+      fread(&v15, 1, 1, File);
+      v6->pPalette16[i] = (unsigned __int8)(DstBuf >> (8 - LOBYTE(this->uTextureRedBits)))
+                        << (LOBYTE(this->uTextureBlueBits) + LOBYTE(this->uTextureGreenBits));
+      v6->pPalette16[i] += (unsigned __int8)(v16 >> (8 - LOBYTE(this->uTextureGreenBits)))
+                        << this->uTextureBlueBits;
+      v6->pPalette16[i] += (unsigned __int8)(v15 >> (8 - LOBYTE(this->uTextureBlueBits)));
     }
-    while ( v11 < 256 );
     result = 1;
   }
   else
-  {
     result = -1;
-  }
   return result;
 }
-
 
 //----- (0040FC08) --------------------------------------------------------
 int LODFile_IconsBitmaps::LoadTextureFromLOD(Texture *pOutTex, const char *pContainer, enum TEXTURE_TYPE eTextureType)
 {
+  //////////////////////////////////
+  //Вызывается сразу после запуска//
+  //////////////////////////////////
   Texture *v8; // esi@3
   size_t v11; // eax@14
   enum TEXTURE_TYPE v12; // eax@14
   signed int v13; // esi@14
   unsigned int v14; // eax@21
-//  unsigned int v15; // ecx@25
-//  unsigned int *v16; // ebx@25
-//  void *v17; // eax@27
-//  unsigned int v18; // ST28_4@27
   void *v19; // ST3C_4@27
-  //Allocator *v20; // ebx@29
-  void *v21; // eax@29
   size_t v22; // ST2C_4@29
   const void *v23; // ecx@29
-//  unsigned __int16 v24; // ax@29
-//  unsigned __int16 v25; // cx@29
-//  __int16 v26; // dx@29
-//  unsigned int v27; // ecx@29
-//  Texture *v28; // eax@29
-//  unsigned int v29; // ST28_4@30
   void *v30; // eax@30
-//  unsigned int v31; // ST2C_4@30
-  void *v32; // eax@32
-  void *v33; // eax@34
-  signed int v34; // eax@37
-  unsigned __int8 *v35; // ecx@37
-  unsigned __int8 *v36; // ecx@37
-  unsigned __int8 *v37; // eax@37
-  signed int v38; // ebx@39
-  int v39; // eax@40
-  int v40; // edx@40
   signed int v41; // ecx@43
   signed int v42; // ecx@48
 
-  //v4 = pContainer;
-  //v5 = this;
-  //v6 = FindContainer(pContainer, 0);
-  //File = v6;
   FILE* pFile = FindContainer(pContainer, false);
   if (!pFile)
     return -1;
@@ -2612,19 +2188,13 @@ int LODFile_IconsBitmaps::LoadTextureFromLOD(Texture *pOutTex, const char *pCont
     }
     return v13;
   }
-  //v15 = v8->uTextureSize;
-  //v16 = &v8->uDecompressedSize;
-  //pOutTex = (Texture *)v8->uTextureSize;
   if ( !v8->uDecompressedSize || dword_011BA4 )
   {
-    v32 = malloc(v8->uTextureSize);
-    v8->pLevelOfDetail0_prolly_alpha_mask = (unsigned __int8 *)v32;
-    fread(v32, 1, (size_t)v8->uTextureSize, pFile);
+    v8->pLevelOfDetail0_prolly_alpha_mask = (unsigned __int8 *)malloc(v8->uTextureSize);
+    fread(v8->pLevelOfDetail0_prolly_alpha_mask, 1, (size_t)v8->uTextureSize, pFile);
   }
   else
   {
-    //v17 = malloc(v8->uDecompressedSize);
-    //v18 = v8->uTextureSize;
     pContainer = (const char *)malloc(v8->uDecompressedSize);
     v19 = malloc(v8->uTextureSize);
     fread(v19, 1, (size_t)v8->uTextureSize, pFile);
@@ -2636,81 +2206,66 @@ int LODFile_IconsBitmaps::LoadTextureFromLOD(Texture *pOutTex, const char *pCont
       pOutTex = (Texture *)(((signed int)v8->uSizeOfMaxLevelOfDetail >> 2)
                           + ((signed int)v8->uSizeOfMaxLevelOfDetail >> 4)
                           + ((signed int)v8->uSizeOfMaxLevelOfDetail >> 6));
-      v21 = malloc((unsigned int)pOutTex);
       v22 = (size_t)pOutTex;
       v23 = &pContainer[v8->uTextureWidth * v8->uTextureHeight];
-      v8->pLevelOfDetail0_prolly_alpha_mask = (unsigned __int8 *)v21;
-      memcpy(v21, v23, v22);
+      v8->pLevelOfDetail0_prolly_alpha_mask = (unsigned __int8 *)malloc((unsigned int)pOutTex);
+      memcpy(v8->pLevelOfDetail0_prolly_alpha_mask, v23, v22);
       v8->uTextureWidth = (signed __int16)v8->uTextureWidth / 2;
-      //v24 = v8->uTextureWidth;
       v8->uTextureHeight = (signed __int16)v8->uTextureHeight / 2;
-      //v25 = v8->uTextureHeight;
       --v8->uWidthLn2;
       --v8->uHeightLn2;
       v8->uWidthMinus1 = v8->uTextureWidth - 1;
-      //v26 = v25 - 1;
-      //v27 = (signed __int16)v8->uTextureWidth * (signed __int16)v25;
-      //v28 = pOutTex;
       v8->uHeightMinus1 = v8->uTextureHeight - 1;
       v8->uSizeOfMaxLevelOfDetail = (signed __int16)v8->uTextureWidth * (signed __int16)v8->uTextureHeight;
       v8->uTextureSize = (unsigned int)pOutTex;
     }
     else
     {
-      //v29 = v8->uDecompressedSize;
-      v30 = malloc(v8->uDecompressedSize);
-      //v31 = v8->uDecompressedSize;
-      v8->pLevelOfDetail0_prolly_alpha_mask = (unsigned __int8 *)v30;
-      memcpy(v30, pContainer, v8->uDecompressedSize);
+      v8->pLevelOfDetail0_prolly_alpha_mask = (unsigned __int8 *)malloc(v8->uDecompressedSize);
+      memcpy(v8->pLevelOfDetail0_prolly_alpha_mask, pContainer, v8->uDecompressedSize);
     }
     free((void *)pContainer);
   }
   free(v8->pPalette16);
   free(v8->pPalette24);
+  v8->pPalette16 = 0;
+  v8->pPalette24 = 0;
   if ( eTextureType == TEXTURE_24BIT_PALETTE )
   {
-    v33 = malloc(0x300);
-    v8->pPalette24 = (unsigned __int8 *)v33;
-    fread(v33, 1, 0x300u, pFile);
+    v8->pPalette24 = (unsigned __int8 *)malloc(0x300);
+    fread(v8->pPalette24, 1, 0x300u, pFile);
   }
   else
   {
-    v8->pPalette24 = 0;
     if ( eTextureType == TEXTURE_16BIT_PALETTE )
     {
       v8->pPalette16 = (unsigned __int16 *)malloc(0x200);
-      for ( v38 = 0; v38 < 256; ++v38 )
+      for ( uint i = 0; i < 256; ++i )
       {
         fread((char *)&eTextureType + 3, 1, 1, pFile);
         fread((char *)&pContainer + 3, 1, 1, pFile);
-        v39 = fread((char *)&pOutTex + 3, 1, 1, pFile);
-        LOWORD(v39) = (unsigned __int8)(BYTE3(eTextureType) >> (8 - LOBYTE(uTextureRedBits)));
-        v8->pPalette16[v38] = v39 << (LOBYTE(uTextureBlueBits) + LOBYTE(uTextureGreenBits));
-        LOWORD(v40) = (unsigned __int8)(BYTE3(pContainer) >> (8 - LOBYTE(uTextureGreenBits)));
-        v8->pPalette16[v38] += v40 << uTextureBlueBits;
-        v8->pPalette16[v38] += (unsigned __int8)(BYTE3(pOutTex) >> (8 - LOBYTE(uTextureBlueBits)));
+        fread((char *)&pOutTex + 3, 1, 1, pFile);
+        v8->pPalette16[i] = (unsigned __int8)(BYTE3(eTextureType) >> (8 - LOBYTE(this->uTextureRedBits))) //Uninitialized memory access
+                            << (LOBYTE(this->uTextureBlueBits) + LOBYTE(this->uTextureGreenBits));
+        v8->pPalette16[i] += (unsigned __int8)(BYTE3(pContainer) >> (8 - LOBYTE(this->uTextureGreenBits)))
+                            << this->uTextureBlueBits;
+        v8->pPalette16[i] += (unsigned __int8)(BYTE3(pOutTex) >> (8 - LOBYTE(this->uTextureBlueBits)));
       }
-      goto LABEL_36;
     }
   }
-  v8->pPalette16 = 0;
-LABEL_36:
+
   if ( v8->pBits & 2 )
   {
-    v34 = v8->uSizeOfMaxLevelOfDetail;
-    v35 = &v8->pLevelOfDetail0_prolly_alpha_mask[v34];
-    v8->pLevelOfDetail1 = v35;
-    v36 = &v35[v34 >> 2];
-    v8->pLevelOfDetail2 = v36;
-    v37 = &v36[v34 >> 4];
+    v8->pLevelOfDetail1 = &v8->pLevelOfDetail0_prolly_alpha_mask[v8->uSizeOfMaxLevelOfDetail];
+    v8->pLevelOfDetail2 = &v8->pLevelOfDetail1[v8->uSizeOfMaxLevelOfDetail >> 2];
+    v8->pLevelOfDetail3 = &v8->pLevelOfDetail2[v8->uSizeOfMaxLevelOfDetail >> 4];
   }
   else
   {
-    v37 = 0;
-    v8->pLevelOfDetail2 = 0;
     v8->pLevelOfDetail1 = 0;
+    v8->pLevelOfDetail2 = 0;
+    v8->pLevelOfDetail3 = 0;
   }
-  v8->pLevelOfDetail3 = v37;
   for ( v41 = 1; v41 < 15; ++v41 )
   {
     if ( 1 << v41 == v8->uTextureWidth )
@@ -2801,7 +2356,6 @@ LABEL_36:
   return 1;
 }
 
-
 Texture *LODFile_IconsBitmaps::LoadTexturePtr(const char *pContainer, enum TEXTURE_TYPE uTextureType)
 {
   uint id = LoadTexture(pContainer, uTextureType);
@@ -2814,12 +2368,6 @@ Texture *LODFile_IconsBitmaps::LoadTexturePtr(const char *pContainer, enum TEXTU
 //----- (0040FB20) --------------------------------------------------------
 unsigned int LODFile_IconsBitmaps::LoadTexture(const char *pContainer, enum TEXTURE_TYPE uTextureType)
 {
-  //LODFile_IconsBitmaps *v3; // esi@1
-  //unsigned int v4; // edi@1
-  //Texture *v5; // ebx@2
-
-  //v3 = this;
-  //v4 = 0;
   areWeLoadingTexture = 1;
 
   for (uint i = 0; i < uNumLoadedFiles; ++i)

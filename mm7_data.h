@@ -288,8 +288,8 @@ template<class T, class U> int8 __CFADD__(T x, U y)
 // Data declarations
 
 extern int game_starting_year;
-extern int game_viewport_width;
-extern int game_viewport_height;
+extern unsigned int game_viewport_width;
+extern unsigned int game_viewport_height;
 extern int game_viewport_x;
 extern int game_viewport_y;
 extern int game_viewport_z;

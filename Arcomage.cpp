@@ -1,10 +1,14 @@
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+
 #define _CRT_SECURE_NO_WARNINGS
 #include <string>
 #include "mm7_unsorted_subs.h"
 
 #include "Render.h"
 #include "Arcomage.h"
-#include "VideoPlayer.h"
+#include "MediaPlayer.h"
 #include "AudioPlayer.h"
 #include "Mouse.h"
 #include "Game.h"
@@ -18,6 +22,7 @@
 #include "texts.h"
 #include <windef.h>
 #include "mm7_data.h"
+#include "UI/UIHouses.h"
 
 
 
@@ -1109,8 +1114,8 @@ LABEL_8:
   pArcomageGame->pSprites.Release();
   pArcomageGame->bGameInProgress = false;
   viewparams->bRedrawGameUI = true;
-  if ( pMovie )
-    pVideoPlayer->_4BF5B2();
+  if ( pMovie_Track )
+    BackToHouseMenu();
   for( int i = 0; i < 12; ++i )
     pSoundList->UnloadSound(am_sounds[i], 1);
 }

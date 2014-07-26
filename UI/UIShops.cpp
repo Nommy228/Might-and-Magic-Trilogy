@@ -1,3 +1,7 @@
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+
 #define _CRT_SECURE_NO_WARNINGS
 #include "UIShops.h"
 #include "..\mm7_unsorted_subs.h"
@@ -61,13 +65,13 @@ void  WeaponShopDialog()
         {
           pButton = pDialogueWindow->GetControl(i);
           pButton->uY = v103 + v19;
-          pButton->uHeight = pFontArrus->CalcTextHeight((const char *)pShopOptions[pNumString], &dialog_window, 0, 0);
-          v19 = pButton->uY + pFontArrus->CalcTextHeight((const char *)pShopOptions[pNumString], &dialog_window, 0, 0) - 1;
+          pButton->uHeight = pFontArrus->CalcTextHeight(pShopOptions[pNumString], &dialog_window, 0, 0);
+          v19 = pButton->uY + pFontArrus->CalcTextHeight(pShopOptions[pNumString], &dialog_window, 0, 0) - 1;
           pButton->uW = v19;
           pColorText = Color16(0xE1u, 0xCDu, 0x23u);
           if ( pDialogueWindow->pCurrentPosActiveItem != i )
             pColorText = Color16(0xFFu, 0xFFu, 0xFFu);
-          dialog_window.DrawTitleText(pFontArrus, 0, pButton->uY, pColorText, (const char *)pShopOptions[pNumString], 3);
+          dialog_window.DrawTitleText(pFontArrus, 0, pButton->uY, pColorText, pShopOptions[pNumString], 3);
           ++pNumString;
         }
       }
@@ -263,13 +267,13 @@ void  WeaponShopDialog()
       {
         pButton = pDialogueWindow->GetControl(i);
         pButton->uY = v103 + v19;
-        pButton->uHeight = pFontArrus->CalcTextHeight((const char *)pShopOptions[pNumString], &dialog_window, 0, 0);
-        v19 = pButton->uY + pFontArrus->CalcTextHeight((const char *)pShopOptions[pNumString], &dialog_window, 0, 0) - 1;
+        pButton->uHeight = pFontArrus->CalcTextHeight(pShopOptions[pNumString], &dialog_window, 0, 0);
+        v19 = pButton->uY + pFontArrus->CalcTextHeight(pShopOptions[pNumString], &dialog_window, 0, 0) - 1;
         pButton->uW = v19;
         pColorText = Color16(0xE1u, 0xCDu, 0x23u);
         if ( pDialogueWindow->pCurrentPosActiveItem != i )
           pColorText = Color16(0xFFu, 0xFFu, 0xFFu);
-        dialog_window.DrawTitleText(pFontArrus, 0, pButton->uY, pColorText, (const char *)pShopOptions[pNumString], 3);
+        dialog_window.DrawTitleText(pFontArrus, 0, pButton->uY, pColorText, pShopOptions[pNumString], 3);
         ++pNumString;
         }
       break;
@@ -733,13 +737,13 @@ void  AlchemistDialog()
         {
           pButton = pDialogueWindow->GetControl(i);
           pButton->uY = v18 + v105;
-          pButton->uHeight = pFontArrus->CalcTextHeight((const char *)pShopOptions[pNumString], &dialog_window, 0, 0);
-          v105 = pButton->uY + pFontArrus->CalcTextHeight((const char *)pShopOptions[pNumString], &dialog_window, 0, 0) - 1;
+          pButton->uHeight = pFontArrus->CalcTextHeight(pShopOptions[pNumString], &dialog_window, 0, 0);
+          v105 = pButton->uY + pFontArrus->CalcTextHeight(pShopOptions[pNumString], &dialog_window, 0, 0) - 1;
           pButton->uW = v105;
           pColorText = Color16(0xE1u, 0xCDu, 0x23u);
           if ( pDialogueWindow->pCurrentPosActiveItem != i )
             pColorText = Color16(0xFFu, 0xFFu, 0xFFu);
-          dialog_window.DrawTitleText(pFontArrus, 0, pButton->uY, pColorText, (const char *)pShopOptions[pNumString], 3);
+          dialog_window.DrawTitleText(pFontArrus, 0, pButton->uY, pColorText, pShopOptions[pNumString], 3);
           ++pNumString;
         }
       }
@@ -982,13 +986,13 @@ void  AlchemistDialog()
       {
         pButton = pDialogueWindow->GetControl(i);
         pButton->uY = v18 + v105;
-        pButton->uHeight = pFontArrus->CalcTextHeight((const char *)pShopOptions[pNumString], &dialog_window, 0, 0);
-        v105 = pButton->uY + pFontArrus->CalcTextHeight((const char *)pShopOptions[pNumString], &dialog_window, 0, 0) - 1;
+        pButton->uHeight = pFontArrus->CalcTextHeight(pShopOptions[pNumString], &dialog_window, 0, 0);
+        v105 = pButton->uY + pFontArrus->CalcTextHeight(pShopOptions[pNumString], &dialog_window, 0, 0) - 1;
         pButton->uW = v105;
         pColorText = Color16(0xE1u, 0xCDu, 0x23u);
         if ( pDialogueWindow->pCurrentPosActiveItem != i )
           pColorText = Color16(0xFFu, 0xFFu, 0xFFu);
-        dialog_window.DrawTitleText(pFontArrus, 0, pButton->uY, pColorText, (const char *)pShopOptions[pNumString], 3);
+        dialog_window.DrawTitleText(pFontArrus, 0, pButton->uY, pColorText, pShopOptions[pNumString], 3);
         ++pNumString;
       }
       return;

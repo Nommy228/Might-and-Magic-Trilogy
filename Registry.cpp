@@ -1,14 +1,18 @@
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+
 #define _CRT_SECURE_NO_WARNINGS
 #include <stdio.h>
 #include <array>
 #include <windows.h>
 
 #include "Registry.h"
+#include "ErrorHandling.h"
 
 //----- (004649EF) --------------------------------------------------------
 int __fastcall ReadWindowsRegistryInt(const char *pKey, int uDefValue)
 {
-  int v3; // [sp+4h] [bp-24h]@1
   DWORD cbData; // [sp+8h] [bp-20h]@1
   LPCSTR lpValueName; // [sp+Ch] [bp-1Ch]@1
   DWORD dwDisposition; // [sp+10h] [bp-18h]@2
@@ -18,7 +22,6 @@ int __fastcall ReadWindowsRegistryInt(const char *pKey, int uDefValue)
   HKEY v10; // [sp+20h] [bp-8h]@1
   HKEY v11; // [sp+24h] [bp-4h]@1
 
-  v3 = uDefValue;
   lpValueName = pKey;
   v11 = 0;
   v10 = 0;
@@ -33,9 +36,13 @@ int __fastcall ReadWindowsRegistryInt(const char *pKey, int uDefValue)
       {
         if ( !RegCreateKeyExA(v10, "1.0", 0, "", 0, 0xF003Fu, 0, &v11, &dwDisposition) )
         {
-          if ( RegQueryValueExA(v11, lpValueName, 0, 0, Data, &cbData) )
+			LSTATUS status;
+          if ( status = RegQueryValueExA(v11, lpValueName, 0, 0, Data, &cbData) )
           {
-            *(int *)Data = v3;
+			  status;			  
+			  GetLastError();
+
+            *(int *)Data = uDefValue;
             RegSetValueExA(v11, lpValueName, 0, 4u, Data, 4u);
           }
           RegCloseKey(v11);

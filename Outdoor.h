@@ -138,7 +138,7 @@ struct OutdoorLocation
   void PrepareActorsDrawList();
   void CreateDebugLocation();
   void Release();
-  bool Load(const char *pFilename, ODMFace *File, size_t a4, int thisa);
+  bool Load(const char *pFilename, ODMFace *File, size_t a4, int *thisa);
   int GetTileIdByTileMapId(signed int a2);
   unsigned int DoGetTileTexture(signed int uX, signed int uZ);
   int _47ED83(signed int a2, signed int a3);
@@ -158,7 +158,7 @@ struct OutdoorLocation
   int GetSomeOtherTileInfo(int sX, int sY);
   unsigned int GetTileTexture(int sX, int sZ);
   int GetHeightOnTerrain(int sX, int sZ);
-  bool Initialize(const char *pFilename, int File, size_t uRespawnInterval, int thisa);
+  bool Initialize(const char *pFilename, int File, size_t uRespawnInterval, int *thisa);
   //bool Release2();
   bool GetTravelDestination(signed int sPartyX, signed int sPartyZ, char *pOut, signed int a5);
   void MessWithLUN();

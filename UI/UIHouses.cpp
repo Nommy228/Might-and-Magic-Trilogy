@@ -1,3 +1,7 @@
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+
 #define _CRT_SECURE_NO_WARNINGS
 #include "UIGuilds.h"
 #include "UIPartyCreation.h"
@@ -21,7 +25,7 @@
 #include "..\Outdoor.h"
 #include "..\Outdoor_stuff.h"
 #include "..\AudioPlayer.h"
-#include "..\VideoPlayer.h"
+#include "..\MediaPlayer.h"
 #include "..\Monsters.h"
 #include "..\Viewport.h"
 #include "..\Keyboard.h"
@@ -889,7 +893,7 @@ bool EnterHouse(enum HOUSE_ID uHouseID)
 		uTextureID_right_panel_loop = uTextureID_right_panel;
 		if ( uNumDialogueNPCPortraits == 1 )
 			pDialogueNPCCount = 1;
-		pVideoPlayer->OpenHouseMovie(pAnimatedRooms[uCurrentHouse_Animation].video_name, 1u);
+		pMediaPlayer->OpenHouseMovie(pAnimatedRooms[uCurrentHouse_Animation].video_name, 1u);
 		dword_5C35D4 = 1;
 		if ( (signed int)uHouseID < 139 || (signed int)uHouseID > 172 )
         {
@@ -1291,7 +1295,7 @@ void __fastcall OnSelectShopDialogueOption(signed int uMessageParam)
     }
     case HOUSE_DIALOGUE_TAVERN_ARCOMAGE_RESULT:
     {
-      pMessageQueue_50CBD0->AddMessage(UIMSG_PlayArcomage, 0, 0);
+      pMessageQueue_50CBD0->AddGUIMessage(UIMSG_PlayArcomage, 0, 0);
       dialog_menu_id = HOUSE_DIALOGUE_TAVERN_ARCOMAGE_RESULT;
       break;
     }
@@ -1536,7 +1540,7 @@ void  TravelByTransport()
       {
         ShowStatusBarString(pGlobalTXT_LocalizationStrings[155], 2);//"У вас не хватает золота"
         PlayHouseSound((unsigned int)window_SpeakInHouse->ptr_1C, HouseSound_Greeting_2);
-        pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 1, 0);
+        pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Escape, 1, 0);
         return;
       }
 
@@ -1606,7 +1610,7 @@ void  TravelByTransport()
           sqrt(3.1415926);
         while ( HouseDialogPressCloseBtn() )
           ;
-        pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 0, 0);
+        pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Escape, 0, 0);
         return;
       }
       else
@@ -1721,17 +1725,17 @@ void  TownHallDialog()
       {
         sprintfex(pTmpBuf.data(), "%s\n%s", pGlobalTXT_LocalizationStrings[606], pGlobalTXT_LocalizationStrings[112]); // "Pay"   "How Much?"
         townHall_window.DrawTitleText(pFontArrus, 0, 146, Color16(0xFFu, 0xFFu, 0x9Bu), pTmpBuf.data(), 3);
-        townHall_window.DrawTitleText(pFontArrus, 0, 186, Color16(0xFFu, 0xFFu, 0xFFu), (const char *)pKeyActionMap->pPressedKeysBuffer, 3);
-        townHall_window.DrawFlashingInputCursor(pFontArrus->GetLineWidth((const char *)pKeyActionMap->pPressedKeysBuffer) / 2 + 80, 185, pFontArrus);
+        townHall_window.DrawTitleText(pFontArrus, 0, 186, Color16(0xFFu, 0xFFu, 0xFFu), pKeyActionMap->pPressedKeysBuffer, 3);
+        townHall_window.DrawFlashingInputCursor(pFontArrus->GetLineWidth(pKeyActionMap->pPressedKeysBuffer) / 2 + 80, 185, pFontArrus);
         return;
       }
       if ( window_SpeakInHouse->receives_keyboard_input_2 == WINDOW_INPUT_CONFIRMED)
       {
-        v1 = atoi((const char *)pKeyActionMap->pPressedKeysBuffer);
-        v2 = atoi((const char *)pKeyActionMap->pPressedKeysBuffer);
+        v1 = atoi(pKeyActionMap->pPressedKeysBuffer);
+        v2 = atoi(pKeyActionMap->pPressedKeysBuffer);
         if ( v1 <= 0 )
         {
-          pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 1, 0);
+          pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Escape, 1, 0);
           return;
         }
         if ( v1 > pParty->uNumGold )
@@ -1751,7 +1755,7 @@ void  TownHallDialog()
       if ( window_SpeakInHouse->receives_keyboard_input_2 == WINDOW_INPUT_CANCELLED)
       {
         window_SpeakInHouse->receives_keyboard_input_2 = WINDOW_INPUT_NONE;
-        pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 1, 0);
+        pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Escape, 1, 0);
       }
       break;
     }
@@ -1795,17 +1799,17 @@ void  BankDialog()
       {
         sprintf(pTmpBuf.data(), "%s\n%s", pGlobalTXT_LocalizationStrings[60], pGlobalTXT_LocalizationStrings[112]);//"Положить" "Сколько?"
         bank_window.DrawTitleText(pFontArrus, 0, 146, Color16(0xFFu, 0xFFu, 0x9Bu), pTmpBuf.data(), 3);
-        bank_window.DrawTitleText(pFontArrus, 0, 186, Color16(0xFFu, 0xFFu, 0xFFu), (const char *)pKeyActionMap->pPressedKeysBuffer, 3);
-        bank_window.DrawFlashingInputCursor(pFontArrus->GetLineWidth((const char *)pKeyActionMap->pPressedKeysBuffer) / 2 + 80, 185, pFontArrus);
+        bank_window.DrawTitleText(pFontArrus, 0, 186, Color16(0xFFu, 0xFFu, 0xFFu), pKeyActionMap->pPressedKeysBuffer, 3);
+        bank_window.DrawFlashingInputCursor(pFontArrus->GetLineWidth(pKeyActionMap->pPressedKeysBuffer) / 2 + 80, 185, pFontArrus);
         return;
       }
       if ( window_SpeakInHouse->receives_keyboard_input_2 == WINDOW_INPUT_CONFIRMED)
       {
-        entered_sum = atoi((const char *)pKeyActionMap->pPressedKeysBuffer);
+        entered_sum = atoi(pKeyActionMap->pPressedKeysBuffer);
         takes_sum = entered_sum;
         if ( !entered_sum )
         {
-          pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 1, 0);
+          pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Escape, 1, 0);
           return;
         }
         if ( entered_sum > pParty->uNumGold )
@@ -1821,13 +1825,13 @@ void  BankDialog()
             pPlayers[uActiveCharacter]->PlaySound(SPEECH_81, 0);
         }
         window_SpeakInHouse->receives_keyboard_input_2 = WINDOW_INPUT_NONE;
-        pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 1, 0);
+        pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Escape, 1, 0);
         return;
       }
       if (window_SpeakInHouse->receives_keyboard_input_2 == WINDOW_INPUT_CANCELLED)
       {
         window_SpeakInHouse->receives_keyboard_input_2 = WINDOW_INPUT_NONE;
-        pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 1, 0);
+        pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Escape, 1, 0);
       }
       return;
     }
@@ -1837,14 +1841,14 @@ void  BankDialog()
       {
         sprintfex(pTmpBuf.data(), "%s\n%s", pGlobalTXT_LocalizationStrings[244], pGlobalTXT_LocalizationStrings[112]);//"Снять" "Сколько?"
         bank_window.DrawTitleText(pFontArrus, 0, 146, Color16(0xFFu, 0xFFu, 0x9Bu), pTmpBuf.data(), 3);
-        bank_window.DrawTitleText(pFontArrus, 0, 186, Color16(0xFFu, 0xFFu, 0xFFu), (const char *)pKeyActionMap->pPressedKeysBuffer, 3);
-        bank_window.DrawFlashingInputCursor(pFontArrus->GetLineWidth((const char *)pKeyActionMap->pPressedKeysBuffer) / 2 + 80, 185, pFontArrus);
+        bank_window.DrawTitleText(pFontArrus, 0, 186, Color16(0xFFu, 0xFFu, 0xFFu), pKeyActionMap->pPressedKeysBuffer, 3);
+        bank_window.DrawFlashingInputCursor(pFontArrus->GetLineWidth(pKeyActionMap->pPressedKeysBuffer) / 2 + 80, 185, pFontArrus);
         return;
       }
       if ( window_SpeakInHouse->receives_keyboard_input_2 == WINDOW_INPUT_CONFIRMED)
       {
         window_SpeakInHouse->receives_keyboard_input_2 = WINDOW_INPUT_NONE;
-        entered_sum = atoi((const char *)pKeyActionMap->pPressedKeysBuffer);
+        entered_sum = atoi(pKeyActionMap->pPressedKeysBuffer);
         takes_sum = entered_sum;
         if ( entered_sum )
         {
@@ -1860,13 +1864,13 @@ void  BankDialog()
           }
         }
         window_SpeakInHouse->receives_keyboard_input_2 = WINDOW_INPUT_NONE;
-        pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 1, 0);
+        pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Escape, 1, 0);
         return;
       }
       if ( window_SpeakInHouse->receives_keyboard_input_2 == WINDOW_INPUT_CANCELLED)
       {
         window_SpeakInHouse->receives_keyboard_input_2 = WINDOW_INPUT_NONE;
-        pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 1, 0);
+        pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Escape, 1, 0);
       }
       return;
     }
@@ -2055,21 +2059,21 @@ void  TavernDialog()
         dialog_menu_id = HOUSE_DIALOGUE_NULL;
         HouseDialogPressCloseBtn();
         GetHouseGoodbyeSpeech();
-        pVideoPlayer->Unload();
+        pMediaPlayer->Unload();
         /*if ( pMessageQueue_50CBD0->uNumMessages )
           pMessageQueue_50CBD0->uNumMessages = pMessageQueue_50CBD0->pMessages[0].field_8 != 0;
         pMessageQueue_50CBD0->pMessages[0].eType = UIMSG_RentRoom;
         pMessageQueue_50CBD0->pMessages[0].param = (int)window_SpeakInHouse->ptr_1C;//107
         pMessageQueue_50CBD0->pMessages[0].field_8 = 1;
         ++pMessageQueue_50CBD0->uNumMessages;*/
-        pMessageQueue_50CBD0->AddMessage(UIMSG_RentRoom, (int)window_SpeakInHouse->ptr_1C, 1);
+        pMessageQueue_50CBD0->AddGUIMessage(UIMSG_RentRoom, (int)window_SpeakInHouse->ptr_1C, 1);
         window_SpeakInHouse->Release();
         window_SpeakInHouse = 0;
         return;
       }
       ShowStatusBarString(pGlobalTXT_LocalizationStrings[155], 2);//У вас не хватает золота
       PlayHouseSound((unsigned int)window_SpeakInHouse->ptr_1C, HouseSound_Goodbye);
-      pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 1, 0);
+      pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Escape, 1, 0);
       break;
     }
 
@@ -2143,7 +2147,7 @@ void  TavernDialog()
         ShowStatusBarString(pGlobalTXT_LocalizationStrings[140], 2);//Вы уже купили еду!
         if ( uActiveCharacter )
           pPlayers[uActiveCharacter]->PlaySound(SPEECH_67, 0);
-        pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 1, 0);
+        pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Escape, 1, 0);
         return;
       }
       if ( pParty->uNumGold >= pPriceFood )
@@ -2151,12 +2155,12 @@ void  TavernDialog()
         Party::TakeGold(pPriceFood);
         pParty->uNumFoodRations = (signed __int64)p2DEvents[(unsigned int)window_SpeakInHouse->ptr_1C - 1].fPriceMultiplier;
         PlayHouseSound((unsigned int)window_SpeakInHouse->ptr_1C, HouseSound_Greeting_2);
-        pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 1, 0);
+        pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Escape, 1, 0);
         return;
       }
       ShowStatusBarString(pGlobalTXT_LocalizationStrings[155], 2);  // "You don't have enough gold"
       PlayHouseSound((unsigned int)window_SpeakInHouse->ptr_1C, HouseSound_Goodbye);
-      pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 1, 0);
+      pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Escape, 1, 0);
       break;
     }
 
@@ -2183,14 +2187,14 @@ void  TavernDialog()
         {
           pButton = pDialogueWindow->GetControl(pItemNum);
           pButton->uY = all_text_height + v54;
-          pTextHeight = pFontArrus->CalcTextHeight((const char *)pShopOptions[pNumString], &dialog_window, 0, 0);
+          pTextHeight = pFontArrus->CalcTextHeight(pShopOptions[pNumString], &dialog_window, 0, 0);
           pButton->uHeight = pTextHeight;
           v54 = pButton->uY + pTextHeight - 1;
           pButton->uW = v54;
           pColorText = Color16(0xFFu, 0xFFu, 0x9Bu);
           if ( pDialogueWindow->pCurrentPosActiveItem != pItemNum )
             pColorText = Color16(0xFFu, 0xFFu, 0xFFu);
-          dialog_window.DrawTitleText(pFontArrus, 0, pButton->uY, pColorText, (const char *)pShopOptions[pNumString], 3);
+          dialog_window.DrawTitleText(pFontArrus, 0, pButton->uY, pColorText, pShopOptions[pNumString], 3);
           ++pNumString;
         }
       }
@@ -2284,7 +2288,7 @@ void TempleDialog()
     {
       ShowStatusBarString(pGlobalTXT_LocalizationStrings[155], 2);//"У вас не хватает золота"
       PlayHouseSound((unsigned int)window_SpeakInHouse->ptr_1C, HouseSound_NotEnoughMoney_TrainingSuccessful);
-      pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 1, 0);
+      pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Escape, 1, 0);
       return;
     }
     Party::TakeGold(pPrice);
@@ -2303,7 +2307,7 @@ void TempleDialog()
       pAudioPlayer->PlaySound((SoundID)(SOUND_GoldReceived|0x2), -1, 0, -1, 0, 0, 0, 0);
       pPlayers[uActiveCharacter]->PlaySound(SPEECH_82, 0);
       pOtherOverlayList->_4418B1(20, uActiveCharacter + 99, 0, 65536);
-      pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 1, 0);
+      pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Escape, 1, 0);
       return;
     }
     if ( (unsigned int)pPlayers[uActiveCharacter]->pConditions[Condition_Zombie] | v35 )
@@ -2316,7 +2320,7 @@ void TempleDialog()
         pAudioPlayer->PlaySound((SoundID)(SOUND_GoldReceived|0x2), -1, 0, -1, 0, 0, 0, 0);
         pPlayers[uActiveCharacter]->PlaySound(SPEECH_82, 0);
         pOtherOverlayList->_4418B1(20, uActiveCharacter + 99, 0, 65536);
-        pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 1, 0);
+        pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Escape, 1, 0);
         return;
       }
       pPlayers[uActiveCharacter]->uPrevFace = pPlayers[uActiveCharacter]->uCurrentFace;
@@ -2333,7 +2337,7 @@ void TempleDialog()
     pAudioPlayer->PlaySound((SoundID)(SOUND_GoldReceived|0x2), -1, 0, -1, 0, 0, 0, 0);
     pPlayers[uActiveCharacter]->PlaySound(SPEECH_82, 0);
     pOtherOverlayList->_4418B1(20, uActiveCharacter + 99, 0, 65536);
-    pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 1, 0);
+    pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Escape, 1, 0);
     return;
   }
   //---------------------------------------------------
@@ -2388,12 +2392,12 @@ void TempleDialog()
       ++byte_F8B1EF[uActiveCharacter];
       pPlayers[uActiveCharacter]->PlaySound(SPEECH_83, 0);
       ShowStatusBarString(pGlobalTXT_LocalizationStrings[527], 2); // "Thank You!"
-      pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 1, 0);
+      pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Escape, 1, 0);
       return;
     }
     ShowStatusBarString(pGlobalTXT_LocalizationStrings[155], 2);//"У вас не хватает золота"
     PlayHouseSound((unsigned int)window_SpeakInHouse->ptr_1C, HouseSound_NotEnoughMoney_TrainingSuccessful);
-    pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 1, 0);
+    pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Escape, 1, 0);
     return;
   }
   //------------------------------------------------
@@ -2607,12 +2611,12 @@ void TrainingDialog()
             sprintfex(pTmpBuf.data(), pGlobalTXT_LocalizationStrings[430], pPlayers[uActiveCharacter]->pName, pPlayers[uActiveCharacter]->uLevel, pPlayers[uActiveCharacter]->uLevel / 10 + 5);// 
                                                 // "%s is now Level %lu and has earned %lu Skill Points!"
             ShowStatusBarString(pTmpBuf.data(), 2);
-            pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 1, 0);
+            pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Escape, 1, 0);
             return;
           }
           ShowStatusBarString(pGlobalTXT_LocalizationStrings[155], 2);// "You don't have enough gold"
           PlayHouseSound((unsigned int)window_SpeakInHouse->ptr_1C, (HouseSoundID)4);
-          pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 1, 0);
+          pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Escape, 1, 0);
           return;
         }
         sprintfex(pTmpBuf.data(), pGlobalTXT_LocalizationStrings[538], (unsigned int)(v5 - pPlayers[uActiveCharacter]->uExperience), pPlayers[uActiveCharacter]->uLevel + 1);// 
@@ -2628,7 +2632,7 @@ void TrainingDialog()
       }
       training_dialog_window.DrawTitleText(pFontArrus, 0, v36, Color16(0xE1u, 0xCDu, 0x23u), pTmpBuf.data(), 3);
       PlayHouseSound((unsigned int)window_SpeakInHouse->ptr_1C, (HouseSoundID)3);
-      pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 1, 0);
+      pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Escape, 1, 0);
       return;
     }
   }
@@ -2836,7 +2840,7 @@ void sub_4B6478()
   {
     v5 = 0;
   }
-  pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 1, v5);
+  pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Escape, 1, v5);
   return; // void func
 }
 
@@ -3325,13 +3329,13 @@ int HouseDialogPressCloseBtn()
   {
     case -1:
       _4B4224_UpdateNPCTopics((int)((char *)pDialogueNPCCount - 1));
-      pVideoPlayer->_4BF5B2();
+      BackToHouseMenu();
       break;
 
     case HOUSE_DIALOGUE_SHOP_DISPLAY_EQUIPMENT:
     case HOUSE_DIALOGUE_LEARN_SKILLS:
     case HOUSE_DIALOGUE_TAVERN_ARCOMAGE_MAIN:
-      pVideoPlayer->_4BF5B2();
+      BackToHouseMenu();
       UI_CreateEndConversationButton();
       dialog_menu_id = HOUSE_DIALOGUE_MAIN;
       InitializaDialogueOptions(in_current_building_type);
@@ -3348,7 +3352,7 @@ int HouseDialogPressCloseBtn()
     case HOUSE_DIALOGUE_TAVERN_ARCOMAGE_RULES:
     case HOUSE_DIALOGUE_TAVERN_ARCOMAGE_VICTORY_CONDITIONS:
     case HOUSE_DIALOGUE_TAVERN_ARCOMAGE_RESULT:
-      pVideoPlayer->_4BF5B2();
+      BackToHouseMenu();
       UI_CreateEndConversationButton();
       dialog_menu_id = HOUSE_DIALOGUE_TAVERN_ARCOMAGE_MAIN;
       InitializaDialogueOptions_Tavern(in_current_building_type);
@@ -3376,14 +3380,37 @@ int HouseDialogPressCloseBtn()
         }
       }
 
-      pVideoPlayer->_4BF5B2();
+      BackToHouseMenu();
       break;
 
     default:
-      pVideoPlayer->_4BF5B2();
+      BackToHouseMenu();
       dialog_menu_id = HOUSE_DIALOGUE_MAIN;
       InitializaDialogueOptions(in_current_building_type);
       break;
   }
   return 1;
+}
+
+//----- (004BF5B2) --------------------------------------------------------
+void BackToHouseMenu()
+{
+  pMouse->_469E24();
+  if ( window_SpeakInHouse && window_SpeakInHouse->ptr_1C == (void *)165 && !pMovie_Track)//!this->pSmackerMovie )
+  {
+    bGameoverLoop = true;
+    HouseDialogPressCloseBtn();
+    window_SpeakInHouse->Release();
+    pParty->uFlags &= 0xFFFFFFFD;
+    if ( EnterHouse(HOUSE_BODY_GUILD_ERATHIA) )
+    {
+      pAudioPlayer->PlaySound(SOUND_Invalid, 0, 0, -1, 0, 0, 0, 0);
+      window_SpeakInHouse = GUIWindow::Create(0, 0, window->GetWidth(), window->GetHeight(), WINDOW_HouseInterior, 165, 0);
+      window_SpeakInHouse->CreateButton(0x3Du, 0x1A8u, 0x1Fu, 0, 2, 94, UIMSG_SelectCharacter, 1, 0x31, "", 0);
+      window_SpeakInHouse->CreateButton(0xB1u, 0x1A8u, 0x1Fu, 0, 2, 94, UIMSG_SelectCharacter, 2, 0x32, "", 0);
+      window_SpeakInHouse->CreateButton(0x124u, 0x1A8u, 0x1Fu, 0, 2, 94, UIMSG_SelectCharacter, 3, 0x33, "", 0);
+      window_SpeakInHouse->CreateButton(0x197u, 0x1A8u, 0x1Fu, 0, 2, 94, UIMSG_SelectCharacter, 4, 0x34, "", 0);
+    }
+    bGameoverLoop = 0;
+  }
 }

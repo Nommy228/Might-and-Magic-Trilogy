@@ -1,10 +1,14 @@
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+
 #define _CRT_SECURE_NO_WARNINGS
 #include "mm7_unsorted_subs.h"
 #include "OSWindow.h"
 #include "mm7_data.h"
 #include "Arcomage.h"
 #include "AudioPlayer.h"
-#include "VideoPlayer.h"
+#include "MediaPlayer.h"
 #include "Mouse.h"
 #include "Timer.h"
 #include "GUIWindow.h"
@@ -40,8 +44,8 @@ bool OSWindow::OnMouseLeftClick(int x, int y)
   if (UIControl::OnMouseLeftClick(x, y))
     return true;
 
-  if (pVideoPlayer->pVideoFrame.pPixels)
-    pVideoPlayer->bStopBeforeSchedule = true;
+  //if (pMediaPlayer->bPlaying_Movie)
+    //pMediaPlayer->bPlaying_Movie = false;
 
   pMouse->SetMouseClick(x, y);
 
@@ -60,8 +64,8 @@ bool OSWindow::OnMouseRightClick(int x, int y)
   if (UIControl::OnMouseRightClick(x, y))
     return true;
 
-  if (pVideoPlayer->pVideoFrame.pPixels)
-    pVideoPlayer->bStopBeforeSchedule = true;
+  if (pMediaPlayer->bPlaying_Movie)
+    pMediaPlayer->bPlaying_Movie = false;
 
   pMouse->SetMouseClick(x, y);
 
@@ -221,8 +225,8 @@ bool OSWindow::WinApiMessageProc(UINT msg, WPARAM wparam, LPARAM lparam, LRESULT
       }
       if ( !pArcomageGame->bGameInProgress )
       {
-        if ( pVideoPlayer->pVideoFrame.pPixels )
-          pVideoPlayer->bStopBeforeSchedule = 1;
+        if ( pMediaPlayer->bPlaying_Movie )
+          pMediaPlayer->bPlaying_Movie = false;
         if ( wparam == VK_RETURN )
         {
           if ( !viewparams->field_4C )
@@ -236,14 +240,14 @@ bool OSWindow::WinApiMessageProc(UINT msg, WPARAM wparam, LPARAM lparam, LRESULT
         }
         if ( wparam == VK_ESCAPE )
         {
-          pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, window_SpeakInHouse != 0, 0);
+          pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Escape, window_SpeakInHouse != 0, 0);
           return 0;
         }
         if ( wparam <= VK_HOME )
           return 0;
         if ( wparam > VK_DOWN )
         {
-          if ( wparam != VK_F4 || pVideoPlayer->AnyMovieLoaded() )
+          if ( wparam != VK_F4 || pMovie_Track )
             return 0;
 
           // F4 - toggle fullscreen
@@ -276,7 +280,7 @@ bool OSWindow::WinApiMessageProc(UINT msg, WPARAM wparam, LPARAM lparam, LRESULT
       }
       if ( wparam != 114 )
       {
-        if ( wparam == 115 && !pVideoPlayer->AnyMovieLoaded() )
+        if ( wparam == 115 && !pMovie_Track )
           SendMessage(api_handle, WM_COMMAND, 104, 0);
         return false;
       }
@@ -316,14 +320,14 @@ bool OSWindow::WinApiMessageProc(UINT msg, WPARAM wparam, LPARAM lparam, LRESULT
               pMiscTimer->Resume();
 
             viewparams->bRedrawGameUI = true;
-            if ( pMovie)//pVideoPlayer->pSmackerMovie )
+            if ( pMovie_Track)//pVideoPlayer->pSmackerMovie )
             {
               pRenderer->RestoreFrontBuffer();
               pRenderer->RestoreBackBuffer();
-              //pVideoPlayer->_4BF5B2();
+              //BackToHouseMenu();
             }
           }
-          if ( pAudioPlayer->hAILRedbook && !bGameoverLoop && !pMovie)//!pVideoPlayer->pSmackerMovie )
+          if ( pAudioPlayer->hAILRedbook && !bGameoverLoop && !pMovie_Track)//!pVideoPlayer->pSmackerMovie )
             AIL_redbook_resume(pAudioPlayer->hAILRedbook);
         }
       }
@@ -332,9 +336,8 @@ bool OSWindow::WinApiMessageProc(UINT msg, WPARAM wparam, LPARAM lparam, LRESULT
         if (!(dword_6BE364_game_settings_1 & GAME_SETTINGS_APP_INACTIVE))
         {
           dword_4E98BC_bApplicationActive = 0;
-          if ( pMovie//(pVideoPlayer->pSmackerMovie || pVideoPlayer->pBinkMovie) 
-			  && pVideoPlayer->bPlayingMovie )
-            pVideoPlayer->bStopBeforeSchedule = 1;
+          if ( pMovie_Track  )
+            pMediaPlayer->bPlaying_Movie = true;
 
           ClipCursor(0);
           dword_6BE364_game_settings_1 |= GAME_SETTINGS_APP_INACTIVE;
@@ -347,9 +350,12 @@ bool OSWindow::WinApiMessageProc(UINT msg, WPARAM wparam, LPARAM lparam, LRESULT
           else
             pMiscTimer->Pause();
 
-          pAudioPlayer->StopChannels(-1, -1);//приостановка воспроизведения звуков при неактивном окне игры
-          if ( pAudioPlayer->hAILRedbook )
-            AIL_redbook_pause(pAudioPlayer->hAILRedbook);
+          if (pAudioPlayer != nullptr)
+          {
+            pAudioPlayer->StopChannels(-1, -1);//приостановка воспроизведения звуков при неактивном окне игры
+            if ( pAudioPlayer->hAILRedbook )
+              AIL_redbook_pause(pAudioPlayer->hAILRedbook);
+          }
         }
       }
       return *result = 0, true;
@@ -387,7 +393,7 @@ bool OSWindow::WinApiMessageProc(UINT msg, WPARAM wparam, LPARAM lparam, LRESULT
       return *result = 0, true;
 
   }
-  return false;
+  return *result = 0, false;
 }
 
 
@@ -459,28 +465,24 @@ LRESULT __stdcall OSWindow::WinApiMsgRouter(HWND hwnd, UINT msg, WPARAM wparam, 
   {
     CREATESTRUCTA* cs = (CREATESTRUCTA *)(lparam);
     OSWindow* window = (OSWindow *)cs->lpCreateParams;
-
     SetWindowLongPtrW(hwnd, GWLP_USERDATA, (LONG_PTR)window);
     return DefWindowProcW(hwnd, msg, wparam, lparam);
   }
-
   OSWindow* window = (OSWindow *)GetWindowLongPtrW(hwnd, GWLP_USERDATA);
-  if (window && window->api_handle == hwnd)
+  if (window && window->api_handle == hwnd)	//Uninitialized memory access
   {
     LPARAM result;
-    if (window->WinApiMessageProc(msg, wparam, lparam, &result))
+    if (window->WinApiMessageProc(msg, wparam, lparam, &result))//Unhandled application exception
       return result;
   }
   return DefWindowProcW(hwnd, msg, (WPARAM)wparam, (LPARAM)lparam);
 }
-
 
 void OSWindow::Show()
 {
   ShowWindow(api_handle, SW_SHOWNORMAL);
   UpdateWindow(api_handle);
 }
-
 
 void OSWindow::SetCursor(const char *cursor_name)
 {
@@ -492,19 +494,19 @@ void OSWindow::SetCursor(const char *cursor_name)
     SetClassLongPtrW(api_handle, GCLP_HCURSOR, (LONG)LoadCursorW(NULL, IDC_ARROW));
   else if (!strcmp(cursor_name, "MICON2") )
   {
-    //HCURSOR hCurs1; // дескриптор курсора 
+    //HCURSOR hCurs1;
  
-    // Создаем курсор в виде мишени. 
+    // Create target 
  
-    //pMouse->uCursorTextureID = pIcons_LOD->LoadTexture(cursor_name, TEXTURE_16BIT_PALETTE);//есть альфа маска
-    //hCurs1 = LoadCursor(NULL, L"Target");//неверно, наверно нужно загрузить/создать курсор
+    //pMouse->uCursorTextureID = pIcons_LOD->LoadTexture(cursor_name, TEXTURE_16BIT_PALETTE);
+    //hCurs1 = LoadCursor(NULL, L"Target");
     SetClassLongPtrW(api_handle, GCLP_HCURSOR, (LONG)LoadCursorW(NULL, IDC_CROSS));
 
   }
   else if (!strcmp(cursor_name, "MICON3") )
     SetClassLongPtrW(api_handle, GCLP_HCURSOR, (LONG)LoadCursorW(NULL, IDC_WAIT));
 
-  //ClientToScreen(api_handle, &cursor_pos); //кидает курсор в другую часть экрана
+  //ClientToScreen(api_handle, &cursor_pos); //???
   SetCursorPos(cursor_pos.x, cursor_pos.y);
 }
 
@@ -878,26 +880,26 @@ bool OSWindow::OnOSMenu(int item_id)
     }
     break;
         //SubMenu "Other"
-    case 40101:  wizard_eye = true;  break;                           //включить око чародея
-    case 40102:  wizard_eye = false;  break;                          //выключить око чародея
-    case 40103:  pODMRenderParams->shading_dist_mist = 0x6000;  break;//новая дальность отрисовки объектов
-    case 40104:  pODMRenderParams->shading_dist_mist = 0x2000;  break;////обычная дальность отрисовки объектов
-    case 40105:  change_seasons = true;  break;                           //включить смену времён года
-    case 40106:  change_seasons = false;  break;                          //выключить смену времён года
-    case 40107:  all_magic = true;  break;                           //включить все заклы(нажимать в окне создания группы)
-    case 40108:  all_magic = false;  break;                          //выключить все заклы
-    case 40109:  debug_information = true;  break;                           //включить информацию fps, положение группы, уровень пола и т.п.
-    case 40110:  debug_information = false;  break;                          //выключить информацию fps, положение группы, уровень пола и т.п.
-    case 40111:  show_picked_face = true;  break;                           //включить выделение активного фейса
-    case 40112:  show_picked_face = false;  break;                          //выключить выделение активного фейса
-    case 40113:  draw_portals_loops = true;  break;                           //включить отрисовку рамок порталов
-    case 40114:  draw_portals_loops = false;  break;                          //включить отрисовку рамок порталов
-    case 40115:  new_speed = true;  break;                           //включить двойную скорость
-    case 40116:  new_speed = false;  break;                          //включить двойную скорость
-    case 40117:  bSnow = true;  break;                           //включить снег
-    case 40118:  bSnow = false;  break;                          //включить снег
-    case 40119:  draw_terrain_dist_mist = true;  break;                           //новая дальность отрисовки тайлов
-    case 40120:  draw_terrain_dist_mist = false;  break;                          //обычная дальность отрисовки тайлов
+    case 40101:  wizard_eye = true;  break;
+    case 40102:  wizard_eye = false;  break;
+    case 40103:  pODMRenderParams->shading_dist_mist = 0x6000;  break;
+    case 40104:  pODMRenderParams->shading_dist_mist = 0x2000;  break;
+    case 40105:  change_seasons = true;  break;
+    case 40106:  change_seasons = false;  break;
+    case 40107:  all_magic = true;  break;
+    case 40108:  all_magic = false;  break;
+    case 40109:  debug_information = true;  break;
+    case 40110:  debug_information = false;  break;
+    case 40111:  show_picked_face = true;  break;
+    case 40112:  show_picked_face = false;  break;
+    case 40113:  draw_portals_loops = true;  break;
+    case 40114:  draw_portals_loops = false;  break;
+    case 40115:  new_speed = true;  break;
+    case 40116:  new_speed = false;  break;
+    case 40117:  bSnow = true;  break;
+    case 40118:  bSnow = false;  break;
+    case 40119:  draw_terrain_dist_mist = true;  break;
+    case 40120:  draw_terrain_dist_mist = false;  break;
 
   }
 

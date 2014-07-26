@@ -1,3 +1,7 @@
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+
 #define _CRT_SECURE_NO_WARNINGS
 
 #include "ErrorHandling.h"
@@ -150,7 +154,6 @@ void sub_491E3A()
   unsigned int v3; // eax@7
   unsigned int v4; // edx@8
   int v6; // edi@17
-  int v12; // eax@26
 
   //__debugbreak();//Ritor1
   for ( uint pl = 0; pl < 4; pl++ )
@@ -198,9 +201,8 @@ void sub_491E3A()
     }
     while ( v6 >= pIcons_LOD->pFacesLock );
   }
-  v12 = pIcons_LOD->pFacesLock;
+  pIcons_LOD->uNumLoadedFiles = pIcons_LOD->pFacesLock;
   pIcons_LOD->pFacesLock = 0;
-  pIcons_LOD->uNumLoadedFiles = v12;
 }
 // 4ED498: using guessed type char byte_4ED498;
 
@@ -211,7 +213,7 @@ void _493938_regenerate()
   int last_reg_time; // qax@1
   int v4; // eax@2
   int v5; // edi@5
-  bool cursed_flag; // ecx@5
+  long long *v6; // ecx@5
   char v7; // sf@5
   int *v8; // ecx@10
   int v9; // edi@15
@@ -256,11 +258,15 @@ void _493938_regenerate()
         if ( !(pParty->pPartyBuffs[PARTY_BUFF_FLY].uFlags & 1) )
         {
           v5 = v4 * pParty->pPartyBuffs[PARTY_BUFF_FLY].uPower;
-          cursed_flag = pParty->pPlayers[pParty->pPartyBuffs[PARTY_BUFF_FLY].uCaster - 1].pConditions[Condition_Cursed];//cursed
-          v7 = cursed_flag < v5;
+          //cursed_flag = pParty->pPlayers[pParty->pPartyBuffs[PARTY_BUFF_FLY].uCaster - 1].pConditions[Condition_Cursed];//cursed
+          //v7 = cursed_flag < v5;
           //cursed_flag -= v5;
-          if ( !v7 )
+
+		  v6 = &pParty->pPlayers[pParty->pPartyBuffs[PARTY_BUFF_FLY].uCaster - 1].pConditions[Condition_Cursed];
+
+          if ( *v6 < v5 )
           {
+			v6 = 0;
             pParty->uFlags &= 0xFFFFFFBFu;
             pParty->bFlying = false;
             redraw_flag = true;
@@ -2129,7 +2135,7 @@ void OnSelectNPCDialogueOption(DIALOGUE_TYPE newDialogueType)
       pParty->hirelingScrollPosition = 0;
       pParty->CountHirelings();
       dword_591084 = 0;
-      pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 1, 0);
+      pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Escape, 1, 0);
       dword_7241C8 = 0;
       return;
     }
@@ -2167,7 +2173,7 @@ void OnSelectNPCDialogueOption(DIALOGUE_TYPE newDialogueType)
       strcpy(v13, speakingNPC->pName);
       pParty->hirelingScrollPosition = 0;
       pParty->CountHirelings();
-      pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 1, 0);
+      pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Escape, 1, 0);
       if ( sDialogue_SpeakingActorNPC_ID >= 0 )
         pDialogue_SpeakingActor->uAIState = Removed;
       if ( uActiveCharacter )
@@ -2185,7 +2191,7 @@ void OnSelectNPCDialogueOption(DIALOGUE_TYPE newDialogueType)
     {
       if ( speakingNPC->uProfession != GateMaster )
         speakingNPC->bHasUsedTheAbility = 1;
-      pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 1, 0);
+      pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Escape, 1, 0);
     }
     else
       ShowStatusBarString(pGlobalTXT_LocalizationStrings[140], 2); //"Your packs are already full!"
@@ -2211,7 +2217,7 @@ void OnSelectNPCDialogueOption(DIALOGUE_TYPE newDialogueType)
       pParty->hirelingScrollPosition = 0;
       pParty->CountHirelings();
       dword_591084 = 0;
-      pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 1, 0);
+      pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Escape, 1, 0);
       dword_7241C8 = 0;
       return;
     }

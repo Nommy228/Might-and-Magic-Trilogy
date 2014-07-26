@@ -225,6 +225,7 @@ struct ItemGen //0x24
   static void PopulateSpecialBonusMap();
   static void PopulateRegularBonusMap();
   static void PopulateArtifactBonusMap();
+  static void ClearItemBonusMaps();
 
   void GetItemBonusSpecialEnchantment(Player* owner, CHARACTER_ATTRIBUTE_TYPE attrToGet, int* additiveBonus, int* halfSkillBonus);
   void GetItemBonusArtifact(Player* owner, CHARACTER_ATTRIBUTE_TYPE attrToGet, int* bonusSum);

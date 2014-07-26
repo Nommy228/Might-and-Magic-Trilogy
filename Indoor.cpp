@@ -1,3 +1,7 @@
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+
 #define _CRT_SECURE_NO_WARNINGS
 #include "ErrorHandling.h"
 #include "ZlibWrapper.h"
@@ -3817,7 +3821,7 @@ void AddBspNodeToRenderList(unsigned int node_id)
   {
     for (uint i = 0; i < pSector->uNumNonBSPFaces; ++i)
       //Log::Warning(L"Non-BSP face: %X", v3->pFaceIDs[v2]);
-      pBspRenderer->AddFaceToRenderList_d3d(node_id, pSector->pFaceIDs[i]);
+      pBspRenderer->AddFaceToRenderList_d3d(node_id, pSector->pFaceIDs[i]);//рекурсия\recursion
   }
   /*else
   {
@@ -4139,7 +4143,7 @@ void stru149::_48653D_frustum_blv(int a2, int a3, int a4, int a5, int a6, int a7
                                 this->viewing_angle_from_north_south, this->field_8_party_dir_z);
 }
 //----- (00407A1C) --------------------------------------------------------
-bool __fastcall sub_407A1C(int x, int z, int y, Vec3_int_ v)
+bool __fastcall sub_407A1C(int x, int y, int z, Vec3_int_ v)
 {
   unsigned int v4; // esi@1
   int dist_y; // edi@2
@@ -4155,15 +4159,12 @@ bool __fastcall sub_407A1C(int x, int z, int y, Vec3_int_ v)
   signed int v21; // ebx@25
   signed int v23; // edi@26
   int v24; // ST34_4@30
-  Vec3_int_ v27; // ST08_12@37
-  Vec3_int_ v28; // ST08_12@37
   signed int v32; // ecx@37
   int v33; // eax@37
   int v35; // eax@39
   ODMFace *odm_face; // esi@54
   signed int v40; // ebx@60
   signed int v42; // edi@61
-  Vec3_int_ v45; // ST08_12@73
   signed int v49; // ecx@73
   int v50; // eax@73
   int v51; // edx@75
@@ -4177,7 +4178,6 @@ bool __fastcall sub_407A1C(int x, int z, int y, Vec3_int_ v)
   signed int v66; // ebx@98
   signed int v68; // edi@99
   int v69; // ST2C_4@103
-  Vec3_int_ v72; // ST08_12@111
   signed int v77; // ecx@111
   int v78; // eax@111
   int v79; // edx@113
@@ -4193,7 +4193,6 @@ bool __fastcall sub_407A1C(int x, int z, int y, Vec3_int_ v)
   int v110; // [sp+18h] [bp-64h]@31
   signed int v113; // [sp+20h] [bp-5Ch]@1
   signed int v114; // [sp+24h] [bp-58h]@1
-  unsigned int a4_8; // [sp+30h] [bp-4Ch]@1
   int v119; // [sp+34h] [bp-48h]@75
   int v120; // [sp+34h] [bp-48h]@113
   int v121; // [sp+38h] [bp-44h]@4
@@ -4251,20 +4250,19 @@ bool __fastcall sub_407A1C(int x, int z, int y, Vec3_int_ v)
 
   //__debugbreak();срабатывает при стрельбе огненным шаром
 
-  v4 = stru_5C6E00->Atan2(v.x - x, v.y - z);
-  v114 = 0;
-  v97.z = y;
-  v97.x = x;
-  v97.y = z;
+  v4 = stru_5C6E00->Atan2(v.x - x, v.y - y);
+
   v113 = 0;
-  a4_8 = stru_5C6E00->Atan2(v.x - x, v.y - z);
+  v114 = 0;
+
+  v97.z = z;
+  v97.x = x;
+  v97.y = y;
+
   if ( uCurrentlyLoadedLevelType == LEVEL_Indoor)
   {
     Vec3_int_::Rotate(32, stru_5C6E00->uIntegerHalfPi + v4, 0, v97, &sX, &sY, &sZ);
-    v45.z = v.z;
-    v45.x = v.x;
-    v45.y = v.y;
-    Vec3_int_::Rotate(32, stru_5C6E00->uIntegerHalfPi + v4, 0, v45, &outx, &outy, &outz);
+    Vec3_int_::Rotate(32, stru_5C6E00->uIntegerHalfPi + v4, 0, v, &outx, &outy, &outz);
     dist_y = outy - sY;
     dist_z = outz - sZ;
 	dist_x = outx - sX;
@@ -4358,11 +4356,8 @@ bool __fastcall sub_407A1C(int x, int z, int y, Vec3_int_ v)
       }
     }
     
-	v72.z = y;
-    v72.x = x;
-    v72.y = z;
-    Vec3_int_::Rotate(32, a4_8 - stru_5C6E00->uIntegerHalfPi, 0, v72, &sX, &sY, &sZ);
-    Vec3_int_::Rotate(32, a4_8 - stru_5C6E00->uIntegerHalfPi, 0, v, &outx, &outy, &outz);
+    Vec3_int_::Rotate(32, v4 - stru_5C6E00->uIntegerHalfPi, 0, v97, &sX, &sY, &sZ);
+    Vec3_int_::Rotate(32, v4 - stru_5C6E00->uIntegerHalfPi, 0, v, &outx, &outy, &outz);
 	dist_y = outy - sY;
 	dist_z = outz - sZ;
 	dist_x = outx - sX;
@@ -4411,7 +4406,6 @@ bool __fastcall sub_407A1C(int x, int z, int y, Vec3_int_ v)
         || v136 > face->pBounding.z2 || v140 < face->pBounding.z1
         || v20 )
         continue;
-      //v92 = sZ * face->pFacePlane_old.vNormal.z;
       v93 = -(face->pFacePlane_old.dist + sX * face->pFacePlane_old.vNormal.x
                                         + sY * face->pFacePlane_old.vNormal.y
                                         + sZ * face->pFacePlane_old.vNormal.z);
@@ -4434,10 +4428,6 @@ bool __fastcall sub_407A1C(int x, int z, int y, Vec3_int_ v)
                                              + sZ * face->pFacePlane_old.vNormal.z)) >> 14;
       if ( v_4c <= abs(v91) )
       {
-        //LODWORD(v94) = v93 << 16;
-        //HIDWORD(v94) = v93 >> 16;
-        //v95 = v94 / vc;
-        //vd = v94 / vc;
         vd = fixpoint_div(v93, vc);
         if ( vd >= 0 )
         {
@@ -4519,10 +4509,6 @@ bool __fastcall sub_407A1C(int x, int z, int y, Vec3_int_ v)
                                                 + sZ * odm_face->pFacePlane.vNormal.z)) >> 14;
           if ( v24 <= abs(v21) )
           {
-            //LODWORD(v25) = v23 << 16;
-            //HIDWORD(v25) = v23 >> 16;
-            //v26 = v25 / v109;
-            //v110 = v25 / v109;
             v110 = fixpoint_div(v23, v109);
             if ( v110 >= 0 )
             {
@@ -4541,14 +4527,8 @@ bool __fastcall sub_407A1C(int x, int z, int y, Vec3_int_ v)
       }
     }
     
-	v27.z = y;
-    v27.x = x;
-    v27.y = z;
-    Vec3_int_::Rotate(32, a4_8 - stru_5C6E00->uIntegerHalfPi, 0, v27, &sX, &sY, &sZ);
-    v28.z = v.z;
-    v28.x = v.x;
-    v28.y = v.y;
-    Vec3_int_::Rotate(32, a4_8 - stru_5C6E00->uIntegerHalfPi, 0, v28, &outx, &outy, &outz);
+    Vec3_int_::Rotate(32, v4 - stru_5C6E00->uIntegerHalfPi, 0, v97, &sX, &sY, &sZ);
+    Vec3_int_::Rotate(32, v4 - stru_5C6E00->uIntegerHalfPi, 0, v, &outx, &outy, &outz);
 	dist_y = outy - sY;
 	dist_z = outz - sZ;
 	dist_x = outx - sX;
@@ -4701,7 +4681,7 @@ char __fastcall DoInteractionWithTopmostZObject(int a1, int a2)
         {
           Actor::AI_FaceObject(v17, 4, 0, 0);
           if ( pActors[v17].sNPC_ID )
-            pMessageQueue_50CBD0->AddMessage(UIMSG_StartNPCDialogue, v17, 0);
+            pMessageQueue_50CBD0->AddGUIMessage(UIMSG_StartNPCDialogue, v17, 0);
           else
           {
             if ( pNPCStats->pGroups_copy[pActors[v17].uGroup] )

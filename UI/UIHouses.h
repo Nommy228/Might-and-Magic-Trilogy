@@ -137,6 +137,7 @@ void SimpleHouseDialog();
 void __fastcall OnSelectShopDialogueOption(signed int uMessageParam);
 void PrepareHouse(enum HOUSE_ID house); // idb
 bool EnterHouse(enum HOUSE_ID uHouseID);
+void BackToHouseMenu();
 
 
 void InitializaDialogueOptions_Tavern(BuildingType type); // idb

@@ -9,6 +9,10 @@
  */
 
 /* @(#) $Id$ */
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+
 
 #ifndef _Z_UTIL_H
 #define _Z_UTIL_H

@@ -1,3 +1,7 @@
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+
 #define _CRT_SECURE_NO_WARNINGS
 #include "ErrorHandling.h"
 #include "PaletteManager.h"
@@ -357,7 +361,7 @@ void PaletteManager::CalcPalettes_LUT(int a2)
     //i = 0;
 
     for (uint i = 0; i < 256; ++i)
-      RGB2HSV(&v64[i], &v63[i], (pBaseColors[a2][i][0] + pPalette_tintColor[0]) / (255.0f + 255.0f),
+      RGB2HSV(&v64[i], &v63[i], (pBaseColors[a2][i][0] + pPalette_tintColor[0]) / (255.0f + 255.0f), //Uninitialized memory access
                                 (pBaseColors[a2][i][1] + pPalette_tintColor[1]) / (255.0f + 255.0f),
                                 (pBaseColors[a2][i][2] + pPalette_tintColor[2]) / (255.0f + 255.0f), &a6[i]);
     //do
@@ -664,8 +668,10 @@ PaletteManager::PaletteManager():
     pBaseColors[0][i][2] = i;
   }
 
-  CalcPalettes_LUT(0);
   memset(pPaletteIDs, 0, sizeof(pPaletteIDs));
+  memset(pPalette_tintColor, 0, sizeof(pPalette_tintColor));
+  memset(pPalette_mistColor, 0, sizeof(pPalette_mistColor));
+  CalcPalettes_LUT(0);
 }
 
 //----- (0048A336) --------------------------------------------------------

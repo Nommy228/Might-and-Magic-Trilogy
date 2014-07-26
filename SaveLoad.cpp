@@ -1,3 +1,7 @@
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+
 #define _CRT_SECURE_NO_WARNINGS
 #include <io.h>
 #include <direct.h>
@@ -22,9 +26,9 @@
 #include "stru123.h"
 #include "texts.h"
 #include "Log.h"
-#include "VideoPlayer.h"
 #include "Level/Decoration.h"
 #include "Render.h"
+#include "MediaPlayer.h"
 
 #include "mm7_data.h"
 
@@ -569,8 +573,8 @@ void SaveNewGame()
   FILE *file; // eax@7
   void *pSave; // [sp+170h] [bp-8h]@3
 
-  if ( pMovie )
-    pVideoPlayer->Unload();
+  if ( pMovie_Track )
+    pMediaPlayer->Unload();
   pSave = malloc(1000000);
   pNew_LOD->CloseWriteFile();
   remove("data\\new.lod");//удалить new.lod

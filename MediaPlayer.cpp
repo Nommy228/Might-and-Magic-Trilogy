@@ -1,31 +1,36 @@
-extern "C"
-{
-  #include "lib/libavcodec/avcodec.h"
-  #include "lib/libavformat/avformat.h"
-  #include "lib/libavutil/avutil.h"
-  #include "lib/libavutil/imgutils.h"
-  #include "lib/libswscale/swscale.h"
-  #include "lib/libswresample/swresample.h"
-  #include "lib/libavutil/opt.h"
-}
-#pragma comment(lib, "avcodec.lib")
-#pragma comment(lib, "avformat.lib")
-#pragma comment(lib, "avutil.lib")
-#pragma comment(lib, "swscale.lib")
-#pragma comment(lib, "swresample.lib")
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
 
 #include <vector>
 #include <deque>
 
-#include "stuff.h"
-#include "OpenALSoundProvider.h"
+#define _CRT_SECURE_NO_WARNINGS
 
+#include "mm7_unsorted_subs.h"
+#include "Mouse.h"
+#include "Game.h"
+#include "Party.h"
+#include "GUIWindow.h"
+#include "texts.h"
+#include "UI\UIHouses.h"
+#include "stuff.h"
+#include "mm7_data.h"
+#include "OpenALSoundProvider.h"
+#include "Log.h"
 #include "MediaPlayer.h"
+#include "Bink_Smacker.h"
+#include "AudioPlayer.h"
+#include "Timer.h"
+#include "Render.h"
+
+#pragma comment(lib, "Version.lib")
+
 using namespace Media;
 
-Media::MPlayer *pMediaPlayer;
-Media::IMovie *pMovie;
-Media::ITrack *pTrack;
+Media::MPlayer *pMediaPlayer = nullptr;
+Media::IMovie *pMovie_Track;
+Media::ITrack *pAudio_Track;
 Movie *movie;
 
 int mSourceID;
@@ -34,7 +39,7 @@ void PlayMovie(const wchar_t * pFilename);
 void PlayAudio(const wchar_t * pFilename);
 void LoadMovie(const char *);
  
-class MemoryStream
+class MemoryStream 
 {
   public:
     inline MemoryStream(void *data, size_t data_size)
@@ -52,6 +57,7 @@ class MemoryStream
 
     inline ~MemoryStream()
     {
+      //Log::Warning(L"Destructor: data delete %u", data);
       if (data)
         delete [] data;
     }
@@ -62,16 +68,19 @@ class MemoryStream
       {
         data_size = 32 + num_bytes;
         data = new char[data_size];
+        //Log::Warning(L"new data %u", data);
         current_pos = 0;
       }
       else if (current_pos + num_bytes >= data_size)
       {
         int  new_data_size = data_size + num_bytes + data_size / 8 + 4;
         auto new_data = new char[new_data_size];
+        //Log::Warning(L"new new_data %u", new_data);
 
         memcpy(new_data, data, data_size);
+        //Log::Warning(L"data delete %u", data);
         delete [] data;
-        
+
         data_size = new_data_size;
         data = new_data;
       }
@@ -100,7 +109,7 @@ class MemoryStream
       current_pos = data_size;
     }
 
-    inline size_t Unwind(size_t bytes)//зациклить???
+    inline size_t Unwind(size_t bytes)
     {
       if (bytes > current_pos)
         current_pos = 0;
@@ -127,12 +136,6 @@ class MemoryStream
     size_t  data_size;
     size_t  current_pos;
 };
-
-bool end_current_file;
-bool loop_current_file;
-DWORD time_video_begin;
-int current_movie_width;
-int current_movie_height;
 
 OpenALSoundProvider *provider = nullptr;
 
@@ -185,8 +188,8 @@ struct AVStreamWrapper
     if (dec_ctx)
     {
 	  // Close the codec
-      // закрытие видео кодека
       avcodec_close(dec_ctx);
+	  Log::Warning(L"close decoder context file\n");
       dec_ctx = nullptr;
     }
   }
@@ -200,8 +203,7 @@ struct AVStreamWrapper
 
 struct AVAudioStream: public AVStreamWrapper
 {
-  inline AVAudioStream():
-    AVStreamWrapper()
+  inline AVAudioStream():AVStreamWrapper()
   {
     this->bytes_per_sample = 0;
     this->bytes_per_second = 0;
@@ -213,8 +215,7 @@ struct AVAudioStream: public AVStreamWrapper
 
 struct AVVideoStream: public AVStreamWrapper
 {
-  inline AVVideoStream():
-    AVStreamWrapper()
+  inline AVVideoStream(): AVStreamWrapper()
   {
     this->frames_per_second = 0.0;
   }
@@ -224,23 +225,17 @@ struct AVVideoStream: public AVStreamWrapper
 
 static bool av_open_stream(AVFormatContext *format_ctx, AVMediaType type, AVStreamWrapper *out_stream)
 {
-  // найдем первый stream
   int stream_idx = av_find_best_stream(format_ctx, type, -1, -1, nullptr, 0);
   if (stream_idx >= 0)
   {
     auto stream = format_ctx->streams[stream_idx];
-    //Информация о кодеке в потоке называется «контекстом кодека» (AVCodecContext).
-    //Используя эту информацию, мы можем найти необходимый кодек (AVCodec) и открыть его.
-	// получаемм кодек
     auto dec_ctx = stream->codec;
 
 	// Find the decoder for the video stream
-    // ищем декодер
     auto dec = avcodec_find_decoder(dec_ctx->codec_id);
     if (dec)
     {
 	  // Open codec
-      // открываем кодек
       if (avcodec_open2(dec_ctx, dec, nullptr) >= 0)
       {
         out_stream->type = type;
@@ -250,13 +245,13 @@ static bool av_open_stream(AVFormatContext *format_ctx, AVMediaType type, AVStre
         out_stream->dec_ctx = dec_ctx;
         return true;
       }
-      fprintf(stderr, "ffmpeg: Could not open codec\n");// Не открылся кодек
+      fprintf(stderr, "ffmpeg: Could not open codec\n");
 	  return false;
     }
-    fprintf(stderr, "ffmpeg: Unable to open codec\n");// Кодек не найден
+    fprintf(stderr, "ffmpeg: Unable to open codec\n");
 	return false;
   }
-  fprintf(stderr, "ffmpeg: Didn't find a stream\n");// Не найден stream
+  fprintf(stderr, "ffmpeg: Didn't find a stream\n");
   return false;	
 }
 
@@ -266,7 +261,7 @@ static bool av_open_audio_stream(AVFormatContext *format_ctx, AVAudioStream *out
     return Error("Audio stream not found"), false;
   
   // we support only 2-channel audio for now
-  //if (out_stream->dec_ctx->channels != 2)//закомментировал потому что при воспроизведении jvc.bik вылетает на этом месте
+  //if (out_stream->dec_ctx->channels != 2)
   //{
    // out_stream->Release();
    // return Error("Unsupported number of channels: %u", out_stream->dec_ctx->channels), false;
@@ -338,7 +333,8 @@ void InterleaveAudioData(MemoryStream *stream, AVSampleFormat src_format, int nu
         return;
       }
 
-      if (swr_convert(converter, dst_channels, num_channels * num_samples, (const uint8_t **)channels, num_channels * num_samples) >= 0)
+      if (swr_convert(converter, dst_channels, num_channels * num_samples, (const uint8_t **)channels, num_channels * num_samples) >= 0) //Invalid partial memory access, Uninitialized memory access
+
         stream->Write(dst_channels[0], num_channels * num_samples * sizeof(__int16));
       else
         __debugbreak();
@@ -369,8 +365,7 @@ bool DecodeAudioFrame(AVCodecContext *dec_ctx, AVPacket *avpacket, AVFrame *avfr
   volatile int decoded = false;
   do
   {
-    //Декодирование аудио-пакета осуществляется функцией avcodec_decode_audio4
-    if (avcodec_decode_audio4(dec_ctx, avframe, (int *)&decoded, avpacket) < 0)
+    if (avcodec_decode_audio4(dec_ctx, avframe, (int *)&decoded, avpacket) < 0)	//Uninitialized portail memory access
     {
       log("Cannot decode audio frame\n");
       return false;
@@ -434,10 +429,6 @@ bool DecodeAudioFrame(AVCodecContext *dec_ctx, AVPacket *avpacket, AVFrame *avfr
    // if sample rate < 44100, frame size is 4096 samples
    // else, frame size is 8192 samples
 
- //сжимает аудио в куски различных размеров в зависимости от частоты дискретизации:
-   //если частота дискретизации < 22050, размер кадра составляет 2048 самплов
-   //если частота дискретизации < 44100, размер кадра составляет 4096 самплов
-   //или, размер кадра составляет 8192 самплов
 
   /* determine frame length */
   if (dec_ctx->sample_rate < 22050)
@@ -447,7 +438,6 @@ bool DecodeAudioFrame(AVCodecContext *dec_ctx, AVPacket *avpacket, AVFrame *avfr
   else
     frame_len_bits = 11;
 
-  //проверка количества каналов (не меньше 1 и не больше 2)
   if (dec_ctx->channels < 1 || dec_ctx->channels > 2) 
   {
         av_log(dec_ctx, AV_LOG_ERROR, "invalid number of channels: %d\n", dec_ctx->channels);
@@ -476,7 +466,6 @@ bool DecodeAudioFrame(AVCodecContext *dec_ctx, AVPacket *avpacket, AVFrame *avfr
 	  frame_len     = 1 << frame_len_bits;                          //2048
 
 	  //a frame is windowed with the previous frame; the size of the window is frame size / 16 
-	  //кадр оконный с предыдущего кадра;Размер окна = размер кадра / 16
       overlap_len   = frame_len / 16;                               //128
       block_size    = (frame_len - overlap_len) * channels;         //1920
 
@@ -484,9 +473,6 @@ bool DecodeAudioFrame(AVCodecContext *dec_ctx, AVPacket *avpacket, AVFrame *avfr
 	  //initialize an array of band frequencies corresponding to an array of 25 critical frequencies (same as WMA, apparently),
 	  // any for which the critical frequencies are less than half the sample rate 
 
-	  //вычислить половину частоты дискретизации(частота дискретизации + 1) / 2;
-	  //инициализировать массив группы частот, соответствующих массиву 25 критических частот (аналогично WMA, очевидно),
-	  // любой, для которых критические частоты в два раза меньше частота дискретизации
       sample_rate_half = (sample_rate + 1) / 2;	                    //22050
       if (dec_ctx->codec->id == AV_CODEC_ID_BINKAUDIO_RDFT)
          root = 2.0 / (sqrt(float(frame_len)) * 32768.0);
@@ -607,10 +593,6 @@ bool LoadAudioTrack(AVFormatContext *format_ctx, AVCodecContext *dec_ctx, int au
 {
   out_audio_stream->Reset();
 
-  //Чтение аудио данных.
-  //Данные из файла читаются пакетами (AVPacket), а для воспроизведения используется фрейм (AVFrame).
-
-  //Выделим память для фрейма
   AVFrame  *frame = avcodec_alloc_frame();
 
   AVPacket *packet = new AVPacket;
@@ -619,11 +601,9 @@ bool LoadAudioTrack(AVFormatContext *format_ctx, AVCodecContext *dec_ctx, int au
   int num_audio_frames = 0;
   int num_audio_samples = 0;
 
-  //чтение пакетов
   while (av_read_frame(format_ctx, packet) >= 0)
   {
 	// Is this a packet from the audio stream?
-    //Принадлежит ли пакет к аудиопотоку
     if (packet->stream_index != audio_stream_idx)
     {
       //log("Suspicious stream id %u in %s", packet->stream_index, filenamea);
@@ -631,7 +611,6 @@ bool LoadAudioTrack(AVFormatContext *format_ctx, AVCodecContext *dec_ctx, int au
     }
 
 	// Decode audio frame
-	//Декодируем аудио фрейм
     int num_samples_decoded;
     DecodeAudioFrame(dec_ctx, packet, frame, out_audio_stream, &num_samples_decoded);
 
@@ -641,7 +620,6 @@ bool LoadAudioTrack(AVFormatContext *format_ctx, AVCodecContext *dec_ctx, int au
   *out_num_audio_frames = num_audio_frames;
   *out_num_audio_samples = num_audio_samples;
 
-  //Освободить память выделенную для фрейма
   avcodec_free_frame(&frame);
   delete frame;
   av_free_packet(packet);
@@ -669,35 +647,25 @@ class Track: public Media::ITrack
       audio.Release();
       if (format_ctx)
       {
-        // закрытия контекста файла
         av_close_input_file(format_ctx);
+		Log::Warning(L"close audio format context file\n");
         format_ctx = nullptr;
       }
     }
 
-    bool LoadAudio(const wchar_t *filename) //Загрузка из папки	для mp3
+    bool LoadAudio(const wchar_t *filename)
     {
       char filenamea[1024];
       sprintf(filenamea, "%S", filename);
       // Open audio file
-      //откроем входной файл(Шаг 2)
-      //Функция avformat_open_input читает файловый заголовок и сохраняет информацию о найденных форматах в структуре
-      //AVFormatContext. Остальные аргументы могут быть установлены в NULL, в этом случае libavformat использует 
-      //автоматическое определение параметров.
       if (avformat_open_input(&format_ctx, filenamea, nullptr, nullptr) >= 0)
       {
         // Retrieve stream information
-        //Т.к. avformat_open_input читает только заголовок файла, то следующим шагом нужно получить информацию о потоках
-        //в файле. Это делается функцией avformat_find_stream_info.
         if (avformat_find_stream_info(format_ctx, nullptr) >= 0)
         {
           // Dump information about file onto standard error
-          //После этого format_context->streams содержит все существующие потоки файла. 
-          //Их количество равно format_context->nb_streams.
-          //Вывести подробную информацию о файле и обо всех потоках можно функцией av_dump_format.
           av_dump_format(format_ctx, 0, filenamea, 0);
 
-		  //Открыть поток
           if (!av_open_audio_stream(format_ctx, &audio))
           {
             Error("Cannot open strack: %s", filenamea);
@@ -708,7 +676,6 @@ class Track: public Media::ITrack
           int          num_audio_frames;
           int          num_audio_samples;
 
-		  //Загрузить аудио трек
           if (LoadAudioTrack(format_ctx, audio.dec_ctx, audio.stream_idx, &audio_plain_data, &num_audio_frames, &num_audio_samples))
           {
             /*#ifdef _DEBUG
@@ -732,10 +699,10 @@ class Track: public Media::ITrack
           }
         }
         Release();
-        fprintf(stderr, "ffmpeg: Unable to find stream info\n"); //Не найден поток
+        fprintf(stderr, "ffmpeg: Unable to find stream info\n");
         return false;
       }
-      fprintf(stderr, "ffmpeg: Unable to open input file\n"); //Не может открыть файл
+      fprintf(stderr, "ffmpeg: Unable to open input file\n");
       return false;
     }
 
@@ -774,15 +741,21 @@ class Movie: public Media::IMovie
       memset(last_resampled_frame_data, 0, sizeof(last_resampled_frame_data));
       memset(last_resampled_frame_linesize, 0, sizeof(last_resampled_frame_linesize));
 
+      audio_data_in_device = nullptr;
       decoding_packet = nullptr;
-		ioBuffer = nullptr;
-		format_ctx = nullptr;
-		avioContext = nullptr;
+	  ioBuffer = nullptr;
+	  format_ctx = nullptr;
+	  avioContext = nullptr;
     }
+
+    virtual ~Movie() {}
  
-    inline void Release()
+    virtual void Release()
     {
       ReleaseAVCodec();
+
+      if (audio_data_in_device)
+        provider->DeleteStreamingTrack(&audio_data_in_device);
     }
 
     inline void ReleaseAVCodec()
@@ -793,8 +766,8 @@ class Movie: public Media::IMovie
       if (format_ctx)
       {
 		// Close the video file
-        // закрытие контекста файла(видео файла)
         av_close_input_file(format_ctx);
+		Log::Warning(L"close video format context file\n");
         format_ctx = nullptr;
 	  }
 	  if(avioContext)
@@ -825,26 +798,14 @@ class Movie: public Media::IMovie
       width = dst_width;
       height = dst_height;
       // Open video file
-      //откроем входной файл(Шаг 2)
-      //Функция avformat_open_input читает файловый заголовок и сохраняет информацию о найденных форматах в структуре
-      //AVFormatContext. Остальные аргументы могут быть установлены в NULL, в этом случае libavformat использует 
-      //автоматическое определение параметров.  Последние 2 аргумента используются для формата файла и опций.
       if (avformat_open_input(&format_ctx, filenamea, nullptr, nullptr) >= 0)
       {
         // Retrieve stream information
-        // Проверяем потоки
-        //Т.к. avformat_open_input читает только заголовок файла, то следующим шагом нужно получить информацию о потоках
-        //в файле. Это делается функцией avformat_find_stream_info.(Шаг 3)
         if (avformat_find_stream_info(format_ctx, nullptr) >= 0)
         {
           // Dump information about file onto standard error
-          //Инициализируем pFormatCtx->streams
-          //После этого format_context->streams содержит все существующие потоки файла. 
-          //Их количество равно format_context->nb_streams.
-          //Вывести подробную информацию о файле и обо всех потоках можно функцией av_dump_format.
           av_dump_format(format_ctx, 0, filenamea, 0);
 
-          //pFormatCtx->streams - массив указателей, размера pFormatCtx->nb_streams, поищем тут потоки.
           if (!av_open_audio_stream(format_ctx, &audio))
           {
             Error("Cannot open audio stream: %s", filenamea);
@@ -860,31 +821,29 @@ class Movie: public Media::IMovie
           //Ritor1: include 
 		  if (_stricmp("binkvideo", video.dec->name) ) 
 		  {
-			current_movie_width = video.dec_ctx->width;
-			current_movie_height = video.dec_ctx->height;
+			pMediaPlayer->current_movie_width = video.dec_ctx->width;
+			pMediaPlayer->current_movie_height = video.dec_ctx->height;
 		  }
 		  else
 		  {
-			current_movie_width = width;
-			current_movie_height = height;
-	      } 
+			pMediaPlayer->current_movie_width = width;
+			pMediaPlayer->current_movie_height = height;
+	      }
 		  //
           decoding_packet = new AVPacket;
           av_init_packet(decoding_packet);
       
 		  // Allocate video frame
-		  //Выделим память для фрейма
           decoding_frame = avcodec_alloc_frame();
 
           audio_data_in_device = provider->CreateStreamingTrack16(audio.dec_ctx->channels, audio.dec_ctx->sample_rate, 2);
-
           return true;
         }
         fprintf(stderr, "ffmpeg: Unable to find stream info\n");
-        return Release(), false; // Не найдена информация о потоке
+        return Release(), false; 
       }
       fprintf(stderr, "ffmpeg: Unable to open input file\n");
-      return Release(), false; // Не может открыть файл
+      return Release(), false;
     }
 
 	bool LoadFromLOD(HANDLE h, int readFunction(void*, uint8_t*, int), int64_t seekFunction(void*, int64_t, int), int width, int height)
@@ -899,46 +858,42 @@ class Movie: public Media::IMovie
 		return Load(L"dummyFilename", width, height, 0);
 	}
 
-    virtual void GetNextFrame(double dt, void *dst_surface)// Получить следующий фрейм
+    virtual void GetNextFrame(double dt, void *dst_surface)
     {
-      playback_time += dt;//изменение времени
+      playback_time += dt;
 
-      //Данные из файла читаются пакетами (AVPacket), а для отображения используется фрейм (AVFrame).
       AVPacket *avpacket = decoding_packet;
       AVFrame *avframe = decoding_frame;
-      
-	  //Инизиализируем avframe
+
       avcodec_get_frame_defaults(avframe);
 
       int desired_frame_number = floor(playback_time * video.dec_ctx->time_base.den / video.dec_ctx->time_base.num + 0.5);
       if (last_resampled_frame_num == desired_frame_number)
       {
-        memcpy(dst_surface, last_resampled_frame_data[0], current_movie_height * last_resampled_frame_linesize[0]);
+        memcpy(dst_surface, last_resampled_frame_data[0], pMediaPlayer->current_movie_height * last_resampled_frame_linesize[0]);
         return;
       }
 
       volatile int frameFinished = false;
 
-	  //чтение пакетов
       // keep reading packets until we hit the end or find a video packet
       do
       {
-        if (loop_current_file)
+        if (pMediaPlayer->loop_current_file)
         {
           //Now seek back to the beginning of the stream
           if (video.dec_ctx->frame_number >= video.stream->duration - 1 )
-            end_current_file = true;
+            pMediaPlayer->bPlaying_Movie = false;
         }
-        if (av_read_frame(format_ctx, avpacket) < 0) //воспроизведение завершено
+        if (av_read_frame(format_ctx, avpacket) < 0)
         {
           // probably movie is finished
-          end_current_file = true;
+          pMediaPlayer->bPlaying_Movie = false;
           av_free_packet(avpacket);
 		  return;
         }
 		// Is this a packet from the video stream?
         // audio packet - queue into playing
-        //Принадлежит ли пакет к аудиопотоку
         if (avpacket->stream_index == audio.stream_idx)
         {
           MemoryStream audio_data;
@@ -948,20 +903,16 @@ class Movie: public Media::IMovie
         }
 
 		// Decode video frame
-        //пакет к видеопотоку
         // video packet - decode & maybe show
         else if (avpacket->stream_index == video.stream_idx)
         {
           do
           {
-	       //Функция avcodec_decode_video2 осуществляет декодирование пакета в фрейм с использованием кодека,
-           //который мы получили раньше (codec_context). Функция устанавливает положительное значение frame_finished в случае
-           //если фрейм декодирован целиком (то есть один фрейм может занимать несколько пакетов и frame_finished будет 
-           //установлен только при декодировании последнего пакета).
             if (avcodec_decode_video2(video.dec_ctx, avframe, (int *)&frameFinished, avpacket) < 0)
               __debugbreak();
           } while (!frameFinished);
         }
+        else __debugbreak(); // unknown stream
       }
       while (avpacket->stream_index != video.stream_idx ||
                avpacket->pts != desired_frame_number);
@@ -975,27 +926,23 @@ class Movie: public Media::IMovie
         uint8_t       *rescaled_data[4] = {nullptr, nullptr, nullptr, nullptr};
         int            rescaled_linesize[4] = {0, 0, 0, 0};
 
-        if (av_image_alloc(rescaled_data, rescaled_linesize, current_movie_width, current_movie_height, rescaled_format, 1) >= 0)
+        if (av_image_alloc(rescaled_data, rescaled_linesize, pMediaPlayer->current_movie_width, pMediaPlayer->current_movie_height, rescaled_format, 1) >= 0)
         {
-          // создание контекста для преобразования
           SwsContext *converter = sws_getContext(avframe->width, avframe->height, (AVPixelFormat)avframe->format,
-                                               current_movie_width, current_movie_height, rescaled_format,
+                                               pMediaPlayer->current_movie_width, pMediaPlayer->current_movie_height, rescaled_format,
                                                SWS_BICUBIC, nullptr, nullptr, nullptr);
-          // преобразование кадра(масштабирование)
           sws_scale(converter, avframe->data, avframe->linesize, 0, avframe->height, rescaled_data, rescaled_linesize);
           sws_freeContext(converter);
 
-          //копирование в возвращаемую переменную
-          memcpy(dst_surface, rescaled_data[0], current_movie_height * rescaled_linesize[0]);
+          memcpy(dst_surface, rescaled_data[0], pMediaPlayer->current_movie_height * rescaled_linesize[0]);
 
           last_resampled_frame_num = desired_frame_number;
           memcpy(last_resampled_frame_data, rescaled_data, sizeof(rescaled_data));
           memcpy(last_resampled_frame_linesize, rescaled_linesize, sizeof(rescaled_linesize));
-          //av_freep(&rescaled_data[0]);//вроде должен быть 
         }
       }
       else
-        memset(dst_surface, 0, width * current_movie_height * 4);
+        memset(dst_surface, 0, width * pMediaPlayer->current_movie_height * 4);
 
       // Free the packet that was allocated by av_read_frame
       av_free_packet(avpacket);
@@ -1020,8 +967,8 @@ class Movie: public Media::IMovie
     AVAudioStream   audio;
     int             num_audio_frames;
     int             num_audio_samples;
-	unsigned char * ioBuffer;
-	AVIOContext *avioContext;
+	unsigned char  *ioBuffer;
+	AVIOContext    *avioContext;
     OpenALSoundProvider::StreamingTrackBuffer *audio_data_in_device;
 
     AVVideoStream   video;
@@ -1030,39 +977,475 @@ class Movie: public Media::IMovie
     int             last_resampled_frame_linesize[4];
 };	
 
-ITrack *MPlayer::LoadTrack(const wchar_t *filename) //Загрузить mp3
+ITrack *MPlayer::LoadTrack(const wchar_t *filename)
 {
-  auto track = new Track;
-  if (!track->LoadAudio(filename))
+  auto audio_track = new Track;
+  Log::Warning(L"allocation dynamic memory for audio_track\n");
+  if (!audio_track->LoadAudio(filename))
   {
-    delete track;
-    track = nullptr;
+    delete audio_track;
+	Log::Warning(L"delete dynamic memory for audio_track\n");
+    audio_track = nullptr;
   }
-  return track;
+  return audio_track;
 }
 
 IMovie *MPlayer::LoadMovie(const wchar_t *filename, int width, int height, int cache_ms)	//Загрузить видео
 {
   movie = new Movie;
+  Log::Warning(L"allocation dynamic memory for movie\n");
   if (!movie->Load(filename, width, height, cache_ms))
   {
     delete movie;
+	Log::Warning(L"delete dynamic memory for movie\n");
     movie = nullptr;
   }
   return movie;
 }
 
+
+//for video/////////////////////////////////////////////////////////////////
+
+//----- (004BE9D8) --------------------------------------------------------
+void MPlayer::Initialize(OSWindow *target_window)
+{
+  DWORD NumberOfBytesRead; // [sp+10h] [bp-4h]@9
+    
+  window = target_window;
+
+  unsigned int uBinkVersionMajor = -1,
+               uBinkVersionMinor = -1;
+  //GetDllVersion(L"BINKW32.DLL", &uBinkVersionMajor, &uBinkVersionMinor);
+  //uBinkVersion = (unsigned __int64)uBinkVersionMajor << 32 | uBinkVersionMinor;
+
+  strcpy(pTmpBuf.data(), "anims\\might7.vid");
+  hMightVid = CreateFileW(L"anims\\might7.vid", GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, 0x8000080, 0);
+  if ( hMightVid == INVALID_HANDLE_VALUE )
+  {
+    sprintf(pTmpBuf2.data(), "Can't open file - anims\\%s.smk", pTmpBuf.data());
+    MessageBoxA(0, pTmpBuf2.data(), "Video File Error", 0);
+    return;
+  }
+  strcpy(pTmpBuf.data(), "anims\\magic7.vid");
+  hMagicVid = CreateFileW(L"anims\\magic7.vid", GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, 0x8000080, 0);
+  if ( hMagicVid == INVALID_HANDLE_VALUE )
+  {
+    if ( !bCanLoadFromCD )
+    {
+       sprintf(pTmpBuf2.data(), "Can't open file - anims\\%s.smk", pTmpBuf.data());
+       MessageBoxA(0, pTmpBuf2.data(), "Video File Error", 0);
+       return;
+    }
+    sprintf(pTmpBuf2.data(), "%c:\\%s", (unsigned __int8)cMM7GameCDDriveLetter, pTmpBuf.data());
+    hMagicVid = CreateFileA(pTmpBuf2.data(), GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, 0x8000080, 0);
+    if ( hMagicVid == (HANDLE)INVALID_HANDLE_VALUE )
+    {
+      sprintf(pTmpBuf2.data(), "Can't open file - %s", pTmpBuf.data());
+      MessageBoxA(0, pTmpBuf2.data(), "Video File Error", 0);
+      return;
+    }
+  }
+  ReadFile(hMightVid, &uNumMightVideoHeaders, 4, &NumberOfBytesRead, 0);
+  ReadFile(hMagicVid, &uNumMagicVideoHeaders, 4, &NumberOfBytesRead, 0);
+  pMightVideoHeaders = (MovieHeader *)malloc(sizeof(MovieHeader) * uNumMightVideoHeaders + 2);
+  pMagicVideoHeaders = (MovieHeader *)malloc(sizeof(MovieHeader) * uNumMagicVideoHeaders + 2);
+  ReadFile(hMightVid, pMightVideoHeaders, 44 * uNumMightVideoHeaders, &NumberOfBytesRead, 0);
+  ReadFile(hMagicVid, pMagicVideoHeaders, 44 * uNumMagicVideoHeaders, &NumberOfBytesRead, 0);
+}
+
+//----- (004BF411) --------------------------------------------------------
+void MPlayer::OpenFullscreenMovie(const char *pFilename, unsigned int bLoop/*, int ScreenSizeFlag*/)
+{
+  if (!this->bPlaying_Movie)
+  {
+    pEventTimer->Pause();
+	if (pAudioPlayer->hAILRedbook)
+		AIL_redbook_pause(pAudioPlayer->hAILRedbook);
+
+	bStopBeforeSchedule = false;
+	bFirstFrame = false;
+	this->bLoopPlaying = bLoop;
+	LoadMovie(pFilename);
+	return;
+  }
+}
+
+//----- (004BF28F) --------------------------------------------------------
+void MPlayer::OpenHouseMovie(const char *pMovieName, unsigned int a3_1)
+{
+  if (!this->bPlaying_Movie)
+  {
+    //Prepare();
+    pEventTimer->Pause();
+    if (pAudioPlayer->hAILRedbook)
+      AIL_redbook_pause(pAudioPlayer->hAILRedbook);
+
+    bStopBeforeSchedule = false;
+    bFirstFrame = false;
+
+    this->bLoopPlaying = a3_1;
+    /*if ( LOBYTE(this->field_104) == 1 )
+    {
+      MessageBoxA(nullptr, "Unsupported Bink playback!", "E:\\WORK\\MSDEV\\MM7\\MM7\\Code\\Video.cpp:925", 0);
+      return;
+    }*/
+
+    LoadMovie(pMovieName);
+	time_video_begin = GetTickCount();
+  }
+}
+
+//----- (004BE70E) --------------------------------------------------------
+void MPlayer::FullscreenMovieLoop(const char *pMovieName, int a2/*, int ScreenSizeFlag, int a4*/)
+{
+  int v4; // ebp@1
+  MSG Msg; // [sp+Ch] [bp-1Ch]@12
+
+  v4 = a2;
+  if ( dword_6BE364_game_settings_1 & (GAME_SETTINGS_NO_HOUSE_ANIM | GAME_SETTINGS_NO_INTRO) ||
+	   bNoVideo)
+    return;
+
+    if ( a2 == 2 )
+      v4 = 0;
+    ShowCursor(0);
+    OpenFullscreenMovie(pMovieName, 0);
+    bPlaying_Movie = 1;
+    field_44 = v4;
+    pRenderer->ClearTarget(0);
+    pCurrentScreen = SCREEN_VIDEO;
+
+    auto hwnd = pMediaPlayer->window->GetApiHandle();
+
+    RECT rc_client;
+    GetClientRect(hwnd, &rc_client);
+    int client_width = rc_client.right - rc_client.left,
+        client_height = rc_client.bottom - rc_client.top;
+
+    HDC     dc = GetDC(hwnd);
+    HDC     back_dc = CreateCompatibleDC(dc);
+	HBITMAP back_bmp = CreateCompatibleBitmap(dc, client_width, client_height);
+	auto    frame_buffer = new char[client_width * client_height * 4];
+    SelectObject(back_dc, back_bmp);
+
+	DWORD t = GetTickCount();
+
+	bPlaying_Movie = true;
+
+    while (true)
+    {
+      if (pMediaPlayer->bStopBeforeSchedule)
+        break;
+      while (PeekMessageA(&Msg, hwnd, 0, 0, PM_REMOVE))
+      {
+        if (Msg.message == WM_QUIT)
+          Game_DeinitializeAndTerminate(0);
+        if (Msg.message == WM_PAINT)
+          break;
+        TranslateMessage(&Msg);
+        DispatchMessageA(&Msg);
+      }
+
+      double dt = (GetTickCount() - t) / 1000.0; 
+      t = GetTickCount();
+
+      pMovie_Track->GetNextFrame(dt, frame_buffer);	
+
+      if (!bPlaying_Movie)
+        break;
+
+      if (frame_buffer)
+      {
+        // draw to hwnd
+        BITMAPINFO bmi;
+        bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+        bmi.bmiHeader.biWidth = client_width;
+        bmi.bmiHeader.biHeight = -client_height;
+        bmi.bmiHeader.biPlanes = 1;
+        bmi.bmiHeader.biBitCount = 32;
+        bmi.bmiHeader.biCompression = BI_RGB;
+        bmi.bmiHeader.biSizeImage = 0;
+        bmi.bmiHeader.biXPelsPerMeter = 0;
+        bmi.bmiHeader.biYPelsPerMeter = 0;
+        bmi.bmiHeader.biClrUsed = 0;
+        bmi.bmiHeader.biClrImportant = 0;
+        GetDIBits(back_dc, back_bmp, 0, client_height, 0, &bmi, DIB_RGB_COLORS);
+        SetDIBits(back_dc, back_bmp, 0, client_height, frame_buffer, &bmi, DIB_RGB_COLORS);
+        BitBlt(dc, 0, 0, client_width, client_height, back_dc, 0, 0, SRCCOPY);
+      }
+
+      GUI_MainMenuMessageProc();  
+
+      if (pMediaPlayer->bStopBeforeSchedule == 1)
+        Sleep(1000); 
+    }
+	delete [] frame_buffer;
+	DeleteObject(back_bmp);
+	DeleteObject(back_dc);
+	ReleaseDC(hwnd, dc);
+
+    pMediaPlayer->Unload();
+
+    //if (a4 == 1)
+      pCurrentScreen = SCREEN_GAME;
+
+    pMediaPlayer->bPlaying_Movie = false;
+
+    ShowCursor(1);
+
+    /*if ( pCurrentScreen == SCREEN_VIDEO )
+      pCurrentScreen = SCREEN_GAME;*/
+}
+
+void MPlayer::HouseMovieLoop()
+{
+	if (pMovie_Track && !bNoVideo)
+	{
+		pRenderer->BeginScene();
+		pMouse->DrawCursorToTarget();
+
+        Log::Warning(L"smacker");
+        loop_current_file = true;
+        pRenderer->BeginScene();
+        if (!bPlaying_Movie)//reload
+        {
+          unsigned int width = game_viewport_width;
+          unsigned int height = game_viewport_height;
+	      MovieRelease();
+
+          SetFilePointer(hVidFile, uOffset, nullptr, FILE_BEGIN);
+          pMovie_Track = nullptr;
+	      Log::Warning(L"reload pMovie_Track");
+          pMovie_Track = pMediaPlayer->LoadMovieFromLOD(hVidFile, &readFunction, &seekFunction, width, height);
+          bPlaying_Movie = true;
+        }
+        //else 
+        //{
+          double dt = (GetTickCount() - time_video_begin) / 1000.0;
+          //dt = 1.0/15.0;
+          time_video_begin = GetTickCount();
+
+          //log("dt=%.5f\n", dt);
+
+          auto image = new char[current_movie_width * current_movie_height * 4];
+
+          pMovie_Track->GetNextFrame(dt, image);
+
+          int image_array[460 * 344];//game_viewport_width * game_viewport_height
+          if (image)
+          {
+            memcpy(image_array, image, sizeof (image_array));
+            for (unsigned int y = 8; y < 8 + game_viewport_height; ++y)//координаты местоположения видеоролика
+            {
+              for (unsigned int x = 8; x < 8 + game_viewport_width; ++x)
+              {
+                auto p = (unsigned __int32 *)pRenderer->pTargetSurface + x + y * pRenderer->uTargetSurfacePitch;
+                *p = image_array[((x - 8) + ((y - 8)*game_viewport_width))];
+              }
+            }
+            delete[] image;
+          }
+       //}
+        pRenderer->EndScene();
+		pMouse->ReadCursorWithItem();
+		pRenderer->EndScene();
+	}
+}
+ 
+//----- (004BF73A) --------------------------------------------------------
+void MPlayer::SelectMovieType()
+{
+  char Source[32]; // [sp+Ch] [bp-40h]@1
+
+  strcpy(Source, this->pCurrentMovieName);
+  pMediaPlayer->Unload();
+  if ( this->uMovieType == 1 )
+    OpenHouseMovie(Source, LOBYTE(this->bLoopPlaying));
+  else if ( this->uMovieType == 2 )
+    OpenFullscreenMovie(Source, LOBYTE(this->bLoopPlaying));
+  else
+    __debugbreak();
+}
+
+void MPlayer::LoadMovie(const char *pFilename)
+{
+  char pVideoNameBik[120]; // [sp+Ch] [bp-28h]@2
+  char pVideoNameSmk[120]; // [sp+Ch] [bp-28h]@2
+
+  sprintf(pVideoNameBik, "%s.bik", pFilename);
+  sprintf(pVideoNameSmk, "%s.smk", pFilename);
+  for (uint i = 0; i < uNumMightVideoHeaders; ++i)
+  {
+    if (!_stricmp(pVideoNameSmk, pMightVideoHeaders[i].pVideoName))
+    {
+      hVidFile = hMightVid;
+      uOffset = pMightVideoHeaders[i].uFileOffset;
+      uSize = pMightVideoHeaders[i + 1].uFileOffset - uOffset;
+      this->uMovieType = 2;
+    }
+  }
+  for (uint i = 0; i < uNumMagicVideoHeaders; ++i)
+  {
+    if (!_stricmp(pVideoNameBik, pMagicVideoHeaders[i].pVideoName))
+    {
+      hVidFile = hMagicVid;
+      uOffset = pMagicVideoHeaders[i].uFileOffset;
+      uSize = pMagicVideoHeaders[i + 1].uFileOffset - uOffset;
+      this->uMovieType = 1;
+    }
+    if (!_stricmp(pVideoNameSmk, pMagicVideoHeaders[i].pVideoName))
+    {
+      hVidFile = hMagicVid;
+      uOffset = pMagicVideoHeaders[i].uFileOffset;
+      uSize = pMagicVideoHeaders[i + 1].uFileOffset - uOffset;
+      this->uMovieType = 2;
+    }
+  }
+  if (!hVidFile)
+  {
+    pMediaPlayer->Unload();
+    MessageBoxA(0, "MediaPlayer error", "MediaPlayer Error", 0);
+    return;
+  }
+
+  SetFilePointer(hVidFile, uOffset, 0, FILE_BEGIN);
+  strcpy(this->pCurrentMovieName, pFilename);
+
+  auto hwnd = pMediaPlayer->window->GetApiHandle();
+  RECT rc_client;
+  GetClientRect(hwnd, &rc_client);
+  int client_width = rc_client.right - rc_client.left,
+      client_height = rc_client.bottom - rc_client.top;
+
+  pMovie_Track = pMediaPlayer->LoadMovieFromLOD(hVidFile, &readFunction, &seekFunction, client_width, client_height);
+}
+
+//----- (004BF794) --------------------------------------------------------
+void MPlayer::ShowMM7IntroVideo_and_LoadingScreen()
+{
+  RGBTexture tex; // [sp+Ch] [bp-30h]@1
+  unsigned int uTrackStartMS; // [sp+34h] [bp-8h]@8
+  unsigned int uTrackEndMS; // [sp+38h] [bp-4h]@8
+
+  pMediaPlayer->bStopBeforeSchedule = false;
+//  pMediaPlayer->pResetflag = 0;
+  bGameoverLoop = true;
+  if (!bNoVideo)
+  {
+    pRenderer->PresentBlackScreen();
+    if ( !pMediaPlayer->bStopBeforeSchedule )
+      PlayFullscreenMovie(MOVIE_Intro, true);
+  }
+
+  tex.Load("mm6title.pcx", 2);
+  pRenderer->BeginScene();
+  pRenderer->DrawTextureRGB(0, 0, &tex);
+  free(tex.pPixels);
+  tex.pPixels = 0;
+
+  //LoadFonts_and_DrawCopyrightWindow();
+  DrawMM7CopyrightWindow();
+
+  pRenderer->EndScene();
+  pRenderer->Present();
+
+  #ifndef _DEBUG
+    Sleep(1500);   // let the copyright window stay for a while
+  #endif
+
+  if (!bNoSound && pAudioPlayer->hAILRedbook )
+  {
+    pAudioPlayer->SetMusicVolume((signed __int64)(pSoundVolumeLevels[uMusicVolimeMultiplier] * 64.0));
+    AIL_redbook_stop(pAudioPlayer->hAILRedbook);
+    AIL_redbook_track_info(pAudioPlayer->hAILRedbook, 14, &uTrackStartMS, &uTrackEndMS);
+    AIL_redbook_play(pAudioPlayer->hAILRedbook, uTrackStartMS + 1, uTrackEndMS);
+  }
+  bGameoverLoop = false;
+}
+
+//----- (004BEBD7) --------------------------------------------------------
+void MPlayer::Unload()
+{
+  bPlaying_Movie = false;
+  uMovieType = 0;
+  memset(pCurrentMovieName, 0, 0x40);
+  if ( pAudioPlayer->hAILRedbook && !bGameoverLoop )
+    AIL_redbook_resume(pAudioPlayer->hAILRedbook);
+  pEventTimer->Resume();
+
+  pMovie_Track->Release();
+  delete pMovie_Track;
+  pMovie_Track = nullptr;
+}
+
+int MPlayer::readFunction(void* opaque, uint8_t* buf, int buf_size)
+{
+  HANDLE stream = (HANDLE)opaque;
+  //int numBytes = stream->read((char*)buf, buf_size);
+  int numBytes;
+  ReadFile(stream, (char *)buf, buf_size, (LPDWORD)&numBytes, NULL);
+  return numBytes;
+}
+
+int64_t MPlayer::seekFunction(void* opaque, int64_t offset, int whence)
+{
+  if (whence == AVSEEK_SIZE)
+    return pMediaPlayer->uSize;
+  HANDLE h = (HANDLE)opaque;
+  LARGE_INTEGER li;
+  li.QuadPart = offset;
+
+  if (!SetFilePointerEx(h, li, (PLARGE_INTEGER)&li, FILE_BEGIN))
+    return -1;
+  return li.QuadPart;
+}
+
+//for video//////////////////////////////////////////////////////////////////
+
+
+
 IMovie *MPlayer::LoadMovieFromLOD(HANDLE h, int readFunction(void*, uint8_t*, int), int64_t seekFunction(void*, int64_t, int), int width, int height)
 {
 	movie = new Movie;
+	Log::Warning(L"allocation dynamic memory for movie\n");
 	if (movie)
 	{
 		if (movie->LoadFromLOD(h, readFunction, seekFunction, width, height))
-			return movie;
+		  return movie;
 		delete movie;
+		Log::Warning(L"delete dynamic memory for movie\n");
 	}
 	return nullptr;
 }
+
+void MovieRelease()
+{
+  movie->Release();
+  delete movie;
+  Log::Warning(L"delete dynamic memory for movie\n");
+  movie = nullptr;
+}
+
+
+//for audio///////////////////////////////////////////////////////
+//----- (004AB818) --------------------------------------------------------
+void MPlayer::LoadAudioSnd()
+{
+  DWORD NumberOfBytesRead; // [sp+Ch] [bp-4h]@3
+
+  hAudioSnd = CreateFileA("Sounds\\Audio.snd", GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, 0x8000080u, 0);
+  if (hAudioSnd == INVALID_HANDLE_VALUE)
+  {
+    Log::Warning(L"Can't open file: %s", L"Sounds\\Audio.snd");
+    return;
+  }
+
+  ReadFile(hAudioSnd, &uNumSoundHeaders, 4, &NumberOfBytesRead, 0);
+  pSoundHeaders = nullptr;
+  pSoundHeaders = (SoundHeader *)malloc(52 * uNumSoundHeaders + 2);
+  ReadFile(hAudioSnd, pSoundHeaders, 52 * uNumSoundHeaders, &NumberOfBytesRead, 0);
+}
+//for audio///////////////////////////////////////////////////////
 
 void av_logger(void *, int, const char *format, va_list args)
 {
@@ -1077,6 +1460,8 @@ void av_logger(void *, int, const char *format, va_list args)
 
 MPlayer::MPlayer()
 {
+  bPlaying_Movie = false;
+
   static int libavcodec_initialized = false;
 
   if (!libavcodec_initialized)
@@ -1085,55 +1470,45 @@ MPlayer::MPlayer()
     avcodec_register_all();
 
     // Register all available file formats and codecs
-    //инициализируем библиотеку ffmpeg(Шаг 1)
-    //Во время инициализации регистрируются все имеющиеся в библиотеке форматы файлов и кодеков.
-    //После этого они будут использоваться автоматически при открытии файлов этого формата и с этими кодеками.
     av_register_all();
 
     libavcodec_initialized = true;
   }
 
+  bStopBeforeSchedule = false;
+  pMovie_Track = nullptr;
+
   if (!provider)
   {
     provider = new OpenALSoundProvider;
+	Log::Warning(L"allocation dynamic memory for provider\n");
     provider->Initialize();
   }
+  LoadAudioSnd();
 }
 
 MPlayer::~MPlayer()
 {
+	delete provider;
+	Log::Warning(L"delete dynamic memory for provider\n");
+
+    bStopBeforeSchedule = false;
+//    pResetflag = 0;
+    pVideoFrame.Release();
 }
 
 void PlayAudio(const wchar_t * pFilename)
 {
-  pTrack = pMediaPlayer->LoadTrack(pFilename);
-  pTrack->Play();
+  pAudio_Track = pMediaPlayer->LoadTrack(pFilename);
+  pAudio_Track->Play();
+  delete pAudio_Track;
+  Log::Warning(L"delete dynamic memory for pAudio_Track\n");
+  pAudio_Track = nullptr;
 }
 
 void PlayMovie(const wchar_t * pFilename)
 {
-  Media::IMovie *track = pMediaPlayer->LoadMovie(pFilename, 640, 480, 0);
-  track->Play();
+  Media::IMovie *Movie_track = pMediaPlayer->LoadMovie(pFilename, 640, 480, 0);
+  Movie_track->Play();
 }
-
-void MovieRelease()
-{
-  movie->Release();
-  delete movie;
-  movie = nullptr;
-}
-
-//////////////////////////////////////////////////////////////////////////
-//Included from a VideoPlayer.cpp file/вставлено из файла VideoPlayer.cpp/
-//////////////////////////////////////////////////////////////////////////
-
-//used in void VideoPlayer::Initialize(OSWindow *target_window) for open .vid files
-MovieHeader *pMightVideoHeaders;
-MovieHeader *pMagicVideoHeaders;
-HANDLE hMightVid;
-HANDLE hMagicVid;
-unsigned __int64 uBinkVersion;
-unsigned int uNumMightVideoHeaders;
-unsigned int uNumMagicVideoHeaders;
-//
 

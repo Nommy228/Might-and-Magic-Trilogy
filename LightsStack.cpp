@@ -1,3 +1,7 @@
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+
 #define _CRT_SECURE_NO_WARNINGS
 #include <string>
 #include "Lights.h"
@@ -30,11 +34,11 @@ bool LightsStack_MobileLight_::AddLight(__int16 x, __int16 y, __int16 z, __int16
 
 bool LightsStack_StationaryLight_::AddLight( __int16 x, __int16 y, __int16 z, __int16 a5, unsigned char r, unsigned char g, unsigned char b, char uLightType )
 {
-  unsigned int v9; // eax@1
-  std::string v11; // [sp-18h] [bp-18h]@3
+  //unsigned int v9; // eax@1
+  //std::string v11; // [sp-18h] [bp-18h]@3
 
-  v9 = this->uNumLightsActive;
-  if ( (signed int)v9 >= 400 )
+  //v9 = this->uNumLightsActive;
+  if ( (signed int)this->uNumLightsActive >= 400 )
   {
     MessageBoxW(nullptr, L"Too many stationary lights!", L"E:\\WORK\\MSDEV\\MM7\\MM7\\Code\\StationaryLightStack.cpp:45", 0);
     return false;

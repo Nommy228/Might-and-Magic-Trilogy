@@ -1,3 +1,7 @@
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+
 #define _CRT_SECURE_NO_WARNINGS
 #include "mm7_unsorted_subs.h"
 #include "ZlibWrapper.h"
@@ -5,7 +9,7 @@
 
 #include "Render.h"
 #include "Outdoor_stuff.h"
-#include "VideoPlayer.h"
+#include "MediaPlayer.h"
 #include "Sprites.h"
 #include "Mouse.h"
 #include "GammaControl.h"
@@ -268,7 +272,7 @@ void Render::RenderTerrainD3D() // New function
     }
   }
 //-------(Отсечение невидимой части карты)------------------------------------------------------------------------------------------
-  float direction = pGame->pIndoorCameraD3D->sRotationY / 256;//direction of the camera(напрвление камеры)
+  float direction = (float)(pGame->pIndoorCameraD3D->sRotationY / 256);//direction of the camera(напрвление камеры)
   //0-East(B)
   //1-NorthEast(CB)
   //2-North(C)
@@ -277,7 +281,7 @@ void Render::RenderTerrainD3D() // New function
   //5-SouthWest(ЮЗ)
   //6-South(Ю)
   //7-SouthEast(ЮВ)
-  int Start_X, End_X, Start_Z, End_Z;
+  unsigned int Start_X, End_X, Start_Z, End_Z;
   if ( direction >= 0 && direction < 1.0 )//East(B) - NorthEast(CB)
   {
     Start_X = pODMRenderParams->uMapGridCellX - 2, End_X = 127;
@@ -503,7 +507,7 @@ void Render::TransformBillboardsAndSetPalettesODM()
   billboard.uViewportW = pViewport->uViewportBR_Y;
   pODMRenderParams->uNumBillboards = uNumBillboardsToDraw;
 
-  for (int i = 0; i < ::uNumBillboardsToDraw; ++i)
+  for (unsigned int i = 0; i < ::uNumBillboardsToDraw; ++i)
   {
     billboard.uScreenSpaceX = pBillboardRenderList[i].uScreenSpaceX;
     billboard.uScreenSpaceY = pBillboardRenderList[i].uScreenSpaceY;
@@ -570,7 +574,7 @@ void Render::DrawSpriteObjects_ODM()
   signed __int16 v46; // [sp+3Ch] [bp-4h]@12
 
   //v41 = 0;
-  for (int i = 0; i < uNumSpriteObjects; ++i)
+  for (unsigned int i = 0; i < uNumSpriteObjects; ++i)
   {
     SpriteObject* object = &pSpriteObjects[i];
     //auto v0 = (char *)&pSpriteObjects[i].uSectorID;
@@ -724,21 +728,16 @@ signed int __stdcall RenderD3D__DeviceEnumerator(GUID *lpGUID, const char *lpDev
 {
   size_t v4; // eax@1
   size_t v5; // eax@1
-  IUnknown *v6; // eax@10
   size_t v7; // eax@13
   DDDEVICEIDENTIFIER ddDevId; // [sp+4h] [bp-4F8h]@11
-  DDSURFACEDESC2 v10;/*int v10; // [sp+42Ch] [bp-D0h]@16
-  int v11; // [sp+430h] [bp-CCh]@16
-  int v12; // [sp+434h] [bp-C8h]@16
-  int v13; // [sp+438h] [bp-C4h]@16
-  int v14; // [sp+474h] [bp-88h]@16*/
+  DDSURFACEDESC2 v10;/*int v10; // [sp+42Ch] [bp-D0h]@16*/
   DDSCAPS2 ddsCaps; // [sp+4A8h] [bp-54h]@14
   unsigned int uFreeVideoMem; // [sp+4B8h] [bp-44h]@14
   RenderD3D_aux aux; // [sp+4BCh] [bp-40h]@19
   IDirect3D3 *pDirect3D3; // [sp+4C4h] [bp-38h]@18
-  int v19; // [sp+4C8h] [bp-34h]@16
+  int is_there_a_compatible_screen_mode; // [sp+4C8h] [bp-34h]@16
   RenderD3D_D3DDevDesc v20; // [sp+4CCh] [bp-30h]@1
-  LPDIRECTDRAW pDirectDraw; // [sp+4F4h] [bp-8h]@4
+  LPDIRECTDRAW pDirectDraw = nullptr; // [sp+4F4h] [bp-8h]@4
   IDirectDraw4 *pDirectDraw4; // [sp+4F8h] [bp-4h]@7
 
   v4 = strlen(lpDriverName);
@@ -768,7 +767,7 @@ signed int __stdcall RenderD3D__DeviceEnumerator(GUID *lpGUID, const char *lpDev
       delete [] v20.pDriverName;
       delete [] v20.pDeviceDesc;
       delete v20.pGUID;
-      v6 = (IUnknown *)pDirectDraw;
+      pDirectDraw->Release();
     }
     else
     {
@@ -791,16 +790,17 @@ signed int __stdcall RenderD3D__DeviceEnumerator(GUID *lpGUID, const char *lpDev
       v10.dwWidth = window->GetHeight();
       v10.ddpfPixelFormat.dwSize = 32;
 
-      v19 = 0;
-      if ( FAILED(pDirectDraw4->EnumDisplayModes(0, 0, &v19, (LPDDENUMMODESCALLBACK2)DDrawDisplayModesEnumerator))
-        || !v19
+      is_there_a_compatible_screen_mode = false;
+      if ( FAILED(pDirectDraw4->EnumDisplayModes(0, 0, &is_there_a_compatible_screen_mode, (LPDDENUMMODESCALLBACK2)DDrawDisplayModesEnumerator))
+        || !is_there_a_compatible_screen_mode
         || FAILED(pDirectDraw4->QueryInterface(IID_IDirect3D3, (LPVOID *)&pDirect3D3)))
       {
         delete [] v20.pDriverName;
         delete [] v20.pDeviceDesc;
-        free(v20.pDDraw4DevDesc);
+        //free(v20.pDDraw4DevDesc);
+		delete [] v20.pDDraw4DevDesc;
         delete v20.pGUID;
-        v6 = (IUnknown *)pDirectDraw4;
+        pDirectDraw4->Release();
       }
       else
       {
@@ -809,14 +809,13 @@ signed int __stdcall RenderD3D__DeviceEnumerator(GUID *lpGUID, const char *lpDev
         pDirect3D3->EnumDevices((LPD3DENUMDEVICESCALLBACK)D3DDeviceEnumerator, &aux);
         delete [] v20.pDriverName;
         delete [] v20.pDeviceDesc;
-        free(v20.pDDraw4DevDesc);
+		delete [] v20.pDDraw4DevDesc;
         delete v20.pGUID;
         pDirectDraw4->Release();
-        v6 = (IUnknown *)pDirect3D3;
         pDirectDraw4 = 0;
+        pDirect3D3->Release();
       }
     }
-    v6->Release();
   }
   return 1;
 }
@@ -899,18 +898,14 @@ HRESULT __stdcall D3DDeviceEnumerator(const GUID *lpGUID, const char *lpDeviceDe
 }
 
 //----- (0049D75C) --------------------------------------------------------
-HRESULT __stdcall DDrawDisplayModesEnumerator(DDSURFACEDESC2 *pSurfaceDesc, __int16 *a2)
+HRESULT __stdcall DDrawDisplayModesEnumerator(DDSURFACEDESC2 *pSurfaceDesc, __int16 *found_compatible_mode)
 {
-  HRESULT result; // eax@3
-
-  if ( pSurfaceDesc->ddsCaps.dwCaps | 0x2000 && pSurfaceDesc->ddpfPixelFormat.dwRGBBitCount == 16 )
+  if ( pSurfaceDesc->ddsCaps.dwCaps | 0x2000 /*&& pSurfaceDesc->ddpfPixelFormat.dwRGBBitCount == 16*/ )
   {
-    *a2 = 1;
-    result = 0;
+    *found_compatible_mode = 1;
+	return S_OK;
   }
-  else
-    result = 1;
-  return result;
+  return 1;
 }
 
 //----- (0047A95E) --------------------------------------------------------
@@ -943,7 +938,7 @@ void Render::PrepareDecorationsRenderList_ODM()
   int v42; // [sp+98h] [bp-Ch]@9
   int b; // [sp+A0h] [bp-4h]@22
 
-  for (int i = 0; i < uNumLevelDecorations; ++i)
+  for (unsigned int i = 0; i < uNumLevelDecorations; ++i)
   {
     //LevelDecoration* decor = &pLevelDecorations[i];
     if ((!(pLevelDecorations[i].uFlags & LEVEL_DECORATION_OBELISK_CHEST)
@@ -1257,24 +1252,24 @@ void RenderD3D::Release()
   v3 = 0;
   do
   {
-    free(v1->pAvailableDevices[v3].pDriverName);
+    delete[] v1->pAvailableDevices[v3].pDriverName;
     v1->pAvailableDevices[v3].pDriverName = nullptr;
-    free(v1->pAvailableDevices[v3].pDeviceDesc);
+    delete[] v1->pAvailableDevices[v3].pDeviceDesc;
     v1->pAvailableDevices[v3].pDeviceDesc = nullptr;
-    free(v1->pAvailableDevices[v3].pDDraw4DevDesc);
+    delete[] v1->pAvailableDevices[v3].pDDraw4DevDesc;
     v1->pAvailableDevices[v3].pDDraw4DevDesc = nullptr;
-    free(v1->pAvailableDevices[v3].pDirectDrawGUID);
+    delete v1->pAvailableDevices[v3].pDirectDrawGUID;
     v1->pAvailableDevices[v3].pDirectDrawGUID = nullptr;
-    free(v1->pAvailableDevices[v3].pName);
+    delete[] v1->pAvailableDevices[v3].pName;
     v1->pAvailableDevices[v3].pName = nullptr;
-    free(v1->pAvailableDevices[v3].pDescription);
+    delete[] v1->pAvailableDevices[v3].pDescription;
     v1->pAvailableDevices[v3].pDescription = nullptr;
-    free(v1->pAvailableDevices[v3].pGUID);
+    delete v1->pAvailableDevices[v3].pGUID;
     v1->pAvailableDevices[v3].pGUID = nullptr;
     ++v3;
   }
   while ( v3 < 4 );
-  free(v1->pAvailableDevices);
+  delete[] v1->pAvailableDevices;
   v1->pAvailableDevices = 0;
   v4 = v1->pViewport;
   if ( v4 )
@@ -1333,9 +1328,9 @@ bool RenderD3D::CreateDevice(unsigned int uDeviceID, int bWindowed, OSWindow *wi
   //IDirectDraw4 *v9; // eax@16
   //IDirectDraw4 *v10; // eax@20
   //IDirectDraw4 *v13; // eax@35
-  const char *v23; // [sp-4h] [bp-DCh]@9
-  const char *v24; // [sp-4h] [bp-DCh]@13
-  const char *v25; // [sp-4h] [bp-DCh]@19
+  //const char *v23; // [sp-4h] [bp-DCh]@9
+  //const char *v24; // [sp-4h] [bp-DCh]@13
+  //const char *v25; // [sp-4h] [bp-DCh]@19
   DWORD v26; // [sp-4h] [bp-DCh]@30
   DDSCAPS2 v27; // [sp+Ch] [bp-CCh]@37
   DDSURFACEDESC2 ddsd2; // [sp+1Ch] [bp-BCh]@11
@@ -1370,9 +1365,7 @@ bool RenderD3D::CreateDevice(unsigned int uDeviceID, int bWindowed, OSWindow *wi
   {
     if (FAILED(pHost->SetCooperativeLevel(hWnd, DDSCL_MULTITHREADED | DDSCL_NORMAL)))
     {
-      v23 = "Init - Failed to set cooperative level.\n";
-      sprintf(pErrorMessage, v23);
-LABEL_65:
+      sprintf(pErrorMessage, "Init - Failed to set cooperative level.\n");
       if (pHost)
       {
         pHost->Release();
@@ -1390,8 +1383,18 @@ LABEL_65:
       pHost->GetDisplayMode(&ddsd2);
       if ( FORCE_16_BITS && ddsd2.ddpfPixelFormat.dwRGBBitCount != 16 )
       {
-        v24 = "Init - Desktop isn't in 16 bit mode.\n";
-        goto LABEL_14;
+        sprintf(pErrorMessage, "Init - Desktop isn't in 16 bit mode.\n");
+        if (pFrontBuffer)
+        {
+          pFrontBuffer->Release();
+          pFrontBuffer = 0;
+        }
+        if (pHost)
+        {
+          pHost->Release();
+          pHost = 0;
+        }
+        return 0;
       }
 
       ddsd2.dwFlags = DDSD_CAPS | DDSD_WIDTH | DDSD_HEIGHT;
@@ -1400,20 +1403,38 @@ LABEL_65:
       ddsd2.dwHeight = game_height;
       if (pHost->CreateSurface(&ddsd2, &pBackBuffer, 0) )
       {
-        v24 = "Init - Failed to create back buffer.\n";
-LABEL_14:
-        sprintf(pErrorMessage, v24);
+        sprintf(pErrorMessage, "Init - Failed to create back buffer.\n");
         if (pFrontBuffer)
         {
           pFrontBuffer->Release();
           pFrontBuffer = 0;
         }
-        goto LABEL_65;
+        if (pHost)
+        {
+          pHost->Release();
+          pHost = 0;
+        }
+        return 0;
       }
       if ( pHost->CreateClipper(0, &v30, 0) )
       {
-        v25 = "Init - Failed to create clipper.\n";
-        goto LABEL_45;
+        sprintf(pErrorMessage, "Init - Failed to create clipper.\n");
+        if (pBackBuffer)
+        {
+          pBackBuffer->Release();
+          pBackBuffer = 0;
+        }
+        if (pFrontBuffer)
+        {
+          pFrontBuffer->Release();
+          pFrontBuffer= 0;
+        }
+        if (pHost)
+        {
+          pHost->Release();
+          pHost = 0;
+        }
+        return 0;
       }
       v30->SetHWnd(0, hWnd);
       pFrontBuffer->SetClipper(v30);
@@ -1431,7 +1452,25 @@ LABEL_14:
       if ( pDirect3D->EnumZBufferFormats(*pAvailableDevices[uDeviceID].pGUID,
              (HRESULT (__stdcall *)(DDPIXELFORMAT *, void *))D3DZBufferFormatEnumerator,
              &ddsd2.ddpfPixelFormat) )
-        goto LABEL_21;
+	  {
+        sprintf(pErrorMessage, "Init - Failed to enumerate Z buffer formats.\n");
+        if (pBackBuffer)
+        {
+          pBackBuffer->Release();
+          pBackBuffer = 0;
+        }
+        if (pFrontBuffer)
+        {
+          pFrontBuffer->Release();
+          pFrontBuffer= 0;
+        }
+        if (pHost)
+        {
+          pHost->Release();
+          pHost = 0;
+        }
+        return 0;	  
+	  }
       if ( uDeviceID == 2 || uDeviceID == 3 )
         ddsd2.ddsCaps.dwCaps |= DDSCAPS_SYSTEMMEMORY;
 
@@ -1439,10 +1478,7 @@ LABEL_14:
       {
         if ( !pBackBuffer->AddAttachedSurface(pZBuffer) )
         {
-          if ( !pDirect3D->CreateDevice(*pAvailableDevices[uDeviceID].pGUID,
-                  pBackBuffer,
-                  &pDevice,
-                  0) )
+          if ( !pDirect3D->CreateDevice(*pAvailableDevices[uDeviceID].pGUID, pBackBuffer, &pDevice, 0) )
           {
             memset(&d3dvp2, 0, sizeof(D3DVIEWPORT2));
             d3dvp2.dvClipWidth = 2.0;
@@ -1452,30 +1488,82 @@ LABEL_14:
             d3dvp2.dvMinZ = 0.0;
             goto LABEL_54;
           }
-LABEL_51:
           sprintf(pErrorMessage, "Init - Failed to create D3D device.\n");
           if (pDirect3D)
           {
             pDirect3D->Release();
             pDirect3D = 0;
           }
-          goto LABEL_59;
+          if (pZBuffer)
+          {
+            pZBuffer->Release();
+            pZBuffer = 0;
+          }
+          if (pBackBuffer)
+          {
+            pBackBuffer->Release();
+            pBackBuffer = 0;
+          }
+          if (pFrontBuffer)
+          {
+            pFrontBuffer->Release();
+            pFrontBuffer= 0;
+          }
+          if (pHost)
+          {
+            pHost->Release();
+            pHost = 0;
+          }
+          return 0;
         }
-LABEL_48:
         sprintf(pErrorMessage, "Init - Failed to attach z-buffer to back buffer.\n");
         if (pZBuffer)
         {
           pZBuffer->Release();
           pZBuffer = 0;
         }
-        goto LABEL_61;
+        if (pBackBuffer)
+        {
+          pBackBuffer->Release();
+          pBackBuffer = 0;
+        }
+        if (pFrontBuffer)
+        {
+          pFrontBuffer->Release();
+          pFrontBuffer= 0;
+        }
+        if (pHost)
+        {
+          pHost->Release();
+          pHost = 0;
+        }
+        return 0;
       }
-      goto LABEL_44;
+      sprintf(pErrorMessage, "Init - Failed to create z-buffer.\n");
+      if (pBackBuffer)
+      {
+        pBackBuffer->Release();
+        pBackBuffer = 0;
+      }
+      if (pFrontBuffer)
+      {
+        pFrontBuffer->Release();
+        pFrontBuffer= 0;
+      }
+      if (pHost)
+      {
+        pHost->Release();
+        pHost = 0;
+      }
+      return 0;
     }
-LABEL_36:
-    v23 = "Init - Failed to create front buffer.\n";
-    sprintf(pErrorMessage, v23);
-    goto LABEL_65;
+    sprintf(pErrorMessage, "Init - Failed to create front buffer.\n");
+    if (pHost)
+    {
+      pHost->Release();
+      pHost = 0;
+    }
+    return 0;
   }
   if ( uDeviceID == 1 )
     v26 = 1045;
@@ -1483,15 +1571,23 @@ LABEL_36:
     v26 = 1041;
   if (pHost->SetCooperativeLevel(hWnd, v26) )
   {
-    v23 = "Init - Failed to set cooperative level.\n";
-    sprintf(pErrorMessage, v23);
-    goto LABEL_65;
+    sprintf(pErrorMessage, "Init - Failed to set cooperative level.\n");
+    if (pHost)
+    {
+      pHost->Release();
+      pHost = 0;
+    }
+    return 0;
   }
   if (pHost->SetDisplayMode(window->GetWidth(), window->GetHeight(), 16, 0, 0) )
   {
-    v23 = "Init - Failed to set display mode.\n";
-    sprintf(pErrorMessage, v23);
-    goto LABEL_65;
+    sprintf(pErrorMessage, "Init - Failed to set display mode.\n");
+    if (pHost)
+    {
+      pHost->Release();
+      pHost = 0;
+    }
+    return 0;
   }
 
   memset(&ddsd2, 0, sizeof(DDSURFACEDESC2));
@@ -1500,7 +1596,15 @@ LABEL_36:
   ddsd2.ddsCaps.dwCaps = DDSCAPS_PRIMARYSURFACE | DDSCAPS_3DDEVICE | DDSCAPS_FLIP | DDSCAPS_COMPLEX;
   ddsd2.dwBackBufferCount = 1;
   if ( pHost->CreateSurface(&ddsd2, &pFrontBuffer, 0) )
-    goto LABEL_36;
+  {
+    sprintf(pErrorMessage, "Init - Failed to create front buffer.\n");
+    if (pHost)
+    {
+      pHost->Release();
+      pHost = 0;
+    }
+    return 0;  
+  }
   //a3a = &pBackBuffer;
   //v14 = *v34;
   memset(&v27, 0, sizeof(DDSCAPS2));
@@ -1510,8 +1614,23 @@ LABEL_36:
   pHost->QueryInterface(IID_IDirect3D3, (LPVOID *)&pDirect3D);
   if (FAILED(pFrontBuffer->GetAttachedSurface(&v27, &pBackBuffer)))
   {
-    v25 = "Init - Failed to get D3D interface.\n";
-    goto LABEL_45;
+    sprintf(pErrorMessage, "Init - Failed to get D3D interface.\n");
+    if (pBackBuffer)
+    {
+      pBackBuffer->Release();
+      pBackBuffer = 0;
+    }
+    if (pFrontBuffer)
+    {
+      pFrontBuffer->Release();
+      pFrontBuffer= 0;
+    }
+    if (pHost)
+    {
+      pHost->Release();
+      pHost = 0;
+    }
+    return 0;
   }
 
   ddsd2.dwFlags = DDSD_CAPS | DDSD_WIDTH | DDSD_HEIGHT | DDSD_PIXELFORMAT;
@@ -1522,41 +1641,103 @@ LABEL_36:
          (HRESULT (__stdcall *)(DDPIXELFORMAT *, void *))D3DZBufferFormatEnumerator,
          &ddsd2.ddpfPixelFormat) )
   {
-LABEL_21:
-    v25 = "Init - Failed to enumerate Z buffer formats.\n";
-    goto LABEL_45;
+    sprintf(pErrorMessage, "Init - Failed to enumerate Z buffer formats.\n");
+    if (pBackBuffer)
+    {
+      pBackBuffer->Release();
+      pBackBuffer = 0;
+    }
+    if (pFrontBuffer)
+    {
+      pFrontBuffer->Release();
+      pFrontBuffer= 0;
+    }
+    if (pHost)
+    {
+      pHost->Release();
+      pHost = 0;
+    }
+    return 0;
   }
   if ( uDeviceID == 2 || uDeviceID == 3 )
     BYTE1(ddsd2.ddsCaps.dwCaps) |= 8u;
   //uDeviceIDa = &pZBuffer;
   if (pHost->CreateSurface(&ddsd2, &pZBuffer, 0) )
   {
-LABEL_44:
-    v25 = "Init - Failed to create z-buffer.\n";
-LABEL_45:
-    sprintf(pErrorMessage, v25);
+    sprintf(pErrorMessage, "Init - Failed to create z-buffer.\n");
     if (pBackBuffer)
     {
       pBackBuffer->Release();
       pBackBuffer = 0;
     }
-LABEL_63:
-    //v19 = &pFrontBuffer;
     if (pFrontBuffer)
     {
       pFrontBuffer->Release();
       pFrontBuffer= 0;
     }
-    goto LABEL_65;
+    if (pHost)
+    {
+      pHost->Release();
+      pHost = 0;
+    }
+    return 0;
   }
   if (pBackBuffer->AddAttachedSurface(pZBuffer))
-    goto LABEL_48;
+  {
+    sprintf(pErrorMessage, "Init - Failed to attach z-buffer to back buffer.\n");
+    if (pZBuffer)
+    {
+      pZBuffer->Release();
+      pZBuffer = 0;
+    }
+    if (pBackBuffer)
+    {
+      pBackBuffer->Release();
+      pBackBuffer = 0;
+    }
+    if (pFrontBuffer)
+    {
+      pFrontBuffer->Release();
+      pFrontBuffer= 0;
+    }
+    if (pHost)
+    {
+      pHost->Release();
+      pHost = 0;
+    }
+    return 0;  
+  }
   //v33 = &pDevice;
-  if (pDirect3D->CreateDevice(*pAvailableDevices[uDeviceID].pGUID,
-         pBackBuffer,
-         &pDevice,
-         0) )
-    goto LABEL_51;
+  if (pDirect3D->CreateDevice(*pAvailableDevices[uDeviceID].pGUID, pBackBuffer, &pDevice, 0) )
+  {
+    sprintf(pErrorMessage, "Init - Failed to create D3D device.\n");
+    if (pDirect3D)
+    {
+      pDirect3D->Release();
+      pDirect3D = 0;
+    }
+    if (pZBuffer)
+    {
+      pZBuffer->Release();
+      pZBuffer = 0;
+    }
+    if (pBackBuffer)
+    {
+      pBackBuffer->Release();
+      pBackBuffer = 0;
+    }
+    if (pFrontBuffer)
+    {
+      pFrontBuffer->Release();
+      pFrontBuffer= 0;
+    }
+    if (pHost)
+    {
+      pHost->Release();
+      pHost = 0;
+    }
+    return 0;  
+  }
   memset(&d3dvp2, 0, sizeof(D3DVIEWPORT2));
   d3dvp2.dvClipWidth = 2.0;
   d3dvp2.dvClipY = 1.0;
@@ -1584,19 +1765,27 @@ LABEL_54:
       pDirect3D->Release();
       pDirect3D = 0;
     }
-LABEL_59:
     if (pZBuffer)
     {
       pZBuffer->Release();
       pZBuffer = 0;
     }
-LABEL_61:
     if (pBackBuffer)
     {
       pBackBuffer->Release();
       pBackBuffer = 0;
     }
-    goto LABEL_63;
+    if (pFrontBuffer)
+    {
+      pFrontBuffer->Release();
+      pFrontBuffer= 0;
+    }
+    if (pHost)
+    {
+      pHost->Release();
+      pHost = 0;
+    }
+    return 0;
   }
 
   pDevice->AddViewport(pViewport);
@@ -1609,18 +1798,18 @@ LABEL_61:
 unsigned int RenderD3D::GetDeviceCaps()
 {
   unsigned int v1; // ebx@1
-  RenderD3D *v2; // edi@1
+  //RenderD3D *v2; // edi@1
   IDirect3DDevice3 *v3; // eax@1
   unsigned int result; // eax@2
   D3DDEVICEDESC refCaps; // [sp+Ch] [bp-1F8h]@1
   D3DDEVICEDESC halCaps; // [sp+108h] [bp-FCh]@1
 
   v1 = 0;
-  v2 = this;
+  //v2 = this;
   memset(&halCaps, 0, 0xFCu);
   halCaps.dwSize = 252;
   memset(&refCaps, 0, 0xFCu);
-  v3 = v2->pDevice;
+  v3 = this->pDevice;
   refCaps.dwSize = 252;
   if ( v3->GetCaps(&halCaps, &refCaps) )
   {
@@ -1681,7 +1870,7 @@ void RenderD3D::Present(bool bForceBlit)
     Point.x = 0;
     ClientToScreen(hWindow, &Point);
     OffsetRect(&rc, Point.x, Point.y);
-    pFrontBuffer->Blt(&rc, pBackBuffer, &v5, DDBLT_WAIT, 0);
+    pFrontBuffer->Blt(&rc, pBackBuffer, &v5, DDBLT_WAIT, 0);//Uninitialized memory access
   }
   else
     pFrontBuffer->Flip(0, 1);
@@ -1694,11 +1883,8 @@ bool RenderD3D::CreateTexture(unsigned int uTextureWidth, unsigned int uTextureH
   unsigned int v9; // ebx@5
   unsigned int v10; // eax@5
   DWORD v11; // edx@5
-  //int v12; // edx@7
   DDSURFACEDESC2 ddsd2; // [sp+Ch] [bp-80h]@1
-  //RenderD3D *v15; // [sp+88h] [bp-4h]@1
 
-  //v15 = this;
   memset(&ddsd2, 0, 0x7Cu);
   ddsd2.dwSize = 0x7Cu;
   ddsd2.dwFlags = DDSD_CAPS | DDSD_WIDTH | DDSD_HEIGHT | DDSD_PIXELFORMAT;
@@ -1734,9 +1920,7 @@ LABEL_8:
     }
   }
   else
-  {
     ddsd2.dwMipMapCount = 1;
-  }
 LABEL_11:
   ddsd2.dwFlags = DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH | DDSD_PIXELFORMAT | DDSD_MIPMAPCOUNT;
   ddsd2.ddsCaps.dwCaps = DDSCAPS_TEXTURE | DDSCAPS_COMPLEX | DDSCAPS_MIPMAP;
@@ -1996,14 +2180,11 @@ void Render::DrawPolygon(unsigned int uNumVertices, struct Polygon *a3, ODMFace 
 //----- (0049EB79) --------------------------------------------------------
 Render::~Render()
 {
-  Render *v1; // esi@1
-
-  v1 = this;
   free(this->pDefaultZBuffer);
-  v1->pD3DBitmaps.Release();
-  v1->pD3DSprites.Release();
+  this->pD3DBitmaps.Release();
+  this->pD3DSprites.Release();
   Release();
-  v1->bWindowMode = 1;
+  this->bWindowMode = 1;
   //nullsub_1();
   //nullsub_1();
 }
@@ -2146,7 +2327,7 @@ void Render::SavePCXScreenshot()
   PCXHeader_2 header2; // [sp+140h] [bp-24h]@10
   char *lineRGB; // [sp+148h] [bp-1Ch]@10
   void *surface; // [sp+14Ch] [bp-18h]@8
-  int image_width; // [sp+150h] [bp-14h]@4
+  unsigned int image_width; // [sp+150h] [bp-14h]@4
   int pitch; // [sp+154h] [bp-10h]@4
   char v31; // [sp+15Ah] [bp-Ah]@25
   unsigned char pict_byte; // [sp+15Bh] [bp-9h]@17
@@ -2224,7 +2405,7 @@ void Render::SavePCXScreenshot()
         image_width = 3 * pitch;
         //v24 = 2 * v5;
         v8 = (unsigned short *)surface;
-        for ( int y = 0; y < this->GetRenderHeight(); y++ )
+        for ( unsigned int y = 0; y < this->GetRenderHeight(); y++ )
         {
           line_picture_data = v8;
           if ( GetRenderWidth() > 0 )
@@ -2564,7 +2745,7 @@ void Render::PackPCXpicture( unsigned short* picture_data, int wight, int heidth
         for ( test_byte = 1; test_byte < 63; ++test_byte )
         {
           v15 = i + test_byte;
-          if ( lineRGB[v15] != pict_byte )
+          if ( lineRGB[v15] != pict_byte )//Uninitialized memory access
             break;
           if ( !(v15 % pitch) )
             break;
@@ -2769,26 +2950,19 @@ void Render::Present()
 //----- (0049FD3A) --------------------------------------------------------
 void Render::_49FD3A_fullscreen()
 {
-  Render *v2; // esi@1
-  IDirectDrawSurface4 *v3; // eax@6
-  IDirectDrawSurface4 *v4; // ST0C_4@6
   RECT v5; // [sp+8h] [bp-10h]@6
 
-  Render* a1 = this;
-  v2 = a1;
-  if ( a1->pRenderD3D )
+  if ( this->pRenderD3D )
   {
     if (pFrontBuffer4->IsLost() == DDERR_SURFACELOST)
       pFrontBuffer4->Restore();
     if (pBackBuffer4->IsLost() == DDERR_SURFACELOST)
       pBackBuffer4->Restore();
-    v3 = v2->pBackBuffer4;
-    v4 = v2->pFrontBuffer4;
     v5.top = 0;
     v5.bottom = window->GetHeight();
     v5.left = 0;
     v5.right = window->GetWidth();
-    v3->BltFast(0, 0, v4, &v5, 16u);
+    this->pBackBuffer4->BltFast(0, 0, this->pFrontBuffer4, &v5, 16);
   }
 }
 
@@ -2805,7 +2979,7 @@ void Render::CreateZBuffer()
 //----- (0049FE05) --------------------------------------------------------
 void Render::Release()
 {
-  Render *v1; // esi@1
+  //Render *v1; // esi@1
   //RenderD3D *v2; // ecx@1
   //char v3; // zf@4
   //void *v4; // ebx@6
@@ -2822,22 +2996,22 @@ void Render::Release()
 //  unsigned __int16 **v15; // ebx@28
 //  void **v16; // esi@29
 
-  v1 = this;
+ // v1 = this;
   if (pRenderD3D)
   {
-    if ( v1->using_software_screen_buffer )
+    if ( this->using_software_screen_buffer )
     {
       pRenderD3D->ClearTarget(true, 0, false, 1.0);
       pRenderD3D->Present(0);
       pRenderD3D->ClearTarget(true, 0, false, 1.0);
     }
-    //v1->pColorKeySurface4 = 0;
-    v1->pBackBuffer4 = nullptr;
-    v1->pFrontBuffer4 = nullptr;
-    v1->pDirectDraw4 = nullptr;
-    delete [] v1->pTargetSurface_unaligned;
-    v1->pTargetSurface = nullptr;
-    v1->pTargetSurface_unaligned = nullptr;
+    //this->pColorKeySurface4 = 0;
+    this->pBackBuffer4 = nullptr;
+    this->pFrontBuffer4 = nullptr;
+    this->pDirectDraw4 = nullptr;
+    delete [] this->pTargetSurface_unaligned;
+    this->pTargetSurface = nullptr;
+    this->pTargetSurface_unaligned = nullptr;
     if (pRenderD3D)
     {
       pRenderD3D->Release();
@@ -2850,81 +3024,78 @@ void Render::Release()
   /*{
     if ( bWinNT4_0 == 1 )
     {
-      v5 = (IDirectDraw *)v1->pDirectDraw2;
+      v5 = (IDirectDraw *)this->pDirectDraw2;
       if ( !v5 )
         return;
-      v5->SetCooperativeLevel(v1->hWnd, 8u);
-      v1->pDirectDraw2->FlipToGDISurface();
-      v6 = v1->pSomeSurface2;
+      v5->SetCooperativeLevel(this->hWnd, 8u);
+      this->pDirectDraw2->FlipToGDISurface();
+      v6 = this->pSomeSurface2;
       if ( v6 )
       {
         v6->Release();
-        v1->pSomeSurface2 = 0;
+        this->pSomeSurface2 = 0;
       }
-      v7 = v1->pBackBuffer2;
+      v7 = this->pBackBuffer2;
       if ( v7 )
       {
         v7->Release();
-        v1->pBackBuffer2 = 0;
+        this->pBackBuffer2 = 0;
       }
-      v8 = v1->pFrontBuffer2;
+      v8 = this->pFrontBuffer2;
       if ( v8 )
       {
         v8->Release();
-        v1->pFrontBuffer2 = 0;
+        this->pFrontBuffer2 = 0;
       }
-      v9 = v1->pDirectDraw2;
+      v9 = this->pDirectDraw2;
       if ( v9 )
       {
         v9->Release();
-        v1->pDirectDraw2 = 0;
+        this->pDirectDraw2 = 0;
       }
     }
     else
     {
-      v10 = v1->pDirectDraw4;
+      v10 = this->pDirectDraw4;
       if ( !v10 )
         return;
-      v10->SetCooperativeLevel(v1->hWnd, 1032u);
-      v1->pDirectDraw4->FlipToGDISurface();
-      v11 = v1->pColorKeySurface4;
+      v10->SetCooperativeLevel(this->hWnd, 1032u);
+      this->pDirectDraw4->FlipToGDISurface();
+      v11 = this->pColorKeySurface4;
       if ( v11 )
       {
         v11->Release();
-        v1->pColorKeySurface4 = 0;
+        this->pColorKeySurface4 = 0;
       }
-      v12 = v1->pBackBuffer4;
+      v12 = this->pBackBuffer4;
       if ( v12 )
       {
         v12->Release();
-        v1->pBackBuffer4 = 0;
+        this->pBackBuffer4 = 0;
       }
-      v13 = v1->pFrontBuffer4;
+      v13 = this->pFrontBuffer4;
       if ( v13 )
       {
         v13->Release();
-        v1->pFrontBuffer4 = 0;
+        this->pFrontBuffer4 = 0;
       }
-      v14 = v1->pDirectDraw4;
+      v14 = this->pDirectDraw4;
       if ( v14 )
       {
         v14->Release();
-        v1->pDirectDraw4 = 0;
+        this->pDirectDraw4 = 0;
       }
     }
-    v15 = &v1->pTargetSurface;
-    if ( v1->pTargetSurface )
+    v15 = &this->pTargetSurface;
+    if ( this->pTargetSurface )
     {
-      v16 = (void **)&v1->ptr_400E8;
+      v16 = (void **)&this->ptr_400E8;
       free(*v16);
       *v15 = 0;
       *v16 = 0;
     }
   }*/
 }
-
-
-
 
 void Present32(unsigned __int32 *src, unsigned int src_pitch,
                unsigned __int32 *dst, unsigned int dst_pitch)
@@ -3136,12 +3307,12 @@ bool Render::InitializeFullscreen()
   //HWND v3; // ebx@1
   //void *v4; // eax@2
   //RenderD3D *v5; // eax@3
-  unsigned int v6; // edx@5
+  //unsigned int v6; // edx@5
   RenderD3D__DevInfo *v7; // ecx@5
   bool v8; // eax@6
-  RenderD3D *v9; // ecx@13
+  //RenderD3D *v9; // ecx@13
   unsigned int v10; // eax@13
-  RenderD3D *v11; // eax@25
+  //RenderD3D *v11; // eax@25
 //  HRESULT v12; // eax@25
   int v13; // ecx@25
   int v14; // eax@27
@@ -3157,10 +3328,10 @@ bool Render::InitializeFullscreen()
   DDSURFACEDESC2 pDesc; // [sp+108h] [bp-204h]@40
   D3DDEVICEDESC halCaps; // [sp+184h] [bp-188h]@25
 //  DDSURFACEDESC2 ddsd2; // [sp+280h] [bp-8Ch]@38
-  void *v28; // [sp+2FCh] [bp-10h]@2
+  //void *v28; // [sp+2FCh] [bp-10h]@2
   int v29; // [sp+308h] [bp-4h]@2
 
-  __debugbreak(); // Nomad
+  //__debugbreak(); // Nomad
 
   //v2 = this;
   this->using_software_screen_buffer = 0;
@@ -3185,20 +3356,16 @@ bool Render::InitializeFullscreen()
   else
   {*/
     pRenderD3D = new RenderD3D;
-    v28 = pRenderD3D;
-    v6 = uDesiredDirect3DDevice;
+    //v28 = pRenderD3D;
+    //v6 = uDesiredDirect3DDevice;
     v29 = -1;
     v7 = pRenderD3D->pAvailableDevices;
-    if ( v7[v6].bIsDeviceCompatible )
-    {
-      v8 = pRenderD3D->CreateDevice(v6, /*0*/true, window);
-    }
+    if ( pRenderD3D->pAvailableDevices[uDesiredDirect3DDevice].bIsDeviceCompatible )
+      v8 = pRenderD3D->CreateDevice(uDesiredDirect3DDevice, /*0*/true, window);
     else
     {
       if ( v7[1].bIsDeviceCompatible )
-      {
         v8 = pRenderD3D->CreateDevice(1, /*0*/true, window);
-      }
       else
       {
         if ( !v7->bIsDeviceCompatible )
@@ -3210,10 +3377,10 @@ bool Render::InitializeFullscreen()
     if ( !v8 )
       Error("D3Drend->Init failed.");
 
-    v9 = pRenderD3D;
-    pBackBuffer4 = v9->pBackBuffer;
-    pFrontBuffer4 = v9->pFrontBuffer;
-    pDirectDraw4 = v9->pHost;
+    //v9 = pRenderD3D;
+    pBackBuffer4 = pRenderD3D->pBackBuffer;
+    pFrontBuffer4 = pRenderD3D->pFrontBuffer;
+    pDirectDraw4 = pRenderD3D->pHost;
     v10 = pRenderD3D->GetDeviceCaps();
     if ( v10 & 1 )
     {
@@ -3260,9 +3427,9 @@ bool Render::InitializeFullscreen()
     memset(&halCaps, 0, 0xFCu);
     halCaps.dwSize = 252;
     memset(&refCaps, 0, 0xFCu);
-    v11 = pRenderD3D;
+    //v11 = pRenderD3D;
     refCaps.dwSize = 252;
-    ErrD3D(v11->pDevice->GetCaps(&halCaps, &refCaps));
+    ErrD3D(pRenderD3D->pDevice->GetCaps(&halCaps, &refCaps));
     v13 = halCaps.dwMinTextureWidth;
     if ( (unsigned int)halCaps.dwMinTextureWidth >= halCaps.dwMinTextureHeight )
       v13 = halCaps.dwMinTextureHeight;
@@ -3342,7 +3509,7 @@ bool Render::InitializeFullscreen()
     using_software_screen_buffer = v15;
   //}
   bWindowMode = 0;
-  pParty->uFlags |= 2u;
+  pParty->uFlags |= 2;
   pViewport->SetFOV(flt_6BE3A0 * 65536.0f);
   return v15 != 0;
 }
@@ -3350,32 +3517,13 @@ bool Render::InitializeFullscreen()
 //----- (004A05F3) --------------------------------------------------------
 bool Render::SwitchToWindow()
 {
-  //Render *v2; // esi@1
-  //void *v3; // eax@2
-  //RenderD3D *v4; // eax@3
-  //unsigned int v5; // edx@5
-  //RenderD3D__DevInfo *v6; // ecx@5
   bool v7; // eax@7
-  //RenderD3D *v8; // ecx@12
   unsigned int v9; // eax@12
-//  RenderD3D *v10; // eax@24
-//  HRESULT v11; // eax@24
   int v12; // eax@24
   int v13; // eax@26
-  //bool v14; // eax@32
-  //char v15; // zf@32
-//  IDirectDraw4 *v16; // eax@35
-//  HRESULT v17; // eax@35
-  //int *v18; // eax@36
-//  int *v19; // edx@38
-//  int v20; // eax@38
-//  unsigned int v21; // ecx@38
-//  int v22; // eax@41
   D3DDEVICEDESC refCaps; // [sp+Ch] [bp-300h]@24
   DDSURFACEDESC2 pDesc; // [sp+108h] [bp-204h]@37
   D3DDEVICEDESC halCaps; // [sp+184h] [bp-188h]@24
-//  DDSURFACEDESC2 ddsd2; // [sp+280h] [bp-8Ch]@35
-  //RenderD3D *thisa; // [sp+2FCh] [bp-10h]@2
   int v29; // [sp+308h] [bp-4h]@2
 
   pParty->uFlags |= PARTY_FLAGS_1_0002;
@@ -3536,7 +3684,6 @@ bool Render::SwitchToWindow()
     ddsd2.dwHeight = 480;
     ErrD3D(v16->CreateSurface(&ddsd2, &pColorKeySurface4, 0));
     pBeforePresentFunction = Present_ColorKey;*/
-LABEL_45:
     using_software_screen_buffer = 1;
 //LABEL_47:
     bWindowMode = 1;
@@ -3562,27 +3709,26 @@ LABEL_45:
 
   memset32(pTargetSurface_unaligned, -1, num_pixels);
 
-
-      pRenderer->pBackBuffer4->Unlock(0);
-      /*v19 = pTargetSurface_unaligned;
-      v20 = (unsigned int)pDesc.lpSurface & 7;
-      v21 = (unsigned int)ptr_400E8 & 7;
-      if ( v21 == v20 )
-      {
-        pTargetSurface = (unsigned __int16 *)v19;
-      }
-      else
-      {
-        if ( (signed int)v21 >= v20 )
-          v22 = (int)((char *)v19 + 2 * (v21 - v20) + 16);
-        else
-          v22 = (int)((char *)v19 + 2 * (v20 - v21) + 16);
-        pTargetSurface = (unsigned __int16 *)v22;
-      }*/
-      pTargetSurface = pTargetSurface_unaligned;
-      uTargetSurfacePitch = window->GetWidth();
-      pBeforePresentFunction = Present_NoColorKey;
-      goto LABEL_45;
+  pRenderer->pBackBuffer4->Unlock(0);
+  /*v19 = pTargetSurface_unaligned;
+  v20 = (unsigned int)pDesc.lpSurface & 7;
+  v21 = (unsigned int)ptr_400E8 & 7;
+  if ( v21 == v20 )
+    pTargetSurface = (unsigned __int16 *)v19;
+  else
+  {
+    if ( (signed int)v21 >= v20 )
+      v22 = (int)((char *)v19 + 2 * (v21 - v20) + 16);
+    else
+      v22 = (int)((char *)v19 + 2 * (v20 - v21) + 16);
+    pTargetSurface = (unsigned __int16 *)v22;
+  }*/
+  pTargetSurface = pTargetSurface_unaligned;
+  uTargetSurfacePitch = window->GetWidth();
+  pBeforePresentFunction = Present_NoColorKey;
+  using_software_screen_buffer = 1;
+  bWindowMode = 1;
+  return 0;
 }
 
 
@@ -3891,34 +4037,43 @@ void Render::ParseTargetPixelFormat()
 //----- (004A0F40) --------------------------------------------------------
 bool Render::LockSurface_DDraw4(IDirectDrawSurface4 *pSurface, DDSURFACEDESC2 *pDesc, unsigned int uLockFlags)
 {
-  //IDirectDrawSurface4 *v4; // esi@1
   HRESULT result; // eax@1
   HRESULT v6; // eax@4
-//  int v7; // [sp-8h] [bp-14h]@10
-//  unsigned int v8; // [sp-4h] [bp-10h]@10
   char v9; // [sp+Bh] [bp-1h]@1
 
-  //v4 = pSurface;
   v9 = 1;
   result = pSurface->Lock(0, pDesc, uLockFlags, 0);
+  /*
+  Когда объект DirectDrawSurface теряет поверхностную память, методы возвратят DDERR_SURFACELOST
+  и не выполнят никакую другую функцию. Метод IDirectDrawSurface::Restore перераспределит поверхностную память
+  и повторно присоединит ее к объекту DirectDrawSurface. 
+  */
   if ( result == DDERR_SURFACELOST )
   {
-    v6 = pSurface->Restore();
+    v6 = pSurface->Restore();//Восстанавливает потерянную поверхность. Это происходит, когда поверхностная память,
+	                         //связанная с объектом DirectDrawSurface была освобождена. 
     if ( v6 )
     {
-      if ( v6 != DDERR_IMPLICITLYCREATED )
+      if ( v6 != DDERR_IMPLICITLYCREATED )//DDERR_IMPLICITLYCREATED - Поверхность не может быть восстановлена,   
+		                                  //потому что она - неявно созданная поверхность.										
       {
-LABEL_20:
         v9 = 0;
-        result = (bool)memset(pDesc, 0, 4u);
-        goto LABEL_21;
+        result = (bool)memset(pDesc, 0, 4);
+        LOBYTE(result) = v9;
+        return 0;
       }
       pRenderer->pFrontBuffer4->Restore();
       pSurface->Restore();
     }
     result = pSurface->Lock(0, pDesc, DDLOCK_WAIT, 0);
-    if ( result == DDERR_INVALIDRECT || result == DDERR_SURFACEBUSY )
-      goto LABEL_20;
+    if ( result == DDERR_INVALIDRECT || result == DDERR_SURFACEBUSY )//DDERR_SURFACEBUSY - Доступ к этой поверхности отказан, 
+		//потому что поверхность блокирована другой нитью. DDERR_INVALIDRECT - Обеспечиваемый прямоугольник недопустим.
+	{
+      v9 = 0;
+      result = (bool)memset(pDesc, 0, 4);
+      LOBYTE(result) = v9;
+      return result;
+	}
     ErrD3D(result);
     if ( result )
     {
@@ -3926,7 +4081,10 @@ LABEL_20:
       //v7 = 2161;
 //LABEL_19:
       //CheckHRESULT((CheckHRESULT_stru0 *)&pSurface, result, "E:\\WORK\\MSDEV\\MM7\\MM7\\Code\\Screen16.cpp", v7, v8);
-      goto LABEL_20;
+      v9 = 0;
+      result = (bool)memset(pDesc, 0, 4);
+      LOBYTE(result) = v9;
+      return result;
     }
     if ( pRenderer->pRenderD3D )
       pRenderD3D->HandleLostResources();
@@ -3937,30 +4095,33 @@ LABEL_20:
     if ( result )
     {
       if ( result == DDERR_INVALIDRECT || result == DDERR_SURFACEBUSY )
-        goto LABEL_20;
+	  {
+        v9 = 0;
+        result = (bool)memset(pDesc, 0, 4);
+        LOBYTE(result) = v9;
+        return result;
+	  }
       ErrD3D(result);
       //v8 = 0;
       //v7 = 2199;
       //goto LABEL_19;
     }
   }
-LABEL_21:
-  LOBYTE(result) = v9;
-  return result;
+  return true;
 }
 
 
 //----- (004A10E4) --------------------------------------------------------
 void Render::CreateDirectDraw()
 {
-  Render *v1; // edi@1
+  //Render *v1; // edi@1
 //  HRESULT v2; // eax@1
 //  HRESULT v3; // eax@5
 //  int v6; // [sp-Ch] [bp-20h]@3
 //  unsigned int v9; // [sp+0h] [bp-14h]@0
   IDirectDraw *lpDD; // [sp+10h] [bp-4h]@1
 
-  v1 = this;
+  //v1 = this;
   ErrD3D(DirectDrawCreate(0, &lpDD, 0));
 
   pDirectDraw4 = nullptr;
@@ -3995,7 +4156,7 @@ void Render::SetDirectDrawDisplayMode(unsigned int uWidth, unsigned int uHeight,
 //----- (004A121C) --------------------------------------------------------
 void Render::CreateFrontBuffer()
 {
-  Render *v1; // esi@1
+  //Render *v1; // esi@1
   IDirectDraw *pDD; // eax@3
   IDirectDrawSurface **pOutSurf; // esi@3
   struct _DDSURFACEDESC *v4; // edx@3
@@ -4004,18 +4165,18 @@ void Render::CreateFrontBuffer()
   unsigned int v7; // [sp-4h] [bp-88h]@3
   DDSURFACEDESC2 a2; // [sp+4h] [bp-80h]@3
 
-  v1 = this;
+  //v1 = this;
   //if (pVersion->pVersionInfo.dwPlatformId != VER_PLATFORM_WIN32_NT ||
       //pVersion->pVersionInfo.dwMajorVersion != 4 )
   {
     memset(&a2, 0, 0x7Cu);
-    pDD = (IDirectDraw *)v1->pDirectDraw4;
+    pDD = (IDirectDraw *)this->pDirectDraw4;
     a2.dwSize = 124;
     a2.dwFlags = 1;
     v7 = 0;
     a2.ddsCaps.dwCaps = 512;
     v6 = 2357;
-    pOutSurf = (IDirectDrawSurface **)&v1->pFrontBuffer4;
+    pOutSurf = (IDirectDrawSurface **)&this->pFrontBuffer4;
     v4 = (struct _DDSURFACEDESC *)&a2;
   }
   /*else
@@ -4036,7 +4197,7 @@ void Render::CreateFrontBuffer()
 //----- (004A12CD) --------------------------------------------------------
 void Render::CreateBackBuffer()
 {
-  Render *v1; // esi@1
+  //Render *v1; // esi@1
   IDirectDraw *v2; // eax@3
   IDirectDrawSurface **ppBackBuffer; // esi@3
   struct _DDSURFACEDESC *v4; // edx@3
@@ -4045,12 +4206,12 @@ void Render::CreateBackBuffer()
   unsigned int v7; // [sp-4h] [bp-88h]@3
   DDSURFACEDESC2 a2; // [sp+4h] [bp-80h]@3
 
-  v1 = this;
+  //v1 = this;
   //if (pVersion->pVersionInfo.dwPlatformId != VER_PLATFORM_WIN32_NT ||
     //  pVersion->pVersionInfo.dwMajorVersion != 4 )
   {
     memset(&a2, 0, 0x7Cu);
-    v2 = (IDirectDraw *)v1->pDirectDraw4;
+    v2 = (IDirectDraw *)this->pDirectDraw4;
     a2.dwSize = 124;
     a2.dwFlags = 7;
     v7 = 0;
@@ -4058,7 +4219,7 @@ void Render::CreateBackBuffer()
     a2.dwWidth = window->GetWidth();
     a2.dwHeight = window->GetHeight();
     v6 = 2387;
-    ppBackBuffer = (IDirectDrawSurface **)&v1->pBackBuffer4;
+    ppBackBuffer = (IDirectDrawSurface **)&this->pBackBuffer4;
     v4 = (struct _DDSURFACEDESC *)&a2;
   }
   /*else
@@ -4081,7 +4242,7 @@ void Render::CreateBackBuffer()
 //----- (004A139A) --------------------------------------------------------
 void Render::CreateDirectDrawPrimarySurface()
 {
-  Render *v1; // esi@1
+  //Render *v1; // esi@1
   //int v2; // ebx@3
 //  IDirectDraw2 *v3; // eax@3
 //  HRESULT v4; // eax@3
@@ -4100,24 +4261,21 @@ void Render::CreateDirectDrawPrimarySurface()
   DDSCAPS2 v17; // [sp+88h] [bp-18h]@4
 //  int a4; // [sp+98h] [bp-8h]@3
 
-  v1 = this;
+  //v1 = this;
   //if (pVersion->pVersionInfo.dwPlatformId != VER_PLATFORM_WIN32_NT ||
       //pVersion->pVersionInfo.dwMajorVersion != 4 )
   {
     //v2 = 0;
     //this->field_4004C = 1;
     memset(&ddsd2, 0, 0x7Cu);
-    v7 = v1->pDirectDraw4;
+    v7 = this->pDirectDraw4;
     ddsd2.dwBackBufferCount = 1;
     ddsd2.dwSize = 0x7Cu;
     ddsd2.dwFlags = DDSD_CAPS | DDSD_BACKBUFFERCOUNT;
     ddsd2.ddsCaps.dwCaps = DDSCAPS_COMPLEX | DDSCAPS_FLIP | DDSCAPS_3DDEVICE | DDSCAPS_PRIMARYSURFACE;
-    ErrD3D(v7->CreateSurface(
-           &ddsd2,
-           &pFrontBuffer4,
-           0));
-    pFrontBuffer = (IDirectDrawSurface *)v1->pFrontBuffer4;
-    ppBackBuffer = (IDirectDrawSurface **)&v1->pBackBuffer4;
+    ErrD3D(v7->CreateSurface(&ddsd2, &pFrontBuffer4, 0));
+    pFrontBuffer = (IDirectDrawSurface *)this->pFrontBuffer4;
+    ppBackBuffer = (IDirectDrawSurface **)&this->pBackBuffer4;
   }
   /*else
   {
@@ -4802,7 +4960,7 @@ void Render::DrawIndoorSkyPolygon(signed int uNumVertices, struct Polygon *pSkyP
       v5 = 31 - (pSkyPolygon->dimming_level & 0x1F);
       if ( v5 < pOutdoor->max_terrain_dimming_level )
         v5 = pOutdoor->max_terrain_dimming_level;
-      for (uint i = 0; i < uNumVertices; ++i)
+      for (uint i = 0; i < (unsigned int)uNumVertices; ++i)
       {
         d3d_vertex_buffer[i].pos.x = array_507D30[i].vWorldViewProjX;
         d3d_vertex_buffer[i].pos.y = array_507D30[i].vWorldViewProjY;
@@ -4828,7 +4986,6 @@ void Render::DrawIndoorSky(unsigned int uNumVertices, unsigned int uFaceID)
   signed __int64 v6; // qax@3
   int v12; // edx@7
   int v13; // eax@7
-//  void *v15; // ecx@9
   int v17; // edi@9
   double v18; // st7@9
   signed int v19; // ebx@9
@@ -4836,16 +4993,8 @@ void Render::DrawIndoorSky(unsigned int uNumVertices, unsigned int uFaceID)
   int v21; // ebx@11
   int v22; // eax@14
   signed __int64 v23; // qtt@16
-//  double v24; // st7@16
-//  unsigned __int8 v25; // sf@16
-//  unsigned __int8 v26; // of@16
   double v28; // st7@20
-//  char *v29; // ebx@20
-//  char *v30; // edx@20
-//  unsigned __int8 v31; // c0@21
-//  unsigned __int8 v32; // c3@21
   double v33; // st6@23
-//  char *v34; // esi@30
   const void *v35; // ecx@31
   int v36; // eax@31
   const void *v37; // edi@31
@@ -4855,24 +5004,12 @@ void Render::DrawIndoorSky(unsigned int uNumVertices, unsigned int uFaceID)
   int v41; // eax@36
   signed __int64 v42; // qtt@39
   int v43; // eax@39
-//  char v44; // zf@39
-//  double v45; // st7@39
-//  double v46; // st7@39
-//  unsigned int v47; // edx@40
   double v48; // st7@41
-//  RenderVertexSoft *v49; // ebx@41
-//  void *v50; // edi@43
   double v51; // st7@46
-//  RenderVertexSoft *v52; // edx@46
-//  void *v53; // edi@48
-//  signed int v59; // [sp-4h] [bp-178h]@17
-//  struct Polygon *v60; // [sp+0h] [bp-174h]@17
-//  IDirect3DTexture2 *v61; // [sp+4h] [bp-170h]@17
   struct Polygon pSkyPolygon; // [sp+14h] [bp-160h]@6
   unsigned int v63; // [sp+120h] [bp-54h]@7
   unsigned int v65; // [sp+128h] [bp-4Ch]@1
   unsigned int v66; // [sp+12Ch] [bp-48h]@7
-  //float v67; // [sp+130h] [bp-44h]@7
   __int64 v69; // [sp+13Ch] [bp-38h]@3
   int v70; // [sp+144h] [bp-30h]@3
   int X; // [sp+148h] [bp-2Ch]@9
@@ -6057,7 +6194,6 @@ void Render::DrawProjectile(float srcX, float srcY, float a3, float a4, float ds
 void Render::_4A4CC9_AddSomeBillboard(stru6_stru1_indoor_sw_billboard *a1, int diffuse)
 {
   unsigned int v5; // eax@7
-//  char *v7; // edx@8
   double v10; // st6@9
   double v11; // st6@10
   int v12; // ebx@13
@@ -6066,7 +6202,7 @@ void Render::_4A4CC9_AddSomeBillboard(stru6_stru1_indoor_sw_billboard *a1, int d
     return;
 
   float depth = 1000000.0;
-  for (uint i = 0; i < a1->uNumVertices; ++i)
+  for (uint i = 0; i < (unsigned int)a1->uNumVertices; ++i)
   {
     if (a1->field_104[i].z < depth)
       depth = a1->field_104[i * 4].z;
@@ -6080,7 +6216,7 @@ void Render::_4A4CC9_AddSomeBillboard(stru6_stru1_indoor_sw_billboard *a1, int d
   pBillboardRenderListD3D[v5].uNumVertices = a1->uNumVertices;
   pBillboardRenderListD3D[v5].z_order = depth;
 
-  for (uint i = 0; i < a1->uNumVertices; ++i)
+  for (uint i = 0; i < (unsigned int)a1->uNumVertices; ++i)
   {
     pBillboardRenderListD3D[v5].pQuads[i].pos.x = a1->field_104[i].x;
     pBillboardRenderListD3D[v5].pQuads[i].pos.y = a1->field_104[i].y;
@@ -6108,32 +6244,21 @@ void Render::_4A4CC9_AddSomeBillboard(stru6_stru1_indoor_sw_billboard *a1, int d
 //----- (004A4DE1) --------------------------------------------------------
 bool Render::LoadTexture(const char *pName, unsigned int bMipMaps, IDirectDrawSurface4 **pOutSurface, IDirect3DTexture2 **pOutTexture)
 {
-//  HRESULT v12; // eax@14
   unsigned __int16 *v13; // ecx@19
   unsigned __int16 *v14; // eax@19
   DWORD v15; // edx@20
-//  HRESULT v16; // eax@23
   stru350 Dst; // [sp+Ch] [bp-F8h]@12
 
   HWLTexture* pHWLTexture = pD3DBitmaps.LoadTexture(pName, bMipMaps);
   if ( pHWLTexture )
   {
     bMipMaps = !strncmp(pName, "HDWTR", 5);
-    if ( !pRenderD3D->CreateTexture(
-            pHWLTexture->uWidth,
-            pHWLTexture->uHeight,
-            pOutSurface,
-            pOutTexture,
-            true,
-            bMipMaps,
-            uMinDeviceTextureDim) )
+    if ( !pRenderD3D->CreateTexture(pHWLTexture->uWidth, pHWLTexture->uHeight, pOutSurface, pOutTexture, true,
+            bMipMaps, uMinDeviceTextureDim) )
       Error("HiScreen16::LoadTexture - D3Drend->CreateTexture() failed: %x", 0);
-    //v10 = *pOutSurface;
-    //v11 = 0;
     if (bMipMaps)
     {
       Dst._450DDE();
-      //v20 = 0;
       Dst._450DF1(&stru_4EFCBC, &stru_4EFCBC);
 
       IDirectDrawSurface4 *pNextSurf = *pOutSurface;
@@ -6149,24 +6274,27 @@ bool Render::LoadTexture(const char *pName, unsigned int bMipMaps, IDirectDrawSu
 
         if ( LockSurface_DDraw4(pNextSurf, &desc, DDLOCK_WAIT | DDLOCK_WRITEONLY) )
         {
-          Dst.sub_451007_scale_image_bicubic(
-            pHWLTexture->pPixels,
-            pHWLTexture->uWidth,
-            pHWLTexture->uHeight,
-            pHWLTexture->uWidth,
-            (unsigned short *)desc.lpSurface,
-            desc.dwWidth,
-            desc.dwHeight,
-            desc.lPitch >> 1,
-            0,
-            0);
+			// linear scaling
+		  for (int s = 0; s < desc.dwHeight; ++s)
+			  for (int t = 0; t < desc.dwWidth; ++t)
+			  {
+				  unsigned int resampled_x = t * pHWLTexture->uWidth / desc.dwWidth,
+					           resampled_y = s * pHWLTexture->uHeight / desc.dwHeight;
+				  unsigned short sample = pHWLTexture->pPixels[resampled_y * pHWLTexture->uWidth + resampled_x];
+
+				  ((unsigned short *)desc.lpSurface)[s * (desc.lPitch >> 1) + t] = sample;
+			  }
+
+			
+			  //bicubic sampling
+          //Dst.sub_451007_scale_image_bicubic(pHWLTexture->pPixels, pHWLTexture->uWidth, pHWLTexture->uHeight, pHWLTexture->uWidth,
+          //  (unsigned short *)desc.lpSurface, desc.dwWidth, desc.dwHeight, desc.lPitch >> 1, 0, 0);
+
           ErrD3D(pNextSurf->Unlock(0));
           //bMipMaps = 0x4D86ACu;
         }
         if (FAILED(pNextSurf->GetAttachedSurface(&v19, &pNextSurf)))
           break;
-        //v10 = (IDirectDrawSurface4 *)pName;
-        //v11 = 0;
       }
       //v20 = -1;
       //nullsub_1();
@@ -6186,7 +6314,7 @@ bool Render::LoadTexture(const char *pName, unsigned int bMipMaps, IDirectDrawSu
         bMipMaps = 0;
         v13 = pHWLTexture->pPixels;
         v14 = (unsigned __int16 *)desc.lpSurface;
-        for(int bMipMaps = 0; bMipMaps < desc.dwHeight; bMipMaps++)
+        for(uint bMipMaps = 0; bMipMaps < desc.dwHeight; bMipMaps++)
         {
           for (v15 = 0; v15 < desc.dwWidth; v15++)
           {
@@ -6208,8 +6336,7 @@ bool Render::LoadTexture(const char *pName, unsigned int bMipMaps, IDirectDrawSu
 
 //----- (004A5048) --------------------------------------------------------
 bool Render::MoveSpriteToDevice( Sprite *pSprite )
-    {
-
+{
   HWLTexture *sprite_texture; // eax@1
   unsigned __int16 *v9; // edx@5
   LPVOID v10; // eax@5
@@ -6224,34 +6351,29 @@ bool Render::MoveSpriteToDevice( Sprite *pSprite )
     pSprite->uBufferHeight = sprite_texture->uBufferHeight;
     pSprite->uAreaWidth = sprite_texture->uAreaWidth;
     pSprite->uAreaHeight = sprite_texture->uAreaHeigth;
-    //v6 = v3->uMinDeviceTextureDim;
-    //v7 = v3->pRenderD3D;
     if (!pRenderD3D->CreateTexture(sprite_texture->uWidth, sprite_texture->uHeight, &pSprite->pTextureSurface, &pSprite->pTexture, 1u, 0, uMinDeviceTextureDim))
       Error("HiScreen16::LoadTexture - D3Drend->CreateTexture() failed: %x", 0);
-    //pSprite = v2->pTextureSurface;
-    //pSprite = (Sprite *)pSprite->pName;
-    //v8 = pSprite;
     memset(&Dst, 0, sizeof(DDSURFACEDESC2));
     Dst.dwSize = 124;
     if ( LockSurface_DDraw4((IDirectDrawSurface4 *)pSprite->pTextureSurface, &Dst, DDLOCK_WAIT | DDLOCK_WRITEONLY) )
     {
-    v9 = sprite_texture->pPixels;
-    v10 = Dst.lpSurface;
-      for (int i=0; i<sprite_texture->uHeight; ++i)
-          {
-          for (int j=0; j<sprite_texture->uWidth/2; ++j)
-              {
-              *(int *)v10 = *(int *)v9;
-              v9 += 2;
-              v10 = (char *)v10 + 4;
-              }
-          v10 = (char *)v10+Dst.lPitch-sprite_texture->uWidth*2;
-          }
+      v9 = sprite_texture->pPixels;
+      v10 = Dst.lpSurface;
+      for (uint i=0; i<sprite_texture->uHeight; ++i)
+      {
+        for (uint j=0; j<sprite_texture->uWidth/2; ++j)
+        {
+          *(int *)v10 = *(int *)v9;
+          v9 += 2;
+          v10 = (char *)v10 + 4;
+        }
+        v10 = (char *)v10 + Dst.lPitch-sprite_texture->uWidth*2;
+      }
       ErrD3D(pSprite->pTextureSurface->Unlock(0));
     }
-    free(sprite_texture->pPixels);
-    free(sprite_texture);
-    return true;
+    delete [] sprite_texture->pPixels;
+    delete sprite_texture;
+	return true;
   }
   return false;
 }
@@ -6790,7 +6912,7 @@ void Render::DrawTranslucent(unsigned int a2, unsigned int a3, Texture *a4)
       }
     }
 
-    for (int y = 0; y < v6; ++y)
+    for (uint y = 0; y < v6; ++y)
     {
       for (int x = 0; x < v5; ++x)
       {
@@ -6977,9 +7099,9 @@ void Render::DrawText(signed int uOutX, signed int uOutY, unsigned __int8 *pFont
       }
     }
 
-    for (int y = 0; y < v10; ++y)
+    for (uint y = 0; y < v10; ++y)
     {
-      for (int x = 0; x < v9; ++x)
+      for (uint x = 0; x < v9; ++x)
       {
         if (*v24)
         {
@@ -7094,7 +7216,7 @@ void Render::DrawTextPalette( int x, int y, unsigned char* font_pixels, int a5, 
     if ( a8 )
     {
       v28 = 0x7FF; // 16bit pRenderer->uTargetGMask | pRenderer->uTargetBMask;
-      for (int dy = 0; dy < v9; ++dy)
+      for (uint dy = 0; dy < v9; ++dy)
       {
         for (int dx = 0; dx < v8; ++dx)
         {
@@ -7142,7 +7264,7 @@ void Render::DrawTextPalette( int x, int y, unsigned char* font_pixels, int a5, 
     }
     else
     {
-      for (int dy = 0; dy < v9; ++dy)
+      for (uint dy = 0; dy < v9; ++dy)
       {
         for (int dx = 0; dx < v8; ++dx)
         {
@@ -7369,7 +7491,7 @@ void Render::DrawMasked(signed int a2, signed int a3, Texture *pTexture, unsigne
         }
         
           v16 = v19;
-        for (int y = 0; y < v5; ++y)
+        for (uint y = 0; y < v5; ++y)
         {
           for (int x = 0; x < v20; ++x)
           {
@@ -7468,7 +7590,7 @@ void Render::_4A65CC(unsigned int x, unsigned int y, Texture *a4, Texture *a5, i
       }
     }
 
-    for (int dy = 0; dy < uHeight; ++dy)
+    for (uint dy = 0; dy < uHeight; ++dy)
     {
       for (int dx = 0; dx < Width; ++dx)
       {
@@ -8115,7 +8237,7 @@ void Render::ChangeBetweenWinFullscreenModes()
       pPaletteManager->RecalculateAll();
       pBitmaps_LOD->SetupPalettes(pRenderer->uTargetRBits, pRenderer->uTargetGBits, pRenderer->uTargetBBits);
       pIcons_LOD->SetupPalettes(pRenderer->uTargetRBits, pRenderer->uTargetGBits, pRenderer->uTargetBBits);
-      for (int i = 0; i < pObjectList->uNumObjects; i++)
+      for (uint i = 0; i < pObjectList->uNumObjects; i++)
       {
         BYTE3(v4) = 0;
         v5 = &pObjectList->pObjects[i];
@@ -8124,8 +8246,8 @@ void Render::ChangeBetweenWinFullscreenModes()
         v5->uParticleTrailColor = v5->uParticleTrailColorB | (v4 << 8);
       }
       SetUserInterface(pParty->alignment, true);
-      if ( pVideoPlayer->pVideoFrame.pPixels )
-        pVideoPlayer->pVideoFrame.Load(pVideoPlayer->pVideoFrameTextureFilename, 1);
+      if ( pMediaPlayer->pVideoFrame.pPixels )
+        pMediaPlayer->pVideoFrame.Load(pMediaPlayer->pVideoFrameTextureFilename, 1);
       if ( sCurrentMenuID != MENU_CREATEPARTY )
       {
         if ( sCurrentMenuID == MENU_CREDITSPROC )
@@ -8160,8 +8282,8 @@ void Render::ChangeBetweenWinFullscreenModes()
       ShowWindow(hWnd, SW_SHOWNORMAL);
     }*/
     pMouse->bActive = true;
-    if ( pVideoPlayer->AnyMovieLoaded() )
-      pVideoPlayer->SelectMovieType();
+    if ( pMovie_Track )
+      pMediaPlayer->SelectMovieType();
     if (dword_6BE364_game_settings_1 & GAME_SETTINGS_0800)
       dword_6BE364_game_settings_1 &= ~GAME_SETTINGS_0800;
     else
@@ -8177,11 +8299,7 @@ void Render::ChangeBetweenWinFullscreenModes()
 //----- (004524D8) --------------------------------------------------------
 HWLTexture *RenderHWLContainer::LoadTexture(const char *pName, int bMipMaps)
 {
-  //int v11; // eax@13
-  //int v12; // ecx@13
   void *v13; // eax@13
-  //unsigned __int8 v14; // zf@13
-  //unsigned __int8 v15; // sf@13
   int v16; // esi@14
   int v17; // ecx@16
   int v18; // esi@16
@@ -8195,14 +8313,12 @@ HWLTexture *RenderHWLContainer::LoadTexture(const char *pName, int bMipMaps)
   int v28; // [sp+2Ch] [bp-8h]@13
   int pDestb; // [sp+3Ch] [bp+8h]@15
 
-  //v3 = this;
-  //sprintf(Str1, "%s", pName);
-  //v4 = uNumItems;
   if (!uNumItems)
     return nullptr;
 
-  //{
-  //v5 = 0, pDesta = uNumItems;
+  ///////////////////////////////
+  //quick search(быстрый поиск)//
+  ///////////////////////////////
   uint idx1 = 0,
        idx2 = uNumItems;
   while (true)
@@ -8224,78 +8340,76 @@ HWLTexture *RenderHWLContainer::LoadTexture(const char *pName, int bMipMaps)
       return false;
   }
 
-
   uint uCompressedSize = 0;
   fread(&uCompressedSize, 4, 1, pFile);
 
-    HWLTexture* pTex = new HWLTexture;
-    fread(&pTex->uBufferWidth, 4, 1, pFile);
-    fread(&pTex->uBufferHeight, 4, 1, pFile);
-    fread(&pTex->uAreaWidth, 4, 1, pFile);
-    fread(&pTex->uAreaHeigth, 4, 1, pFile);
-    fread(&pTex->uWidth, 4, 1, pFile);
-    fread(&pTex->uHeight, 4, 1, pFile);
-    fread(&pTex->uAreaX, 4, 1, pFile);
-    fread(&pTex->uAreaY, 4, 1, pFile);
+  HWLTexture* pTex = new HWLTexture;
+  fread(&pTex->uBufferWidth, 4, 1, pFile);
+  fread(&pTex->uBufferHeight, 4, 1, pFile);
+  fread(&pTex->uAreaWidth, 4, 1, pFile);
+  fread(&pTex->uAreaHeigth, 4, 1, pFile);
+  fread(&pTex->uWidth, 4, 1, pFile);
+  fread(&pTex->uHeight, 4, 1, pFile);
+  fread(&pTex->uAreaX, 4, 1, pFile);
+  fread(&pTex->uAreaY, 4, 1, pFile);
 
-    pTex->pPixels = new unsigned __int16[pTex->uWidth * pTex->uHeight];
-    if (uCompressedSize)
-    {
-      char* pCompressedData = new char[uCompressedSize];
-      {
-        fread(pCompressedData, 1, uCompressedSize, pFile);
-        uint uDecompressedSize = pTex->uWidth * pTex->uHeight * sizeof(short);
-        zlib::MemUnzip(pTex->pPixels, &uDecompressedSize, pCompressedData, uCompressedSize);
-      }
-      delete [] pCompressedData;
-    }
-    else
-      fread(pTex->pPixels, 2, pTex->uWidth * pTex->uHeight, pFile);
+  pTex->pPixels = new unsigned __int16[pTex->uWidth * pTex->uHeight];
+  if (uCompressedSize)
+  {
+    char* pCompressedData = new char[uCompressedSize];
+    fread(pCompressedData, 1, uCompressedSize, pFile);
+    uint uDecompressedSize = pTex->uWidth * pTex->uHeight * sizeof(short);
+    zlib::MemUnzip(pTex->pPixels, &uDecompressedSize, pCompressedData, uCompressedSize);
+    delete [] pCompressedData;
+  }
+  else
+    fread(pTex->pPixels, 2, pTex->uWidth * pTex->uHeight, pFile);
 
-    if ( scale_hwls_to_half )
+  if ( scale_hwls_to_half )
+  {
+	__debugbreak();//Ritor1
+    pTex->uHeight /= 2;
+    pTex->uWidth /= 2;
+    v13 = new unsigned __int16[pTex->uWidth * pTex->uHeight];
+    v28 = 0;
+    v26 = (unsigned __int16 *)v13;
+    if ( pTex->uHeight > 0 )
     {
-      pTex->uHeight /= 2;
-      pTex->uWidth /= 2;
-      v13 = new unsigned __int16[pTex->uWidth * pTex->uHeight];
-      v28 = 0;
-      v26 = (unsigned __int16 *)v13;
-      if ( pTex->uHeight > 0 )
+      v16 = pTex->uWidth;
+      v27 = 1;
+      do
       {
-        v16 = pTex->uWidth;
-        v27 = 1;
-        do
+        pDestb = 0;
+        if ( v16 > 0 )
         {
-          pDestb = 0;
-          if ( v16 > 0 )
+          do
           {
-            do
-            {
-              v17 = v16 * v27;
-              v18 = v28 * v16;
-              v19 = pTex->pPixels;
-              v20 = pDestb + 2 * v18;
-              v21 = (int)&v19[2 * (pDestb + v17)];
-              v22 = (int)&v19[2 * v20];
-              LOWORD(v20) = *(unsigned short *)(v21 + 2);
-              LOWORD(v21) = *(unsigned short *)v21;
-              v23 = pDestb++ + v18;
-              extern unsigned int __fastcall _452442_color_cvt(unsigned __int16 a1, unsigned __int16 a2, int a3, int a4);
-              v26[v23] = _452442_color_cvt(*(unsigned short *)v22, *(unsigned short *)(v22 + 2), v21, v20);
-              v16 = pTex->uWidth;
-            }
-            while (pDestb < pTex->uWidth);
+            v17 = v16 * v27;
+            v18 = v28 * v16;
+            v19 = pTex->pPixels;
+            v20 = pDestb + 2 * v18;
+            v21 = (int)&v19[2 * (pDestb + v17)];
+            v22 = (int)&v19[2 * v20];
+            LOWORD(v20) = *(unsigned short *)(v21 + 2);
+            LOWORD(v21) = *(unsigned short *)v21;
+            v23 = pDestb + v18;
+			pDestb++;
+            extern unsigned int __fastcall _452442_color_cvt(unsigned __int16 a1, unsigned __int16 a2, int a3, int a4);
+            v26[v23] = _452442_color_cvt(*(unsigned short *)v22, *(unsigned short *)(v22 + 2), v21, v20);
+            v16 = pTex->uWidth;
           }
-          ++v28;
-          v27 += 2;
+          while (pDestb < pTex->uWidth);
         }
-        while ( v28 < (signed int)pTex->uHeight );
+        ++v28;
+        v27 += 2;
       }
-      delete [] pTex->pPixels;
-      pTex->pPixels = v26;
+      while ( v28 < (signed int)pTex->uHeight );
     }
-    return pTex;
+    delete [] pTex->pPixels;
+    pTex->pPixels = v26;
+  }
+  return pTex;
 }
-
 //----- (0045271F) --------------------------------------------------------
 bool RenderHWLContainer::Release()
 {
@@ -8310,7 +8424,7 @@ bool RenderHWLContainer::Release()
     v5 = this->pFile;
     this->uDataOffset = v4;
     fwrite(&this->uNumItems, 4u, 1u, v5);
-    for (int i = 0; i < this->uNumItems; i++)
+    for (uint i = 0; i < this->uNumItems; i++)
     {
       fwrite(this->pSpriteNames[i], 1u, 0x14u, this->pFile);
       fprintf(File, "D3D texture name:  %s\t\toffset: %x\n", this->pSpriteNames[i], *(unsigned int *)(&(this->pSpriteNames[i]) + 200000/sizeof(char*)));
@@ -8324,9 +8438,9 @@ bool RenderHWLContainer::Release()
   else
   {
     fclose(this->pFile);
-    for (int i = 0; i < this->uNumItems; i++)
+    for (uint i = 0; i < this->uNumItems; i++)
     {
-      free(this->pSpriteNames[i]);
+      delete[] this->pSpriteNames[i];
     }
   }
   return true;
@@ -8528,7 +8642,7 @@ int ODM_NearClip(unsigned int num_vertices)
   //  v2                     v1
 
   int out_num_vertices = 0;
-  for (int i = 0; i < num_vertices; ++i)
+  for (uint i = 0; i < num_vertices; ++i)
   {
     next_vertices_flag = array_50AC10[i + 1].vWorldViewPosition.x <= 8.0;//
     if ( current_vertices_flag ^ next_vertices_flag )
@@ -8676,7 +8790,7 @@ void Render::DrawBuildingsD3D()
   unused = 0;
   if ( (signed int)pOutdoor->uNumBModels > 0 )
   {
-    for ( uint model_id = 0; model_id < pOutdoor->uNumBModels; model_id++ )
+    for ( uint model_id = 0; model_id < (unsigned int)pOutdoor->uNumBModels; model_id++ )
     {
       if ( IsBModelVisible(model_id, &unused) )
       {
@@ -9001,7 +9115,7 @@ bool PauseGameDrawing()
     && pCurrentScreen != SCREEN_CHANGE_LOCATION )
   {
 	  if (pCurrentScreen == SCREEN_INPUT_BLV)
-		  return pMovie;//pSmackerMovie != 0;
+		  return pMovie_Track;//pSmackerMovie != 0;
     if ( pCurrentScreen != SCREEN_BRANCHLESS_NPC_DIALOG )
       return true;
   }
@@ -9054,9 +9168,9 @@ unsigned short *Render::MakeScreenshot(signed int width, signed int height)
 
   if ( LockSurface_DDraw4(pBackBuffer4, &Dst, DDLOCK_WAIT) )
   {
-    for (uint y = 0; y < height; ++y)
+    for (uint y = 0; y < (unsigned int)height; ++y)
     {
-      for (uint x = 0; x < width; ++x)
+      for (uint x = 0; x < (unsigned int)width; ++x)
       {
         //*v3 = pRenderer->ReadPixel16((int)(x* interval_x + 8.0), (int)(y * interval_y + 8.0));//screen_data[screen_y + (int)(x* interval_x + 8.0)];
 		  /*
@@ -9411,7 +9525,7 @@ void Render::DrawDecal(Decal *pDecal, float z_bias)
   else
     color_mult = pDecal->field_C18->_43B570_get_color_mult_by_time();
 
-  for (uint i = 0; i < pDecal->uNumVertices; ++i)
+  for (uint i = 0; i < (unsigned int)pDecal->uNumVertices; ++i)
   {
     uint uTint = Render::GetActorTintColor(pDecal->pVertices[i].vWorldViewPosition.x, pDecal->field_C14, 0, 0, nullptr);
 

@@ -105,6 +105,7 @@ struct stru6
     this->uFadeTime = 0;
     this->uNumProjectiles = 0;
     this->field_0 = 0;
+	this->uAnimLength = 0;
 
     pStru1 = new stru6_stru1_indoor_sw_billboard;
     pStru1->Initialize(0xFF3C1Eu);

@@ -12468,7 +12468,7 @@ __handle_mouse_click:
         //}
         if ( wParam == VK_ESCAPE )
         {
-          pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, window_SpeakInHouse != 0, 0);
+          pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Escape, window_SpeakInHouse != 0, 0);
           return 0;
         }
         if ( wParam <= VK_HOME )
@@ -12550,7 +12550,7 @@ __handle_mouse_click:
             {
               pRenderer->RestoreFrontBuffer();
               pRenderer->RestoreBackBuffer();
-              pVideoPlayer->_4BF5B2();
+              BackToHouseMenu();
             }
           }
           if ( pAudioPlayer->hAILRedbook && !bGameoverLoop && !pVideoPlayer->pSmackerMovie )
@@ -14644,4 +14644,15 @@ LABEL_154:
       goto LABEL_154;
     }
   }
+//----- (004BF3F9) --------------------------------------------------------
+bool MPlayer::AnyMovieLoaded()
+{
+  return pMovie_Track != 0;
+}
+//----- (004BF8F6) --------------------------------------------------------
+void MPlayer::PlayDeathMovie()
+{
+  bStopBeforeSchedule = 0;
+  PlayFullscreenMovie(MOVIE_Death, true);
+}
 */

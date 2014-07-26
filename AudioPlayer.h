@@ -1,6 +1,6 @@
 #pragma once
 #include "OSAPI.h"
-
+#include "MediaPlayer.h"
 
 
 
@@ -41,7 +41,7 @@ struct AudioPlayer_3DSample
 
 
 /*   26 */
-#pragma pack(push, 1)
+/*#pragma pack(push, 1)
 struct SoundHeader
 {
   char pSoundName[40];
@@ -49,7 +49,7 @@ struct SoundHeader
   unsigned int uCompressedSize;
   unsigned int uDecompressedSize;
 };
-#pragma pack(pop)
+#pragma pack(pop)*/
 
 /*   27 */
 #pragma pack(push, 1)
@@ -162,15 +162,15 @@ struct AudioPlayer
     field_2D4 = 0;
     s3DSoundVolume = 127;
   }
-
+  inline ~AudioPlayer(){ Release(); };
   void SetMusicVolume(int vol);
   void SetMasterVolume(float fVolume);
   void _4AA258(int a2);
   void PlaySound(SoundID eSoundID, signed int a3, unsigned int uNumRepeats, signed int a5, signed int a6, int a7, float uVolume, int sPlaybackRate);
   void UpdateSounds();
   void StopChannels(int uStartChannel, int uEndChannel);
-  void LoadAudioSnd();
-  void Initialize();
+  void LoadAudioSnd();//
+  void Initialize();//
   void CheckA3DSupport(bool query);
   void Release();
   void FreeChannel(MixerChannel *pChannel);

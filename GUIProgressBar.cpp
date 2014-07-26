@@ -1,3 +1,7 @@
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+
 #define _CRT_SECURE_NO_WARNINGS
 #include "GUIProgressBar.h"
 #include "ErrorHandling.h"
@@ -23,7 +27,7 @@ bool GUIProgressBar::Initialize(Type type)
   //GUIProgressBar *v2; // esi@1
   signed int v4; // eax@7
   int v5; // ecx@8
-  int v6; // edi@8
+  //int v6; // edi@8
   int v7; // edx@14
   //const char *v8; // [sp-8h] [bp-84h]@20
   //unsigned int v9; // [sp-4h] [bp-80h]@20
@@ -52,22 +56,22 @@ bool GUIProgressBar::Initialize(Type type)
   if (uType == TYPE_Fullscreen)
   {
     v5 = 0;
-    v6 = (int)&field_10;
+    //v6 = (int)&field_10;
     do
     {
-      if ( *(char *)(v6 + v4) == 1 )
+      if ( field_10[v4] == 1 )
         ++v5;
       ++v4;
     }
     while ( v4 <= 5 );
     if ( v5 == 5 )
-      memset(&field_10, 0, 8);
+      memset(field_10, 0, 8);
     v7 = rand() % 5 + 1;
-    if ( *(&field_10 + v7) == 1 )
+    if ( field_10[v7] == 1 )
     {
       do
         v7 = rand() % 5 + 1;
-      while ( *(char *)(v6 + v7) == 1 );
+      while ( field_10[v7] == 1 );
     }
     sprintf(Str1, "loading%d.pcx", v7);
     pLoadingBg.Load(Str1, 2);
@@ -82,25 +86,6 @@ bool GUIProgressBar::Initialize(Type type)
     return true;
   }
 
-  /*if ( !pParty->uAlignment )
-  {
-    v9 = 2;
-    v8 = "bardata-b";
-    goto LABEL_23;
-  }
-  if ( pParty->uAlignment == 1 )
-  {
-    v9 = 2;
-    v8 = "bardata";
-    goto LABEL_23;
-  }
-  if ( pParty->uAlignment == 2 )
-  {
-    v9 = 2;
-    v8 = "bardata-c";
-LABEL_23:
-    pIcons_LOD->_410522(&pBardata, v8, v9);
-  }*/
   switch (pParty->alignment)
   {
     case PartyAlignment_Good:    pIcons_LOD->_410522(&pBardata, "bardata-b", 2); break;
@@ -137,21 +122,18 @@ void GUIProgressBar::Release()
 {
   int v3; // edi@7
 
+  pLoadingBg.Release();
   if ( this->uType == 1 )
   {
-    if ( !this->pLoadingBg.pPixels )
-      return;
     if ( this->uProgressCurrent != this->uProgressMax )
     {
       this->uProgressCurrent = this->uProgressMax - 1;
       Progress();
     }
-    free(this->pLoadingBg.pPixels);
     v3 = (int)&this->pLoadingProgress.pLevelOfDetail0_prolly_alpha_mask;
     free(this->pLoadingProgress.pLevelOfDetail0_prolly_alpha_mask);
     free(this->pLoadingProgress.pPalette16);
     this->pLoadingProgress.pPalette16 = 0;
-    this->pLoadingBg.pPixels = 0;
   }
   else
   {

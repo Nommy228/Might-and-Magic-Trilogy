@@ -67,7 +67,7 @@ struct KeyboardActionMapping
   unsigned int pVirtualKeyCodesMapping[30];
   KeyToggleType pToggleTypes[30];
   int max_input_string_len;
-  unsigned __int8 pPressedKeysBuffer[257];
+  __int8 pPressedKeysBuffer[257];
   unsigned __int8 uNumKeysPressed;
   char field_202;
   char field_203;

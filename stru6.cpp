@@ -1,3 +1,7 @@
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+
 #define _CRT_SECURE_NO_WARNINGS
 #include "stru6.h"
 
@@ -1415,26 +1419,11 @@ void stru6::RenderSpecialEffects()
 {
   double v4; // st7@4
   double v5; // st6@4
-  //double v6; // st7@4
   float v7; // ST14_4@6
   unsigned int v8; // ST14_4@8
-  unsigned int v9; // eax@8
   SpriteFrame *v10; // eax@8
   int v11; // edi@8
-  double v12; // st7@9
-  double v13; // st7@9
-  double v14; // st7@9
-  double v15; // st6@9
-//  HRESULT v16; // eax@9
-//  HRESULT v17; // eax@9
-//  signed __int64 v18; // qtt@10
-//  const char *v19; // [sp+4h] [bp-E8h]@0
-//  int v20; // [sp+8h] [bp-E4h]@0
-//  unsigned int v21; // [sp+Ch] [bp-E0h]@0
   RenderVertexD3D3 vd3d[4]; // [sp+60h] [bp-8Ch]@9
-//  int v24; // [sp+E0h] [bp-Ch]@10
-  SpriteFrame *v70; // [sp+E4h] [bp-8h]@8
-  unsigned int v26; // [sp+E8h] [bp-4h]@3
 
   if (uNumProjectiles)
   {
@@ -1457,56 +1446,50 @@ void stru6::RenderSpecialEffects()
 
   if (uAnimLength > 0)
   {
-    v8 = 8
-       * pSpriteFrameTable->pSpriteSFrames[pSpriteFrameTable->FastFindSprite("spell84")].uAnimLength
-       - uAnimLength;
-    v9 = pSpriteFrameTable->FastFindSprite("spell84");
-    v10 = pSpriteFrameTable->GetFrame(v9, v8);
+    v8 = 8 * pSpriteFrameTable->pSpriteSFrames[pSpriteFrameTable->FastFindSprite("spell84")].uAnimLength - uAnimLength;
+    v10 = pSpriteFrameTable->GetFrame(pSpriteFrameTable->FastFindSprite("spell84"), v8);
     v11 = v10->pHwSpriteIDs[0];
-    v70 = v10;
     uAnimLength -= pEventTimer->uTimeElapsed;
     //if ( pRenderer->pRenderD3D )
-    {
-      v12 = (double)(signed int)pViewport->uViewportTL_X;
-      vd3d[0].pos.x = v12;
-      vd3d[1].pos.x = v12;
-      v13 = (double)(signed int)pViewport->uViewportBR_X;
-      v26 = pViewport->uViewportBR_Y + 1;
-      vd3d[0].diffuse = 0x7F7F7Fu;
-      vd3d[1].diffuse = 0x7F7F7Fu;
-      vd3d[2].pos.x = v13;
-      vd3d[3].pos.x = v13;
-      v14 = (double)(signed int)pViewport->uViewportTL_Y;
-      vd3d[2].diffuse = 0x7F7F7Fu;
-      vd3d[3].diffuse = 0x7F7F7Fu;
-      vd3d[0].specular = 0;
-      vd3d[1].specular = 0;
-      vd3d[0].pos.y = v14;
-      v15 = (double)(pViewport->uViewportBR_Y + 1);
-      vd3d[2].specular = 0;
-      vd3d[3].specular = 0;
-      vd3d[1].pos.y = v15;
-      vd3d[2].pos.y = v15;
-      vd3d[3].pos.y = v14;
+    //{
+      vd3d[0].pos.x = (double)(signed int)pViewport->uViewportTL_X;
+      vd3d[0].pos.y = (double)(signed int)pViewport->uViewportTL_Y;
       vd3d[0].pos.z = 0.0;
-      vd3d[1].pos.z = 0.0;
-      vd3d[2].pos.z = 0.0;
-      vd3d[3].pos.z = 0.0;
+      vd3d[0].diffuse = 0x7F7F7Fu;
+      vd3d[0].specular = 0;
       vd3d[0].rhw = 1.0;
-      vd3d[1].rhw = 1.0;
-      vd3d[2].rhw = 1.0;
-      vd3d[3].rhw = 1.0;
       vd3d[0].texcoord.x = 0.0;
-      vd3d[1].texcoord.x = 0.0;
-      vd3d[2].texcoord.x = 1.0;
-      vd3d[3].texcoord.x = 1.0;
       vd3d[0].texcoord.y = 0.0;
+
+      vd3d[1].pos.x = (double)(signed int)pViewport->uViewportTL_X;
+      vd3d[1].pos.y = (double)(pViewport->uViewportBR_Y + 1);
+      vd3d[1].pos.z = 0.0;
+      vd3d[1].diffuse = 0x7F7F7Fu;
+      vd3d[1].specular = 0;
+      vd3d[1].rhw = 1.0;
+      vd3d[1].texcoord.x = 0.0;
       vd3d[1].texcoord.y = 1.0;
+
+      vd3d[2].pos.x = (double)(signed int)pViewport->uViewportBR_X;
+      vd3d[2].pos.y = (double)(pViewport->uViewportBR_Y + 1);
+      vd3d[2].pos.z = 0.0;
+      vd3d[2].diffuse = 0x7F7F7Fu;
+      vd3d[2].specular = 0;
+      vd3d[2].rhw = 1.0;
+      vd3d[2].texcoord.x = 1.0;
       vd3d[2].texcoord.y = 1.0;
+
+      vd3d[3].pos.x = (double)(signed int)pViewport->uViewportBR_X;
+      vd3d[3].pos.y = (double)(signed int)pViewport->uViewportTL_Y;
+      vd3d[3].pos.z = 0.0;
+      vd3d[3].diffuse = 0x7F7F7Fu;
+      vd3d[3].specular = 0;
+      vd3d[3].rhw = 1.0;
+      vd3d[3].texcoord.x = 1.0;
       vd3d[3].texcoord.y = 0.0;
 
       pRenderer->DrawSpecialEffectsQuad(vd3d, pSprites_LOD->pHardwareSprites[v11].pTexture);
-    }
+    //}
     /*else
     {
       vsr.pTarget = pRenderer->pTargetSurface;

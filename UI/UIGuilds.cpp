@@ -1,3 +1,7 @@
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+
 #define _CRT_SECURE_NO_WARNINGS
 #include "..\mm7_unsorted_subs.h"
 #include "..\Items.h"
@@ -228,7 +232,7 @@ void GuildDialog()
       }
     }
   }
-  pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 1, 0);
+  pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Escape, 1, 0);
   return;
 }
 //----- (004BC8D5) --------------------------------------------------------

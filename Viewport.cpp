@@ -1,3 +1,7 @@
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+
 #define _CRT_SECURE_NO_WARNINGS
 #include "Viewport.h"
 
@@ -470,7 +474,7 @@ void OnGameViewportClick()
           }
           return;
         }
-        pMessageQueue_50CBD0->AddMessage(UIMSG_StartNPCDialogue, mon_id, 0);
+        pMessageQueue_50CBD0->AddGUIMessage(UIMSG_StartNPCDialogue, mon_id, 0);
         return;
       }
       if ( pParty->bTurnBasedModeOn == true && pTurnEngine->turn_stage == TE_MOVEMENT )
@@ -478,7 +482,7 @@ void OnGameViewportClick()
         pTurnEngine->field_18 |= TE_FLAG_8;
         return;
       }
-      pMessageQueue_50CBD0->AddMessage(UIMSG_Attack, 0, 0);
+      pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Attack, 0, 0);
     }
     else
     {
@@ -488,7 +492,7 @@ void OnGameViewportClick()
         return;
       }
       if ( uActiveCharacter && sub_427769_isSpellQuickCastableOnShiftClick(pPlayers[uActiveCharacter]->uQuickSpell))
-        pMessageQueue_50CBD0->AddMessage(UIMSG_CastQuickSpell, 0, 0);
+        pMessageQueue_50CBD0->AddGUIMessage(UIMSG_CastQuickSpell, 0, 0);
     }
     return;
   }

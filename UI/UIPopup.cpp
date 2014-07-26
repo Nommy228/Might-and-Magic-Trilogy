@@ -1,3 +1,7 @@
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+
 #define _CRT_SECURE_NO_WARNINGS
 #include "UIPopup.h"
 #include "Books\UIMapBook.h"
@@ -1866,7 +1870,7 @@ void Inventory_ItemPopupAndAlchemy()
       pPlayers[uActiveCharacter]->RemoveItemAtInventoryIndex(pOut_y);
       pPlayers[uActiveCharacter]->ReceiveDamage(rand() % 11 + 10, DMGT_FIRE);
       pAudioPlayer->PlaySound(SOUND_8, 0, 0, -1, 0, 0, 0, 0);
-      pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 0, 0);
+      pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Escape, 0, 0);
       v39.z = pParty->vPosition.z + pParty->sEyelevel;
       v39.x = pParty->vPosition.x;
       v39.y = pParty->vPosition.y;
@@ -1891,7 +1895,7 @@ void Inventory_ItemPopupAndAlchemy()
       pPlayers[uActiveCharacter]->ReceiveDamage(rand() % 71 + 30, DMGT_FIRE);
       pPlayers[uActiveCharacter]->ItemsEnchant(1);
       pAudioPlayer->PlaySound(SOUND_8, 0, 0, -1, 0, 0, 0, 0);
-      pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 0, 0);
+      pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Escape, 0, 0);
 
       v39.z = pParty->vPosition.z + pParty->sEyelevel;
       v39.x = pParty->vPosition.x;
@@ -1918,7 +1922,7 @@ void Inventory_ItemPopupAndAlchemy()
       pPlayers[uActiveCharacter]->ItemsEnchant(5);
       pAudioPlayer->PlaySound(SOUND_8, 0, 0, -1, 0, 0, 0, 0);
 
-      pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 0, 0);
+      pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Escape, 0, 0);
 
       v39.z = pParty->vPosition.z + pParty->sEyelevel;
       v39.x = pParty->vPosition.x;
@@ -1945,7 +1949,7 @@ void Inventory_ItemPopupAndAlchemy()
       pPlayers[uActiveCharacter]->ItemsEnchant(0);
       pAudioPlayer->PlaySound(SOUND_8, 0, 0, -1, 0, 0, 0, 0);
 
-      pMessageQueue_50CBD0->AddMessage(UIMSG_Escape, 0, 0);
+      pMessageQueue_50CBD0->AddGUIMessage(UIMSG_Escape, 0, 0);
 
       v39.z = pParty->vPosition.z + pParty->sEyelevel;
       v39.x = pParty->vPosition.x;

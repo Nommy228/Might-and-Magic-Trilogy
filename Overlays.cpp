@@ -1,3 +1,8 @@
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+
+
 #define _CRT_SECURE_NO_WARNINGS
 #include <stdlib.h>
 #include "ErrorHandling.h"

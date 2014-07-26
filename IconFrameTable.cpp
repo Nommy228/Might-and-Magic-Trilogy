@@ -1,3 +1,7 @@
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+
 #define _CRT_SECURE_NO_WARNINGS
 #include "ErrorHandling.h"
 #include "IconFrameTable.h"
@@ -36,18 +40,13 @@ IconFrame *IconFrameTable::GetFrame(unsigned int uIconID, unsigned int uFrameID)
 //----- (00494FBF) --------------------------------------------------------
 void IconFrameTable::InitializeAnimation(unsigned int uIconID)
 {
-  unsigned int v3; // edi@3
-  const char *i; // eax@3
-
-  if ( (signed int)uIconID <= (signed int)this->uNumIcons && (uIconID & 0x80000000u) == 0 )
+  if ( uIconID && (signed int)uIconID <= (signed int)this->uNumIcons )
   {
-    v3 = uIconID;
-    for ( i = this->pIcons[uIconID].pTextureName; ; i = this->pIcons[v3].pTextureName )
+    for ( uint  i = uIconID; ; ++i )
     {
-      this->pIcons[v3].uTextureID = pIcons_LOD->LoadTexture(i, TEXTURE_16BIT_PALETTE);
-      if ( !(this->pIcons[v3].uFlags & 1) )
+      this->pIcons[i].uTextureID = pIcons_LOD->LoadTexture(this->pIcons[i].pTextureName, TEXTURE_16BIT_PALETTE);
+      if ( !(this->pIcons[i].uFlags & 1) )
         break;
-      ++v3;
     }
   }
 }

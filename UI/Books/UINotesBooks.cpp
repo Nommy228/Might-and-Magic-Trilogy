@@ -405,7 +405,7 @@ void BookUI_Journal_Draw()
     journal_window.uFrameZ = game_viewport_z;
     journal_window.uFrameW = game_viewport_w;
     if ( pStorylineText->StoreLine[achieved_awards[books_primary_item_per_page]].pPageTitle )
-      journal_window.DrawTitleText(pBook2Font, 0, 22, ui_book_journal_title_color, (const char *)pStorylineText->StoreLine[achieved_awards[books_primary_item_per_page]].pPageTitle, 3);
+      journal_window.DrawTitleText(pBook2Font, 0, 22, ui_book_journal_title_color, pStorylineText->StoreLine[achieved_awards[books_primary_item_per_page]].pPageTitle, 3);
   }
 
   //for other text
@@ -441,7 +441,7 @@ void BookUI_Journal_Draw()
     pDialogueString = BuildDialogueString(pStorylineText->StoreLine[ achieved_awards[books_primary_item_per_page]].pText, uActiveCharacter - 1,
                                           0, 0, 0, &pParty->PartyTimes.HistoryEventTimes[index]);
     pStringOnPage = pAutonoteFont->GetPageTop(pDialogueString, &journal_window, 1, (unsigned __int8)Journal_limitation_factor[books_primary_item_per_page]);
-    journal_window.DrawText(pAutonoteFont, 1, 0, ui_book_journal_text_color, (const char *)pStringOnPage, 0,
+    journal_window.DrawText(pAutonoteFont, 1, 0, ui_book_journal_text_color, pStringOnPage, 0,
                             journal_window.uFrameY + journal_window.uFrameHeight, ui_book_journal_text_shadow);
     ++num_achieved_awards;
   }

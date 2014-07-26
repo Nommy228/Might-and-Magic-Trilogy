@@ -1,3 +1,7 @@
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+
 #define _CRT_SECURE_NO_WARNINGS
 
 #include "MMT.h"
@@ -8,11 +12,10 @@
 #include "Mouse.h"
 #include "LOD.h"
 #include "Render.h"
-#include "VideoPlayer.h"
-#include "CShow.h"
 #include "GUIFont.h"
 #include "lib/libpng/png.h"
 #include "MediaPlayer.h"
+#include "ErrorHandling.h"
 
 void  ShowLogoVideo()
 {
@@ -20,18 +23,18 @@ void  ShowLogoVideo()
   //unsigned int uTrackStartMS; // [sp+34h] [bp-8h]@8
   //unsigned int uTrackEndMS; // [sp+38h] [bp-4h]@8
 
-  pVideoPlayer->bStopBeforeSchedule = false;
-  pVideoPlayer->pResetflag = 0;
+  pMediaPlayer->bStopBeforeSchedule = false;
+//  pMediaPlayer->pResetflag = 0;
   bGameoverLoop = 1;
   if (!bNoVideo)
   {
     pRenderer->PresentBlackScreen();
-    PlayFullscreenMovie(MOVIE_3DOLogo, true);
-    if ( !pVideoPlayer->bStopBeforeSchedule )
+    pMediaPlayer->PlayFullscreenMovie(MOVIE_3DOLogo, true);
+    if ( !pMediaPlayer->bStopBeforeSchedule )
     {
-      PlayFullscreenMovie(MOVIE_NWCLogo, true);
-      if ( !pVideoPlayer->bStopBeforeSchedule )
-        PlayFullscreenMovie(MOVIE_JVC, true);
+      pMediaPlayer->PlayFullscreenMovie(MOVIE_NWCLogo, true);
+      if ( !pMediaPlayer->bStopBeforeSchedule )
+        pMediaPlayer->PlayFullscreenMovie(MOVIE_JVC, true);
     }
   }
   char pContainerName[64];
@@ -44,7 +47,7 @@ void  ShowLogoVideo()
   free(tex.pPixels);
   tex.pPixels = 0;
   MainMenuUI_LoadFontsAndSomeStuff();
-  DrawMMTCopyrightWindow();//Текстовое сообщение ММТ меню
+  DrawMMTCopyrightWindow();//Text message in ММТ menu
 
   pRenderer->EndScene();
   pRenderer->Present();
@@ -157,7 +160,7 @@ Texture *LoadPNG(const char *name)
       i++;
     }
   }
-  //Ritor1: temporarily stopped, needed change RGBTexture structure/Пока приостановлено в связи с необходимостью внести изменения в структуру(создать)RGBTexture
+  //Ritor1: temporarily stopped, needed change RGBTexture structure
   /*for (int i = 0; i < width * height; ++i)
     tex->pPalette16[i] = 0x7FF;
   memset(tex->pLevelOfDetail0_prolly_alpha_mask, 1, sizeof(unsigned __int8) * width * height);*/
@@ -176,25 +179,25 @@ void MMT_MainMenu_Loop()
   pCurrentScreen = SCREEN_GAME;
 
   pGUIWindow2 = 0;
-  pAudioPlayer->StopChannels(-1, -1);//остановить/подготовить канал
+  pAudioPlayer->StopChannels(-1, -1);
 
-  if (!bNoSound )
-    PlayAudio(L"Sounds\\New_Sounds/Stronghold_Theme.mp3");//воспроизводим мп3
+  //if (!bNoSound )
+    //PlayAudio(L"Sounds\\New_Sounds/Stronghold_Theme.mp3");
   //if (!bNoVideo )
     //pVideoPlayer->PlayMovie(L"Anims\\New_Video/3DOLOGO.smk");
 
-  pMouse->RemoveHoldingItem();//избавить курсор от вещи
+  pMouse->RemoveHoldingItem();
 
   pIcons_LOD->_inlined_sub2();
 
-  //Создание нового окна
-  //WINDOW_MainMenu добавлено в GUIWindow.h
+  //Create new window
+  //WINDOW_MainMenu included in GUIWindow.h
   pWindow_MMT_MainMenu = GUIWindow::Create(0, 0, window->GetWidth(), window->GetHeight(), WINDOW_MainMenu, 0, 0);
 
-  //Загрузка кнопок
+  //load buttons
   //Texture* MMT_MM6      = pIcons_LOD->LoadTexturePtr("title_new", TEXTURE_16BIT_PALETTE);
 
-  sprintf(pContainerName, "data\\New_Icons/%s", "mm6_button_oval.png");//загружаем png из папки
+  sprintf(pContainerName, "data\\New_Icons/%s", "mm6_button_oval.png");
   Texture* MMT_MM6 = LoadPNG(pContainerName);
 								
   Texture* MMT_MM7      = pIcons_LOD->LoadTexturePtr("title_load", TEXTURE_16BIT_PALETTE);
@@ -210,9 +213,11 @@ void MMT_MainMenu_Loop()
 
   pTexture_PCX.Release();
 
-  sprintf(pContainerName, "data\\New_Icons/%s", "MMTTITLE.pcx");//загружаем pcx из папки
-  pTexture_PCX.LoadPCXFile(pContainerName, 0);
-  SetCurrentMenuID(MENU_MMT_MAIN_MENU);//Добавлено в enum MENU_STATE в GUIWindows.h
+  sprintf(pContainerName, "data\\New_Icons/%s", "MMTTITLE.pcx");
+  if (pTexture_PCX.LoadPCXFile(pContainerName, 0) == 1)
+	Error("File not found: %s", pContainerName);
+
+  SetCurrentMenuID(MENU_MMT_MAIN_MENU);//included in enum MENU_STATE in GUIWindows.h
   SetForegroundWindow(window->GetApiHandle());
   SendMessageW(window->GetApiHandle(), WM_ACTIVATEAPP, 1, 0);
   while (GetCurrentMenuID() == MENU_MMT_MAIN_MENU )
@@ -237,7 +242,7 @@ void MMT_MainMenu_Loop()
       pRenderer->BeginScene();
       pRenderer->DrawTextureRGB(0, 0, &pTexture_PCX);
 
-      MMT_MenuMessageProc();//отдельный для ММТ меню обработчик сообщений
+      MMT_MenuMessageProc();//for ММТ menu
       GUI_UpdateWindows();
 
       if ( !pModalWindow )// ???
@@ -249,7 +254,7 @@ void MMT_MainMenu_Loop()
              && cursor.y >= (signed int)pButton->uY && cursor.y <= (signed int)pButton->uW )
            {
             pControlParam = pButton->msg_param;
-            switch (pControlParam) // подсветка кнопок
+            switch (pControlParam) // backlight for buttons
             {
               case 0:
                 pTexture = MMT_MM6;
@@ -277,7 +282,7 @@ void MMT_MainMenu_Loop()
                 pY = window->GetHeight() - 35;
                 break;
             }
-            pRenderer->DrawTextureIndexed(pX, pY, pTexture); //подсветка кнопок
+            pRenderer->DrawTextureIndexed(pX, pY, pTexture);
            }
           }
         }
@@ -291,7 +296,7 @@ void MMT_MainMenu_Loop()
   pRenderer->EndScene();
   pRenderer->Present();
 
-  //освобождаем ресурсы
+  //remove resurs
   pTexture_PCX.Release();
   if ( pGUIWindow2 )
   {
@@ -317,12 +322,30 @@ void MMT_MenuMessageProc()
 
       switch (pUIMessageType)
       {
-        case UIMSG_MMT_MainMenu_MM7: //кнопка игры ММ7
+        case UIMSG_MMT_MainMenu_MM6:
+          //video
+          //SetCurrentMenuID(MENU_MAIN_MM6);
+          pAudioPlayer->PlaySound((SoundID)27, 0, 0, -1, 0, 0, 0, 0);//temporarily
+          break;
+        case UIMSG_MMT_MainMenu_MM7: //new button for ММ7
           //GUIWindow::Create(495, 172, 0, 0, WINDOW_PressedButton2, (int)pMainMenu_BtnNew, 0);
           alSourceStop(mSourceID);
-          ShowMM7IntroVideo_and_LoadingScreen();
+          pMediaPlayer->ShowMM7IntroVideo_and_LoadingScreen();
           SetCurrentMenuID(MENU_MAIN);
           break;
+        case UIMSG_MMT_MainMenu_MM8:
+          //video
+          //SetCurrentMenuID(MENU_MAIN_MM8);
+          pAudioPlayer->PlaySound((SoundID)27, 0, 0, -1, 0, 0, 0, 0);//temporarily
+          break;
+        case UIMSG_MMT_MainMenu_Continue:
+          //video
+          //SetCurrentMenuID(MENU_MAIN_Continue);
+          pAudioPlayer->PlaySound((SoundID)27, 0, 0, -1, 0, 0, 0, 0);//temporarily
+          break;
+        case UIMSG_ExitToWindows:
+          GUIWindow::Create(495, 337, 0, 0, WINDOW_PressedButton2, (int)pMainMenu_BtnExit, 0);
+          SetCurrentMenuID(MENU_EXIT_GAME);
 
         default:
           break;

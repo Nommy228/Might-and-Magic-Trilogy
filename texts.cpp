@@ -1,3 +1,7 @@
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+
 #define _CRT_SECURE_NO_WARNINGS
 #include <string.h>
 
@@ -109,10 +113,10 @@ void InitializeGameText()
 		}*/
 	strtok((char *)pGlobalTXT_Raw, "\r");	   //Carriage Return 0D 13
 	strtok(NULL, "\r");					   	  //Carriage Return 0D 13
-	test_string = strtok(NULL, "\r") + 1;	 //Carriage Return 0D 13
 
 	for (int i = 0; i < MAX_LOC_STRINGS; ++i)
-		{
+  {
+    test_string = strtok(NULL, "\r") + 1;	 //Carriage Return 0D 13
 		step = 0;
 		string_end = false;
 		do
@@ -145,8 +149,6 @@ void InitializeGameText()
 			test_string=tmp_pos+1;
 			}
 		while ( step <= 2 && !string_end);  
-
-		test_string = strtok(NULL, "\r") + 1;  //Carriage Return 0D 13
 		}	
 
   SetSomeItemsNames();

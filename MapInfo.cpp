@@ -1,3 +1,7 @@
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+
 #include "MapInfo.h"
 #include "LOD.h"
 #include "ErrorHandling.h"

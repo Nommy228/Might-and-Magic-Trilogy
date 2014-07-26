@@ -1,10 +1,13 @@
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
 #define _CRT_SECURE_NO_WARNINGS
 
 #include <string>
 #include "ZlibWrapper.h"
 
 #include "mm7_data.h"
-#include "VideoPlayer.h"
+#include "MediaPlayer.h"
 #include "AudioPlayer.h"
 #include "FrameTableInc.h"
 #include "Indoor.h"
@@ -85,8 +88,7 @@ void SoundList::Initialize()
       pSoundDesc = &pSoundList->pSL_Sounds[i];
       if ( pSoundList->pSL_Sounds[i].eType != SOUND_DESC_SYSTEM )
         continue;
-      sprintf(pSoundName, "%s", pSL_Sounds[i].pSoundName);
-      pSoundList->pSL_Sounds[i].pSoundData[0] = ::LoadSound(pSoundName, (SoundData *)-1, pSL_Sounds[i].uSoundID);
+      pSoundList->pSL_Sounds[i].pSoundData[0] = ::LoadSound(pSoundName, (SoundData *)-1, pSL_Sounds[i].uSoundID); // Ritor result crash exe file
       if ( !pAudioPlayer->b3DSoundInitialized )
         continue;
       pSoundDesc = &pSoundList->pSL_Sounds[i];
@@ -126,6 +128,7 @@ void SoundList::Initialize()
       pSoundList->UnloadSound(i, 1);
     }
   }
+  //_CrtDumpMemoryLeaks();
 }
 
 //----- (004A9A67) --------------------------------------------------------
@@ -486,7 +489,7 @@ void AudioPlayer::_4AA258(int a2)
 }
 
 //----- (004AA306) --------------------------------------------------------
-void AudioPlayer::PlaySound(SoundID eSoundID, signed int a3, unsigned int uNumRepeats, signed int source_x, signed int source_y, int a7, float uVolume, int sPlaybackRate)
+void AudioPlayer::PlaySound(SoundID eSoundID, signed int pid, unsigned int uNumRepeats, signed int source_x, signed int source_y, int sound_data_id, float uVolume, int sPlaybackRate)
 {
   int v12; // edi@13
   signed int v13; // ecx@17
@@ -567,7 +570,7 @@ void AudioPlayer::PlaySound(SoundID eSoundID, signed int a3, unsigned int uNumRe
     return;
   }
   assert(sound_id < pSoundList->sNumSounds);
-  if ( !a7 )
+  if ( !sound_data_id )
   {
     if ( !pSoundList->pSL_Sounds[sound_id].pSoundData[0] )
     {
@@ -575,7 +578,7 @@ void AudioPlayer::PlaySound(SoundID eSoundID, signed int a3, unsigned int uNumRe
         pSoundList->LoadSound(eSoundID, 0);
     }
   }
-  if ( !pSoundList->pSL_Sounds[sound_id].pSoundData[a7] )
+  if ( !pSoundList->pSL_Sounds[sound_id].pSoundData[sound_data_id] )
     return;
 
   int start_channel = 0,
@@ -584,13 +587,13 @@ void AudioPlayer::PlaySound(SoundID eSoundID, signed int a3, unsigned int uNumRe
 
   if (!b3DSoundInitialized || pSoundList->pSL_Sounds[sound_id].Is3D())
   {
-    if (a3 == 0)  // generic sound like from UI
+    if (pid == 0)  // generic sound like from UI
     {
       start_channel = 10;
       end_channel = 12;
       for (uint i = start_channel; i <= end_channel; ++i)
       {
-        if ( pMixerChannels[i].source_pid == a3 && AIL_sample_status(pMixerChannels[i].hSample) == AIL::Sample::Playing )
+        if ( pMixerChannels[i].source_pid == pid && AIL_sample_status(pMixerChannels[i].hSample) == AIL::Sample::Playing )
         {
           if ( pMixerChannels[i].uSourceTrackIdx == sound_id )
             return;                          // already playing the same sound from the same source - return
@@ -603,17 +606,17 @@ void AudioPlayer::PlaySound(SoundID eSoundID, signed int a3, unsigned int uNumRe
         if ( AIL_sample_status(pMixerChannels[j].hSample) == AIL::Sample::Done )
         {
           AIL_init_sample(pMixerChannels[j].hSample);
-          char *p = (char *)pSoundList->pSL_Sounds[sound_id].pSoundData[a7];
-          if (a7 == 0)  p = p + 4;//for RIFF
-		  if ( eSoundID == 75 )// Ritor1: include +7 for pSounds[20]
-			  p = p + 7;
+          char *p = (char *)pSoundList->pSL_Sounds[sound_id].pSoundData[sound_data_id];
+          //if (sound_data_id == 0)  p = p + 4;//for RIFF
+		  //if ( eSoundID == 75 )// Ritor1: include +7 for pSounds[20]
+			  //p = p + 7;
           AIL_set_sample_file(pMixerChannels[j].hSample, p, -1);
           if ( sample_volume == 10000 )
             sample_volume = uMasterVolume;
           if (uVolume)
             sample_volume = uVolume;
-          int object_type = PID_TYPE(a3),
-              object_id = PID_ID(a3);
+          int object_type = PID_TYPE(pid),
+              object_id = PID_ID(pid);
           if (source_x != -1)//срабатывает например у форта в ’ермондейле звук выстрелов пушек
           {
             //if (!source_x)
@@ -630,7 +633,7 @@ void AudioPlayer::PlaySound(SoundID eSoundID, signed int a3, unsigned int uNumRe
           if (uNumRepeats)
             AIL_set_sample_loop_count(pMixerChannels[j].hSample, uNumRepeats - 1);
           pMixerChannels[j].uSourceTrackIdx = sound_id;
-          pMixerChannels[j].source_pid = a3;
+          pMixerChannels[j].source_pid = pid;
           pMixerChannels[j].uSourceTrackID = eSoundID;
           int rval = AIL_start_sample(pMixerChannels[j].hSample);
           if ( sPlaybackRate )
@@ -642,7 +645,7 @@ void AudioPlayer::PlaySound(SoundID eSoundID, signed int a3, unsigned int uNumRe
       }
       return;
     }
-    else if (a3 == -1)  // exclusive sounds - can override
+    else if (pid == -1)  // exclusive sounds - can override
     {
       /*if ( AIL_sample_status(pMixerChannels[13].hSample) == AIL::Sample::Done )
       {
@@ -651,8 +654,8 @@ void AudioPlayer::PlaySound(SoundID eSoundID, signed int a3, unsigned int uNumRe
             FreeChannel(&pMixerChannels[13]);
       }*/
       AIL_init_sample(pMixerChannels[13].hSample);
-      char *p = (char *)pSoundList->pSL_Sounds[sound_id].pSoundData[a7];
-      if (a7 == 0)
+      char *p = (char *)pSoundList->pSL_Sounds[sound_id].pSoundData[sound_data_id];
+      if (sound_data_id == 0)
         p = p + 4;//for RIFF
 	  if ( eSoundID == 75 )//  Ritor1: include +7 for pSounds[20]
 		  p = p + 7;
@@ -662,12 +665,12 @@ void AudioPlayer::PlaySound(SoundID eSoundID, signed int a3, unsigned int uNumRe
        if (uVolume)
          sample_volume = uVolume;
        AIL_set_sample_volume(pMixerChannels[13].hSample, sample_volume);
-       int object_type = PID_TYPE(a3),
-           object_id = PID_ID(a3);
+       int object_type = PID_TYPE(pid),
+           object_id = PID_ID(pid);
        if (uNumRepeats)
          AIL_set_sample_loop_count(pMixerChannels[13].hSample, uNumRepeats - 1);
        pMixerChannels[13].uSourceTrackIdx = sound_id;
-       pMixerChannels[13].source_pid = a3;
+       pMixerChannels[13].source_pid = pid;
        pMixerChannels[13].uSourceTrackID = eSoundID;
        int rval = AIL_start_sample(pMixerChannels[13].hSample);//no sound chest close 
        if ( sPlaybackRate )
@@ -676,13 +679,13 @@ void AudioPlayer::PlaySound(SoundID eSoundID, signed int a3, unsigned int uNumRe
          AIL_sample_ms_position(pMixerChannels[13].hSample, &sLastTrackLengthMS, 0);
        return;
     }
-    else if (a3 < 0)    // exclusive sounds - no override (close chest)
+    else if (pid < 0)    // exclusive sounds - no override (close chest)
     {
       start_channel = 14;
       end_channel = 14;
       for (uint i = start_channel; i <= end_channel; ++i)
       {
-        if ( pMixerChannels[i].source_pid == a3 && AIL_sample_status(pMixerChannels[i].hSample) == AIL::Sample::Playing )
+        if ( pMixerChannels[i].source_pid == pid && AIL_sample_status(pMixerChannels[i].hSample) == AIL::Sample::Playing )
         {
           if ( pMixerChannels[i].uSourceTrackIdx == sound_id )
             return;                          // already playing the same sound from the same source - return
@@ -695,8 +698,8 @@ void AudioPlayer::PlaySound(SoundID eSoundID, signed int a3, unsigned int uNumRe
         if ( AIL_sample_status(pMixerChannels[j].hSample) == AIL::Sample::Done )
         {
           AIL_init_sample(pMixerChannels[j].hSample);
-          char *p = (char *)pSoundList->pSL_Sounds[sound_id].pSoundData[a7];
-          if (a7 == 0)  p = p + 4;//for RIFF
+          char *p = (char *)pSoundList->pSL_Sounds[sound_id].pSoundData[sound_data_id];
+          if (sound_data_id == 0)  p = p + 4;//for RIFF
 		  if ( eSoundID == 75 )//  Ritor1: include +7 for pSounds[20]
 			  p = p + 7;
           AIL_set_sample_file(pMixerChannels[j].hSample, p, -1);
@@ -704,12 +707,12 @@ void AudioPlayer::PlaySound(SoundID eSoundID, signed int a3, unsigned int uNumRe
             sample_volume = uMasterVolume;
           if (uVolume)
             sample_volume = uVolume;
-          int object_type = PID_TYPE(a3),
-              object_id = PID_ID(a3);
+          int object_type = PID_TYPE(pid),
+              object_id = PID_ID(pid);
           if (uNumRepeats)
             AIL_set_sample_loop_count(pMixerChannels[j].hSample, uNumRepeats - 1);
           pMixerChannels[j].uSourceTrackIdx = sound_id;
-          pMixerChannels[j].source_pid = a3;
+          pMixerChannels[j].source_pid = pid;
           pMixerChannels[j].uSourceTrackID = eSoundID;
           int rval = AIL_start_sample(pMixerChannels[j].hSample);//no sound chest close 
           if ( sPlaybackRate )
@@ -723,8 +726,8 @@ void AudioPlayer::PlaySound(SoundID eSoundID, signed int a3, unsigned int uNumRe
     }
     else
     {
-        int object_type = PID_TYPE(a3),
-            object_id = PID_ID(a3);
+        int object_type = PID_TYPE(pid),
+            object_id = PID_ID(pid);
         switch (object_type)
         {
           case OBJECT_BLVDoor:
@@ -738,7 +741,7 @@ void AudioPlayer::PlaySound(SoundID eSoundID, signed int a3, unsigned int uNumRe
             end_channel = 12;
             for (uint i = start_channel; i <= end_channel; ++i)
             {
-              if ( pMixerChannels[i].source_pid == a3 && AIL_sample_status(pMixerChannels[i].hSample) == AIL::Sample::Playing )
+              if ( pMixerChannels[i].source_pid == pid && AIL_sample_status(pMixerChannels[i].hSample) == AIL::Sample::Playing )
               {
                 if ( pMixerChannels[i].uSourceTrackIdx == sound_id )
                   return;                          // already playing the same sound from the same source - return
@@ -751,7 +754,7 @@ void AudioPlayer::PlaySound(SoundID eSoundID, signed int a3, unsigned int uNumRe
               if ( AIL_sample_status(pMixerChannels[j].hSample) == AIL::Sample::Done )
               {
                 AIL_init_sample(pMixerChannels[j].hSample);
-                AIL_set_sample_file(pMixerChannels[j].hSample, (char *)pSoundList->pSL_Sounds[sound_id].pSoundData[a7] + 4 * (a7 == 0), -1);
+                AIL_set_sample_file(pMixerChannels[j].hSample, (char *)pSoundList->pSL_Sounds[sound_id].pSoundData[sound_data_id] + 4 * (sound_data_id == 0), -1);
                 if (uVolume)
                   sample_volume = uVolume;
                 AIL_set_sample_volume(pMixerChannels[j].hSample, sample_volume);
@@ -765,7 +768,7 @@ void AudioPlayer::PlaySound(SoundID eSoundID, signed int a3, unsigned int uNumRe
                 if (uNumRepeats)
                   AIL_set_sample_loop_count(pMixerChannels[j].hSample, uNumRepeats - 1);
                 pMixerChannels[j].uSourceTrackIdx = sound_id;
-                pMixerChannels[j].source_pid = a3;
+                pMixerChannels[j].source_pid = pid;
                 pMixerChannels[j].uSourceTrackID = eSoundID;
                 int rval = AIL_start_sample(pMixerChannels[j].hSample);
                 if ( sPlaybackRate )
@@ -784,7 +787,7 @@ void AudioPlayer::PlaySound(SoundID eSoundID, signed int a3, unsigned int uNumRe
             end_channel = 12;
             for (uint i = start_channel; i <= end_channel; ++i)
             {
-              if ( pMixerChannels[i].source_pid == a3 && AIL_sample_status(pMixerChannels[i].hSample) == AIL::Sample::Playing )
+              if ( pMixerChannels[i].source_pid == pid && AIL_sample_status(pMixerChannels[i].hSample) == AIL::Sample::Playing )
               {
                 if ( pMixerChannels[i].uSourceTrackIdx == sound_id )
                   return;                          // already playing the same sound from the same source - return
@@ -797,14 +800,14 @@ void AudioPlayer::PlaySound(SoundID eSoundID, signed int a3, unsigned int uNumRe
               if ( AIL_sample_status(pMixerChannels[j].hSample) == AIL::Sample::Done )
               {
                 AIL_init_sample(pMixerChannels[j].hSample);
-                AIL_set_sample_file(pMixerChannels[j].hSample, (char *)pSoundList->pSL_Sounds[sound_id].pSoundData[a7] + 4 * (a7 == 0), -1);
+                AIL_set_sample_file(pMixerChannels[j].hSample, (char *)pSoundList->pSL_Sounds[sound_id].pSoundData[sound_data_id] + 4 * (sound_data_id == 0), -1);
                 if (uVolume)
                   sample_volume = uVolume;
                 AIL_set_sample_volume(pMixerChannels[j].hSample, sample_volume);
                 if (uNumRepeats)
                   AIL_set_sample_loop_count(pMixerChannels[j].hSample, uNumRepeats - 1);
                 pMixerChannels[j].uSourceTrackIdx = sound_id;
-                pMixerChannels[j].source_pid = a3;
+                pMixerChannels[j].source_pid = pid;
                 pMixerChannels[j].uSourceTrackID = eSoundID;
                 int rval = AIL_start_sample(pMixerChannels[j].hSample);
                 if ( sPlaybackRate )
@@ -827,7 +830,7 @@ void AudioPlayer::PlaySound(SoundID eSoundID, signed int a3, unsigned int uNumRe
               return;
             for (uint i = start_channel; i <= end_channel; ++i)
             {
-              if ( pMixerChannels[i].source_pid == a3 && AIL_sample_status(pMixerChannels[i].hSample) == AIL::Sample::Playing )
+              if ( pMixerChannels[i].source_pid == pid && AIL_sample_status(pMixerChannels[i].hSample) == AIL::Sample::Playing )
               {
                 if ( pMixerChannels[i].uSourceTrackIdx == sound_id )
                   return;                          // already playing the same sound from the same source - return
@@ -840,7 +843,7 @@ void AudioPlayer::PlaySound(SoundID eSoundID, signed int a3, unsigned int uNumRe
               if ( AIL_sample_status(pMixerChannels[j].hSample) == AIL::Sample::Done )
               {
                 AIL_init_sample(pMixerChannels[j].hSample);
-                AIL_set_sample_file(pMixerChannels[j].hSample, (char *)pSoundList->pSL_Sounds[sound_id].pSoundData[a7] + 4 * (a7 == 0), -1);
+                AIL_set_sample_file(pMixerChannels[j].hSample, (char *)pSoundList->pSL_Sounds[sound_id].pSoundData[sound_data_id] + 4 * (sound_data_id == 0), -1);
                 if (uVolume)
                   sample_volume = uVolume;
                 AIL_set_sample_volume(pMixerChannels[j].hSample, sample_volume);
@@ -850,7 +853,7 @@ void AudioPlayer::PlaySound(SoundID eSoundID, signed int a3, unsigned int uNumRe
                 if (uNumRepeats)
                   AIL_set_sample_loop_count(pMixerChannels[j].hSample, uNumRepeats - 1);
                 pMixerChannels[j].uSourceTrackIdx = sound_id;
-                pMixerChannels[j].source_pid = a3;
+                pMixerChannels[j].source_pid = pid;
                 pMixerChannels[j].uSourceTrackID = eSoundID;
                 int rval = AIL_start_sample(pMixerChannels[j].hSample);
                 if ( sPlaybackRate )
@@ -873,7 +876,7 @@ void AudioPlayer::PlaySound(SoundID eSoundID, signed int a3, unsigned int uNumRe
               return;
             for (uint i = start_channel; i <= end_channel; ++i)
             {
-              if ( pMixerChannels[i].source_pid == a3 && AIL_sample_status(pMixerChannels[i].hSample) == AIL::Sample::Playing )//звук фонтана и шагов не проход€т проверку на повтор
+              if ( pMixerChannels[i].source_pid == pid && AIL_sample_status(pMixerChannels[i].hSample) == AIL::Sample::Playing )//звук фонтана и шагов не проход€т проверку на повтор
               {
                 if ( pMixerChannels[i].uSourceTrackIdx == sound_id )
                   return;                          // already playing the same sound from the same source - return
@@ -886,7 +889,7 @@ void AudioPlayer::PlaySound(SoundID eSoundID, signed int a3, unsigned int uNumRe
               if ( AIL_sample_status(pMixerChannels[j].hSample) == AIL::Sample::Done )
               {
                 AIL_init_sample(pMixerChannels[j].hSample);
-                AIL_set_sample_file(pMixerChannels[j].hSample, (char *)pSoundList->pSL_Sounds[sound_id].pSoundData[a7] + 4 * (a7 == 0), -1);
+                AIL_set_sample_file(pMixerChannels[j].hSample, (char *)pSoundList->pSL_Sounds[sound_id].pSoundData[sound_data_id] + 4 * (sound_data_id == 0), -1);
                 if (uVolume)
                   sample_volume = uVolume;
                 AIL_set_sample_volume(pMixerChannels[j].hSample, sample_volume);
@@ -896,7 +899,7 @@ void AudioPlayer::PlaySound(SoundID eSoundID, signed int a3, unsigned int uNumRe
                 if (uNumRepeats)
                   AIL_set_sample_loop_count(pMixerChannels[j].hSample, uNumRepeats - 1);
                 pMixerChannels[j].uSourceTrackIdx = sound_id;
-                pMixerChannels[j].source_pid = a3;
+                pMixerChannels[j].source_pid = pid;
                 pMixerChannels[j].uSourceTrackID = eSoundID;
                 int rval = AIL_start_sample(pMixerChannels[j].hSample);
                 if ( sPlaybackRate )
@@ -919,7 +922,7 @@ void AudioPlayer::PlaySound(SoundID eSoundID, signed int a3, unsigned int uNumRe
               return;
             for (uint i = start_channel; i <= end_channel; ++i)
             {
-              if ( pMixerChannels[i].source_pid == a3 && AIL_sample_status(pMixerChannels[i].hSample) == AIL::Sample::Playing )
+              if ( pMixerChannels[i].source_pid == pid && AIL_sample_status(pMixerChannels[i].hSample) == AIL::Sample::Playing )
               {
                 if (pMixerChannels[i].uSourceTrackIdx == sound_id)
                   return;                          // already playing the same sound from the same source - return
@@ -932,7 +935,7 @@ void AudioPlayer::PlaySound(SoundID eSoundID, signed int a3, unsigned int uNumRe
               if ( AIL_sample_status(pMixerChannels[j].hSample) == AIL::Sample::Done )
               {
                 AIL_init_sample(pMixerChannels[j].hSample);
-                AIL_set_sample_file(pMixerChannels[j].hSample, (char *)pSoundList->pSL_Sounds[sound_id].pSoundData[a7] + 4 * (a7 == 0), -1);
+                AIL_set_sample_file(pMixerChannels[j].hSample, (char *)pSoundList->pSL_Sounds[sound_id].pSoundData[sound_data_id] + 4 * (sound_data_id == 0), -1);
                 if (uVolume)
                   sample_volume = uVolume;
                 AIL_set_sample_volume(pMixerChannels[j].hSample, sample_volume);
@@ -942,7 +945,7 @@ void AudioPlayer::PlaySound(SoundID eSoundID, signed int a3, unsigned int uNumRe
                 if (uNumRepeats)
                   AIL_set_sample_loop_count(pMixerChannels[j].hSample, uNumRepeats - 1);
                 pMixerChannels[j].uSourceTrackIdx = sound_id;
-                pMixerChannels[j].source_pid = a3;
+                pMixerChannels[j].source_pid = pid;
                 pMixerChannels[j].uSourceTrackID = eSoundID;
                 int rval = AIL_start_sample(pMixerChannels[j].hSample);
                 if ( sPlaybackRate )
@@ -961,7 +964,7 @@ void AudioPlayer::PlaySound(SoundID eSoundID, signed int a3, unsigned int uNumRe
             end_channel = 9;
             for (uint i = start_channel; i <= end_channel; ++i)
             {
-              if ( pMixerChannels[i].source_pid == a3 && AIL_sample_status(pMixerChannels[i].hSample) == AIL::Sample::Playing )
+              if ( pMixerChannels[i].source_pid == pid && AIL_sample_status(pMixerChannels[i].hSample) == AIL::Sample::Playing )
               {
                 if ( pMixerChannels[i].uSourceTrackIdx == sound_id )
                   return;                          // already playing the same sound from the same source - return
@@ -974,14 +977,14 @@ void AudioPlayer::PlaySound(SoundID eSoundID, signed int a3, unsigned int uNumRe
               if ( AIL_sample_status(pMixerChannels[j].hSample) == AIL::Sample::Done )
               {
                 AIL_init_sample(pMixerChannels[j].hSample);
-                AIL_set_sample_file(pMixerChannels[j].hSample, (char *)pSoundList->pSL_Sounds[sound_id].pSoundData[a7] + 4 * (a7 == 0), -1);
+                AIL_set_sample_file(pMixerChannels[j].hSample, (char *)pSoundList->pSL_Sounds[sound_id].pSoundData[sound_data_id] + 4 * (sound_data_id == 0), -1);
                 if (uVolume)
                   sample_volume = uVolume;
                 AIL_set_sample_volume(pMixerChannels[j].hSample, sample_volume);
                 if (uNumRepeats)
                   AIL_set_sample_loop_count(pMixerChannels[j].hSample, uNumRepeats - 1);
                 pMixerChannels[j].uSourceTrackIdx = sound_id;
-                pMixerChannels[j].source_pid = a3;
+                pMixerChannels[j].source_pid = pid;
                 pMixerChannels[j].uSourceTrackID = eSoundID;
                 int rval = AIL_start_sample(pMixerChannels[j].hSample);
                 if ( sPlaybackRate )
@@ -1030,13 +1033,13 @@ void AudioPlayer::PlaySound(SoundID eSoundID, signed int a3, unsigned int uNumRe
         sample_volume = uMasterVolume;
 
       AIL_init_sample(pMixerChannels[v62].hSample);
-      AIL_set_sample_file(pMixerChannels[v62].hSample, (char *)pSoundList->pSL_Sounds[sound_id].pSoundData[a7] + 4 * (a7 == 0), -1);
+      AIL_set_sample_file(pMixerChannels[v62].hSample, (char *)pSoundList->pSL_Sounds[sound_id].pSoundData[sound_data_id] + 4 * (sound_data_id == 0), -1);
       if (uVolume)
         sample_volume = uVolume;
       AIL_set_sample_volume(pMixerChannels[v62].hSample, sample_volume);
 
-      int object_type = PID_TYPE(a3),
-          object_id = PID_ID(a3);
+      int object_type = PID_TYPE(pid),
+          object_id = PID_ID(pid);
       if (source_x != -1)
       {
         if (!source_x)
@@ -1050,7 +1053,7 @@ void AudioPlayer::PlaySound(SoundID eSoundID, signed int a3, unsigned int uNumRe
       if (uNumRepeats)
         AIL_set_sample_loop_count(pMixerChannels[v62].hSample, uNumRepeats - 1);
       pMixerChannels[v62].uSourceTrackIdx = sound_id;
-      pMixerChannels[v62].source_pid = a3;
+      pMixerChannels[v62].source_pid = pid;
       pMixerChannels[v62].uSourceTrackID = eSoundID;
       int rval = AIL_start_sample(pMixerChannels[v62].hSample);
       if ( sPlaybackRate )
@@ -1063,10 +1066,10 @@ void AudioPlayer::PlaySound(SoundID eSoundID, signed int a3, unsigned int uNumRe
   {
   __debugbreak(); // 3d sound stuff, refactor
   v12 = 13;
-  if ( a3 < 0 )
+  if ( pid < 0 )
   {
     v15 = pAudioPlayer->uNum3DSamples;
-    if ( a3 == -1 )
+    if ( pid == -1 )
     {
       if ( v15 < 16 )
         v12 = v15 - 1;
@@ -1087,7 +1090,7 @@ void AudioPlayer::PlaySound(SoundID eSoundID, signed int a3, unsigned int uNumRe
     v21 = (double)pParty->sEyelevel + (double)pParty->vPosition.z;
     goto LABEL_47;
   }
-  if ( PID_TYPE(a3) == 2 )
+  if ( PID_TYPE(pid) == 2 )
   {
     v22 = pAudioPlayer->uNum3DSamples;
     if ( v22 < 16 )
@@ -1100,11 +1103,11 @@ void AudioPlayer::PlaySound(SoundID eSoundID, signed int a3, unsigned int uNumRe
       v96 = 7;
       v12 = 5;
     }
-    pLayingItem = &pSpriteObjects[PID_ID(a3)];
+    pLayingItem = &pSpriteObjects[PID_ID(pid)];
   }
   else
   {
-    if ( PID_TYPE(a3) == 3 )
+    if ( PID_TYPE(pid) == 3 )
     {
       v18 = pAudioPlayer->uNum3DSamples;
       v12 = 0;
@@ -1112,7 +1115,7 @@ void AudioPlayer::PlaySound(SoundID eSoundID, signed int a3, unsigned int uNumRe
         v96 = 3 * v18 / 16;
       else
         v96 = 3;
-      pActor1 = &pActors[PID_ID(a3)];
+      pActor1 = &pActors[PID_ID(pid)];
       v20 = pActor1->vPosition.y;
       pRenderVertexSoft.vWorldPosition.x = (double)pActor1->vPosition.x;
       v100 = pActor1->vPosition.z;
@@ -1120,10 +1123,10 @@ void AudioPlayer::PlaySound(SoundID eSoundID, signed int a3, unsigned int uNumRe
       v21 = (double)v100;
       goto LABEL_47;
     }
-    if ( PID_TYPE(a3) != 5 )
+    if ( PID_TYPE(pid) != 5 )
     {
       v13 = pAudioPlayer->uNum3DSamples;
-      if ( PID_TYPE(a3) == 6 )
+      if ( PID_TYPE(pid) == 6 )
       {
         if ( v13 >= 16 )
         {
@@ -1173,7 +1176,7 @@ void AudioPlayer::PlaySound(SoundID eSoundID, signed int a3, unsigned int uNumRe
       v12 = 4;
       v96 = 4;
     }
-    pLayingItem = (SpriteObject *)&pLevelDecorations[PID_ID(a3)];
+    pLayingItem = (SpriteObject *)&pLevelDecorations[PID_ID(pid)];
   }
   pRenderVertexSoft.vWorldPosition.x = (double)pLayingItem->vPosition.x;
   pRenderVertexSoft.vWorldPosition.y = (double)pLayingItem->vPosition.y;
@@ -1184,9 +1187,9 @@ LABEL_47:
     sub_4AAEA6_transform(&pRenderVertexSoft);
   else
     pGame->pIndoorCameraD3D->ViewTransform(&pRenderVertexSoft, 1);
-  if ( a3 )
+  if ( pid )
   {
-    if ( a3 != -1 )
+    if ( pid != -1 )
     {
       v101 = 0;
       if ( pAudioPlayer->uNum3DSamples > 0 )
@@ -1195,7 +1198,7 @@ LABEL_47:
         do
         {
           if ( AIL_3D_sample_status(pAudioPlayer_3DSample->hSample) == 4 
-			  && pAudioPlayer_3DSample->field_4 == a3 && AIL_3D_sample_status(pAudioPlayer_3DSample->hSample) == 4 )
+			  && pAudioPlayer_3DSample->field_4 == pid && AIL_3D_sample_status(pAudioPlayer_3DSample->hSample) == 4 )
           {
             if ( pAudioPlayer_3DSample->field_8 == sound_id )
               return;
@@ -1295,12 +1298,12 @@ LABEL_192:
       AIL_set_3D_sample_loop_count(*(int *)v42, v86);
       if ( source_x == -1 )
       {
-        if ( PID_TYPE(a3) == 1 )
+        if ( PID_TYPE(pid) == 1 )
         {
           if ( uCurrentlyLoadedLevelType == LEVEL_Indoor )
           {
 			//goto LABEL_103;
-            pBLVDoor = &pIndoor->pDoors[PID_ID(a3)];
+            pBLVDoor = &pIndoor->pDoors[PID_ID(pid)];
             if ( !pBLVDoor->uDoorID )
              return;
             pRenderVertexSoft.vWorldPosition.x = (double)*pBLVDoor->pXOffsets;
@@ -1334,7 +1337,7 @@ LABEL_101:
             v54 = -v99;
             AIL_set_3D_orientation((void *)*(int *)v42, LODWORD(v54), 0.0, LODWORD(v53), 0.0, 1.0, 0.0);
             //pAudioPlayer3 = pAudioPlayer;
-            *((int *)v41 + 6) = a3;
+            *((int *)v41 + 6) = pid;
             *((int *)v41 + 7) = sound_id;
             *(&pAudioPlayer->bEAXSupported + 4 * (v102 + 2)) = eSoundID;
           }
@@ -1345,15 +1348,15 @@ LABEL_101:
           }
           return;
         }
-        if ( PID_TYPE(a3) == 2 )
+        if ( PID_TYPE(pid) == 2 )
         {
-          pLayingItem2 = &pSpriteObjects[PID_ID(a3)];
+          pLayingItem2 = &pSpriteObjects[PID_ID(pid)];
         }
         else
         {
-          if ( PID_TYPE(a3) == 3 )
+          if ( PID_TYPE(pid) == 3 )
           {
-            pActor = &pActors[PID_ID(a3)];
+            pActor = &pActors[PID_ID(pid)];
             v46 = pActor->vPosition.y;
             pRenderVertexSoft.vWorldPosition.x = (double)pActor->vPosition.x;
             uNumRepeatsb = pActor->vPosition.z;
@@ -1361,7 +1364,7 @@ LABEL_101:
             v47 = (double)uNumRepeatsb;
             goto LABEL_101;
           }
-          if ( PID_TYPE(a3) != 5 )
+          if ( PID_TYPE(pid) != 5 )
           {
             pRenderVertexSoft.vWorldPosition.x = (double)pParty->vPosition.x;
             v43 = (double)pParty->vPosition.y;
@@ -1369,7 +1372,7 @@ LABEL_101:
             v47 = (double)pParty->sEyelevel + (double)pParty->vPosition.z;
             goto LABEL_101;
           }
-          pLayingItem2 = (SpriteObject *)&pLevelDecorations[PID_ID(a3)];
+          pLayingItem2 = (SpriteObject *)&pLevelDecorations[PID_ID(pid)];
         }
         pRenderVertexSoft.vWorldPosition.x = (double)pLayingItem2->vPosition.x;
         pRenderVertexSoft.vWorldPosition.y = (double)pLayingItem2->vPosition.y;
@@ -2138,15 +2141,8 @@ void AudioPlayer::LoadAudioSnd()
 //----- (004AB8CE) --------------------------------------------------------
 void AudioPlayer::Initialize()
 {
-  //AudioPlayer *v2; // esi@1
   int v3; // ebx@1
-  //_DIG_DRIVER *v4; // eax@1
   _PROVIDER *v6; // eax@9
-  //HWND v7; // ST00_4@9
-  //MixerChannel *pChannel; // edi@14
-//  _SAMPLE *v9; // eax@15
-  //_REDBOOK *v10; // eax@19
-  //int v11; // ecx@21
   int v12; // [sp+Ch] [bp-Ch]@9
   char *Str1; // [sp+10h] [bp-8h]@6
   int v14; // [sp+14h] [bp-4h]@5
@@ -2343,8 +2339,9 @@ void AudioPlayer::Release() //ќсвободить
 
   if ( this->bPlayerReady )
   {
-    CloseHandle(hMagicVid);
-    CloseHandle(hMightVid);
+	free(pSoundHeaders);
+    CloseHandle(pMediaPlayer->hMagicVid);
+    CloseHandle(pMediaPlayer->hMightVid);
     pAudioPlayer->StopChannels(-1, -1);
     if ( pAudioPlayer->uMixerChannels > 0 )
     {
@@ -2395,21 +2392,11 @@ void AudioPlayer::Release() //ќсвободить
 //----- (004ABE55) --------------------------------------------------------
 void AudioPlayer::FreeChannel(MixerChannel *pChannel)
 {
-  //int v2; // ebx@1
-  //AudioPlayer *v3; // esi@1
-  //SoundDesc *v4; // eax@2
-//  unsigned __int8 v5; // zf@5
-  //unsigned __int8 v6; // sf@5
-  //char *v7; // edi@6
   int num_same_sound_on_channels; // eax@8
-  //int v9; // ST04_4@8
   int v10; // ecx@12
-//  int v11; // edi@13
   int v12; // eax@13
-  //unsigned __int8 v13; // of@13
   int v14[16]; // [sp+Ch] [bp-48h]@8
   int num_playing_channels; // [sp+4Ch] [bp-8h]@5
-  //int v16; // [sp+50h] [bp-4h]@5
 
   if (!pSoundList->pSL_Sounds)
     return;
@@ -2452,16 +2439,12 @@ LABEL_16:
 void AudioPlayer::_4ABF23(AudioPlayer_3DSample *a2)
 {
   int v2; // ebx@1
-  //AudioPlayer *v3; // esi@1
-  //SoundDesc *v4; // eax@2
   unsigned __int8 v5; // zf@5
   unsigned __int8 v6; // sf@5
   char *v7; // edi@6
   int v8; // eax@8
-//  int v9; // ST04_4@8
   int v10; // ecx@12
   int v11; // eax@13
-//  unsigned __int8 v12; // of@13
   int v13[16]; // [sp+Ch] [bp-48h]@8
   int v14; // [sp+4Ch] [bp-8h]@5
   int v15; // [sp+50h] [bp-4h]@5
@@ -2563,15 +2546,8 @@ void AudioPlayer::SetMapEAX()
 int AudioPlayer::_4AC0A2()
 {
   unsigned int map_id; // eax@1
-  //int v4; // ebx@1
-  //int *v5; // edi@2
-  //int v6; // eax@4
-  //AudioPlayer_3DSample *v8; // ebx@7
   void *v9; // eax@8
-  //int v10; // ebx@14
-  //unsigned int v11; // eax@14
   int v12; // [sp+1Ch] [bp-8h]@1
-  //int v13; // [sp+20h] [bp-4h]@6
 
   //__debugbreak();//Ritor1
 
@@ -2728,7 +2704,7 @@ SoundData *LoadSound(const char *pSoundName, SoundData *pOutBuff, unsigned int u
     pAudioPlayer->pSoundHeaders[uFindSound_BinSearch_ResultID].uCompressedSize = pAudioPlayer->pSoundHeaders[uFindSound_BinSearch_ResultID].uDecompressedSize;
     if ( pAudioPlayer->pSoundHeaders[uFindSound_BinSearch_ResultID].uDecompressedSize )
     {
-      ReadFile(pAudioPlayer->hAudioSnd, pOutBuff->pData, pAudioPlayer->pSoundHeaders[uFindSound_BinSearch_ResultID].uDecompressedSize + 7, &NumberOfBytesRead, 0);// Ritor1: include +7 for pSounds[20]
+      ReadFile(pAudioPlayer->hAudioSnd, pOutBuff->pData, pAudioPlayer->pSoundHeaders[uFindSound_BinSearch_ResultID].uDecompressedSize, &NumberOfBytesRead, 0);// Ritor1: pSounds[20]
     }
     else
     {

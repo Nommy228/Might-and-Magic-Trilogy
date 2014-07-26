@@ -1,3 +1,7 @@
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+
 #define _CRT_SECURE_NO_WARNINGS
 #include <stdlib.h>
 #include "ErrorHandling.h"
@@ -328,9 +332,10 @@ void SpellStats::Initialize()
 	pSpellsTXT_Raw = (char *)pEvents_LOD->LoadRaw("spells.txt", 0);
 
 	strtok(pSpellsTXT_Raw, "\r");
-	strtok(NULL, "\r");
 	for(int i=1; i<100; ++i) 
-	{
+  {
+    if ((i % (11 - 1) )==0)
+      strtok(NULL, "\r");
     test_string=strtok(NULL, "\r")+1;
     auto tokens = Tokenize(test_string, '\t');
     pInfos[i].pName=RemoveQuotes(tokens[2]);
@@ -346,8 +351,6 @@ void SpellStats::Initialize()
     pSpellDatas[i].stats |= strchr(tokens[10], 'e') || strchr(tokens[10], 'E') ? 2 : 0;
     pSpellDatas[i].stats |= strchr(tokens[10], 'c') || strchr(tokens[10], 'C') ? 4 : 0;
     pSpellDatas[i].stats |= strchr(tokens[10], 'x') || strchr(tokens[10], 'X') ? 8 : 0;
-    if ((i % 11)==0)
-      strtok(NULL, "\r");
   }
 }
 //----- (00448DF8) --------------------------------------------------------

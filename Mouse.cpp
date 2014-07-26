@@ -1,3 +1,7 @@
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+
 #define _CRT_SECURE_NO_WARNINGS
 #include "mm7_unsorted_subs.h"
 #include "Texture.h"
@@ -221,7 +225,7 @@ void Mouse::DrawCursor()
 
   if ( this->bInitialized )
   {
-    if ( !this->field_8 && this->bActive && !this->field_C )
+    if ( !this->field_8 && this->bActive && !this->field_C ) //Uninitialized memory access(this->field_8)
       pMouse->_469AE4();//Ritor1: странная, непонятная функция
     this->field_F4 = 1;
     if ( this->field_C )
@@ -473,7 +477,7 @@ void Mouse::UI_OnMouseLeftClick(int *pXY)
                 v10 = pMessageQueue_50CBD0->pMessages[0].field_8 != 0;
                 pMessageQueue_50CBD0->uNumMessages = pMessageQueue_50CBD0->pMessages[0].field_8 != 0;
               }
-              pMessageQueue_50CBD0->AddMessage(control->msg, control->msg_param, 0);
+              pMessageQueue_50CBD0->AddGUIMessage(control->msg, control->msg_param, 0);
               return;
             }
             continue;
@@ -489,7 +493,7 @@ void Mouse::UI_OnMouseLeftClick(int *pXY)
                 v10 = pMessageQueue_50CBD0->pMessages[0].field_8 != 0;
                 pMessageQueue_50CBD0->uNumMessages = pMessageQueue_50CBD0->pMessages[0].field_8 != 0;
               }
-              pMessageQueue_50CBD0->AddMessage(control->msg, control->msg_param, 0);
+              pMessageQueue_50CBD0->AddGUIMessage(control->msg, control->msg_param, 0);
               return;
             }
             continue;
@@ -505,7 +509,7 @@ void Mouse::UI_OnMouseLeftClick(int *pXY)
                 v10 = pMessageQueue_50CBD0->pMessages[0].field_8 != 0;
                 pMessageQueue_50CBD0->uNumMessages = pMessageQueue_50CBD0->pMessages[0].field_8 != 0;
               }
-              pMessageQueue_50CBD0->AddMessage(control->msg, control->msg_param, 0);
+              pMessageQueue_50CBD0->AddGUIMessage(control->msg, control->msg_param, 0);
               return;
             }
             continue;
@@ -534,7 +538,7 @@ void Mouse::UI_OnMouseLeftClick(int *pXY)
       *(&pMessageQueue_50CBD0->uNumMessages + 3 * pMessageQueue_50CBD0->uNumMessages + 3) = 0;
       ++pMessageQueue_50CBD0->uNumMessages;
     }*/
-    pMessageQueue_50CBD0->AddMessage(UIMSG_STEALFROMACTOR, PID_ID((unsigned __int16)v5), 0);
+    pMessageQueue_50CBD0->AddGUIMessage(UIMSG_STEALFROMACTOR, PID_ID((unsigned __int16)v5), 0);
 
     if ( pParty->bTurnBasedModeOn == 1 )
     {
@@ -621,7 +625,7 @@ bool Mouse::UI_OnKeyDown(unsigned int vkKey)
           }
           while ( v13 );
         }
-        pMessageQueue_50CBD0->AddMessage(pButton->msg, pButton->msg_param, 0);
+        pMessageQueue_50CBD0->AddGUIMessage(pButton->msg, pButton->msg_param, 0);
         break;
       }
       case VK_RIGHT:
@@ -652,7 +656,7 @@ bool Mouse::UI_OnKeyDown(unsigned int vkKey)
           }
           while ( v10 );
         }
-        pMessageQueue_50CBD0->AddMessage(pButton->msg, pButton->msg_param, 0);
+        pMessageQueue_50CBD0->AddGUIMessage(pButton->msg, pButton->msg_param, 0);
         break;
       }
       case VK_DOWN:
@@ -676,7 +680,7 @@ bool Mouse::UI_OnKeyDown(unsigned int vkKey)
           }
           while ( v20 );
         }
-        pMessageQueue_50CBD0->AddMessage(pButton->msg, pButton->msg_param, 0);
+        pMessageQueue_50CBD0->AddGUIMessage(pButton->msg, pButton->msg_param, 0);
         return true;
       }
       case VK_SELECT:
@@ -744,7 +748,7 @@ bool Mouse::UI_OnKeyDown(unsigned int vkKey)
           }
           while ( v25 );
         }
-        pMessageQueue_50CBD0->AddMessage(pButton->msg, pButton->msg_param, 0);
+        pMessageQueue_50CBD0->AddGUIMessage(pButton->msg, pButton->msg_param, 0);
         return true;
       }
       case VK_NEXT:

@@ -417,6 +417,7 @@ struct IndoorLocation
     pMapOutlines = 0;
     uNumSpawnPoints = 0;
     pSpawnPoints = 0;
+	uNumSectors = 0;
   }
 
   int GetSector(int sX, int sY, int sZ);
